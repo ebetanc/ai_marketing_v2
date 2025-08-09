@@ -165,6 +165,33 @@ export function Strategies() {
     loading: false
   })
 
+  // Debug function to test click
+  const handleAngleClick = (strategyId: string, angleIndex: number, event: React.MouseEvent) => {
+    console.log('=== ANGLE CLICK DEBUG ===')
+    console.log('Strategy ID:', strategyId)
+    console.log('Angle Index:', angleIndex)
+    console.log('Current expanded angles:', expandedAngles)
+    
+    event.preventDefault()
+    event.stopPropagation()
+    
+    setExpandedAngles(prev => {
+      const currentExpanded = prev[strategyId]
+      const newExpanded = currentExpanded === angleIndex ? null : angleIndex
+      
+      console.log('Current expanded for strategy:', currentExpanded)
+      console.log('New expanded value:', newExpanded)
+      
+      const newState = {
+        ...prev,
+        [strategyId]: newExpanded
+      }
+      
+      console.log('New state:', newState)
+      return newState
+    })
+  }
+
   const toggleAngleExpansion = (strategyId: string, angleIndex: number) => {
     console.log('Toggling angle expansion for strategy:', strategyId, 'angle:', angleIndex)
     setExpandedAngles(prev => {
@@ -477,7 +504,7 @@ export function Strategies() {
                       {angles.map((angle, index) => (
                         <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
                           <button
-                            onClick={() => toggleAngleExpansion(strategy.id, index)}
+                            onClick={(e) => handleAngleClick(strategy.id, index, e)}
                             className={`w-full p-3 text-left hover:bg-gray-50 transition-colors flex items-center justify-between ${
                               expandedAngleIndex === index ? 'bg-blue-50 border-b border-blue-200' : ''
                             }`}
