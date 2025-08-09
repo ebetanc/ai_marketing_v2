@@ -19,6 +19,11 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
 
   // Helper function to parse and extract angles from content
   const extractAngles = (content: any) => {
+    // If content already has angles array (from Supabase transformation)
+    if (content?.angles && Array.isArray(content.angles)) {
+      return content.angles
+    }
+
     let parsedContent = null
     try {
       if (typeof content.body === 'string' && (content.body.startsWith('[') || content.body.startsWith('{'))) {
