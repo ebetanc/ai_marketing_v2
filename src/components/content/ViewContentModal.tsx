@@ -71,8 +71,55 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
     setExpandedAngles({})
   }
 
+  const renderAngleProperty = (key: string, value: any) => {
+    if (!value) return null
+    
+    const displayKey = key.replace(/([A-Z])/g, ' $1').trim()
+    const capitalizedKey = displayKey.charAt(0).toUpperCase() + displayKey.slice(1)
+    
+    let displayValue = value
+    if (typeof value === 'string') {
+      displayValue = value.replace(/^["']|["']$/g, '').trim()
+    } else if (typeof value === 'object') {
+      displayValue = JSON.stringify(value, null, 2)
+    }
+    
+    return (
+      <div key={key}>
+        <h5 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
+          <FileText className="h-4 w-4 mr-1 text-blue-600" />
+          {capitalizedKey}
+        </h5>
+        <div className="bg-gray-50 rounded-lg p-3">
+          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+            {displayValue}
+          </p>
+        </div>
+      </div>
+    )
+  }
   const renderAngleContent = (angle: any, index: number) => {
     const isExpanded = expandedAngles[index]
+    
+    // Get angle title/header
+    const angleTitle = angle.header || angle.title || angle.topic || `Content Angle ${index + 1}`
+    
+    // Get main content preview
+    const getPreviewContent = () => {
+      if (angle.description) {
+        const desc = typeof angle.description === 'string' 
+          ? angle.description.replace(/^["']|["']$/g, '').trim()
+          : JSON.stringify(angle.description)
+        return desc.length > 150 ? desc.substring(0, 150) + '...' : desc
+      }
+      if (angle.content) {
+        const content = typeof angle.content === 'string' 
+          ? angle.content.replace(/^["']|["']$/g, '').trim()
+          : JSON.stringify(angle.content)
+        return content.length > 150 ? content.substring(0, 150) + '...' : content
+      }
+      return 'Click to view angle details...'
+    }
     
     return (
       <Card key={index} className="border border-gray-200">
@@ -83,13 +130,18 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
                 <span className="text-blue-600 font-semibold text-sm">{index + 1}</span>
               </div>
               <div>
-                <h4 className="font-medium text-gray-900">
-                  {angle.header || angle.title || angle.topic || `Angle ${index + 1}`}
+                <h4 className="font-medium text-gray-900 text-base">
+                  {angleTitle}
                 </h4>
                 {angle.platform && (
                   <Badge variant="secondary" className="text-xs mt-1">
                     {angle.platform}
                   </Badge>
+                )}
+                {!isExpanded && (
+                  <p className="text-sm text-gray-600 mt-2 leading-relaxed">
+                    {getPreviewContent()}
+                  </p>
                 )}
               </div>
             </div>
@@ -113,78 +165,10 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
         {isExpanded && (
           <CardContent className="pt-0">
             <div className="space-y-4">
-              {/* Description */}
-              {angle.description && (
-                <div>
-                  <h5 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
-                    <FileText className="h-4 w-4 mr-1 text-blue-600" />
-                    Description
-                  </h5>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                      {typeof angle.description === 'string' 
-                        ? angle.description.replace(/^["']|["']$/g, '').trim()
-                        : JSON.stringify(angle.description, null, 2)
-                      }
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Content */}
-              {angle.content && (
-                <div>
-                  <h5 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
-                    <Zap className="h-4 w-4 mr-1 text-purple-600" />
-                    Content
-                  </h5>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                      {typeof angle.content === 'string' 
-                        ? angle.content.replace(/^["']|["']$/g, '').trim()
-                        : JSON.stringify(angle.content, null, 2)
-                      }
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Content Structure */}
-              {angle.contentStructure && (
-                <div>
-                  <h5 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
-                    <Target className="h-4 w-4 mr-1 text-teal-600" />
-                    Content Structure
-                  </h5>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                      {typeof angle.contentStructure === 'string' 
-                        ? angle.contentStructure.replace(/^["']|["']$/g, '').trim()
-                        : JSON.stringify(angle.contentStructure, null, 2)
-                      }
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Additional Properties */}
-              {Object.keys(angle).filter(key => 
-                !['header', 'title', 'topic', 'description', 'content', 'contentStructure', 'platform'].includes(key)
-              ).map(key => (
-                <div key={key}>
-                  <h5 className="text-sm font-medium text-gray-900 mb-2 capitalize">
-                    {key.replace(/([A-Z])/g, ' $1').trim()}
-                  </h5>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                      {typeof angle[key] === 'string' 
-                        ? angle[key].replace(/^["']|["']$/g, '').trim()
-                        : JSON.stringify(angle[key], null, 2)
-                      }
-                    </p>
-                  </div>
-                </div>
-              ))}
+              {/* Render all angle properties dynamically */}
+              {Object.keys(angle)
+                .filter(key => !['header', 'title', 'topic', 'platform'].includes(key))
+                .map(key => renderAngleProperty(key, angle[key]))}
             </div>
           </CardContent>
         )}
