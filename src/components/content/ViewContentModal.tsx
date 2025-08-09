@@ -265,47 +265,20 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
   const [selectedAngle, setSelectedAngle] = useState<{ angle: any; index: number } | null>(null)
   const [parsedContent, setParsedContent] = useState<any>(null)
   const [copied, setCopied] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     if (content && content.body) {
-      setIsLoading(true)
-      console.log('Raw content body:', content.body)
       try {
         if (typeof content.body === 'string' && (content.body.startsWith('[') || content.body.startsWith('{'))) {
           const parsed = JSON.parse(content.body)
-          console.log('Parsed content:', parsed)
-          
-          // Handle different data structures
-          if (Array.isArray(parsed)) {
-            setParsedContent(parsed)
-          } else if (parsed && typeof parsed === 'object') {
-            // Check if it's a wrapper object containing angles
-            if (parsed.angles && Array.isArray(parsed.angles)) {
-              setParsedContent(parsed.angles)
-            } else if (parsed.content && Array.isArray(parsed.content)) {
-              setParsedContent(parsed.content)
-            } else if (parsed.strategy && Array.isArray(parsed.strategy)) {
-              setParsedContent(parsed.strategy)
-            } else {
-              // Single object
-              setParsedContent(parsed)
-            }
-          } else {
-            setParsedContent(parsed)
-          }
+          setParsedContent(parsed)
         } else {
           setParsedContent(content.body)
         }
       } catch (error) {
         console.error('Error parsing content:', error)
-        console.log('Failed to parse, using raw content:', content.body)
         setParsedContent(content.body)
-      } finally {
-        setIsLoading(false)
       }
-    } else {
-      setIsLoading(false)
     }
   }, [content])
 
@@ -439,11 +412,11 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
           </div>
 
           {/* Strategy Angles */}
-          {!isLoading && Array.isArray(parsedContent) && parsedContent.length > 0 ? (
+          {Array.isArray(parsedContent) && parsedContent.length > 0 ? (
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <Target className="h-5 w-5 mr-2 text-purple-600" />
-                Content Strategy Angles ({parsedContent.length} angles available):
+                Select an angle below to generate specific content ideas from that strategy approach:
               </h3>
               <div className="space-y-4">
                 {parsedContent.map((angle, index) => (
@@ -461,9 +434,10 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
                           <div className="flex-1">
                             <div className="flex items-center space-x-2 mb-2">
                               <h4 className="font-semibold text-gray-900">
-                                Angle {index + 1} of {parsedContent.length}
+                                Angle {index + 1}
                               </h4>
                               <Badge variant="secondary">Strategy</Badge>
+                              <span className="text-lg font-bold text-purple-600">{index + 1}</span>
                             </div>
                             
                             <h3 className="text-xl font-bold text-gray-900 mb-3">
@@ -471,11 +445,8 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
                             </h3>
                             
                             <div className="text-gray-700 mb-4">
-                              <p className="leading-relaxed">
-                                {angle.description || angle.content ? (
-                                  (angle.description || angle.content).substring(0, 300) + 
-                                  ((angle.description || angle.content).length > 300 ? '...' : '')
-                                ) : 'No description available.'}
+                              <p className="line-clamp-3">
+                                {angle.description || angle.content || 'No description available.'}
                               </p>
                             </div>
                             
@@ -485,7 +456,7 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
                                 Click to view full angle details
                               </button>
                               <span className="text-sm text-gray-500">
-                                {(angle.description || angle.content || '').split(' ').filter(word => word.length > 0).length} words
+                                {angle.description?.split(' ').length || angle.content?.split(' ').length || 0} words
                               </span>
                             </div>
                           </div>
@@ -495,48 +466,6 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
                   </Card>
                 ))}
               </div>
-            </div>
-          ) : !isLoading && parsedContent && typeof parsedContent === 'object' && !Array.isArray(parsedContent) ? (
-            /* Check if it's a single strategy object that might contain angles */
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <Target className="h-5 w-5 mr-2 text-purple-600" />
-                Strategy Content:
-              </h3>
-              <Card 
-                className="hover:shadow-md transition-shadow duration-200 cursor-pointer border-2 border-gray-100 hover:border-purple-200"
-                onClick={() => handleAngleClick(parsedContent, 0)}
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start space-x-4 flex-1">
-                      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
-                        <Zap className="h-5 w-5 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-xl font-bold text-gray-900 mb-3">
-                          {parsedContent.header || parsedContent.title || content.title}
-                        </h3>
-                        <div className="text-gray-700 mb-4">
-                          <p className="leading-relaxed">
-                            {(parsedContent.description || parsedContent.content || 'Click to view full content').substring(0, 300)}
-                            {(parsedContent.description || parsedContent.content || '').length > 300 ? '...' : ''}
-                          </p>
-                        </div>
-                        <button className="text-purple-600 hover:text-purple-800 font-medium text-sm flex items-center">
-                          <Eye className="h-4 w-4 mr-1" />
-                          Click to view and edit full content
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          ) : isLoading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-              <p className="text-gray-500 mt-2">Loading content...</p>
             </div>
           ) : (
             /* Single Content Display */
