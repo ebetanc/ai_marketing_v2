@@ -503,7 +503,7 @@ export function Strategies() {
                     <div className="space-y-2">
                       {angles.map((angle, index) => (
                         <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
-                          <div className={`p-3 border-b border-gray-200 flex items-center justify-between ${
+                          <div className={`p-3 flex items-center justify-between ${
                               expandedAngleIndex === index ? 'bg-blue-50 border-b border-blue-200' : ''
                             }`}>
                             <div className="flex-1">
@@ -516,34 +516,30 @@ export function Strategies() {
                                 {truncateText(getAngleContent(angle), 60)}
                               </p>
                             </div>
-                            <div className="ml-3">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.preventDefault()
-                                  e.stopPropagation()
-                                  console.log('=== EXPAND BUTTON CLICKED ===')
-                                  console.log('Strategy ID:', strategy.id)
-                                  console.log('Angle Index:', index)
-                                  console.log('Current expanded:', expandedAngleIndex)
-                                  toggleAngleExpansion(strategy.id, index)
-                                }}
-                                className="text-xs px-2 py-1"
-                              >
-                                {expandedAngleIndex === index ? (
-                                  <>
-                                    <ChevronDown className="h-3 w-3 mr-1" />
-                                    Collapse
-                                  </>
-                                ) : (
-                                  <>
-                                    <ChevronRight className="h-3 w-3 mr-1" />
-                                    Expand
-                                  </>
-                                )}
-                              </Button>
-                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                console.log('=== EXPAND BUTTON CLICKED ===')
+                                console.log('Strategy ID:', strategy.id)
+                                console.log('Angle Index:', index)
+                                console.log('Current expanded:', expandedAngleIndex)
+                                toggleAngleExpansion(strategy.id, index)
+                              }}
+                              className="ml-3 px-3 py-1 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                            >
+                              {expandedAngleIndex === index ? (
+                                <>
+                                  <ChevronDown className="h-3 w-3 mr-1" />
+                                  Collapse
+                                </>
+                              ) : (
+                                <>
+                                  <ChevronRight className="h-3 w-3 mr-1" />
+                                  Expand
+                                </>
+                              )}
+                            </button>
                           </div>
                           
                           {expandedAngleIndex === index && (
