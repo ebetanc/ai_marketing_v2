@@ -26,23 +26,36 @@ export function Strategies() {
       console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL)
       console.log('Supabase client:', supabase)
       
+      // First, let's try to get the current user/session
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      console.log('Current user:', user)
+      console.log('Auth error:', authError)
+      
       const { data, error } = await supabase
         .from('strategies')
         .select('*')
         .order('created_at', { ascending: false })
       
       console.log('Supabase response:', { data, error })
+      console.log('Data length:', data?.length)
+      console.log('Error details:', error)
       
       if (error) {
         console.error('Supabase error:', error)
+        console.error('Error code:', error.code)
+        console.error('Error message:', error.message)
+        console.error('Error details:', error.details)
         throw error
       }
       
       console.log('Strategies fetched successfully:', data?.length || 0, 'records')
+      console.log('First strategy (if any):', data?.[0])
       setStrategies(data || [])
     } catch (error) {
       console.error('Error fetching strategies:', error)
-      setError(error instanceof Error ? error.message : 'Failed to fetch strategies')
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch strategies'
+      console.error('Final error message:', errorMessage)
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
