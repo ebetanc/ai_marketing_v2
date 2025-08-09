@@ -418,209 +418,210 @@ export function Strategies() {
 
       {/* Strategies Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {filteredStrategies.map((strategy) => (
+        {filteredStrategies.map((strategy) => {
           const angles = extractStrategyAngles(strategy)
           const expandedAngleIndex = expandedAngles[strategy.id]
           
-          <Card key={strategy.id} className="hover:shadow-md transition-shadow duration-200 overflow-hidden">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-3 flex-1">
-                  <div className="text-2xl">⚡</div>
-                  <div className="flex-1 min-w-0">
-                    <CardTitle className="text-sm sm:text-base line-clamp-2">
-                      {strategy.title}
-                    </CardTitle>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {strategy.brand_name}
-                      <Badge variant="primary" className="ml-2 text-xs">
-                        AI Generated
-                      </Badge>
-                      {angles.length > 0 && (
-                        <Badge variant="secondary" className="ml-1 text-xs">
-                          {angles.length} Angles
+          return (
+            <Card key={strategy.id} className="hover:shadow-md transition-shadow duration-200 overflow-hidden">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start space-x-3 flex-1">
+                    <div className="text-2xl">⚡</div>
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-sm sm:text-base line-clamp-2">
+                        {strategy.title}
+                      </CardTitle>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {strategy.brand_name}
+                        <Badge variant="primary" className="ml-2 text-xs">
+                          AI Generated
                         </Badge>
-                      )}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <button 
-                    onClick={() => handleDeleteClick(strategy)}
-                    className="p-1 hover:bg-red-50 rounded-lg transition-colors group"
-                    title="Delete strategy"
-                  >
-                    <Trash2 className="h-4 w-4 text-gray-400 group-hover:text-red-600" />
-                  </button>
-                  <button className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
-                    <MoreVertical className="h-4 w-4 text-gray-400" />
-                  </button>
-                </div>
-              </div>
-            </CardHeader>
-            
-            <CardContent className="space-y-4">
-              {/* Strategy Angles */}
-              {angles.length > 0 ? (
-                <div>
-                  <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
-                    <Target className="h-4 w-4 mr-1 text-blue-600" />
-                    Content Angles
-                  </h4>
-                  <div className="space-y-2">
-                    {angles.map((angle, index) => (
-                      <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
-                        <button
-                          onClick={() => toggleAngleExpansion(strategy.id, index)}
-                          className={`w-full p-3 text-left hover:bg-gray-50 transition-colors flex items-center justify-between ${
-                            expandedAngleIndex === index ? 'bg-blue-50 border-b border-blue-200' : ''
-                          }`}
-                        >
-                          <div className="flex-1">
-                            <p className={`text-sm font-medium ${
-                              expandedAngleIndex === index ? 'text-blue-900' : 'text-gray-900'
-                            }`}>
-                              {getAngleSummary(angle, index)}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1 line-clamp-1">
-                              {truncateText(getAngleContent(angle), 60)}
-                            </p>
-                          </div>
-                          <div className={`ml-2 transition-transform ${
-                            expandedAngleIndex === index ? 'rotate-90' : ''
-                          }`}>
-                            <ChevronRight className="h-4 w-4 text-gray-400" />
-                          </div>
-                        </button>
-                        
-                        {expandedAngleIndex === index && (
-                          <div className="p-4 bg-blue-50 border-t border-blue-200">
-                            <div className="space-y-3">
-                              {angle.header && (
-                                <div>
-                                  <h5 className="text-xs font-semibold text-blue-900 uppercase tracking-wide mb-1">
-                                    Header
-                                  </h5>
-                                  <p className="text-sm text-blue-800">{angle.header}</p>
-                                </div>
-                              )}
-                              
-                              {angle.description && (
-                                <div>
-                                  <h5 className="text-xs font-semibold text-blue-900 uppercase tracking-wide mb-1">
-                                    Description
-                                  </h5>
-                                  <p className="text-sm text-blue-800 leading-relaxed whitespace-pre-wrap">
-                                    {angle.description}
-                                  </p>
-                                </div>
-                              )}
-                              
-                              {angle.contentStructure && (
-                                <div>
-                                  <h5 className="text-xs font-semibold text-blue-900 uppercase tracking-wide mb-1">
-                                    Content Structure
-                                  </h5>
-                                  <div className="text-sm text-blue-800">
-                                    {Array.isArray(angle.contentStructure) ? (
-                                      <ul className="list-disc list-inside space-y-1">
-                                        {angle.contentStructure.map((item, idx) => (
-                                          <li key={idx}>{item}</li>
-                                        ))}
-                                      </ul>
-                                    ) : (
-                                      <p className="whitespace-pre-wrap">{angle.contentStructure}</p>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                              
-                              {angle.keyPoints && (
-                                <div>
-                                  <h5 className="text-xs font-semibold text-blue-900 uppercase tracking-wide mb-1">
-                                    Key Points
-                                  </h5>
-                                  <div className="text-sm text-blue-800">
-                                    {Array.isArray(angle.keyPoints) ? (
-                                      <ul className="list-disc list-inside space-y-1">
-                                        {angle.keyPoints.map((point, idx) => (
-                                          <li key={idx}>{point}</li>
-                                        ))}
-                                      </ul>
-                                    ) : (
-                                      <p className="whitespace-pre-wrap">{angle.keyPoints}</p>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                              
-                              {angle.callToAction && (
-                                <div>
-                                  <h5 className="text-xs font-semibold text-blue-900 uppercase tracking-wide mb-1">
-                                    Call to Action
-                                  </h5>
-                                  <p className="text-sm text-blue-800">{angle.callToAction}</p>
-                                </div>
-                              )}
-                              
-                              {angle.platform && (
-                                <div>
-                                  <h5 className="text-xs font-semibold text-blue-900 uppercase tracking-wide mb-1">
-                                    Platform
-                                  </h5>
-                                  <Badge variant="secondary" className="text-xs">
-                                    {angle.platform}
-                                  </Badge>
-                                </div>
-                              )}
-                            </div>
-                          </div>
+                        {angles.length > 0 && (
+                          <Badge variant="secondary" className="ml-1 text-xs">
+                            {angles.length} Angles
+                          </Badge>
                         )}
-                      </div>
-                    ))}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <button 
+                      onClick={() => handleDeleteClick(strategy)}
+                      className="p-1 hover:bg-red-50 rounded-lg transition-colors group"
+                      title="Delete strategy"
+                    >
+                      <Trash2 className="h-4 w-4 text-gray-400 group-hover:text-red-600" />
+                    </button>
+                    <button className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
+                      <MoreVertical className="h-4 w-4 text-gray-400" />
+                    </button>
                   </div>
                 </div>
-              ) : (
-                <div>
-                  <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
-                    <Zap className="h-4 w-4 mr-1 text-purple-600" />
-                    Strategy Overview
-                  </h4>
-                  <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
-                    <p className="text-sm text-gray-700 leading-relaxed line-clamp-4">
-                      {truncateText(JSON.stringify(extractStrategyContent(strategy), null, 2), 200)}
-                    </p>
+              </CardHeader>
+              
+              <CardContent className="space-y-4">
+                {/* Strategy Angles */}
+                {angles.length > 0 ? (
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
+                      <Target className="h-4 w-4 mr-1 text-blue-600" />
+                      Content Angles
+                    </h4>
+                    <div className="space-y-2">
+                      {angles.map((angle, index) => (
+                        <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
+                          <button
+                            onClick={() => toggleAngleExpansion(strategy.id, index)}
+                            className={`w-full p-3 text-left hover:bg-gray-50 transition-colors flex items-center justify-between ${
+                              expandedAngleIndex === index ? 'bg-blue-50 border-b border-blue-200' : ''
+                            }`}
+                          >
+                            <div className="flex-1">
+                              <p className={`text-sm font-medium ${
+                                expandedAngleIndex === index ? 'text-blue-900' : 'text-gray-900'
+                              }`}>
+                                {getAngleSummary(angle, index)}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1 line-clamp-1">
+                                {truncateText(getAngleContent(angle), 60)}
+                              </p>
+                            </div>
+                            <div className={`ml-2 transition-transform ${
+                              expandedAngleIndex === index ? 'rotate-90' : ''
+                            }`}>
+                              <ChevronRight className="h-4 w-4 text-gray-400" />
+                            </div>
+                          </button>
+                          
+                          {expandedAngleIndex === index && (
+                            <div className="p-4 bg-blue-50 border-t border-blue-200">
+                              <div className="space-y-3">
+                                {angle.header && (
+                                  <div>
+                                    <h5 className="text-xs font-semibold text-blue-900 uppercase tracking-wide mb-1">
+                                      Header
+                                    </h5>
+                                    <p className="text-sm text-blue-800">{angle.header}</p>
+                                  </div>
+                                )}
+                                
+                                {angle.description && (
+                                  <div>
+                                    <h5 className="text-xs font-semibold text-blue-900 uppercase tracking-wide mb-1">
+                                      Description
+                                    </h5>
+                                    <p className="text-sm text-blue-800 leading-relaxed whitespace-pre-wrap">
+                                      {angle.description}
+                                    </p>
+                                  </div>
+                                )}
+                                
+                                {angle.contentStructure && (
+                                  <div>
+                                    <h5 className="text-xs font-semibold text-blue-900 uppercase tracking-wide mb-1">
+                                      Content Structure
+                                    </h5>
+                                    <div className="text-sm text-blue-800">
+                                      {Array.isArray(angle.contentStructure) ? (
+                                        <ul className="list-disc list-inside space-y-1">
+                                          {angle.contentStructure.map((item, idx) => (
+                                            <li key={idx}>{item}</li>
+                                          ))}
+                                        </ul>
+                                      ) : (
+                                        <p className="whitespace-pre-wrap">{angle.contentStructure}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {angle.keyPoints && (
+                                  <div>
+                                    <h5 className="text-xs font-semibold text-blue-900 uppercase tracking-wide mb-1">
+                                      Key Points
+                                    </h5>
+                                    <div className="text-sm text-blue-800">
+                                      {Array.isArray(angle.keyPoints) ? (
+                                        <ul className="list-disc list-inside space-y-1">
+                                          {angle.keyPoints.map((point, idx) => (
+                                            <li key={idx}>{point}</li>
+                                          ))}
+                                        </ul>
+                                      ) : (
+                                        <p className="whitespace-pre-wrap">{angle.keyPoints}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {angle.callToAction && (
+                                  <div>
+                                    <h5 className="text-xs font-semibold text-blue-900 uppercase tracking-wide mb-1">
+                                      Call to Action
+                                    </h5>
+                                    <p className="text-sm text-blue-800">{angle.callToAction}</p>
+                                  </div>
+                                )}
+                                
+                                {angle.platform && (
+                                  <div>
+                                    <h5 className="text-xs font-semibold text-blue-900 uppercase tracking-wide mb-1">
+                                      Platform
+                                    </h5>
+                                    <Badge variant="secondary" className="text-xs">
+                                      {angle.platform}
+                                    </Badge>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
+                ) : (
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
+                      <Zap className="h-4 w-4 mr-1 text-purple-600" />
+                      Strategy Overview
+                    </h4>
+                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                      <p className="text-sm text-gray-700 leading-relaxed line-clamp-4">
+                        {truncateText(JSON.stringify(extractStrategyContent(strategy), null, 2), 200)}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>{formatDate(strategy.created_at)}</span>
+                  <span>{strategy.metadata?.word_count || 0} words</span>
                 </div>
-              )}
 
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <span>{formatDate(strategy.created_at)}</span>
-                <span>{strategy.metadata?.word_count || 0} words</span>
-              </div>
+                <div className="flex items-center justify-between">
+                  {getStatusBadge(strategy.status)}
+                  <Badge variant="secondary" className="text-xs capitalize">
+                    Content Strategy
+                  </Badge>
+                </div>
 
-              <div className="flex items-center justify-between">
-                {getStatusBadge(strategy.status)}
-                <Badge variant="secondary" className="text-xs capitalize">
-                  Content Strategy
-                </Badge>
-              </div>
-
-              <div className="flex space-x-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full"
-                  onClick={() => handleViewStrategy(strategy)}
-                >
-                  <Eye className="h-3 w-3 mr-1" />
-                  View
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="flex space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => handleViewStrategy(strategy)}
+                  >
+                    <Eye className="h-3 w-3 mr-1" />
+                    View
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           )
-        ))}
+        })}
       </div>
 
       {filteredStrategies.length === 0 && (
