@@ -27,6 +27,7 @@ import { formatDate, truncateText } from '../lib/utils'
 import { db } from '../lib/firebase'
 import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore'
 import { useCompanies } from '../hooks/useCompanies'
+import { supabase } from '../lib/supabase'
 
 // Brand Selection Modal Component
 interface BrandSelectionModalProps {
@@ -85,10 +86,128 @@ function BrandSelectionModal({ isOpen, onClose, brands, onSelectBrand }: BrandSe
   )
 }
 
+// Helper function to extract and format strategy content from JSON
+const extractStrategyContent = (strategy: any) => {
+  // Try to parse the body if it's JSON
+  let parsedContent = null
+  try {
+    if (typeof strategy.body === 'string' && (strategy.body.startsWith('[') || strategy.body.startsWith('{'))) {
+      parsedContent = JSON.parse(strategy.body)
+    }
+  } catch (error) {
+    // If parsing fails, use the raw body
+  }
+
+  // Extract meaningful content from parsed JSON
+  if (parsedContent) {
+    if (Array.isArray(parsedContent) && parsedContent.length > 0) {
+      const firstStrategy = parsedContent[0]
+      if (firstStrategy.description) {
+        return firstStrategy.description.replace(/^["']|["']$/g, '').trim()
+      }
+      if (firstStrategy.content) {
+        return firstStrategy.content.replace(/^["']|["']$/g, '').trim()
+      }
+      if (firstStrategy.header) {
+        return firstStrategy.header.replace(/^["']|["']$/g, '').trim()
+      }
+      // If it's an array of strategies, try to extract a meaningful summary
+      if (typeof firstStrategy === 'string') {
+        return firstStrategy.replace(/^["']|["']$/g, '').trim()
+      }
+    }
+    
+    if (parsedContent.description) {
+      return parsedContent.description.replace(/^["']|["']$/g, '').trim()
+    }
+    
+    if (parsedContent.content) {
+      return parsedContent.content.replace(/^["']|["']$/g, '').trim()
+    }
+    
+    if (parsedContent.header) {
+      return parsedContent.header.replace(/^["']|["']$/g, '').trim()
+    }
+  }
+
+  // Fallback to original body or a default message
+  const fallbackContent = strategy.body || 'AI-generated content strategy with multiple angles and approaches.'
+  
+  // If it's still JSON-like, try to clean it up
+  if (typeof fallbackContent === 'string' && fallbackContent.includes('"')) {
+    // Try to extract readable content from JSON strings
+    const cleanContent = fallbackContent
+      .replace(/^\[|\]$/g, '') // Remove array brackets
+      .replace(/^\{|\}$/g, '') // Remove object brackets  
+      .replace(/"[^"]*":\s*/g, '') // Remove JSON keys
+      .replace(/[{}[\]"]/g, '') // Remove remaining JSON characters
+      .replace(/,\s*/g, '. ') // Replace commas with periods
+      .replace(/\.\s*\./g, '.') // Remove double periods
+      .trim()
+    
+    return cleanContent || 'AI-generated content strategy with multiple angles and approaches.'
+  }
+  
+  return fallbackContent
+}
+
+// Helper function to extract strategy focus/header
+const extractStrategyFocus = (strategy: any) => {
+  let parsedContent = null
+  try {
+    if (typeof strategy.body === 'string' && (strategy.body.startsWith('[') || strategy.body.startsWith('{'))) {
+      parsedContent = JSON.parse(strategy.body)
+    }
+  } catch (error) {
+    // If parsing fails, return null
+  }
+
+  if (parsedContent) {
+    if (Array.isArray(parsedContent) && parsedContent.length > 0) {
+      const firstStrategy = parsedContent[0]
+      if (firstStrategy.header) {
+        return firstStrategy.header
+      }
+      if (firstStrategy.brandId) {
+        return `Strategy for ${firstStrategy.brandId}`
+      }
+      if (firstStrategy.topic) {
+        return firstStrategy.topic
+      }
+    }
+    
+    if (parsedContent.header) {
+      return parsedContent.header
+    }
+    
+    if (parsedContent.topic) {
+      return parsedContent.topic
+    }
+  }
+
+  return null
+}
+
+interface Strategy {
+  id: string
+  title: string
+  body: string
+  status: string
+  created_at: string
+  brand_id?: string
+  brand_name?: string
+  company_id?: string
+  type?: string
+  firebaseId?: string
+  metadata?: {
+    word_count?: number
+  }
+}
 
 export function Strategies() {
   const { companies } = useCompanies()
   const [strategies, setStrategies] = useState<Strategy[]>([])
+  const [generatedStrategies, setGeneratedStrategies] = useState<Strategy[]>([])
   const [loadingStrategies, setLoadingStrategies] = useState(true)
   const [selectedCompany, setSelectedCompany] = useState('')
   const [filterStatus, setFilterStatus] = useState<'all' | 'draft' | 'approved'>('all')
@@ -96,13 +215,14 @@ export function Strategies() {
   const [showBrandSelection, setShowBrandSelection] = useState(false)
   const [showGenerateModal, setShowGenerateModal] = useState(false)
   const [selectedBrand, setSelectedBrand] = useState<any>(null)
-  const [viewStrategyModal, setViewStrategyModal] = useState<{ isOpen: boolean; strategy: Strategy | null }>({
+  const [viewStrategyModal, setViewStrategyModal] = useState<{ isOpen: boolean; strategy: Strategy | null; content?: any }>({
     isOpen: false,
     strategy: null
   })
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean
     strategy: Strategy | null
+    content?: any
     loading: boolean
   }>({
     isOpen: false,
@@ -133,7 +253,33 @@ export function Strategies() {
       }
     }
 
+    const fetchGeneratedStrategiesFromFirebase = async () => {
+      try {
+        const strategyCollection = collection(db, 'strategy')
+        const strategySnapshot = await getDocs(strategyCollection)
+        
+        const strategies = strategySnapshot.docs.map(doc => ({
+          id: doc.id,
+          firebaseId: doc.id, // Store the actual Firebase document ID
+          ...doc.data()
+        }))
+        
+        // Filter to only show content strategies
+        const actualStrategies = strategies.filter(item => 
+          item.type === 'content_strategy'
+        )
+        
+        setGeneratedStrategies(actualStrategies)
+      } catch (error) {
+        console.error('Error fetching strategies from Firebase:', error)
+        setGeneratedStrategies([])
+      } finally {
+        setLoadingStrategies(false)
+      }
+    }
+
     fetchStrategiesFromSupabase()
+    fetchGeneratedStrategiesFromFirebase()
   }, [])
 
   const refreshStrategies = async () => {
@@ -150,43 +296,57 @@ export function Strategies() {
       } else {
         setStrategies(data || [])
       }
+
+      const strategyCollection = collection(db, 'strategy')
+      const strategySnapshot = await getDocs(strategyCollection)
+      
+      const strategies = strategySnapshot.docs.map(doc => ({
+        id: doc.id,
+        firebaseId: doc.id, // Store the actual Firebase document ID
+        ...doc.data()
+      }))
+      
+      const actualStrategies = strategies.filter(item => 
+        item.type === 'content_strategy'
+      )
+      
+      setGeneratedStrategies(actualStrategies)
     } catch (error) {
       console.error('Error refreshing strategies:', error)
     } finally {
       setLoadingStrategies(false)
     }
   }
-        
-  const handleDeleteClick = (strategy: Strategy) => {
+
+  const handleDeleteClick = (content: any) => {
     setDeleteDialog({
       isOpen: true,
-      strategy,
+      content,
       loading: false
     })
   }
 
   const handleDeleteConfirm = async () => {
-    if (!deleteDialog.strategy) return
+    if (!deleteDialog.content) return
 
     setDeleteDialog(prev => ({ ...prev, loading: true }))
 
     try {
-      const { error } = await supabase
-        .from('strategies')
-        .delete()
-        .eq('id', deleteDialog.strategy.id)
+      // Use the actual Firebase document ID
+      const firebaseDocId = deleteDialog.content.firebaseId || deleteDialog.content.id
+      console.log('Attempting to delete strategy with Firebase ID:', firebaseDocId)
+      console.log('Full strategy object:', deleteDialog.content)
       
-      if (error) {
-        throw error
-      }
+      await deleteDoc(doc(db, 'strategy', firebaseDocId))
+      console.log('Successfully deleted strategy from Firebase:', firebaseDocId)
       
-      console.log('Successfully deleted strategy from Supabase:', deleteDialog.strategy.id)
-      
-      setStrategies(prev => prev.filter(strategy => strategy.id !== deleteDialog.strategy!.id))
-      setDeleteDialog({ isOpen: false, strategy: null, loading: false })
+      setGeneratedStrategies(prev => prev.filter(content => content.id !== deleteDialog.content.id))
+      setDeleteDialog({ isOpen: false, content: null, loading: false })
       console.log('Strategy deleted successfully from database and UI updated')
     } catch (error) {
       console.error('Error deleting strategy:', error)
+      console.error('Error details:', error.message)
+      console.error('Firebase Document ID that failed:', deleteDialog.content.firebaseId || deleteDialog.content.id)
       alert('Failed to delete strategy. Please try again.')
       setDeleteDialog(prev => ({ ...prev, loading: false }))
     } finally {
@@ -196,7 +356,7 @@ export function Strategies() {
   }
 
   const handleDeleteCancel = () => {
-    setDeleteDialog({ isOpen: false, strategy: null, loading: false })
+    setDeleteDialog({ isOpen: false, content: null, loading: false })
   }
 
   const handleGenerateStrategyClick = () => {
@@ -221,96 +381,29 @@ export function Strategies() {
     setShowGenerateModal(true)
   }
 
-  // Transform Supabase strategies to display format
-  const transformedStrategies = strategies.map(strategy => ({
+  const allStrategies = generatedStrategies.map(strategy => ({
     ...strategy,
-    title: `Strategy for ${strategy.brand || 'Unknown Brand'}`,
-    brand_name: strategy.brand || 'Unknown Brand',
-    company_id: strategy.brand || '',
-    status: 'draft', // Default status since not in Supabase table
-    type: 'content_strategy',
-    // Convert angles to a structured format for display
-    angles: [
-      strategy.angle1_header && {
-        header: strategy.angle1_header,
-        description: strategy.angle1_description,
-        objective: strategy.angle1_objective,
-        tonality: strategy.angle1_tonality
-      },
-      strategy.angle2_header && {
-        header: strategy.angle2_header,
-        description: strategy.angle2_description,
-        objective: strategy.angle2_objective,
-        tonality: strategy.angle2_tonality
-      },
-      strategy.angle3_header && {
-        header: strategy.angle3_header,
-        description: strategy.angle3_description,
-        objective: strategy.angle3_objective,
-        tonality: strategy.angle3_tonality
-      },
-      strategy.angle4_header && {
-        header: strategy.angle4_header,
-        description: strategy.angle4_description,
-        objective: strategy.angle4_objective,
-        tonality: strategy.angle4_tonality
-      },
-      strategy.angle5_header && {
-        header: strategy.angle5_header,
-        description: strategy.angle5_description,
-        objective: strategy.angle5_objective,
-        tonality: strategy.angle5_tonality
-      },
-      strategy.angle6_header && {
-        header: strategy.angle6_header,
-        description: strategy.angle6_description,
-        objective: strategy.angle6_objective,
-        tonality: strategy.angle6_tonality
-      },
-      strategy.angle7_header && {
-        header: strategy.angle7_header,
-        description: strategy.angle7_description,
-        objective: strategy.angle7_objective,
-        tonality: strategy.angle7_tonality
-      },
-      strategy.angle8_header && {
-        header: strategy.angle8_header,
-        description: strategy.angle8_description,
-        objective: strategy.angle8_objective,
-        tonality: strategy.angle8_tonality
-      },
-      strategy.angle9_header && {
-        header: strategy.angle9_header,
-        description: strategy.angle9_description,
-        objective: strategy.angle9_objective,
-        tonality: strategy.angle9_tonality
-      },
-      strategy.angle10_header && {
-        header: strategy.angle10_header,
-        description: strategy.angle10_description,
-        objective: strategy.angle10_objective,
-        tonality: strategy.angle10_tonality
-      }
-    ].filter(Boolean) // Remove null/undefined angles
+    source: 'generated',
+    company_id: strategy.brand_id,
+    brand_name: strategy.brand_name || 'Unknown Brand'
   }))
 
-  const filteredStrategies = transformedStrategies.filter(strategy => {
+  const filteredStrategies = allStrategies.filter(strategy => {
     const matchesCompany = !selectedCompany || strategy.company_id === selectedCompany
     const matchesStatus = filterStatus === 'all' || strategy.status === filterStatus
     const matchesSearch = !searchQuery || 
       strategy.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (strategy.brand || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (strategy.platforms || '').toLowerCase().includes(searchQuery.toLowerCase())
+      strategy.body.toLowerCase().includes(searchQuery.toLowerCase())
     
     return matchesCompany && matchesStatus && matchesSearch
   })
 
-  const handleViewStrategy = (strategy: any) => {
-    setViewStrategyModal({ isOpen: true, strategy })
+  const handleViewStrategy = (content: any) => {
+    setViewStrategyModal({ isOpen: true, content })
   }
 
   const handleCloseViewModal = () => {
-    setViewStrategyModal({ isOpen: false, strategy: null })
+    setViewStrategyModal({ isOpen: false, content: null })
   }
 
   const statusOptions = [
@@ -356,7 +449,7 @@ export function Strategies() {
       <ViewContentModal
         isOpen={viewStrategyModal.isOpen}
         onClose={handleCloseViewModal}
-        content={viewStrategyModal.strategy}
+        content={viewStrategyModal.content}
       />
 
       <BrandSelectionModal
@@ -377,7 +470,7 @@ export function Strategies() {
         onClose={handleDeleteCancel}
         onConfirm={handleDeleteConfirm}
         title="Delete Strategy"
-        message={`Are you sure you want to delete the strategy for "${deleteDialog.strategy?.brand}"? This action cannot be undone.`}
+        message={`Are you sure you want to delete "${deleteDialog.content?.title}"? This action cannot be undone.`}
         confirmText="Delete Strategy"
         cancelText="Cancel"
         variant="danger"
@@ -452,58 +545,35 @@ export function Strategies() {
             </CardHeader>
             
             <CardContent className="space-y-4">
-              {/* Strategy Overview */}
-              <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
-                  <Target className="h-4 w-4 mr-1 text-blue-600" />
-                  Brand & Platforms
-                </h4>
-                <div className="space-y-2">
+              {/* Strategy Focus */}
+              {extractStrategyFocus(strategy) && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
+                    <Target className="h-4 w-4 mr-1 text-blue-600" />
+                    Strategy Focus
+                  </h4>
                   <p className="text-sm text-blue-700 bg-blue-50 px-3 py-2 rounded-lg">
-                    {strategy.brand_name}
+                    {extractStrategyFocus(strategy)}
                   </p>
-                  {strategy.platforms && (
-                    <p className="text-sm text-gray-600">
-                      <strong>Platforms:</strong> {strategy.platforms}
-                    </p>
-                  )}
                 </div>
-              </div>
+              )}
 
-              {/* Angles Preview */}
+              {/* Strategy Content */}
               <div>
                 <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
                   <Zap className="h-4 w-4 mr-1 text-purple-600" />
-                  Content Angles ({strategy.angles?.length || 0})
+                  Strategy Overview
                 </h4>
                 <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
-                  {strategy.angles && strategy.angles.length > 0 ? (
-                    <div className="space-y-2">
-                      {strategy.angles.slice(0, 2).map((angle: any, index: number) => (
-                        <div key={index} className="text-sm">
-                          <span className="font-medium text-gray-900">{index + 1}. {angle.header}</span>
-                          {angle.description && (
-                            <p className="text-gray-600 text-xs mt-1 line-clamp-2">
-                              {truncateText(angle.description, 100)}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                      {strategy.angles.length > 2 && (
-                        <p className="text-xs text-gray-500 italic">
-                          +{strategy.angles.length - 2} more angles...
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-500">No angles available</p>
-                  )}
+                  <p className="text-sm text-gray-700 leading-relaxed line-clamp-4">
+                    {truncateText(extractStrategyContent(strategy), 200)}
+                  </p>
                 </div>
               </div>
 
               <div className="flex items-center justify-between text-xs text-gray-500">
                 <span>{formatDate(strategy.created_at)}</span>
-                <span>{strategy.angles?.length || 0} angles</span>
+                <span>{strategy.metadata?.word_count || 0} words</span>
               </div>
 
               <div className="flex items-center justify-between">
@@ -534,15 +604,15 @@ export function Strategies() {
           <CardContent className="text-center py-12">
             <Zap className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {transformedStrategies.length === 0 ? 'No strategies yet' : 'No strategies match your filters'}
+              {allStrategies.length === 0 ? 'No strategies yet' : 'No strategies match your filters'}
             </h3>
             <p className="text-gray-500 mb-6">
-              {transformedStrategies.length === 0 
+              {allStrategies.length === 0 
                 ? 'Generate your first content strategy to see it here.'
                 : 'Try adjusting your filters to see more strategies.'
               }
             </p>
-            {transformedStrategies.length === 0 && (
+            {allStrategies.length === 0 && (
               <div className="text-center">
                 <p className="text-sm text-gray-500">
                   Go to <strong>Companies</strong> → View a company → Click <strong>Generate Strategy</strong>
