@@ -21,7 +21,9 @@ import {
   Share2,
   Zap,
   Plus,
-  Target
+  Target,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react'
 import { formatDate, truncateText } from '../lib/utils'
 import { db } from '../lib/firebase'
@@ -97,94 +99,45 @@ const extractStrategyContent = (strategy: any) => {
     // If parsing fails, use the raw body
   }
 
-  // Extract meaningful content from parsed JSON
-  if (parsedContent) {
-    if (Array.isArray(parsedContent) && parsedContent.length > 0) {
-      const firstStrategy = parsedContent[0]
-      if (firstStrategy.description) {
-        return firstStrategy.description.replace(/^["']|["']$/g, '').trim()
-      }
-      if (firstStrategy.content) {
-        return firstStrategy.content.replace(/^["']|["']$/g, '').trim()
-      }
-      if (firstStrategy.header) {
-        return firstStrategy.header.replace(/^["']|["']$/g, '').trim()
-      }
-      // If it's an array of strategies, try to extract a meaningful summary
-      if (typeof firstStrategy === 'string') {
-        return firstStrategy.replace(/^["']|["']$/g, '').trim()
-      }
-    }
-    
-    if (parsedContent.description) {
-      return parsedContent.description.replace(/^["']|["']$/g, '').trim()
-    }
-    
-    if (parsedContent.content) {
-      return parsedContent.content.replace(/^["']|["']$/g, '').trim()
-    }
-    
-    if (parsedContent.header) {
-      return parsedContent.header.replace(/^["']|["']$/g, '').trim()
-    }
-  }
-
-  // Fallback to original body or a default message
-  const fallbackContent = strategy.body || 'AI-generated content strategy with multiple angles and approaches.'
-  
-  // If it's still JSON-like, try to clean it up
-  if (typeof fallbackContent === 'string' && fallbackContent.includes('"')) {
-    // Try to extract readable content from JSON strings
-    const cleanContent = fallbackContent
-      .replace(/^\[|\]$/g, '') // Remove array brackets
-      .replace(/^\{|\}$/g, '') // Remove object brackets  
-      .replace(/"[^"]*":\s*/g, '') // Remove JSON keys
-      .replace(/[{}[\]"]/g, '') // Remove remaining JSON characters
-      .replace(/,\s*/g, '. ') // Replace commas with periods
-      .replace(/\.\s*\./g, '.') // Remove double periods
-      .trim()
-    
-    return cleanContent || 'AI-generated content strategy with multiple angles and approaches.'
-  }
-  
-  return fallbackContent
+  return parsedContent || strategy.body || 'AI-generated content strategy with multiple angles and approaches.'
 }
 
-// Helper function to extract strategy focus/header
-const extractStrategyFocus = (strategy: any) => {
+// Helper function to extract all angles from strategy
+const extractStrategyAngles = (strategy: any) => {
   let parsedContent = null
   try {
     if (typeof strategy.body === 'string' && (strategy.body.startsWith('[') || strategy.body.startsWith('{'))) {
       parsedContent = JSON.parse(strategy.body)
     }
   } catch (error) {
-    // If parsing fails, return null
+    return []
   }
 
   if (parsedContent) {
     if (Array.isArray(parsedContent) && parsedContent.length > 0) {
-      const firstStrategy = parsedContent[0]
-      if (firstStrategy.header) {
-        return firstStrategy.header
-      }
-      if (firstStrategy.brandId) {
-        return `Strategy for ${firstStrategy.brandId}`
-      }
-      if (firstStrategy.topic) {
-        return firstStrategy.topic
-      }
-    }
-    
-    if (parsedContent.header) {
-      return parsedContent.header
-    }
-    
-    if (parsedContent.topic) {
-      return parsedContent.topic
+      return parsedContent
     }
   }
 
-  return null
+  return []
+}
+
+// Helper function to get angle summary for display
+const getAngleSummary = (angle: any, index: number) => {
+  if (angle.header) return angle.header
+  if (angle.topic) return angle.topic
+  if (angle.title) return angle.title
+  if (angle.angleId) return `Content Angle ${angle.angleId}`
+  return `Angle ${index + 1}`
+}
+
+// Helper function to get angle content
+const getAngleContent = (angle: any) => {
+  if (angle.description) return angle.description
+  if (angle.content) return angle.content
+  if (angle.body) return angle.body
+  if (typeof angle === 'string') return angle
+  return JSON.stringify(angle, null, 2)
 }
 
 export function Strategies() {
@@ -201,6 +154,7 @@ export function Strategies() {
     isOpen: false,
     content: null
   })
+  const [expandedAngles, setExpandedAngles] = useState<{ [key: string]: number | null }>({})
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean
     content: any
@@ -352,6 +306,13 @@ export function Strategies() {
     setViewStrategyModal({ isOpen: false, content: null })
   }
 
+  const toggleAngleExpansion = (strategyId: string, angleIndex: number) => {
+    setExpandedAngles(prev => ({
+      ...prev,
+      [strategyId]: prev[strategyId] === angleIndex ? null : angleIndex
+    }))
+  }
+
   const statusOptions = [
     { value: 'all', label: 'All Status' },
     { value: 'draft', label: 'Draft' },
@@ -458,7 +419,10 @@ export function Strategies() {
       {/* Strategies Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {filteredStrategies.map((strategy) => (
-          <Card key={strategy.id} className="hover:shadow-md transition-shadow duration-200">
+          const angles = extractStrategyAngles(strategy)
+          const expandedAngleIndex = expandedAngles[strategy.id]
+          
+          <Card key={strategy.id} className="hover:shadow-md transition-shadow duration-200 overflow-hidden">
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex items-start space-x-3 flex-1">
@@ -472,6 +436,11 @@ export function Strategies() {
                       <Badge variant="primary" className="ml-2 text-xs">
                         AI Generated
                       </Badge>
+                      {angles.length > 0 && (
+                        <Badge variant="secondary" className="ml-1 text-xs">
+                          {angles.length} Angles
+                        </Badge>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -491,31 +460,139 @@ export function Strategies() {
             </CardHeader>
             
             <CardContent className="space-y-4">
-              {/* Strategy Focus */}
-              {extractStrategyFocus(strategy) && (
+              {/* Strategy Angles */}
+              {angles.length > 0 ? (
                 <div>
                   <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
                     <Target className="h-4 w-4 mr-1 text-blue-600" />
-                    Strategy Focus
+                    Content Angles
                   </h4>
-                  <p className="text-sm text-blue-700 bg-blue-50 px-3 py-2 rounded-lg">
-                    {extractStrategyFocus(strategy)}
-                  </p>
+                  <div className="space-y-2">
+                    {angles.map((angle, index) => (
+                      <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
+                        <button
+                          onClick={() => toggleAngleExpansion(strategy.id, index)}
+                          className={`w-full p-3 text-left hover:bg-gray-50 transition-colors flex items-center justify-between ${
+                            expandedAngleIndex === index ? 'bg-blue-50 border-b border-blue-200' : ''
+                          }`}
+                        >
+                          <div className="flex-1">
+                            <p className={`text-sm font-medium ${
+                              expandedAngleIndex === index ? 'text-blue-900' : 'text-gray-900'
+                            }`}>
+                              {getAngleSummary(angle, index)}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1 line-clamp-1">
+                              {truncateText(getAngleContent(angle), 60)}
+                            </p>
+                          </div>
+                          <div className={`ml-2 transition-transform ${
+                            expandedAngleIndex === index ? 'rotate-90' : ''
+                          }`}>
+                            <ChevronRight className="h-4 w-4 text-gray-400" />
+                          </div>
+                        </button>
+                        
+                        {expandedAngleIndex === index && (
+                          <div className="p-4 bg-blue-50 border-t border-blue-200">
+                            <div className="space-y-3">
+                              {angle.header && (
+                                <div>
+                                  <h5 className="text-xs font-semibold text-blue-900 uppercase tracking-wide mb-1">
+                                    Header
+                                  </h5>
+                                  <p className="text-sm text-blue-800">{angle.header}</p>
+                                </div>
+                              )}
+                              
+                              {angle.description && (
+                                <div>
+                                  <h5 className="text-xs font-semibold text-blue-900 uppercase tracking-wide mb-1">
+                                    Description
+                                  </h5>
+                                  <p className="text-sm text-blue-800 leading-relaxed whitespace-pre-wrap">
+                                    {angle.description}
+                                  </p>
+                                </div>
+                              )}
+                              
+                              {angle.contentStructure && (
+                                <div>
+                                  <h5 className="text-xs font-semibold text-blue-900 uppercase tracking-wide mb-1">
+                                    Content Structure
+                                  </h5>
+                                  <div className="text-sm text-blue-800">
+                                    {Array.isArray(angle.contentStructure) ? (
+                                      <ul className="list-disc list-inside space-y-1">
+                                        {angle.contentStructure.map((item, idx) => (
+                                          <li key={idx}>{item}</li>
+                                        ))}
+                                      </ul>
+                                    ) : (
+                                      <p className="whitespace-pre-wrap">{angle.contentStructure}</p>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {angle.keyPoints && (
+                                <div>
+                                  <h5 className="text-xs font-semibold text-blue-900 uppercase tracking-wide mb-1">
+                                    Key Points
+                                  </h5>
+                                  <div className="text-sm text-blue-800">
+                                    {Array.isArray(angle.keyPoints) ? (
+                                      <ul className="list-disc list-inside space-y-1">
+                                        {angle.keyPoints.map((point, idx) => (
+                                          <li key={idx}>{point}</li>
+                                        ))}
+                                      </ul>
+                                    ) : (
+                                      <p className="whitespace-pre-wrap">{angle.keyPoints}</p>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {angle.callToAction && (
+                                <div>
+                                  <h5 className="text-xs font-semibold text-blue-900 uppercase tracking-wide mb-1">
+                                    Call to Action
+                                  </h5>
+                                  <p className="text-sm text-blue-800">{angle.callToAction}</p>
+                                </div>
+                              )}
+                              
+                              {angle.platform && (
+                                <div>
+                                  <h5 className="text-xs font-semibold text-blue-900 uppercase tracking-wide mb-1">
+                                    Platform
+                                  </h5>
+                                  <Badge variant="secondary" className="text-xs">
+                                    {angle.platform}
+                                  </Badge>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
+                    <Zap className="h-4 w-4 mr-1 text-purple-600" />
+                    Strategy Overview
+                  </h4>
+                  <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                    <p className="text-sm text-gray-700 leading-relaxed line-clamp-4">
+                      {truncateText(JSON.stringify(extractStrategyContent(strategy), null, 2), 200)}
+                    </p>
+                  </div>
                 </div>
               )}
-
-              {/* Strategy Content */}
-              <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
-                  <Zap className="h-4 w-4 mr-1 text-purple-600" />
-                  Strategy Overview
-                </h4>
-                <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
-                  <p className="text-sm text-gray-700 leading-relaxed line-clamp-4">
-                    {truncateText(extractStrategyContent(strategy), 200)}
-                  </p>
-                </div>
-              </div>
 
               <div className="flex items-center justify-between text-xs text-gray-500">
                 <span>{formatDate(strategy.created_at)}</span>
@@ -542,6 +619,7 @@ export function Strategies() {
               </div>
             </CardContent>
           </Card>
+          )
         ))}
       </div>
 
