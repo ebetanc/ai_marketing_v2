@@ -1,12 +1,19 @@
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
+import { Badge } from '../components/ui/Badge'
 import { supabase } from '../lib/supabase'
 import { 
   RefreshCw,
-  Database
+  Database,
+  Building2,
+  Target,
+  Zap,
+  FileText,
+  Calendar
 } from 'lucide-react'
 import type { Strategy } from '../lib/supabase'
+import { formatDate } from '../lib/utils'
 
 export function Strategies() {
   const [strategies, setStrategies] = useState<Strategy[]>([])
@@ -61,6 +68,38 @@ export function Strategies() {
     }
   }
 
+  // Helper function to extract all angles from a strategy
+  const extractAnglesFromStrategy = (strategy: Strategy) => {
+    const angles = []
+    for (let i = 1; i <= 10; i++) {
+      const header = strategy[`angle${i}_header` as keyof Strategy] as string
+      const description = strategy[`angle${i}_description` as keyof Strategy] as string
+      const objective = strategy[`angle${i}_objective` as keyof Strategy] as string
+      const tonality = strategy[`angle${i}_tonality` as keyof Strategy] as string
+      
+      if (header || description || objective || tonality) {
+        angles.push({
+          number: i,
+          header: header || `Angle ${i}`,
+          description: description || 'No description provided',
+          objective: objective || 'No objective specified',
+          tonality: tonality || 'No tonality defined'
+        })
+      }
+    }
+    return angles
+  }
+
+  // Group strategies by brand
+  const strategiesByBrand = strategies.reduce((acc, strategy) => {
+    const brand = strategy.brand || 'Unknown Brand'
+    if (!acc[brand]) {
+      acc[brand] = []
+    }
+    acc[brand].push(strategy)
+    return acc
+  }, {} as Record<string, Strategy[]>)
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -102,56 +141,130 @@ export function Strategies() {
 
       {/* Strategies Table */}
       {!loading && !error && strategies.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Database className="h-5 w-5 mr-2 text-blue-600" />
-              Strategies Table ({strategies.length} records)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse border border-gray-300">
-                <thead>
-                  <tr className="bg-gray-50">
-                    <th className="border border-gray-300 px-4 py-2 text-left text-sm font-medium text-gray-900">ID</th>
-                    <th className="border border-gray-300 px-4 py-2 text-left text-sm font-medium text-gray-900">Created At</th>
-                    <th className="border border-gray-300 px-4 py-2 text-left text-sm font-medium text-gray-900">Platforms</th>
-                    <th className="border border-gray-300 px-4 py-2 text-left text-sm font-medium text-gray-900">Brand</th>
-                    <th className="border border-gray-300 px-4 py-2 text-left text-sm font-medium text-gray-900">Angle 1 Header</th>
-                    <th className="border border-gray-300 px-4 py-2 text-left text-sm font-medium text-gray-900">Angle 1 Description</th>
-                    <th className="border border-gray-300 px-4 py-2 text-left text-sm font-medium text-gray-900">Angle 2 Header</th>
-                    <th className="border border-gray-300 px-4 py-2 text-left text-sm font-medium text-gray-900">Angle 3 Header</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {strategies.map((strategy) => (
-                    <tr key={strategy.id} className="hover:bg-gray-50">
-                      <td className="border border-gray-300 px-4 py-2 text-sm text-gray-900">{strategy.id}</td>
-                      <td className="border border-gray-300 px-4 py-2 text-sm text-gray-900">
-                        {new Date(strategy.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="border border-gray-300 px-4 py-2 text-sm text-gray-900">{strategy.platforms || '-'}</td>
-                      <td className="border border-gray-300 px-4 py-2 text-sm text-gray-900">{strategy.brand || '-'}</td>
-                      <td className="border border-gray-300 px-4 py-2 text-sm text-gray-900 max-w-xs truncate">
-                        {strategy.angle1_header || '-'}
-                      </td>
-                      <td className="border border-gray-300 px-4 py-2 text-sm text-gray-900 max-w-xs truncate">
-                        {strategy.angle1_description || '-'}
-                      </td>
-                      <td className="border border-gray-300 px-4 py-2 text-sm text-gray-900 max-w-xs truncate">
-                        {strategy.angle2_header || '-'}
-                      </td>
-                      <td className="border border-gray-300 px-4 py-2 text-sm text-gray-900 max-w-xs truncate">
-                        {strategy.angle3_header || '-'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        <div className="space-y-8">
+          {Object.entries(strategiesByBrand).map(([brandName, brandStrategies]) => (
+            <div key={brandName} className="space-y-6">
+              {/* Brand Header */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center">
+                    <Building2 className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">{brandName}</h2>
+                    <p className="text-gray-600">{brandStrategies.length} strateg{brandStrategies.length === 1 ? 'y' : 'ies'}</p>
+                  </div>
+                </div>
+                <Badge variant="primary" className="text-sm">
+                  {brandStrategies.reduce((total, strategy) => total + extractAnglesFromStrategy(strategy).length, 0)} angles total
+                </Badge>
+              </div>
+
+              {/* Strategy Cards for this Brand */}
+              <div className="space-y-6">
+                {brandStrategies.map((strategy) => {
+                  const angles = extractAnglesFromStrategy(strategy)
+                  const platforms = strategy.platforms ? strategy.platforms.split(',').map(p => p.trim()) : []
+                  
+                  return (
+                    <Card key={strategy.id} className="border-l-4 border-l-blue-500">
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                              <Database className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div>
+                              <CardTitle className="text-lg">Strategy #{strategy.id}</CardTitle>
+                              <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
+                                <span className="flex items-center">
+                                  <Calendar className="h-4 w-4 mr-1" />
+                                  {formatDate(strategy.created_at)}
+                                </span>
+                                <span>{angles.length} angle{angles.length === 1 ? '' : 's'}</span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Platform Badges */}
+                          {platforms.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {platforms.slice(0, 3).map((platform, index) => (
+                                <Badge key={index} variant="secondary" className="text-xs capitalize">
+                                  {platform}
+                                </Badge>
+                              ))}
+                              {platforms.length > 3 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  +{platforms.length - 3} more
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </CardHeader>
+                      
+                      <CardContent>
+                        {/* Individual Angle Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {angles.map((angle) => (
+                            <Card key={angle.number} className="bg-gray-50 border border-gray-200 hover:shadow-md transition-shadow">
+                              <CardHeader className="pb-3">
+                                <div className="flex items-center space-x-2">
+                                  <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                                    {angle.number}
+                                  </div>
+                                  <CardTitle className="text-sm font-semibold text-gray-900 line-clamp-1">
+                                    {angle.header}
+                                  </CardTitle>
+                                </div>
+                              </CardHeader>
+                              
+                              <CardContent className="space-y-3 pt-0">
+                                {/* Description */}
+                                <div>
+                                  <h5 className="text-xs font-medium text-gray-700 mb-1 flex items-center">
+                                    <FileText className="h-3 w-3 mr-1 text-blue-500" />
+                                    Description
+                                  </h5>
+                                  <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed">
+                                    {angle.description}
+                                  </p>
+                                </div>
+                                
+                                {/* Objective */}
+                                <div>
+                                  <h5 className="text-xs font-medium text-gray-700 mb-1 flex items-center">
+                                    <Target className="h-3 w-3 mr-1 text-green-500" />
+                                    Objective
+                                  </h5>
+                                  <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">
+                                    {angle.objective}
+                                  </p>
+                                </div>
+                                
+                                {/* Tonality */}
+                                <div>
+                                  <h5 className="text-xs font-medium text-gray-700 mb-1 flex items-center">
+                                    <Zap className="h-3 w-3 mr-1 text-purple-500" />
+                                    Tonality
+                                  </h5>
+                                  <Badge variant="secondary" className="text-xs">
+                                    {angle.tonality}
+                                  </Badge>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          ))}
+        </div>
       )}
 
       {/* Empty State */}
