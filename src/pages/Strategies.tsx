@@ -22,15 +22,23 @@ export function Strategies() {
       setLoading(true)
       setError(null)
       
+      console.log('Fetching strategies from Supabase...')
+      console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL)
+      console.log('Supabase client:', supabase)
+      
       const { data, error } = await supabase
         .from('strategies')
         .select('*')
         .order('created_at', { ascending: false })
       
+      console.log('Supabase response:', { data, error })
+      
       if (error) {
+        console.error('Supabase error:', error)
         throw error
       }
       
+      console.log('Strategies fetched successfully:', data?.length || 0, 'records')
       setStrategies(data || [])
     } catch (error) {
       console.error('Error fetching strategies:', error)
