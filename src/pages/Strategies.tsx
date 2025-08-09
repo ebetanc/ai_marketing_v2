@@ -130,7 +130,7 @@ export function Strategies() {
               </table>
             </div>
           </CardContent>
-        </div>
+        </Card>
       )}
 
       {/* Empty State */}
