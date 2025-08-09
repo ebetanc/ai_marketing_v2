@@ -165,6 +165,18 @@ export function Strategies() {
     loading: false
   })
 
+  const toggleAngleExpansion = (strategyId: string, angleIndex: number) => {
+    console.log('Toggling angle expansion for strategy:', strategyId, 'angle:', angleIndex)
+    setExpandedAngles(prev => {
+      const newState = {
+        ...prev,
+        [strategyId]: prev[strategyId] === angleIndex ? null : angleIndex
+      }
+      console.log('New expanded angles state:', newState)
+      return newState
+    })
+  }
+
   useEffect(() => {
     const fetchGeneratedStrategiesFromFirebase = async () => {
       try {
@@ -304,13 +316,6 @@ export function Strategies() {
 
   const handleCloseViewModal = () => {
     setViewStrategyModal({ isOpen: false, content: null })
-  }
-
-  const toggleAngleExpansion = (strategyId: string, angleIndex: number) => {
-    setExpandedAngles(prev => ({
-      ...prev,
-      [strategyId]: prev[strategyId] === angleIndex ? null : angleIndex
-    }))
   }
 
   const statusOptions = [
