@@ -134,6 +134,13 @@ export function Ideas() {
                     <th className="text-left p-3 font-medium text-gray-900">Description</th>
                     <th className="text-left p-3 font-medium text-gray-900">Image Prompt</th>
                     <th className="text-left p-3 font-medium text-gray-900">Platforms</th>
+                    <th className="text-left p-3 font-medium text-gray-900">Strategy ID</th>
+                    <th className="text-left p-3 font-medium text-gray-900">Angle Number</th>
+                    <th className="text-left p-3 font-medium text-gray-900">Objective</th>
+                    <th className="text-left p-3 font-medium text-gray-900">Tonality</th>
+                    <th className="text-left p-3 font-medium text-gray-900">Content Type</th>
+                    <th className="text-left p-3 font-medium text-gray-900">Status</th>
+                    <th className="text-left p-3 font-medium text-gray-900">All Columns</th>
                     <th className="text-left p-3 font-medium text-gray-900">Created</th>
                   </tr>
                 </thead>
@@ -192,6 +199,55 @@ export function Ideas() {
                         ) : (
                           <span className="text-gray-400">N/A</span>
                         )}
+                      </td>
+                      <td className="p-3 text-sm text-gray-900">
+                        <div className="font-mono text-xs bg-gray-100 p-1 rounded mb-1">
+                          Raw: {JSON.stringify(idea.strategy_id)}
+                        </div>
+                        {idea.strategy_id || 'N/A'}
+                      </td>
+                      <td className="p-3 text-sm text-gray-900">
+                        <div className="font-mono text-xs bg-gray-100 p-1 rounded mb-1">
+                          Raw: {JSON.stringify(idea.angle_number)}
+                        </div>
+                        {idea.angle_number || 'N/A'}
+                      </td>
+                      <td className="p-3 text-sm text-gray-900 max-w-xs">
+                        <div className="font-mono text-xs bg-gray-100 p-1 rounded mb-1">
+                          Raw: {JSON.stringify(idea.objective)}
+                        </div>
+                        <div className="truncate" title={idea.objective}>
+                          {idea.objective || 'N/A'}
+                        </div>
+                      </td>
+                      <td className="p-3 text-sm text-gray-900">
+                        <div className="font-mono text-xs bg-gray-100 p-1 rounded mb-1">
+                          Raw: {JSON.stringify(idea.tonality)}
+                        </div>
+                        {idea.tonality || 'N/A'}
+                      </td>
+                      <td className="p-3 text-sm text-gray-900">
+                        <div className="font-mono text-xs bg-gray-100 p-1 rounded mb-1">
+                          Raw: {JSON.stringify(idea.content_type)}
+                        </div>
+                        {idea.content_type || 'N/A'}
+                      </td>
+                      <td className="p-3 text-sm">
+                        <div className="font-mono text-xs bg-gray-100 p-1 rounded mb-1">
+                          Raw: {JSON.stringify(idea.status)}
+                        </div>
+                        {idea.status ? (
+                          <Badge variant={idea.status === 'approved' ? 'success' : 'warning'}>
+                            {idea.status}
+                          </Badge>
+                        ) : (
+                          <span className="text-gray-400">N/A</span>
+                        )}
+                      </td>
+                      <td className="p-3 text-xs">
+                        <div className="font-mono text-xs bg-blue-50 p-2 rounded max-w-xs overflow-auto">
+                          <pre>{JSON.stringify(idea, null, 2)}</pre>
+                        </div>
                       </td>
                       <td className="p-3 text-sm text-gray-500">
                         {idea.created_at ? formatDate(idea.created_at) : 'N/A'}
