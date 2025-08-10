@@ -17,7 +17,8 @@ import {
   Zap,
   Trash2,
   RefreshCw,
-  Database
+  Database,
+  FileText
 } from 'lucide-react'
 import { formatDate, truncateText } from '../lib/utils'
 
