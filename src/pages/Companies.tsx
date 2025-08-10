@@ -138,6 +138,7 @@ export function Companies() {
     acc[brandName].push(company)
     return acc
   }, {} as Record<string, any[]>)
+  
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -257,61 +258,44 @@ export function Companies() {
                                 <Calendar className="h-4 w-4 mr-1" />
                                 {formatDate(company.created_at)}
                               </span>
-                <div className="space-y-4">
-                  {/* Company Summary */}
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-sm text-gray-700 leading-relaxed">
-                      {company.brand_tone ? truncateText(company.brand_tone, 150) : 'No brand description available'}
-                    </p>
-                  </div>
-                  
-                  {/* Quick Info */}
-                  <div className="flex flex-wrap gap-2">
-                    {company.target_audience && (
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        <Target className="h-3 w-3 mr-1" />
-                        Target Audience Defined
-                      </span>
-                    )}
-                    {company.key_offer && (
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        <Building2 className="h-3 w-3 mr-1" />
-                        Key Offer Defined
-                      </span>
-                    )}
-                    {company.additional_information && (
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                        <FileText className="h-3 w-3 mr-1" />
-                        Additional Info
-                      </span>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="mt-6 flex justify-end">
-                            </CardContent>
-                          </Card>
-                        )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {/* Company Summary */}
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <p className="text-sm text-gray-700 leading-relaxed">
+                            {company.brand_tone ? truncateText(company.brand_tone, 150) : 'No brand description available'}
+                          </p>
+                        </div>
                         
-                        {/* Additional Information */}
-                        {company.additional_information && (
-                          <Card className="bg-white border border-gray-200">
-                            <CardHeader className="pb-2">
-                              <CardTitle className="text-sm font-semibold text-gray-900 flex items-center">
-                                <FileText className="h-4 w-4 mr-2 text-purple-600" />
-                                Additional Info
-                              </CardTitle>
-                            </CardHeader>
-                            <CardContent className="pt-0">
-                              <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed">
-                                {truncateText(company.additional_information, 100)}
-                              </p>
-                            </CardContent>
-                          </Card>
-                        )}
+                        {/* Quick Info */}
+                        <div className="flex flex-wrap gap-2">
+                          {company.target_audience && (
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              <Target className="h-3 w-3 mr-1" />
+                              Target Audience Defined
+                            </span>
+                          )}
+                          {company.key_offer && (
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              <Building2 className="h-3 w-3 mr-1" />
+                              Key Offer Defined
+                            </span>
+                          )}
+                          {company.additional_information && (
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                              <FileText className="h-3 w-3 mr-1" />
+                              Additional Info
+                            </span>
+                          )}
+                        </div>
                       </div>
                       
-                      <div className="mt-4 flex justify-end">
+                      <div className="mt-6 flex justify-end">
                         <Button 
                           variant="outline" 
                           size="sm"
