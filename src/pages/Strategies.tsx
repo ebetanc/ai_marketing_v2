@@ -290,47 +290,51 @@ export function Strategies() {
 
       {/* Strategies Table */}
       {!loading && !error && strategies.length > 0 && (
-        <div className="space-y-8">
+        <div className="space-y-12">
           {Object.entries(strategiesByBrand).map(([brandName, brandStrategies]) => (
             <div key={brandName} className="space-y-6">
               {/* Brand Header */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center">
-                    <Building2 className="h-6 w-6 text-white" />
+              <div className="bg-gradient-to-r from-blue-50 to-teal-50 rounded-2xl p-6 border border-blue-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg">
+                      <Building2 className="h-8 w-8 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-3xl font-bold text-gray-900">{brandName}</h2>
+                      <p className="text-blue-600 font-medium">{brandStrategies.length} strateg{brandStrategies.length === 1 ? 'y' : 'ies'} • {brandStrategies.reduce((total, strategy) => total + extractAnglesFromStrategy(strategy).length, 0)} content angles</p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900">{brandName}</h2>
-                    <p className="text-gray-600">{brandStrategies.length} strateg{brandStrategies.length === 1 ? 'y' : 'ies'}</p>
+                  <div className="text-right">
+                    <Badge variant="primary" className="text-lg px-6 py-3 font-semibold">
+                      {brandStrategies.reduce((total, strategy) => total + extractAnglesFromStrategy(strategy).length, 0)} Total Angles
+                    </Badge>
                   </div>
                 </div>
-                <Badge variant="primary" className="text-sm">
-                  {brandStrategies.reduce((total, strategy) => total + extractAnglesFromStrategy(strategy).length, 0)} angles total
-                </Badge>
               </div>
 
               {/* Strategy Cards for this Brand */}
-              <div className="space-y-6">
+              <div className="space-y-8">
                 {brandStrategies.map((strategy) => {
                   const angles = extractAnglesFromStrategy(strategy)
                   const platforms = strategy.platforms ? strategy.platforms.split(',').map(p => p.trim()) : []
                   
                   return (
-                    <Card key={strategy.id} className="border-l-4 border-l-blue-500">
+                    <Card key={strategy.id} className="border-l-4 border-l-blue-500 shadow-md">
                       <CardHeader>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                              <Database className="h-5 w-5 text-blue-600" />
+                            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                              <Database className="h-6 w-6 text-blue-600" />
                             </div>
                             <div>
-                              <CardTitle className="text-lg">Strategy #{strategy.id}</CardTitle>
+                              <CardTitle className="text-xl">Strategy #{strategy.id}</CardTitle>
                               <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
                                 <span className="flex items-center">
                                   <Calendar className="h-4 w-4 mr-1" />
                                   {formatDate(strategy.created_at)}
                                 </span>
-                                <span>{angles.length} angle{angles.length === 1 ? '' : 's'}</span>
+                                <span className="font-medium">{angles.length} angle{angles.length === 1 ? '' : 's'}</span>
                               </div>
                             </div>
                           </div>
@@ -355,63 +359,51 @@ export function Strategies() {
                       
                       <CardContent>
                         {/* Individual Angle Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                           {angles.map((angle) => (
-                            <Card key={angle.number} className="bg-gray-50 border border-gray-200 hover:shadow-md transition-shadow">
-                              <CardHeader className="pb-3">
+                            <Card key={angle.number} className="bg-white border border-gray-200 hover:shadow-lg hover:border-blue-300 transition-all duration-200 group">
+                              <CardHeader className="pb-2">
                                 <div className="flex items-center space-x-2">
-                                  <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-sm">
                                     {angle.number}
                                   </div>
-                                  <CardTitle className="text-sm font-semibold text-gray-900 line-clamp-1">
+                                  <CardTitle className="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight">
                                     {angle.header}
                                   </CardTitle>
                                 </div>
                               </CardHeader>
                               
-                              <CardContent className="space-y-3 pt-0">
+                              <CardContent className="space-y-3 pt-0 pb-4">
                                 {/* Description */}
                                 <div>
-                                  <h5 className="text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                    <FileText className="h-3 w-3 mr-1 text-blue-500" />
-                                    Description
-                                  </h5>
-                                  <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed">
+                                  <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed bg-gray-50 p-2 rounded-lg">
                                     {angle.description}
                                   </p>
                                 </div>
                                 
-                                {/* Objective */}
-                                <div>
-                                  <h5 className="text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                    <Target className="h-3 w-3 mr-1 text-green-500" />
-                                    Objective
-                                  </h5>
-                                  <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">
-                                    {angle.objective}
-                                  </p>
-                                </div>
-                                
-                                {/* Tonality */}
-                                <div>
-                                  <h5 className="text-xs font-medium text-gray-700 mb-1 flex items-center">
-                                    <Zap className="h-3 w-3 mr-1 text-purple-500" />
-                                    Tonality
-                                  </h5>
-                                  <Badge variant="secondary" className="text-xs">
-                                    {angle.tonality}
-                                  </Badge>
+                                {/* Objective & Tonality in one row */}
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-1">
+                                    <Target className="h-3 w-3 text-green-500" />
+                                    <span className="text-xs text-gray-500">Goal</span>
+                                  </div>
+                                  <div className="flex items-center space-x-1">
+                                    <Zap className="h-3 w-3 text-purple-500" />
+                                    <Badge variant="secondary" className="text-xs px-2 py-1">
+                                      {angle.tonality.length > 15 ? angle.tonality.substring(0, 15) + '...' : angle.tonality}
+                                    </Badge>
+                                  </div>
                                 </div>
 
                                 {/* View Button */}
-                                <div className="pt-2">
+                                <div className="pt-1">
                                   <Button 
                                     variant="outline" 
                                     size="sm" 
-                                    className="w-full"
+                                    className="w-full text-xs py-1.5 group-hover:bg-blue-50 group-hover:border-blue-300 group-hover:text-blue-700 transition-colors"
                                     onClick={() => handleViewAngle(strategy, angle)}
                                   >
-                                    <Eye className="h-3 w-3 mr-1" />
+                                    <Eye className="h-3 w-3 mr-1.5" />
                                     View
                                   </Button>
                                 </div>
