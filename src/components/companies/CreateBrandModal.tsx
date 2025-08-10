@@ -287,34 +287,6 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
                   rows={4}
                 />
 
-                {/* Load from Firebase section */}
-                <div className="border-t border-gray-200 pt-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-                    <Database className="h-5 w-5 mr-2 text-purple-600" />
-                    Load Existing Brand Data
-                  </h3>
-                  <div className="flex space-x-3">
-                    <Input
-                      placeholder="Enter Brand ID from Firebase"
-                      value={brandIdToLoad}
-                      onChange={(e) => setBrandIdToLoad(e.target.value)}
-                      className="flex-1"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleLoadFromFirebase}
-                      loading={loadFromFirebaseLoading}
-                      disabled={!brandIdToLoad.trim()}
-                    >
-                      <Database className="h-4 w-4 mr-2" />
-                      Load
-                    </Button>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Enter a Firebase document ID to load existing brand data into the form
-                  </p>
-                </div>
               </div>
 
               <div className="flex justify-end">
