@@ -1095,36 +1095,69 @@ export function Strategies() {
                     </div>
                   </div>
                   <div className="text-right">
+                    <p className="text-sm text-gray-500">Latest Strategy</p>
+                    <p className="text-lg font-semibold text-gray-900">
+                      {brandStrategies[0]?.created_at ? formatDate(brandStrategies[0].created_at) : 'Unknown'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Brand Strategies */}
+              <div className="space-y-8">
+                {brandStrategies.map((strategy) => {
+                  const angles = extractAnglesFromStrategy(strategy)
+                  const platforms = strategy.platforms ? strategy.platforms.split(',').map(p => p.trim()) : []
+                  
+                  return (
+                    <Card key={strategy.id} className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+                      <CardContent className="p-8">
+                        <div className="flex items-center justify-between mb-6">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center shadow-md">
+                              <Database className="h-6 w-6 text-white" />
+                            </div>
+                            <div>
+                              <h3 className="text-xl font-bold text-gray-900">Strategy #{strategy.id}</h3>
+                              <div className="flex items-center space-x-4 mt-1">
+                                <div className="flex items-center space-x-1">
+                                  <Calendar className="h-4 w-4 text-gray-400" />
+                                  <span className="text-sm text-gray-500">
+                                    {strategy.created_at ? formatDate(strategy.created_at) : 'Unknown date'}
                                   </span>
-                                  {platforms.length > 0 && (
-                                    <div className="flex items-center space-x-2">
-                                      <span>Platforms:</span>
-                                      <div className="flex space-x-1">
-                                        {platforms.slice(0, 3).map((platform, index) => (
-                                          <Badge key={index} variant="secondary" className="text-xs">
-                                            {platform}
-                                          </Badge>
-                                        ))}
-                                        {platforms.length > 3 && (
-                                          <Badge variant="secondary" className="text-xs">
-                                            +{platforms.length - 3}
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    </div>
-                                  )}
                                 </div>
+                                <div className="flex items-center space-x-1">
+                                  <Target className="h-4 w-4 text-gray-400" />
+                                  <span className="text-sm text-gray-500">{angles.length} angles</span>
+                                </div>
+                                {platforms.length > 0 && (
+                                  <div className="flex items-center space-x-2">
+                                    <span>Platforms:</span>
+                                    <div className="flex space-x-1">
+                                      {platforms.slice(0, 3).map((platform, index) => (
+                                        <Badge key={index} variant="secondary" className="text-xs">
+                                          {platform}
+                                        </Badge>
+                                      ))}
+                                      {platforms.length > 3 && (
+                                        <Badge variant="secondary" className="text-xs">
+                                          +{platforms.length - 3}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             </div>
-                            <div className="text-right">
-                              <Button
-                                onClick={() => handleViewStrategyDetails(strategy)}
-                                className="bg-blue-600 hover:bg-blue-700"
-                              >
-                                <Eye className="h-4 w-4 mr-2" />
-                                View All Angles
-                              </Button>
-                            </div>
+                          </div>
+                          <div className="text-right">
+                            <Button
+                              onClick={() => handleViewStrategyDetails(strategy)}
+                              className="bg-blue-600 hover:bg-blue-700"
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              View All Angles
+                            </Button>
                           </div>
                         </div>
                         
