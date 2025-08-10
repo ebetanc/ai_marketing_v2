@@ -24,9 +24,11 @@ export function Ideas() {
   const [viewIdeaModal, setViewIdeaModal] = useState<{
     isOpen: boolean
     idea: any
+    topic: any
   }>({
     isOpen: false,
-    idea: null
+    idea: null,
+    topic: null
   })
 
   useEffect(() => {
@@ -73,68 +75,53 @@ export function Ideas() {
     const topics = []
     const columns = Object.keys(idea).sort() // Sort to ensure consistent order
     
-    // Find topic groups (assuming columns 9-11, 12-14, etc. pattern)
-    // We'll look for patterns like topic1, topic2, etc. or numbered columns
     let topicIndex = 1
     
     while (true) {
-      // Try different naming patterns
       const topicKey = `topic${topicIndex}`
       const descriptionKey = `description${topicIndex}` || `topic${topicIndex}_description`
       const imagePromptKey = `image_prompt${topicIndex}` || `topic${topicIndex}_image_prompt`
       
-      // Also try column index based approach (columns 9-11, 12-14, etc.)
       const baseIndex = 8 + (topicIndex - 1) * 3 // 9-11 for topic 1, 12-14 for topic 2, etc.
       const columnTopic = columns[baseIndex]
       const columnDescription = columns[baseIndex + 1]
       const columnImagePrompt = columns[baseIndex + 2]
       
-      // Check if we have data for this topic
       const topic = idea[topicKey] || idea[columnTopic]
       const description = idea[descriptionKey] || idea[columnDescription]
       const imagePrompt = idea[imagePromptKey] || idea[columnImagePrompt]
       
-      // If we have at least a topic or description, add it
       if (topic || description || imagePrompt) {
         topics.push({
           number: topicIndex,
           topic: topic || `Topic ${topicIndex}`,
           description: description || 'No description provided',
           image_prompt: imagePrompt || 'No image prompt provided',
-          // Store the actual column names for debugging
-          _debug: {
-            topicColumn: topicKey,
-            descriptionColumn: descriptionKey,
-            imagePromptColumn: imagePromptKey,
-            columnTopic,
-            columnDescription,
-            columnImagePrompt
-          }
         })
         topicIndex++
       } else {
-        // No more topics found
         break
       }
       
-      // Safety break to avoid infinite loop
       if (topicIndex > 20) break
     }
     
-    console.log(`Extracted ${topics.length} topics from idea:`, topics)
     return topics
   }
-  const handleViewIdea = (idea: any) => {
+
+  const handleViewTopic = (idea: any, topic: any) => {
     setViewIdeaModal({
       isOpen: true,
-      idea
+      idea,
+      topic
     })
   }
 
   const handleCloseViewModal = () => {
     setViewIdeaModal({
       isOpen: false,
-      idea: null
+      idea: null,
+      topic: null
     })
   }
 
@@ -174,7 +161,9 @@ export function Ideas() {
                   <Lightbulb className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">{viewIdeaModal.idea?.topic || viewIdeaModal.idea?.header || 'Content Idea'}</h2>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    {viewIdeaModal.topic?.topic || `Topic ${viewIdeaModal.topic?.number}`}
+                  </h2>
                   <p className="text-sm text-gray-500">{viewIdeaModal.idea?.brand || 'Unknown Brand'}</p>
                 </div>
               </div>
@@ -183,13 +172,13 @@ export function Ideas() {
                 onClick={handleCloseViewModal}
                 className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
               >
-                <Eye className="h-5 w-5 text-gray-400" />
+                <X className="h-5 w-5 text-gray-400" />
               </button>
             </div>
 
             {/* Content */}
             <div className="flex-1 p-6 overflow-y-auto space-y-6 min-h-0">
-              {/* Topic/Header */}
+              {/* Topic */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center text-lg">
@@ -199,7 +188,7 @@ export function Ideas() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-700 leading-relaxed">
-                    {viewIdeaModal.idea?.topic || viewIdeaModal.idea?.header || 'No topic specified'}
+                    {viewIdeaModal.topic?.topic || 'No topic specified'}
                   </p>
                 </CardContent>
               </Card>
@@ -214,13 +203,13 @@ export function Ideas() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                    {viewIdeaModal.idea?.description || 'No description available'}
+                    {viewIdeaModal.topic?.description || 'No description available'}
                   </p>
                 </CardContent>
               </Card>
 
               {/* Image Prompt */}
-              {viewIdeaModal.idea?.image_prompt && (
+              {viewIdeaModal.topic?.image_prompt && viewIdeaModal.topic.image_prompt !== 'No image prompt provided' && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center text-lg">
@@ -230,51 +219,29 @@ export function Ideas() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                      {viewIdeaModal.idea.image_prompt}
+                      {viewIdeaModal.topic.image_prompt}
                     </p>
                   </CardContent>
                 </Card>
               )}
 
-              {/* Additional Details */}
+              {/* Idea Set Details */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center text-lg">
                     <Zap className="h-5 w-5 mr-2 text-orange-600" />
-                    Details
+                    Idea Set Details
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {viewIdeaModal.idea?.objective && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Objective</p>
-                      <p className="text-gray-700">{viewIdeaModal.idea.objective}</p>
-                    </div>
-                  )}
-                  {viewIdeaModal.idea?.tonality && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Tonality</p>
-                      <p className="text-gray-700">{viewIdeaModal.idea.tonality}</p>
-                    </div>
-                  )}
-                  {viewIdeaModal.idea?.content_type && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Content Type</p>
-                      <p className="text-gray-700">{viewIdeaModal.idea.content_type}</p>
-                    </div>
-                  )}
-                  {viewIdeaModal.idea?.platforms && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 mb-2">Platforms</p>
-                      <div className="flex flex-wrap gap-2">
-                        {(Array.isArray(viewIdeaModal.idea.platforms) ? viewIdeaModal.idea.platforms : [viewIdeaModal.idea.platforms]).map((platform, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs">
-                            {platform}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Idea Set ID</p>
+                    <p className="text-gray-700">#{viewIdeaModal.idea?.id}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Topic Number</p>
+                    <p className="text-gray-700">{viewIdeaModal.topic?.number}</p>
+                  </div>
                   {viewIdeaModal.idea?.strategy_id && (
                     <div>
                       <p className="text-sm font-medium text-gray-900">Strategy ID</p>
@@ -285,6 +252,12 @@ export function Ideas() {
                     <div>
                       <p className="text-sm font-medium text-gray-900">Angle Number</p>
                       <p className="text-gray-700">{viewIdeaModal.idea.angle_number}</p>
+                    </div>
+                  )}
+                  {viewIdeaModal.idea?.created_at && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Created</p>
+                      <p className="text-gray-700">{formatDate(viewIdeaModal.idea.created_at)}</p>
                     </div>
                   )}
                 </CardContent>
@@ -395,14 +368,18 @@ export function Ideas() {
                         {/* Individual Topic Cards */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                           {topics.map((topic) => (
-                            <Card key={topic.number} className="bg-white border border-gray-200 hover:shadow-lg hover:border-blue-300 transition-all duration-200 group">
+                            <Card 
+                              key={topic.number} 
+                              className="bg-white border border-gray-200 hover:shadow-lg hover:border-blue-300 transition-all duration-200 group cursor-pointer"
+                              onClick={() => handleViewTopic(idea, topic)}
+                            >
                               <CardHeader className="pb-2">
                                 <div className="flex items-center space-x-2">
                                   <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-sm">
                                     {topic.number}
                                   </div>
                                   <CardTitle className="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight">
-                                    {topic.topic}
+                                    {truncateText(topic.topic, 40)}
                                   </CardTitle>
                                 </div>
                               </CardHeader>
@@ -411,36 +388,29 @@ export function Ideas() {
                                 {/* Description */}
                                 <div>
                                   <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed bg-gray-50 p-2 rounded-lg">
-                                    {topic.description}
+                                    {truncateText(topic.description, 100)}
                                   </p>
                                 </div>
                                 
                                 {/* Image Prompt */}
                                 {topic.image_prompt && topic.image_prompt !== 'No image prompt provided' && (
                                   <div>
-                                    <p className="text-xs font-medium text-purple-700 mb-1">Image Prompt:</p>
+                                    <p className="text-xs font-medium text-purple-700 mb-1">Image:</p>
                                     <p className="text-xs text-purple-600 line-clamp-3 bg-purple-50 p-2 rounded-lg">
-                                      {truncateText(topic.image_prompt, 120)}
+                                      {truncateText(topic.image_prompt, 80)}
                                     </p>
                                   </div>
                                 )}
                                 
-                                {/* Debug info (remove this once working) */}
-                                <div className="text-xs text-gray-400 bg-gray-100 p-2 rounded">
-                                  <p>Debug: Topic {topic.number}</p>
-                                  <p>Columns: {JSON.stringify(topic._debug, null, 2)}</p>
+                                {/* View indicator */}
+                                <div className="pt-1">
+                                  <div className="text-xs text-blue-600 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                                    Click to view details →
+                                  </div>
                                 </div>
                               </CardContent>
                             </Card>
                           ))}
-                        </div>
-                        
-                        {/* Raw data for debugging */}
-                        <div className="mt-6 p-4 bg-gray-100 rounded-lg">
-                          <h4 className="font-medium text-gray-900 mb-2">Raw Idea Data (for debugging):</h4>
-                          <pre className="text-xs text-gray-600 overflow-auto max-h-40">
-                            {JSON.stringify(idea, null, 2)}
-                          </pre>
                         </div>
                       </CardContent>
                     </Card>
