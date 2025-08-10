@@ -364,6 +364,7 @@ export function Ideas() {
         identifier: 'generateContent',
         topic: topicData,
         platforms: ["twitter", "linkedin", "newsletter"],
+        // FULL BRAND INFORMATION
         companyDetails: companyData ? {
           // Include ALL company data from Supabase
           ...companyData,
@@ -375,10 +376,14 @@ export function Ideas() {
           additionalInfo: companyData.additional_information || '',
           website: companyData.website || ''
         } : null,
+        // SPECIFIC ANGLE DETAILS THAT GENERATED THIS IDEA
         angleDetails: angleDetails,
+        // FULL STRATEGY CONTEXT
         strategyContext: strategyData ? {
           id: strategyData.id,
           brand: strategyData.brand,
+          name: strategyData.brand || 'Unnamed Strategy', // Strategy Name
+          description: strategyData.description || 'No strategy description available', // Strategy Description
           platforms: strategyData.platforms,
           created_at: strategyData.created_at,
           totalAngles: (() => {
@@ -389,6 +394,19 @@ export function Ideas() {
             return count
           })()
         } : null,
+        // REQUIRED FIELDS FOR AI AGENT CONTEXT
+        aiContext: {
+          strategyName: strategyData?.brand || 'Unknown Strategy',
+          strategyDescription: strategyData?.description || 'No strategy description available',
+          tonality: angleDetails?.tonality || 'No tonality specified',
+          objective: angleDetails?.objective || 'No objective specified',
+          keyOffer: companyData?.key_offer || companyData?.keyOffer || 'No key offer specified',
+          // Additional context for better content generation
+          brandTone: companyData?.brand_tone || companyData?.brandTone || 'No brand tone specified',
+          targetAudience: companyData?.target_audience || companyData?.targetAudience || 'No target audience specified',
+          platforms: ["twitter", "linkedin", "newsletter"],
+          contentType: 'idea_to_content_generation'
+        },
         context: {
           requestType: 'generate_content_from_idea',
           timestamp: new Date().toISOString(),

@@ -10,6 +10,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 export type Strategy = {
   id: number
   created_at: string
+  description: string | null
   platforms: string | null
   brand: string | null
   angle1_header: string | null
