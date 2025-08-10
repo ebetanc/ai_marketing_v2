@@ -1153,6 +1153,16 @@ export function Strategies() {
                           <div className="text-right">
                             <Button
                               onClick={() => handleViewStrategyDetails(strategy)}
+                            >
+                              View Details
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
             </div>
           ))}
         </div>
