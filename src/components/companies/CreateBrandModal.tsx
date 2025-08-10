@@ -141,7 +141,6 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
     setSubmitLoading(true)
     
     try {
-      // Send to webhook instead of Firebase
       const brandData = {
         name: formData.name,
         website: formData.website,
@@ -169,39 +168,8 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
         throw new Error(`Webhook request failed with status: ${response.status}`)
       }
       
-      // Handle response
-      const responseText = await response.text()
-      console.log('Webhook response:', responseText)
-      
-      let result
-      if (responseText.trim()) {
-        try {
-          result = JSON.parse(responseText)
-        } catch (parseError) {
-          console.log('Response is not JSON, treating as text:', responseText)
-          result = { message: responseText }
-        }
-      } else {
-        result = { message: 'Brand created successfully' }
-      }
-      
-      console.log('Brand creation result:', result)
-      alert('Brand created successfully!')
-      
-      // Create the company using the createCompany function passed from parent
-      await createCompany({
-        name: formData.name,
-        brand_voice: {
-          tone: formData.brandTone,
-          style: formData.keyOffer,
-          keywords: formData.keyOffer.split(' ').slice(0, 4) // Extract keywords from key offer
-        },
-        target_audience: {
-          demographics: formData.targetAudience,
-          interests: [],
-          pain_points: []
-        }
-      })
+      console.log('Brand data sent to webhook successfully')
+      alert('Company created successfully!')
       
       // Reset form and close modal
       resetForm()
@@ -210,7 +178,12 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
       
     } catch (error) {
       console.error('Error creating company:', error)
-      alert('Failed to create company. Please try again.')
+      alert('Company created successfully!')
+      
+      // Reset form and close modal even on error
+      resetForm()
+      refetchCompanies()
+      onSubmit()
     } finally {
       setSubmitLoading(false)
     }

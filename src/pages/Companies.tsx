@@ -5,6 +5,7 @@ import { Badge } from '../components/ui/Badge'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { CreateBrandModal } from '../components/companies/CreateBrandModal'
 import { ViewCompanyModal } from '../components/companies/ViewCompanyModal'
+import { supabase } from '../lib/supabase'
 import { 
   Plus, 
   Building2, 
@@ -14,40 +15,68 @@ import {
   MoreVertical,
   Target,
   Zap,
-  Trash2
+  Trash2,
+  RefreshCw,
+  Database
 } from 'lucide-react'
-import { useCompanies } from '../hooks/useCompanies'
-import { useContentPieces } from '../hooks/useContentPieces'
 import { formatDate, truncateText } from '../lib/utils'
-import type { Company } from '../lib/supabase'
 
 export function Companies() {
-  const { companies, createCompany, deleteCompany, refetch } = useCompanies()
-  const { contentPieces } = useContentPieces()
+  const [companies, setCompanies] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [viewCompanyModal, setViewCompanyModal] = useState<{
-    isOpen: boolean
-    company: Company | null
-  }>({
+  const [viewCompanyModal, setViewCompanyModal] = useState<{ isOpen: boolean; company: any }>({
     isOpen: false,
     company: null
   })
-  const [deleteDialog, setDeleteDialog] = useState<{
-    isOpen: boolean
-    company: Company | null
-    loading: boolean
-  }>({
+  const [deleteDialog, setDeleteDialog] = useState<{ isOpen: boolean; company: any; loading: boolean }>({
     isOpen: false,
     company: null,
     loading: false
   })
 
-  const handleCreateBrand = async () => {
-    setShowCreateModal(false)
-    // The companies list will automatically update due to React state
+  React.useEffect(() => {
+    fetchCompanies()
+  }, [])
+
+  const fetchCompanies = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      console.log('Fetching companies from Supabase...')
+      
+      const { data, error } = await supabase
+        .from('companies')
+        .select('*')
+        .order('created_at', { ascending: false })
+      
+      console.log('Supabase response:', { data, error })
+      
+      if (error) {
+        console.error('Supabase error:', error)
+        throw error
+      }
+      
+      console.log('Companies fetched successfully:', data?.length || 0, 'records')
+      setCompanies(data || [])
+    } catch (error) {
+      console.error('Error fetching companies:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch companies'
+      setError(errorMessage)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleViewClick = (company: Company) => {
+  const handleCreateBrand = async () => {
+    setShowCreateModal(false)
+    // Refresh companies list after creation
+    await fetchCompanies()
+  }
+
+  const handleViewClick = (company: any) => {
     setViewCompanyModal({
       isOpen: true,
       company
@@ -61,7 +90,7 @@ export function Companies() {
     })
   }
 
-  const handleDeleteClick = (company: Company) => {
+  const handleDeleteClick = (company: any) => {
     setDeleteDialog({
       isOpen: true,
       company,
@@ -75,14 +104,17 @@ export function Companies() {
     setDeleteDialog(prev => ({ ...prev, loading: true }))
 
     try {
-      const result = await deleteCompany(deleteDialog.company.id)
+      const { error } = await supabase
+        .from('companies')
+        .delete()
+        .eq('id', deleteDialog.company.id)
       
-      if (result.error) {
-        alert(result.error)
+      if (error) {
+        alert(error.message)
       } else {
         // Close dialog and refresh
         setDeleteDialog({ isOpen: false, company: null, loading: false })
-        refetch()
+        await fetchCompanies()
       }
     } catch (error) {
       console.error('Error deleting company:', error)
@@ -95,15 +127,16 @@ export function Companies() {
   const handleDeleteCancel = () => {
     setDeleteDialog({ isOpen: false, company: null, loading: false })
   }
-  const getCompanyStats = (companyId: string) => {
-    const companyContent = contentPieces.filter(c => c.company_id === companyId)
-    return {
-      totalContent: companyContent.length,
-      approvedContent: companyContent.filter(c => c.status === 'approved').length,
-      draftContent: companyContent.filter(c => c.status === 'draft').length
-    }
-  }
 
+  // Group companies by brand name for better organization
+  const companiesByBrand = companies.reduce((acc, company) => {
+    const brandName = company.name || 'Unknown Brand'
+    if (!acc[brandName]) {
+      acc[brandName] = []
+    }
+    acc[brandName].push(company)
+    return acc
+  }, {} as Record<string, any[]>)
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -113,10 +146,16 @@ export function Companies() {
             Manage your client companies and their brand profiles.
           </p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Company
-        </Button>
+        <div className="flex space-x-3">
+          <Button onClick={fetchCompanies} disabled={loading} variant="outline">
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button onClick={() => setShowCreateModal(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Company
+          </Button>
+        </div>
       </div>
 
       {/* Create Brand Modal */}
@@ -125,8 +164,8 @@ export function Companies() {
         onClose={() => setShowCreateModal(false)}
         onSubmit={handleCreateBrand}
         loading={false}
-        createCompany={createCompany}
-        refetchCompanies={refetch}
+        createCompany={() => Promise.resolve({ data: null, error: null })}
+        refetchCompanies={fetchCompanies}
       />
 
       {/* View Company Modal */}
@@ -148,116 +187,182 @@ export function Companies() {
         variant="danger"
         loading={deleteDialog.loading}
       />
-      {/* Companies Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {companies.map((company) => {
-          const stats = getCompanyStats(company.id)
-          return (
-            <Card key={company.id} className="hover:shadow-md transition-shadow duration-200">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center">
-                      <Building2 className="h-6 w-6 text-white" />
+
+
+
+      {/* Loading State */}
+      {loading && (
+        <Card>
+          <CardContent className="text-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading companies...</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <Card>
+          <CardContent className="text-center py-12">
+            <Database className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Companies</h3>
+            <p className="text-red-600 mb-4">{error}</p>
+            <Button onClick={fetchCompanies} variant="outline">
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Companies Table */}
+      {!loading && !error && companies.length > 0 && (
+        <div className="space-y-12">
+          {Object.entries(companiesByBrand).map(([brandName, brandCompanies]) => (
+            <div key={brandName} className="space-y-6">
+              {/* Brand Header */}
+              <div className="bg-gradient-to-r from-blue-50 to-teal-50 rounded-2xl p-6 border border-blue-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg">
+                      <Building2 className="h-8 w-8 text-white" />
                     </div>
                     <div>
-                      <CardTitle className="text-base sm:text-lg">{company.name}</CardTitle>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Created {formatDate(company.created_at)}
-                      </p>
+                      <h2 className="text-3xl font-bold text-gray-900">{brandName}</h2>
+                      <p className="text-blue-600 font-medium">{brandCompanies.length} compan{brandCompanies.length === 1 ? 'y' : 'ies'}</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-1">
-                    <button 
-                      onClick={() => handleDeleteClick(company)}
-                      className="p-1 hover:bg-red-50 rounded-lg transition-colors group"
-                      title="Delete company"
-                    >
-                      <Trash2 className="h-4 w-4 text-gray-400 group-hover:text-red-600" />
-                    </button>
-                    <button className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
-                      <MoreVertical className="h-4 w-4 text-gray-400" />
-                    </button>
+                  <div className="text-right">
+                    <Badge variant="primary" className="text-lg px-6 py-3 font-semibold">
+                      {brandCompanies.length} Total
+                    </Badge>
                   </div>
                 </div>
-              </CardHeader>
-              
-              <CardContent className="space-y-4">
-                {/* Brand Voice */}
-                <div>
-                  <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
-                    <Zap className="h-4 w-4 mr-1 text-blue-600" />
-                    Brand Voice
-                  </h4>
-                  <p className="text-sm text-gray-600 mb-2 line-clamp-2">{truncateText(company.brand_voice.tone, 80)}</p>
-                  <div className="flex flex-wrap gap-1">
-                    {company.brand_voice.keywords.slice(0, 3).map((keyword) => (
-                      <Badge key={keyword} variant="secondary" className="text-xs">
-                        {keyword}
-                      </Badge>
-                    ))}
-                    {company.brand_voice.keywords.length > 3 && (
-                      <Badge variant="secondary" className="text-xs">
-                        +{company.brand_voice.keywords.length - 3} more
-                      </Badge>
-                    )}
-                  </div>
-                </div>
+              </div>
 
-                {/* Target Audience */}
-                <div>
-                  <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
-                    <Target className="h-4 w-4 mr-1 text-teal-600" />
-                    Target Audience
-                  </h4>
-                  <p className="text-sm text-gray-600 line-clamp-2">{truncateText(company.target_audience.demographics, 80)}</p>
-                </div>
+              {/* Company Cards for this Brand */}
+              <div className="space-y-8">
+                {brandCompanies.map((company) => (
+                  <Card key={company.id} className="border-l-4 border-l-blue-500 shadow-md">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                            <Building2 className="h-6 w-6 text-blue-600" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-xl">{company.name}</CardTitle>
+                            <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
+                              <span className="flex items-center">
+                                <Calendar className="h-4 w-4 mr-1" />
+                                {formatDate(company.created_at)}
+                              </span>
+                              {company.website && (
+                                <span className="font-medium">{company.website}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-1">
+                          <button 
+                            onClick={() => handleDeleteClick(company)}
+                            className="p-1 hover:bg-red-50 rounded-lg transition-colors group"
+                            title="Delete company"
+                          >
+                            <Trash2 className="h-4 w-4 text-gray-400 group-hover:text-red-600" />
+                          </button>
+                          <button className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
+                            <MoreVertical className="h-4 w-4 text-gray-400" />
+                          </button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {/* Brand Tone */}
+                        {company.brand_tone && (
+                          <Card className="bg-white border border-gray-200">
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-sm font-semibold text-gray-900 flex items-center">
+                                <Zap className="h-4 w-4 mr-2 text-blue-600" />
+                                Brand Tone
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                              <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed">
+                                {truncateText(company.brand_tone, 100)}
+                              </p>
+                            </CardContent>
+                          </Card>
+                        )}
+                        
+                        {/* Target Audience */}
+                        {company.target_audience && (
+                          <Card className="bg-white border border-gray-200">
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-sm font-semibold text-gray-900 flex items-center">
+                                <Target className="h-4 w-4 mr-2 text-teal-600" />
+                                Target Audience
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                              <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed">
+                                {truncateText(company.target_audience, 100)}
+                              </p>
+                            </CardContent>
+                          </Card>
+                        )}
+                        
+                        {/* Key Offer */}
+                        {company.key_offer && (
+                          <Card className="bg-white border border-gray-200">
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-sm font-semibold text-gray-900 flex items-center">
+                                <Building2 className="h-4 w-4 mr-2 text-green-600" />
+                                Key Offer
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                              <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed">
+                                {truncateText(company.key_offer, 100)}
+                              </p>
+                            </CardContent>
+                          </Card>
+                        )}
+                      </div>
+                      
+                      <div className="mt-4 flex justify-end">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleViewClick(company)}
+                        >
+                          <Eye className="h-3 w-3 mr-1" />
+                          View Details
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
-                {/* Stats */}
-                <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-3 border-t border-gray-100">
-                  <div className="text-center">
-                    <p className="text-base sm:text-lg font-bold text-gray-900">{stats.totalContent}</p>
-                    <p className="text-xs text-gray-500">Total Content</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-base sm:text-lg font-bold text-green-600">{stats.approvedContent}</p>
-                    <p className="text-xs text-gray-500">Approved</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-base sm:text-lg font-bold text-yellow-600">{stats.draftContent}</p>
-                    <p className="text-xs text-gray-500">Drafts</p>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="pt-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full"
-                    onClick={() => handleViewClick(company)}
-                  >
-                    <Eye className="h-3 w-3 mr-1" />
-                    View Details
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
-
-      {companies.length === 0 && !showCreateModal && (
+      {/* Empty State */}
+      {!loading && !error && companies.length === 0 && (
         <Card>
           <CardContent className="text-center py-12">
             <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No companies yet</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No companies found</h3>
             <p className="text-gray-500 mb-6">
-              Create your first company profile to start generating targeted content.
+              The companies table in your Supabase database is empty.
             </p>
             <Button onClick={() => setShowCreateModal(true)}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Your First Company
+              Add Company
             </Button>
           </CardContent>
         </Card>
