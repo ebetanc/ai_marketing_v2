@@ -261,6 +261,59 @@ export function Ideas() {
     }))
   }
 
+  const handleGenerateContent = async () => {
+    if (!viewIdeaModal.idea || !viewIdeaModal.topic) return
+    
+    setGeneratingContent(true)
+    
+    try {
+      const payload = {
+        identifier: 'generateContent',
+        topic: {
+          topicNumber: viewIdeaModal.topic.number,
+          topic: viewIdeaModal.topic.topic,
+          description: viewIdeaModal.topic.description,
+          image_prompt: viewIdeaModal.topic.image_prompt,
+          idea: {
+            id: viewIdeaModal.idea.id,
+            brand: viewIdeaModal.idea.brand,
+            strategy_id: viewIdeaModal.idea.strategy_id,
+            angle_number: viewIdeaModal.idea.angle_number,
+            created_at: viewIdeaModal.idea.created_at
+          }
+        }
+      }
+      
+      console.log('=== GENERATE CONTENT WEBHOOK ===')
+      console.log('Sending payload:', payload)
+      
+      const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      })
+      
+      console.log('Webhook response status:', response.status)
+      
+      if (!response.ok) {
+        throw new Error(`Webhook failed with status: ${response.status}`)
+      }
+      
+      const result = await response.json()
+      console.log('Webhook response:', result)
+      
+      alert('Content generation started! Check the Content page for results.')
+      
+    } catch (error) {
+      console.error('Error generating content:', error)
+      alert(`Failed to generate content: ${error.message || 'Unknown error'}`)
+    } finally {
+      setGeneratingContent(false)
+    }
+  }
+
   // Group ideas by brand
   const ideasByBrand = ideas.reduce((acc, idea) => {
     const brand = idea.brand || 'Unknown Brand'
