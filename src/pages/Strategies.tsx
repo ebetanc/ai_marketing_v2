@@ -12,7 +12,8 @@ import {
   FileText,
   Calendar,
   Eye,
-  X
+  X,
+  Trash2
 } from 'lucide-react'
 import type { Strategy } from '../lib/supabase'
 import { formatDate } from '../lib/utils'
