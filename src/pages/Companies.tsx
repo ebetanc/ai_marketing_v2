@@ -257,77 +257,38 @@ export function Companies() {
                                 <Calendar className="h-4 w-4 mr-1" />
                                 {formatDate(company.created_at)}
                               </span>
-                              {company.website && (
-                                <span className="font-medium">{company.website}</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center space-x-1">
-                          <button 
-                            onClick={() => handleDeleteClick(company)}
-                            className="p-1 hover:bg-red-50 rounded-lg transition-colors group"
-                            title="Delete company"
-                          >
-                            <Trash2 className="h-4 w-4 text-gray-400 group-hover:text-red-600" />
-                          </button>
-                          <button className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
-                            <MoreVertical className="h-4 w-4 text-gray-400" />
-                          </button>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {/* Brand Tone */}
-                        {company.brand_tone && (
-                          <Card className="bg-white border border-gray-200">
-                            <CardHeader className="pb-2">
-                              <CardTitle className="text-sm font-semibold text-gray-900 flex items-center">
-                                <Zap className="h-4 w-4 mr-2 text-blue-600" />
-                                Brand Tone
-                              </CardTitle>
-                            </CardHeader>
-                            <CardContent className="pt-0">
-                              <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed">
-                                {truncateText(company.brand_tone, 100)}
-                              </p>
-                            </CardContent>
-                          </Card>
-                        )}
-                        
-                        {/* Target Audience */}
-                        {company.target_audience && (
-                          <Card className="bg-white border border-gray-200">
-                            <CardHeader className="pb-2">
-                              <CardTitle className="text-sm font-semibold text-gray-900 flex items-center">
-                                <Target className="h-4 w-4 mr-2 text-teal-600" />
-                                Target Audience
-                              </CardTitle>
-                            </CardHeader>
-                            <CardContent className="pt-0">
-                              <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed">
-                                {truncateText(company.target_audience, 100)}
-                              </p>
-                            </CardContent>
-                          </Card>
-                        )}
-                        
-                        {/* Key Offer */}
-                        {company.key_offer && (
-                          <Card className="bg-white border border-gray-200">
-                            <CardHeader className="pb-2">
-                              <CardTitle className="text-sm font-semibold text-gray-900 flex items-center">
-                                <Building2 className="h-4 w-4 mr-2 text-green-600" />
-                                Key Offer
-                              </CardTitle>
-                            </CardHeader>
-                            <CardContent className="pt-0">
-                              <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed">
-                                {truncateText(company.key_offer, 100)}
-                              </p>
+                <div className="space-y-4">
+                  {/* Company Summary */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <p className="text-sm text-gray-700 leading-relaxed">
+                      {company.brand_tone ? truncateText(company.brand_tone, 150) : 'No brand description available'}
+                    </p>
+                  </div>
+                  
+                  {/* Quick Info */}
+                  <div className="flex flex-wrap gap-2">
+                    {company.target_audience && (
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <Target className="h-3 w-3 mr-1" />
+                        Target Audience Defined
+                      </span>
+                    )}
+                    {company.key_offer && (
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <Building2 className="h-3 w-3 mr-1" />
+                        Key Offer Defined
+                      </span>
+                    )}
+                    {company.additional_information && (
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                        <FileText className="h-3 w-3 mr-1" />
+                        Additional Info
+                      </span>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="mt-6 flex justify-end">
                             </CardContent>
                           </Card>
                         )}
