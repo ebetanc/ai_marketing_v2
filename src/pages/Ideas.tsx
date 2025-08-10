@@ -68,6 +68,62 @@ export function Ideas() {
     }
   }
 
+  // Helper function to extract topics from grouped columns
+  const extractTopicsFromIdea = (idea: any) => {
+    const topics = []
+    const columns = Object.keys(idea).sort() // Sort to ensure consistent order
+    
+    // Find topic groups (assuming columns 9-11, 12-14, etc. pattern)
+    // We'll look for patterns like topic1, topic2, etc. or numbered columns
+    let topicIndex = 1
+    
+    while (true) {
+      // Try different naming patterns
+      const topicKey = `topic${topicIndex}`
+      const descriptionKey = `description${topicIndex}` || `topic${topicIndex}_description`
+      const imagePromptKey = `image_prompt${topicIndex}` || `topic${topicIndex}_image_prompt`
+      
+      // Also try column index based approach (columns 9-11, 12-14, etc.)
+      const baseIndex = 8 + (topicIndex - 1) * 3 // 9-11 for topic 1, 12-14 for topic 2, etc.
+      const columnTopic = columns[baseIndex]
+      const columnDescription = columns[baseIndex + 1]
+      const columnImagePrompt = columns[baseIndex + 2]
+      
+      // Check if we have data for this topic
+      const topic = idea[topicKey] || idea[columnTopic]
+      const description = idea[descriptionKey] || idea[columnDescription]
+      const imagePrompt = idea[imagePromptKey] || idea[columnImagePrompt]
+      
+      // If we have at least a topic or description, add it
+      if (topic || description || imagePrompt) {
+        topics.push({
+          number: topicIndex,
+          topic: topic || `Topic ${topicIndex}`,
+          description: description || 'No description provided',
+          image_prompt: imagePrompt || 'No image prompt provided',
+          // Store the actual column names for debugging
+          _debug: {
+            topicColumn: topicKey,
+            descriptionColumn: descriptionKey,
+            imagePromptColumn: imagePromptKey,
+            columnTopic,
+            columnDescription,
+            columnImagePrompt
+          }
+        })
+        topicIndex++
+      } else {
+        // No more topics found
+        break
+      }
+      
+      // Safety break to avoid infinite loop
+      if (topicIndex > 20) break
+    }
+    
+    console.log(`Extracted ${topics.length} topics from idea:`, topics)
+    return topics
+  }
   const handleViewIdea = (idea: any) => {
     setViewIdeaModal({
       isOpen: true,
@@ -295,91 +351,101 @@ export function Ideas() {
               </div>
 
               {/* Ideas Grid for this Brand */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {brandIdeas.map((idea) => (
-                  <Card key={idea.id} className="hover:shadow-lg hover:border-blue-300 transition-all duration-200 group">
-                    <CardHeader className="pb-2">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-sm">
-                          <Lightbulb className="h-4 w-4" />
-                        </div>
-                        <CardTitle className="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight">
-                          {idea.topic || idea.header || 'Content Idea'}
-                        </CardTitle>
-                      </div>
-                    </CardHeader>
-                    
-                    <CardContent className="space-y-3 pt-0 pb-4">
-                      {/* Description */}
-                      <div>
-                        <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed bg-gray-50 p-2 rounded-lg">
-                          {truncateText(idea.description || 'No description available', 150)}
-                        </p>
-                      </div>
-                      
-                      {/* Image Prompt */}
-                      {idea.image_prompt && (
-                        <div>
-                          <p className="text-xs font-medium text-purple-700 mb-1">Image Prompt:</p>
-                          <p className="text-xs text-purple-600 line-clamp-2 bg-purple-50 p-2 rounded-lg">
-                            {truncateText(idea.image_prompt, 100)}
-                          </p>
-                        </div>
-                      )}
-                      
-                      {/* Platforms & Details */}
-                      <div className="flex items-center justify-between">
-                        {idea.platforms && (
-                          <div className="flex flex-wrap gap-1">
-                            {(Array.isArray(idea.platforms) ? idea.platforms.slice(0, 2) : [idea.platforms]).map((platform, index) => (
-                              <Badge key={index} variant="secondary" className="text-xs px-2 py-1">
-                                {platform}
+              <div className="space-y-8">
+                {brandIdeas.map((idea) => {
+                  const topics = extractTopicsFromIdea(idea)
+                  
+                  return (
+                    <Card key={idea.id} className="border-l-4 border-l-blue-500 shadow-md">
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                              <Lightbulb className="h-6 w-6 text-blue-600" />
+                            </div>
+                            <div>
+                              <CardTitle className="text-xl">Idea Set #{idea.id}</CardTitle>
+                              <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
+                                <span className="flex items-center">
+                                  <Calendar className="h-4 w-4 mr-1" />
+                                  {formatDate(idea.created_at)}
+                                </span>
+                                <span className="font-medium">{topics.length} topic{topics.length === 1 ? '' : 's'}</span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Strategy Info */}
+                          {idea.strategy_id && (
+                            <div className="flex flex-wrap gap-2">
+                              <Badge variant="secondary" className="text-xs">
+                                Strategy #{idea.strategy_id}
                               </Badge>
-                            ))}
-                          </div>
-                        )}
-                        {idea.status && (
-                          <Badge variant={idea.status === 'approved' ? 'success' : 'warning'} className="text-xs">
-                            {idea.status}
-                          </Badge>
-                        )}
-                      </div>
-
-                      {/* Additional Info */}
-                      <div className="text-xs text-gray-500 space-y-1">
-                        {idea.strategy_id && (
-                          <div className="flex items-center">
-                            <Target className="h-3 w-3 mr-1" />
-                            <span>Strategy #{idea.strategy_id}</span>
-                          </div>
-                        )}
-                        {idea.angle_number && (
-                          <div className="flex items-center">
-                            <Zap className="h-3 w-3 mr-1" />
-                            <span>Angle {idea.angle_number}</span>
-                          </div>
-                        )}
-                        <div className="flex items-center">
-                          <Calendar className="h-3 w-3 mr-1" />
-                          <span>{formatDate(idea.created_at)}</span>
+                              {idea.angle_number && (
+                                <Badge variant="secondary" className="text-xs">
+                                  Angle {idea.angle_number}
+                                </Badge>
+                              )}
+                            </div>
+                          )}
                         </div>
-                      </div>
-
-                      {/* View Button */}
-                      <div className="pt-1">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="w-full text-xs py-1.5 group-hover:bg-blue-50 group-hover:border-blue-300 group-hover:text-blue-700 transition-colors"
-                          onClick={() => handleViewIdea(idea)}
-                        >
-                          <Eye className="h-3 w-3 mr-1.5" />
-                          View Details
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardHeader>
+                      
+                      <CardContent>
+                        {/* Individual Topic Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                          {topics.map((topic) => (
+                            <Card key={topic.number} className="bg-white border border-gray-200 hover:shadow-lg hover:border-blue-300 transition-all duration-200 group">
+                              <CardHeader className="pb-2">
+                                <div className="flex items-center space-x-2">
+                                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-sm">
+                                    {topic.number}
+                                  </div>
+                                  <CardTitle className="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight">
+                                    {topic.topic}
+                                  </CardTitle>
+                                </div>
+                              </CardHeader>
+                              
+                              <CardContent className="space-y-3 pt-0 pb-4">
+                                {/* Description */}
+                                <div>
+                                  <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed bg-gray-50 p-2 rounded-lg">
+                                    {topic.description}
+                                  </p>
+                                </div>
+                                
+                                {/* Image Prompt */}
+                                {topic.image_prompt && topic.image_prompt !== 'No image prompt provided' && (
+                                  <div>
+                                    <p className="text-xs font-medium text-purple-700 mb-1">Image Prompt:</p>
+                                    <p className="text-xs text-purple-600 line-clamp-3 bg-purple-50 p-2 rounded-lg">
+                                      {truncateText(topic.image_prompt, 120)}
+                                    </p>
+                                  </div>
+                                )}
+                                
+                                {/* Debug info (remove this once working) */}
+                                <div className="text-xs text-gray-400 bg-gray-100 p-2 rounded">
+                                  <p>Debug: Topic {topic.number}</p>
+                                  <p>Columns: {JSON.stringify(topic._debug, null, 2)}</p>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                        
+                        {/* Raw data for debugging */}
+                        <div className="mt-6 p-4 bg-gray-100 rounded-lg">
+                          <h4 className="font-medium text-gray-900 mb-2">Raw Idea Data (for debugging):</h4>
+                          <pre className="text-xs text-gray-600 overflow-auto max-h-40">
+                            {JSON.stringify(idea, null, 2)}
+                          </pre>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
               </div>
             </div>
           ))}
