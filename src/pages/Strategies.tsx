@@ -242,11 +242,6 @@ export function Strategies() {
     setGeneratingIdeas(true)
     
     try {
-      // Parse platforms string into native JavaScript array
-      const platformsArray = viewAngleModal.strategy.platforms 
-        ? viewAngleModal.strategy.platforms.split(',').map(p => p.trim())
-        : []
-
       const angleData = {
         angleNumber: viewAngleModal.angle.number,
         header: viewAngleModal.angle.header,
@@ -256,7 +251,7 @@ export function Strategies() {
         strategy: {
           id: viewAngleModal.strategy.id,
           brand: viewAngleModal.strategy.brand,
-          platforms: platformsArray,
+          platforms: ["twitter", "linkedin", "newsletter"],
           created_at: viewAngleModal.strategy.created_at
         }
       }
