@@ -379,31 +379,10 @@ export function Strategies() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">{currentBrand}</h1>
           <p className="mt-2 text-gray-600">
-            Content strategies and angles for {currentBrand}.
+            Content strategies and angles for {currentBrand}
           </p>
         </div>
         <div className="flex items-center space-x-3">
-          {/* Strategy Dropdown */}
-          {brandStrategies.length > 0 && (
-            <div className="relative">
-              <select
-                value={selectedStrategyId || ''}
-                onChange={(e) => setSelectedStrategyId(Number(e.target.value))}
-                className="appearance-none bg-white border border-gray-200 rounded-xl px-4 py-2 pr-8 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                {brandStrategies.map((strategy) => (
-                  <option key={strategy.id} value={strategy.id}>
-                    Strategy #{strategy.id} ({extractAnglesFromStrategy(strategy).length} angles)
-                  </option>
-                ))}
-              </select>
-              <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </div>
-          )}
           <Button onClick={fetchStrategies} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
