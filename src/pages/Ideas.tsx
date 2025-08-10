@@ -267,32 +267,35 @@ export function Ideas() {
     setGeneratingContent(true)
     
     try {
-      const payload = {
-        identifier: 'generateContent',
-        topic: {
-          topicNumber: viewIdeaModal.topic.number,
-          topic: viewIdeaModal.topic.topic,
-          description: viewIdeaModal.topic.description,
-          image_prompt: viewIdeaModal.topic.image_prompt,
-          idea: {
-            id: viewIdeaModal.idea.id,
-            brand: viewIdeaModal.idea.brand,
-            strategy_id: viewIdeaModal.idea.strategy_id,
-            angle_number: viewIdeaModal.idea.angle_number,
-            created_at: viewIdeaModal.idea.created_at
-          }
+      const topicData = {
+        topicNumber: viewIdeaModal.topic.number,
+        topic: viewIdeaModal.topic.topic,
+        description: viewIdeaModal.topic.description,
+        image_prompt: viewIdeaModal.topic.image_prompt,
+        idea: {
+          id: viewIdeaModal.idea.id,
+          brand: viewIdeaModal.idea.brand,
+          strategy_id: viewIdeaModal.idea.strategy_id,
+          angle_number: viewIdeaModal.idea.angle_number,
+          created_at: viewIdeaModal.idea.created_at
         }
+      }
+
+      const webhookPayload = {
+        identifier: 'generateContent',
+        topic: topicData,
+        platforms: ["twitter", "linkedin", "newsletter"]
       }
       
       console.log('=== GENERATE CONTENT WEBHOOK ===')
-      console.log('Sending payload:', payload)
+      console.log('Sending payload:', webhookPayload)
       
       const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(webhookPayload)
       })
       
       console.log('Webhook response status:', response.status)
