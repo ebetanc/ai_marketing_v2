@@ -10,7 +10,9 @@ import {
   Target,
   Zap,
   FileText,
-  Calendar
+  Calendar,
+  Eye,
+  X
 } from 'lucide-react'
 import type { Strategy } from '../lib/supabase'
 import { formatDate } from '../lib/utils'
@@ -19,6 +21,15 @@ export function Strategies() {
   const [strategies, setStrategies] = useState<Strategy[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [viewAngleModal, setViewAngleModal] = useState<{
+    isOpen: boolean
+    strategy: Strategy | null
+    angle: any
+  }>({
+    isOpen: false,
+    strategy: null,
+    angle: null
+  })
 
   useEffect(() => {
     fetchStrategies()
@@ -90,6 +101,22 @@ export function Strategies() {
     return angles
   }
 
+  const handleViewAngle = (strategy: Strategy, angle: any) => {
+    setViewAngleModal({
+      isOpen: true,
+      strategy,
+      angle
+    })
+  }
+
+  const handleCloseViewModal = () => {
+    setViewAngleModal({
+      isOpen: false,
+      strategy: null,
+      angle: null
+    })
+  }
+
   // Group strategies by brand
   const strategiesByBrand = strategies.reduce((acc, strategy) => {
     const brand = strategy.brand || 'Unknown Brand'
@@ -114,6 +141,128 @@ export function Strategies() {
           Refresh
         </Button>
       </div>
+
+      {/* View Angle Modal */}
+      {viewAngleModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
+                  <Target className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">{viewAngleModal.angle?.header}</h2>
+                  <p className="text-sm text-gray-500">
+                    {viewAngleModal.strategy?.brand} • Strategy #{viewAngleModal.strategy?.id} • Angle {viewAngleModal.angle?.number}
+                  </p>
+                </div>
+              </div>
+              
+              <button
+                onClick={handleCloseViewModal}
+                className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+              >
+                <X className="h-5 w-5 text-gray-400" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 p-6 overflow-y-auto space-y-6 min-h-0">
+              {/* Description */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center text-lg">
+                    <FileText className="h-5 w-5 mr-2 text-blue-600" />
+                    Description
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                    {viewAngleModal.angle?.description}
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Objective */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center text-lg">
+                    <Target className="h-5 w-5 mr-2 text-green-600" />
+                    Objective
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                    {viewAngleModal.angle?.objective}
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Tonality */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center text-lg">
+                    <Zap className="h-5 w-5 mr-2 text-purple-600" />
+                    Tonality
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center space-x-3">
+                    <Badge variant="secondary" className="text-sm px-4 py-2">
+                      {viewAngleModal.angle?.tonality}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Strategy Context */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center text-lg">
+                    <Database className="h-5 w-5 mr-2 text-gray-600" />
+                    Strategy Context
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Brand</p>
+                    <p className="text-gray-700">{viewAngleModal.strategy?.brand}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Strategy ID</p>
+                    <p className="text-gray-700">#{viewAngleModal.strategy?.id}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Created</p>
+                    <p className="text-gray-700">{viewAngleModal.strategy?.created_at ? formatDate(viewAngleModal.strategy.created_at) : 'Unknown'}</p>
+                  </div>
+                  {viewAngleModal.strategy?.platforms && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 mb-2">Platforms</p>
+                      <div className="flex flex-wrap gap-2">
+                        {viewAngleModal.strategy.platforms.split(',').map((platform, index) => (
+                          <Badge key={index} variant="secondary" className="text-xs capitalize">
+                            {platform.trim()}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+              <Button variant="outline" onClick={handleCloseViewModal}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Loading State */}
       {loading && (
@@ -252,6 +401,19 @@ export function Strategies() {
                                   <Badge variant="secondary" className="text-xs">
                                     {angle.tonality}
                                   </Badge>
+                                </div>
+
+                                {/* View Button */}
+                                <div className="pt-2">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="w-full"
+                                    onClick={() => handleViewAngle(strategy, angle)}
+                                  >
+                                    <Eye className="h-3 w-3 mr-1" />
+                                    View
+                                  </Button>
                                 </div>
                               </CardContent>
                             </Card>
