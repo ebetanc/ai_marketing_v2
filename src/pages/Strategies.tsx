@@ -180,11 +180,6 @@ export function Strategies() {
       console.log('Update Data:', updateData)
       console.log('Original Strategy:', viewAngleModal.strategy)
       
-      // Check current user authentication
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      console.log('Current User:', user)
-      console.log('Auth Error:', authError)
-      
       const { error } = await supabase
         .from('strategies')
         .update(updateData)
@@ -203,16 +198,6 @@ export function Strategies() {
       }
       
       console.log('Strategy updated successfully')
-      
-      // Verify the update by fetching the record
-      const { data: verifyData, error: verifyError } = await supabase
-        .from('strategies')
-        .select('*')
-        .eq('id', viewAngleModal.strategy.id)
-        .single()
-      
-      console.log('Verification Query Result:', verifyData)
-      console.log('Verification Query Error:', verifyError)
       
       // Update local state
       setStrategies(prev => prev.map(strategy => {
@@ -236,6 +221,9 @@ export function Strategies() {
         angle: updatedAngle,
         isEditing: false
       }))
+      
+      // Force a refresh of the data from the database to ensure consistency
+      await fetchStrategies()
       
       alert('Changes saved successfully!')
       
