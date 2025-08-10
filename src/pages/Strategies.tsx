@@ -571,6 +571,16 @@ export function Strategies() {
                   <>
                     <Button 
                       variant="outline" 
+                      onClick={handleDeleteStrategy}
+                      loading={deleting}
+                      disabled={deleting}
+                      className="bg-red-50 border-red-200 text-red-700 hover:bg-red-100 hover:border-red-300"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      {deleting ? 'Deleting...' : 'Delete Strategy'}
+                    </Button>
+                    <Button 
+                      variant="outline" 
                       onClick={handleEditToggle}
                     >
                       Edit
