@@ -365,7 +365,7 @@ export function Strategies() {
         strategy: {
           id: viewAngleModal.strategy.id,
           brand: viewAngleModal.strategy.brand,
-          platforms: strategyPlatforms,
+          platforms: ["twitter", "linkedin", "newsletter"],
           created_at: viewAngleModal.strategy.created_at
         }
       }
@@ -384,14 +384,14 @@ export function Strategies() {
           additionalInfo: company.additional_information || '',
           website: company.website || '',
           // Platform-specific data
-          selectedPlatforms: strategyPlatforms,
-          platformCount: strategyPlatforms.length
+          selectedPlatforms: ["twitter", "linkedin", "newsletter"],
+          platformCount: 3
         } : null,
         context: {
           requestType: 'generate_ideas_from_angle',
           timestamp: new Date().toISOString(),
           brandDetailsIncluded: !!company,
-          platformCount: strategyPlatforms.length,
+          platformCount: 3,
           strategyId: viewAngleModal.strategy.id,
           angleNumber: viewAngleModal.angle.number
         }
