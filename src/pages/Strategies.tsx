@@ -253,7 +253,8 @@ export function Strategies() {
           brand: viewAngleModal.strategy.brand,
           platforms: viewAngleModal.strategy.platforms ? viewAngleModal.strategy.platforms.split(',').map(p => p.trim()) : [],
           created_at: viewAngleModal.strategy.created_at
-        }
+        },
+        platforms: viewAngleModal.strategy.platforms ? viewAngleModal.strategy.platforms.split(',').map(p => p.trim()) : []
       }
 
       console.log('=== GENERATE IDEAS DEBUG ===')
