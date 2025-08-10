@@ -42,6 +42,58 @@ export function Strategies() {
   const [saving, setSaving] = useState(false)
   const [generatingIdeas, setGeneratingIdeas] = useState(false)
 
+  // Helper function to format markdown-like text
+  const formatDescription = (text: string) => {
+    if (!text) return 'No description available'
+    
+    return text.split('\n').map((line, index) => {
+      // Handle headers (###)
+      if (line.startsWith('### ')) {
+        return (
+          <h4 key={index} className="text-lg font-semibold text-gray-900 mt-4 mb-2 first:mt-0">
+            {line.replace('### ', '')}
+          </h4>
+        )
+      }
+      
+      // Handle numbered lists
+      if (/^\d+\.\s/.test(line)) {
+        const content = line.replace(/^\d+\.\s/, '')
+        // Handle bold text within numbered items
+        const formattedContent = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        return (
+          <div key={index} className="mb-2 pl-4">
+            <span className="font-medium text-blue-600 mr-2">{line.match(/^\d+/)?.[0]}.</span>
+            <span dangerouslySetInnerHTML={{ __html: formattedContent }} />
+          </div>
+        )
+      }
+      
+      // Handle bullet points with dashes
+      if (line.startsWith('- ')) {
+        const content = line.replace(/^- /, '')
+        const formattedContent = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        return (
+          <div key={index} className="mb-1 pl-6 flex items-start">
+            <span className="text-blue-500 mr-2 mt-1">•</span>
+            <span dangerouslySetInnerHTML={{ __html: formattedContent }} />
+          </div>
+        )
+      }
+      
+      // Handle regular paragraphs with bold formatting
+      if (line.trim()) {
+        const formattedContent = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        return (
+          <p key={index} className="mb-2" dangerouslySetInnerHTML={{ __html: formattedContent }} />
+        )
+      }
+      
+      // Empty lines for spacing
+      return <br key={index} />
+    })
+  }
+
   useEffect(() => {
     fetchStrategies()
   }, [])
