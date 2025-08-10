@@ -293,6 +293,59 @@ export function Ideas() {
     setGeneratingContent(true)
     
     try {
+      // Fetch full company details from Supabase
+      console.log('=== FETCHING COMPANY DETAILS ===')
+      console.log('Looking for company with brand name:', viewIdeaModal.idea.brand)
+      
+      const { data: companyData, error: companyError } = await supabase
+        .from('companies')
+        .select('*')
+        .or(`name.eq.${viewIdeaModal.idea.brand},brand_name.eq.${viewIdeaModal.idea.brand}`)
+        .single()
+      
+      if (companyError) {
+        console.error('Error fetching company details:', companyError)
+        console.log('Continuing without company details...')
+      }
+      
+      console.log('Company data fetched:', companyData)
+      
+      // Fetch strategy and angle details from Supabase
+      console.log('=== FETCHING STRATEGY AND ANGLE DETAILS ===')
+      console.log('Strategy ID:', viewIdeaModal.idea.strategy_id)
+      console.log('Angle Number:', viewIdeaModal.idea.angle_number)
+      
+      let strategyData = null
+      let angleDetails = null
+      
+      if (viewIdeaModal.idea.strategy_id && viewIdeaModal.idea.angle_number) {
+        const { data: strategy, error: strategyError } = await supabase
+          .from('strategies')
+          .select('*')
+          .eq('id', viewIdeaModal.idea.strategy_id)
+          .single()
+        
+        if (strategyError) {
+          console.error('Error fetching strategy details:', strategyError)
+          console.log('Continuing without strategy details...')
+        } else {
+          strategyData = strategy
+          
+          // Extract specific angle details
+          const angleNumber = viewIdeaModal.idea.angle_number
+          angleDetails = {
+            number: angleNumber,
+            header: strategy[`angle${angleNumber}_header`] || '',
+            description: strategy[`angle${angleNumber}_description`] || '',
+            objective: strategy[`angle${angleNumber}_objective`] || '',
+            tonality: strategy[`angle${angleNumber}_tonality`] || ''
+          }
+          
+          console.log('Strategy data fetched:', strategyData)
+          console.log('Angle details extracted:', angleDetails)
+        }
+      }
+      
       const topicData = {
         topicNumber: viewIdeaModal.topic.number,
         topic: viewIdeaModal.topic.topic,
@@ -310,11 +363,48 @@ export function Ideas() {
       const webhookPayload = {
         identifier: 'generateContent',
         topic: topicData,
-        platforms: ["twitter", "linkedin", "newsletter"]
+        platforms: ["twitter", "linkedin", "newsletter"],
+        companyDetails: companyData ? {
+          // Include ALL company data from Supabase
+          ...companyData,
+          // Add computed/formatted fields for backward compatibility
+          name: companyData.brand_name || companyData.name || 'Unknown Brand',
+          brandTone: companyData.brand_tone || '',
+          keyOffer: companyData.key_offer || '',
+          targetAudience: companyData.target_audience || '',
+          additionalInfo: companyData.additional_information || '',
+          website: companyData.website || ''
+        } : null,
+        angleDetails: angleDetails,
+        strategyContext: strategyData ? {
+          id: strategyData.id,
+          brand: strategyData.brand,
+          platforms: strategyData.platforms,
+          created_at: strategyData.created_at,
+          totalAngles: (() => {
+            let count = 0
+            for (let i = 1; i <= 10; i++) {
+              if (strategyData[`angle${i}_header`]) count++
+            }
+            return count
+          })()
+        } : null,
+        context: {
+          requestType: 'generate_content_from_idea',
+          timestamp: new Date().toISOString(),
+          hasCompanyDetails: !!companyData,
+          hasAngleDetails: !!angleDetails,
+          hasStrategyContext: !!strategyData,
+          ideaSetId: viewIdeaModal.idea.id,
+          topicNumber: viewIdeaModal.topic.number
+        }
       }
       
-      console.log('=== GENERATE CONTENT WEBHOOK ===')
+      console.log('=== ENHANCED GENERATE CONTENT WEBHOOK ===')
       console.log('Sending payload:', webhookPayload)
+      console.log('Company details included:', !!companyData)
+      console.log('Angle details included:', !!angleDetails)
+      console.log('Strategy context included:', !!strategyData)
       
       const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
         method: 'POST',
