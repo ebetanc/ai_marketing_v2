@@ -19,125 +19,15 @@ import {
   Trash2,
   FileText,
   Target,
-  Users
+  Users,
+  Calendar
 } from 'lucide-react'
 import { formatDate, truncateText } from '../lib/utils'
 import { supabase } from '../lib/supabase'
 
 // Helper function to extract and format idea content
 const extractIdeaContent = (idea: any) => {
-  // First check if we have a direct description field from Supabase
-  if (idea.description && typeof idea.description === 'string') {
-    return idea.description
-  }
-  
-  // Then check body field
-  if (idea.body && typeof idea.body === 'string' && !idea.body.startsWith('[') && !idea.body.startsWith('{')) {
-    return idea.body
-  }
-  
-  // Try to parse the body if it's JSON
-  let parsedContent = null
-  try {
-    if (typeof idea.body === 'string' && idea.body.startsWith('[') || idea.body.startsWith('{')) {
-      parsedContent = JSON.parse(idea.body)
-    }
-  } catch (error) {
-    // If parsing fails, use the raw body
-  }
-
-  // Extract meaningful content from parsed JSON
-  if (parsedContent) {
-    if (Array.isArray(parsedContent) && parsedContent.length > 0) {
-      const firstIdea = parsedContent[0]
-      if (firstIdea.description) {
-        // Clean up the description by removing extra quotes and formatting
-        return firstIdea.description.replace(/^["']|["']$/g, '').trim()
-      }
-      if (firstIdea.topic) {
-        return firstIdea.topic.replace(/^["']|["']$/g, '').trim()
-      }
-      if (firstIdea.content) {
-        return firstIdea.content.replace(/^["']|["']$/g, '').trim()
-      }
-      // If it's an array of ideas, try to extract a meaningful summary
-      if (typeof firstIdea === 'string') {
-        return firstIdea.replace(/^["']|["']$/g, '').trim()
-      }
-    }
-    
-    if (parsedContent.description) {
-      return parsedContent.description.replace(/^["']|["']$/g, '').trim()
-    }
-    
-    if (parsedContent.topic) {
-      return parsedContent.topic.replace(/^["']|["']$/g, '').trim()
-    }
-    
-    if (parsedContent.content) {
-      return parsedContent.content.replace(/^["']|["']$/g, '').trim()
-    }
-  }
-
-  // Fallback to original body or a default message
-  const fallbackContent = idea.body || 'AI-generated content idea based on your selected strategy.'
-  
-  // If it's still JSON-like, try to clean it up
-  if (typeof fallbackContent === 'string' && fallbackContent.includes('"')) {
-    // Try to extract readable content from JSON strings
-    const cleanContent = fallbackContent
-      .replace(/^\[|\]$/g, '') // Remove array brackets
-      .replace(/^\{|\}$/g, '') // Remove object brackets  
-      .replace(/"[^"]*":\s*/g, '') // Remove JSON keys
-      .replace(/[{}[\]"]/g, '') // Remove remaining JSON characters
-      .replace(/,\s*/g, '. ') // Replace commas with periods
-      .replace(/\.\s*\./g, '.') // Remove double periods
-      .trim()
-    
-    return cleanContent || 'AI-generated content idea based on your selected strategy.'
-  }
-  
-  return fallbackContent
-}
-
-// Helper function to extract idea summary/topic
-const extractIdeaSummary = (idea: any) => {
-  // First check if we have a direct header field from Supabase
-  if (idea.header && typeof idea.header === 'string') {
-    return idea.header
-  }
-  
-  // Then check title field
-  if (idea.title && typeof idea.title === 'string') {
-    return idea.title
-  }
-  
-  let parsedContent = null
-  try {
-    if (typeof idea.body === 'string' && (idea.body.startsWith('[') || idea.body.startsWith('{'))) {
-      parsedContent = JSON.parse(idea.body)
-    }
-  } catch (error) {
-    // If parsing fails, return null
-  }
-
-  if (parsedContent) {
-    if (Array.isArray(parsedContent) && parsedContent.length > 0) {
-      const firstIdea = parsedContent[0]
-      if (firstIdea.topic) {
-        return firstIdea.topic
-      }
-      if (firstIdea.angleId) {
-        return `Content Angle ${firstIdea.angleId}`
-      }
-    }
-    
-    if (parsedContent.topic) {
-      return parsedContent.topic
-    }
-  }
-
-  return null
+  return idea.description || 'No description available'
 }
 
 export function Ideas() {
@@ -254,38 +144,38 @@ export function Ideas() {
   }
 
   // Filter ideas
-  const allIdeas = supabaseIdeas.map(idea => ({
-    ...idea,
-    source: 'supabase',
-    company_id: idea.brand || idea.brand_id,
-    brand_name: idea.brand || idea.brand_name || 'Unknown Brand',
-    title: idea.header || idea.title || 'Untitled Idea',
-    body: idea.description || idea.body || 'No description available',
-    type: idea.type || 'idea',
-    status: idea.status || 'draft',
-    platforms: idea.platforms || [],
-    created_at: idea.created_at || new Date().toISOString()
-  }))
+  // Group ideas by brand
+  const ideasByBrand = supabaseIdeas.reduce((acc, idea) => {
+    const brandName = idea.brand || 'Unknown Brand'
+    if (!acc[brandName]) {
+      acc[brandName] = []
+    }
+    acc[brandName].push({
+      ...idea,
+      source: 'supabase',
+      company_id: idea.brand || idea.brand_id,
+      brand_name: brandName,
+      title: idea.header || idea.title || 'Untitled Idea',
+      body: idea.description || idea.body || 'No description available',
+      type: idea.type || 'idea',
+      status: idea.status || 'draft',
+      platforms: idea.platforms || [],
+      created_at: idea.created_at || new Date().toISOString()
+    })
+    return acc
+  }, {} as Record<string, any[]>)
 
-  const filteredIdeas = allIdeas.filter(idea => {
-    const matchesCompany = !selectedCompany || 
-      idea.company_id === selectedCompany || 
-      idea.brand === selectedCompany ||
-      idea.brand_name === selectedCompany
-    const matchesStatus = filterStatus === 'all' || idea.status === filterStatus
-    const matchesType = filterType === 'all' || idea.type === filterType
-    const matchesPlatform = filterPlatform === 'all' || 
-      (Array.isArray(idea.platforms) && idea.platforms.includes(filterPlatform)) ||
-      (typeof idea.platforms === 'string' && idea.platforms.includes(filterPlatform)) ||
-      (idea.metadata?.platforms && idea.metadata.platforms.includes(filterPlatform))
-    const matchesSearch = !searchQuery || (
-      idea.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      idea.body.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (idea.header && idea.header.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (idea.description && idea.description.toLowerCase().includes(searchQuery.toLowerCase()))
-    )
-    
-    return matchesCompany && matchesStatus && matchesType && matchesPlatform && matchesSearch
+  // Filter brands based on search and filters
+  const filteredBrands = Object.entries(ideasByBrand).filter(([brandName, ideas]) => {
+    const matchesCompany = !selectedCompany || brandName === selectedCompany
+    const matchesSearch = !searchQuery || 
+      brandName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ideas.some(idea => 
+        (idea.topic && idea.topic.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (idea.description && idea.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (idea.header && idea.header.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    return matchesCompany && matchesSearch
   })
 
   const handleViewIdea = (idea: any) => {
@@ -316,7 +206,7 @@ export function Ideas() {
 
   const brandOptions = [
     { value: '', label: 'All Companies' },
-    // Note: You may want to fetch brands from Supabase as well if needed
+    ...Object.keys(ideasByBrand).map(brand => ({ value: brand, label: brand }))
   ]
 
   const getStatusBadge = (status: string) => {
@@ -401,95 +291,115 @@ export function Ideas() {
         </CardContent>
       </Card>
 
-      {/* Ideas Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {filteredIdeas.map((idea) => (
-          <Card key={idea.id} className="hover:shadow-md transition-shadow duration-200">
+      {/* Ideas by Brand */}
+      <div className="space-y-8">
+        {filteredBrands.map(([brandName, ideas]) => (
+          <Card key={brandName} className="border-l-4 border-l-blue-500 shadow-md">
             <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-3 flex-1">
-                  <div className="text-2xl">💡</div>
-                  <div className="flex-1 min-w-0">
-                    <CardTitle className="text-sm sm:text-base line-clamp-2">
-                      {idea.title}
-                    </CardTitle>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {idea.brand_name}
-                      <Badge variant="primary" className="ml-2 text-xs">
-                        AI Generated
-                      </Badge>
-                    </p>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                    <Lightbulb className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl">{brandName}</CardTitle>
+                    <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
+                      <span className="flex items-center">
+                        <Calendar className="h-4 w-4 mr-1" />
+                        {formatDate(ideas[0]?.created_at)}
+                      </span>
+                      <span className="font-medium">{ideas.length} idea{ideas.length === 1 ? '' : 's'}</span>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-1">
-                  <button 
-                    onClick={() => handleDeleteClick(idea)}
-                    className="p-1 hover:bg-red-50 rounded-lg transition-colors group"
-                    title="Delete idea"
-                  >
-                    <Trash2 className="h-4 w-4 text-gray-400 group-hover:text-red-600" />
-                  </button>
-                  <button className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
-                    <MoreVertical className="h-4 w-4 text-gray-400" />
-                  </button>
-                </div>
+                
+                <Badge variant="primary" className="text-lg px-6 py-3 font-semibold">
+                  {ideas.length} Ideas
+                </Badge>
               </div>
             </CardHeader>
             
-            <CardContent className="space-y-4">
-              {/* Idea Summary */}
-              {extractIdeaSummary(idea) && (
-                <div>
-                  <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
-                    <Target className="h-4 w-4 mr-1 text-blue-600" />
-                    Topic
-                  </h4>
-                  <p className="text-sm text-blue-700 bg-blue-50 px-3 py-2 rounded-lg">
-                    {extractIdeaSummary(idea)}
-                  </p>
-                </div>
-              )}
+            <CardContent>
+              {/* Individual Idea Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {ideas.map((idea) => (
+                  <Card key={idea.id} className="bg-white border border-gray-200 hover:shadow-lg hover:border-blue-300 transition-all duration-200 group">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-sm">
+                          💡
+                        </div>
+                        <CardTitle className="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight">
+                          {idea.topic || idea.header || 'Untitled Idea'}
+                        </CardTitle>
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent className="space-y-3 pt-0 pb-4">
+                      {/* Description */}
+                      <div>
+                        <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed bg-gray-50 p-2 rounded-lg">
+                          {truncateText(idea.description || 'No description available', 120)}
+                        </p>
+                      </div>
+                      
+                      {/* Image Prompt */}
+                      {idea.image_prompt && (
+                        <div>
+                          <p className="text-xs font-medium text-gray-900 mb-1 flex items-center">
+                            <Target className="h-3 w-3 mr-1 text-purple-500" />
+                            Image Prompt
+                          </p>
+                          <p className="text-xs text-purple-700 bg-purple-50 px-2 py-1 rounded-lg line-clamp-2">
+                            {truncateText(idea.image_prompt, 80)}
+                          </p>
+                        </div>
+                      )}
 
-              {/* Idea Content */}
-              <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
-                  <Lightbulb className="h-4 w-4 mr-1 text-yellow-600" />
-                  Generated Idea
-                </h4>
-                <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
-                  <p className="text-sm text-gray-700 leading-relaxed line-clamp-4">
-                    {truncateText(extractIdeaContent(idea), 200)}
-                  </p>
-                </div>
-              </div>
+                      {/* Platforms */}
+                      {idea.platforms && (
+                        <div className="flex flex-wrap gap-1">
+                          {(Array.isArray(idea.platforms) ? idea.platforms : [idea.platforms]).slice(0, 2).map((platform, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs px-2 py-1">
+                              {platform}
+                            </Badge>
+                          ))}
+                          {(Array.isArray(idea.platforms) ? idea.platforms : [idea.platforms]).length > 2 && (
+                            <Badge variant="secondary" className="text-xs px-2 py-1">
+                              +{(Array.isArray(idea.platforms) ? idea.platforms : [idea.platforms]).length - 2}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
 
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <span>{formatDate(idea.created_at)}</span>
-                <span>From Supabase</span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                {getStatusBadge(idea.status)}
-                <Badge variant="secondary" className="text-xs capitalize">
-                  {idea.type?.replace('_', ' ') || 'idea'}
-                </Badge>
-              </div>
-
-              <div className="flex space-x-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full"
-                  onClick={() => handleViewIdea(idea)}
-                >
-                  <Eye className="h-3 w-3 mr-1" />
-                  View
-                </Button>
+                      {/* Actions */}
+                      <div className="flex space-x-1 pt-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1 text-xs py-1.5 group-hover:bg-blue-50 group-hover:border-blue-300 group-hover:text-blue-700 transition-colors"
+                          onClick={() => handleViewIdea(idea)}
+                        >
+                          <Eye className="h-3 w-3 mr-1.5" />
+                          View
+                        </Button>
+                        <button 
+                          onClick={() => handleDeleteClick(idea)}
+                          className="p-1.5 hover:bg-red-50 rounded-lg transition-colors group"
+                          title="Delete idea"
+                        >
+                          <Trash2 className="h-3 w-3 text-gray-400 group-hover:text-red-600" />
+                        </button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+
       {/* Loading State */}
       {loadingIdeas && (
         <Card>
@@ -501,15 +411,15 @@ export function Ideas() {
       )}
 
       {/* Empty State */}
-      {!loadingIdeas && filteredIdeas.length === 0 && (
+      {!loadingIdeas && filteredBrands.length === 0 && (
         <Card>
           <CardContent className="text-center py-12">
             <Lightbulb className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {allIdeas.length === 0 ? 'No ideas found' : 'No ideas match your filters'}
+              {Object.keys(ideasByBrand).length === 0 ? 'No ideas found' : 'No ideas match your filters'}
             </h3>
             <p className="text-gray-500 mb-6">
-              {allIdeas.length === 0 
+              {Object.keys(ideasByBrand).length === 0 
                 ? 'The ideas table in your Supabase database is empty.'
                 : 'Try adjusting your filters to see more ideas.'
               }
