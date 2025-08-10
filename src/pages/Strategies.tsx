@@ -420,7 +420,7 @@ export function Strategies() {
       console.log('companies array IDs:', companies.map(c => ({ id: c.id, type: typeof c.id, name: c.brand_name || c.name })))
       
       // Find the selected company data
-      const company = companies.find(c => c.id === selectedCompany)
+      const company = companies.find(c => c.id == selectedCompany) // Use == for type coercion
       if (!company) {
         console.error('=== COMPANY NOT FOUND ERROR ===')
         console.error('Looking for company with ID:', selectedCompany)
@@ -428,19 +428,35 @@ export function Strategies() {
         throw new Error('Selected company not found')
       }
 
-      // Prepare comprehensive brand data payload
+      // Prepare comprehensive brand data payload with ALL company columns
       const brandData = {
-        id: company.id,
+        // Include ALL company data from Supabase
+        ...company, // Spread all company properties
+        
+        // Add computed/formatted fields for backward compatibility
         name: company.brand_name || company.name || 'Unknown Brand',
-        website: company.website || '',
         brandTone: company.brand_tone || '',
         keyOffer: company.key_offer || '',
         targetAudience: company.target_audience || '',
         additionalInfo: company.additional_information || '',
-        createdAt: company.created_at || '',
+        
+        // Platform-specific data
         selectedPlatforms: selectedPlatforms,
-        platformCount: selectedPlatforms.length
+        platformCount: selectedPlatforms.length,
+        
+        // Metadata for webhook processing
+        webhook_metadata: {
+          source: 'strategies_page',
+          timestamp: new Date().toISOString(),
+          selected_platforms: selectedPlatforms,
+          platform_count: selectedPlatforms.length
+        }
       }
+
+      console.log('=== COMPLETE BRAND DATA PAYLOAD ===')
+      console.log('Full company object from database:', company)
+      console.log('Enhanced brand data for webhook:', brandData)
+      console.log('Brand data JSON:', JSON.stringify(brandData, null, 2))
 
       const webhookPayload = {
         identifier: "generateAngles",
