@@ -40,6 +40,15 @@ export function Ideas() {
   })
   const [saving, setSaving] = useState(false)
   const [generatingContent, setGeneratingContent] = useState(false)
+  const [viewIdeaSetModal, setViewIdeaSetModal] = useState<{
+    isOpen: boolean
+    idea: any
+    topics: any[]
+  }>({
+    isOpen: false,
+    idea: null,
+    topics: []
+  })
 
   useEffect(() => {
     fetchIdeas()
@@ -252,6 +261,23 @@ export function Ideas() {
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleViewIdeaSet = (idea: any) => {
+    const topics = extractTopicsFromIdea(idea)
+    setViewIdeaSetModal({
+      isOpen: true,
+      idea,
+      topics
+    })
+  }
+
+  const handleCloseIdeaSetModal = () => {
+    setViewIdeaSetModal({
+      isOpen: false,
+      idea: null,
+      topics: []
+    })
   }
 
   const handleFormChange = (field: string, value: string) => {
@@ -511,6 +537,87 @@ export function Ideas() {
         </div>
       )}
 
+      {/* View Idea Set Modal */}
+      {viewIdeaSetModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
+                  <Lightbulb className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Content Ideas Set #{viewIdeaSetModal.idea?.id} - {viewIdeaSetModal.idea?.brand}
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    {viewIdeaSetModal.topics.length} content ideas • Created {viewIdeaSetModal.idea?.created_at ? formatDate(viewIdeaSetModal.idea.created_at) : 'Unknown'}
+                  </p>
+                </div>
+              </div>
+              
+              <button
+                onClick={handleCloseIdeaSetModal}
+                className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+              >
+                <X className="h-5 w-5 text-gray-400" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 p-6 overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {viewIdeaSetModal.topics.map((topic) => (
+                  <Card 
+                    key={topic.number} 
+                    className="bg-white border border-gray-200 hover:shadow-lg hover:border-blue-300 transition-all duration-200 group cursor-pointer"
+                    onClick={() => handleViewTopic(viewIdeaSetModal.idea, topic)}
+                  >
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-sm">
+                          {topic.number}
+                        </div>
+                        <CardTitle className="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight">
+                          {truncateText(topic.topic, 40)}
+                        </CardTitle>
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent className="space-y-3 pt-0 pb-4">
+                      {/* Description */}
+                      <div>
+                        <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed bg-gray-50 p-2 rounded-lg">
+                          {truncateText(topic.description, 100)}
+                        </p>
+                      </div>
+                      
+                      {/* Image Prompt */}
+                      {topic.image_prompt && topic.image_prompt !== 'No image prompt provided' && (
+                        <div>
+                          <p className="text-xs font-medium text-purple-700 mb-1">Image:</p>
+                          <p className="text-xs text-purple-600 line-clamp-3 bg-purple-50 p-2 rounded-lg">
+                            {truncateText(topic.image_prompt, 80)}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {/* View indicator */}
+                      <div className="pt-1">
+                        <div className="text-xs text-blue-600 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                          Click to view details →
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Loading State */}
       {loading && (
         <Card>
@@ -567,87 +674,38 @@ export function Ideas() {
                   
                   return (
                     <Card key={idea.id} className="border-l-4 border-l-blue-500 shadow-md">
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                              <Lightbulb className="h-6 w-6 text-blue-600" />
+                      <CardContent>
+                        <div className="flex items-center justify-between p-6">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg">
+                              <Lightbulb className="h-8 w-8 text-white" />
                             </div>
                             <div>
-                              <CardTitle className="text-xl">Idea Set #{idea.id}</CardTitle>
-                              <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
+                              <h3 className="text-2xl font-bold text-gray-900">Content Ideas Set #{idea.id}</h3>
+                              <p className="text-blue-600 font-medium text-lg">{topics.length} content idea{topics.length === 1 ? '' : 's'} ready for execution</p>
+                              <div className="flex items-center space-x-4 text-sm text-gray-500 mt-2">
                                 <span className="flex items-center">
                                   <Calendar className="h-4 w-4 mr-1" />
                                   {formatDate(idea.created_at)}
                                 </span>
-                                <span className="font-medium">{topics.length} topic{topics.length === 1 ? '' : 's'}</span>
+                                {idea.strategy_id && (
+                                  <>
+                                    <span>Strategy #{idea.strategy_id}</span>
+                                    {idea.angle_number && <span>Angle {idea.angle_number}</span>}
+                                  </>
+                                )}
                               </div>
                             </div>
                           </div>
                           
-                          {/* Strategy Info */}
-                          {idea.strategy_id && (
-                            <div className="flex flex-wrap gap-2">
-                              <Badge variant="secondary" className="text-xs">
-                                Strategy #{idea.strategy_id}
-                              </Badge>
-                              {idea.angle_number && (
-                                <Badge variant="secondary" className="text-xs">
-                                  Angle {idea.angle_number}
-                                </Badge>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </CardHeader>
-                      
-                      <CardContent>
-                        {/* Individual Topic Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                          {topics.map((topic) => (
-                            <Card 
-                              key={topic.number} 
-                              className="bg-white border border-gray-200 hover:shadow-lg hover:border-blue-300 transition-all duration-200 group cursor-pointer"
-                              onClick={() => handleViewTopic(idea, topic)}
-                            >
-                              <CardHeader className="pb-2">
-                                <div className="flex items-center space-x-2">
-                                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-sm">
-                                    {topic.number}
-                                  </div>
-                                  <CardTitle className="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight">
-                                    {truncateText(topic.topic, 40)}
-                                  </CardTitle>
-                                </div>
-                              </CardHeader>
-                              
-                              <CardContent className="space-y-3 pt-0 pb-4">
-                                {/* Description */}
-                                <div>
-                                  <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed bg-gray-50 p-2 rounded-lg">
-                                    {truncateText(topic.description, 100)}
-                                  </p>
-                                </div>
-                                
-                                {/* Image Prompt */}
-                                {topic.image_prompt && topic.image_prompt !== 'No image prompt provided' && (
-                                  <div>
-                                    <p className="text-xs font-medium text-purple-700 mb-1">Image:</p>
-                                    <p className="text-xs text-purple-600 line-clamp-3 bg-purple-50 p-2 rounded-lg">
-                                      {truncateText(topic.image_prompt, 80)}
-                                    </p>
-                                  </div>
-                                )}
-                                
-                                {/* View indicator */}
-                                <div className="pt-1">
-                                  <div className="text-xs text-blue-600 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                                    Click to view details →
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))}
+                          <Button
+                            onClick={() => handleViewIdeaSet(idea)}
+                            size="lg"
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            <Eye className="h-5 w-5 mr-2" />
+                            View All Ideas
+                          </Button>
                         </div>
                       </CardContent>
                     </Card>
