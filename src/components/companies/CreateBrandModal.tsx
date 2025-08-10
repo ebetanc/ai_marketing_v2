@@ -155,7 +155,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
 
       console.log('Sending brand data to webhook:', brandData)
       
-      const response = await fetch(`${import.meta.env.VITE_N8N_WEBHOOK_URL}/content-saas`, {
+      const response = await fetch(`${import.meta.env.VITE_N8N_WEBHOOK_URL}/dacf25b7-b505-4b10-a6f7-a2ac0e21a1ec`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
