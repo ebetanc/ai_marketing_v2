@@ -147,7 +147,7 @@ export function Companies() {
           </p>
         </div>
         <div className="flex space-x-3">
-          <Button onClick={fetchCompanies} disabled={loading} variant="outline">
+          <Button onClick={fetchCompaniesFromSupabase} disabled={loading} variant="outline">
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
@@ -207,7 +207,7 @@ export function Companies() {
             <Database className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Companies</h3>
             <p className="text-red-600 mb-4">{error}</p>
-            <Button onClick={fetchCompanies} variant="outline">
+            <Button onClick={fetchCompaniesFromSupabase} variant="outline">
               Try Again
             </Button>
           </CardContent>
