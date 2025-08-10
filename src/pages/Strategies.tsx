@@ -411,9 +411,20 @@ export function Strategies() {
     setGenerating(true)
     
     try {
+      // Debug logs to diagnose the "Selected company not found" error
+      console.log('=== DEBUG: SELECTED COMPANY AND COMPANIES ARRAY ===')
+      console.log('selectedCompany value:', selectedCompany)
+      console.log('selectedCompany type:', typeof selectedCompany)
+      console.log('companies array:', companies)
+      console.log('companies array length:', companies.length)
+      console.log('companies array IDs:', companies.map(c => ({ id: c.id, type: typeof c.id, name: c.brand_name || c.name })))
+      
       // Find the selected company data
       const company = companies.find(c => c.id === selectedCompany)
       if (!company) {
+        console.error('=== COMPANY NOT FOUND ERROR ===')
+        console.error('Looking for company with ID:', selectedCompany)
+        console.error('Available company IDs:', companies.map(c => c.id))
         throw new Error('Selected company not found')
       }
 
