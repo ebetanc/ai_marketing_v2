@@ -300,7 +300,7 @@ export function Ideas() {
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
         .select('*')
-        .or(`name.eq.${viewIdeaModal.idea.brand},brand_name.eq.${viewIdeaModal.idea.brand}`)
+        .eq('brand_name', viewIdeaModal.idea.brand)
         .single()
       
       if (companyError) {
