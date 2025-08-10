@@ -227,7 +227,7 @@ export function Companies() {
                       <Building2 className="h-8 w-8 text-white" />
                     </div>
                     <div>
-                      <CardTitle className="text-xl">{company.brand_name}</CardTitle>
+                      <CardTitle className="text-xl">{brandName}</CardTitle>
                       <p className="text-blue-600 font-medium">{brandCompanies.length} compan{brandCompanies.length === 1 ? 'y' : 'ies'}</p>
                     </div>
                   </div>
