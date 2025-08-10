@@ -124,8 +124,8 @@ const extractIdeaSummary = (idea: any) => {
 export function Ideas() {
   const [firebaseBrands, setFirebaseBrands] = useState<any[]>([])
   const [generatedIdeas, setGeneratedIdeas] = useState<any[]>([])
-  const [loadingBrands, setLoadingBrands] = useState(true)
-  const [loadingIdeas, setLoadingIdeas] = useState(true)
+  const [loadingBrands, setLoadingBrands] = useState(false)
+  const [loadingIdeas, setLoadingIdeas] = useState(false)
   const [selectedCompany, setSelectedCompany] = useState('')
   const [filterStatus, setFilterStatus] = useState<'all' | 'draft' | 'approved'>('all')
   const [filterType, setFilterType] = useState<'all' | string>('all')
@@ -147,76 +147,12 @@ export function Ideas() {
 
   // Fetch brands from Firebase
   useEffect(() => {
-    const fetchBrandsFromFirebase = async () => {
-      try {
-        console.log('Fetching brands from Firebase...')
-        const brandsCollection = collection(db, 'brands')
-        const brandsSnapshot = await getDocs(brandsCollection)
-        
-        const brands = brandsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }))
-        
-        console.log('Fetched brands:', brands.length)
-        setFirebaseBrands(brands)
-      } catch (error) {
-        console.error('Error fetching brands from Firebase:', error)
-        setFirebaseBrands([])
-      } finally {
-        setLoadingBrands(false)
-      }
-    }
-
-    const fetchGeneratedIdeasFromFirebase = async () => {
-      try {
-        console.log('Fetching ideas from Firebase...')
-        const ideasCollection = collection(db, 'ideas')
-        const ideasSnapshot = await getDocs(ideasCollection)
-        
-        const ideas = ideasSnapshot.docs.map(doc => ({
-          id: doc.id,
-          firebaseId: doc.id, // Store the actual Firebase document ID
-          ...doc.data()
-        }))
-        
-        console.log('Fetched ideas:', ideas.length)
-        console.log('Ideas with IDs:', ideas.map(idea => ({ id: idea.id, title: idea.title })))
-        setGeneratedIdeas(ideas)
-      } catch (error) {
-        console.error('Error fetching ideas from Firebase:', error)
-        setGeneratedIdeas([])
-      } finally {
-        setLoadingIdeas(false)
-      }
-    }
-
-    fetchBrandsFromFirebase()
-    fetchGeneratedIdeasFromFirebase()
+    // Firebase fetching disabled
   }, [])
 
   // Refresh ideas after operations
   const refreshIdeas = async () => {
-    setLoadingIdeas(true)
-    try {
-      console.log('Refreshing ideas from Firebase...')
-      const ideasCollection = collection(db, 'ideas')
-      const ideasSnapshot = await getDocs(ideasCollection)
-      
-      const ideas = ideasSnapshot.docs.map(doc => ({
-        id: doc.id,
-        firebaseId: doc.id, // Store the actual Firebase document ID
-        ...doc.data()
-      }))
-      
-      console.log('Refreshed ideas from Firebase:', ideas.length)
-      console.log('Refreshed ideas with IDs:', ideas.map(idea => ({ id: idea.id, title: idea.title })))
-      setGeneratedIdeas(ideas)
-    } catch (error) {
-      console.error('Error refreshing ideas:', error)
-    } finally {
-      setLoadingIdeas(false)
-    }
+    // Refresh disabled
   }
 
   const handleDeleteClick = (idea: any) => {
@@ -407,134 +343,7 @@ export function Ideas() {
       </Card>
 
       {/* Ideas Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {filteredIdeas.map((idea) => (
-          <Card key={idea.id} className="hover:shadow-md transition-shadow duration-200">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-3 flex-1">
-                  <div className="text-2xl">💡</div>
-                  <div className="flex-1 min-w-0">
-                    <CardTitle className="text-sm sm:text-base line-clamp-2">
-                      {idea.title}
-                    </CardTitle>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {idea.brand_name}
-                      <Badge variant="primary" className="ml-2 text-xs">
-                        AI Generated
-                      </Badge>
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <button 
-                    onClick={() => handleDeleteClick(idea)}
-                    className="p-1 hover:bg-red-50 rounded-lg transition-colors group"
-                    title="Delete idea"
-                  >
-                    <Trash2 className="h-4 w-4 text-gray-400 group-hover:text-red-600" />
-                  </button>
-                  <button className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
-                    <MoreVertical className="h-4 w-4 text-gray-400" />
-                  </button>
-                </div>
-              </div>
-            </CardHeader>
-            
-            <CardContent className="space-y-4">
-              {/* Idea Summary/Topic */}
-              {extractIdeaSummary(idea) && (
-                <div>
-                  <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
-                    <Target className="h-4 w-4 mr-1 text-blue-600" />
-                    Topic Focus
-                  </h4>
-                  <p className="text-sm text-blue-700 bg-blue-50 px-3 py-2 rounded-lg">
-                    {extractIdeaSummary(idea)}
-                  </p>
-                </div>
-              )}
-
-              {/* Idea Description */}
-              <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
-                  <Lightbulb className="h-4 w-4 mr-1 text-yellow-600" />
-                  Content Approach
-                </h4>
-                <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
-                  <p className="text-sm text-gray-700 leading-relaxed line-clamp-4">
-                    {truncateText(extractIdeaContent(idea), 200)}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <span>{formatDate(idea.created_at)}</span>
-                <span>{idea.metadata?.word_count || 0} words</span>
-              </div>
-
-              {/* Platform Tags */}
-              {(idea.platforms || idea.metadata?.platforms) && (
-                <div className="flex flex-wrap gap-1">
-                  {(idea.platforms || idea.metadata?.platforms || []).slice(0, 3).map((platform: string) => (
-                    <Badge key={platform} variant="secondary" className="text-xs capitalize">
-                      {platform}
-                    </Badge>
-                  ))}
-                  {(idea.platforms || idea.metadata?.platforms || []).length > 3 && (
-                    <Badge variant="secondary" className="text-xs">
-                      +{(idea.platforms || idea.metadata?.platforms || []).length - 3} more
-                    </Badge>
-                  )}
-                </div>
-              )}
-
-              <div className="flex items-center justify-between">
-                {getStatusBadge(idea.status)}
-                <Badge variant="secondary" className="text-xs">
-                  {idea.type === 'content_idea' ? 'Content Idea' : (idea.type || 'Idea').replace('_', ' ')}
-                </Badge>
-              </div>
-
-              <div className="flex space-x-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full"
-                  onClick={() => handleViewIdea(idea)}
-                >
-                    <Eye className="h-3 w-3 mr-1" />
-                    View
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {filteredIdeas.length === 0 && (
-        <Card>
-          <CardContent className="text-center py-12">
-            <Lightbulb className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {allIdeas.length === 0 ? 'No ideas yet' : 'No ideas match your filters'}
-            </h3>
-            <p className="text-gray-500 mb-6">
-              {allIdeas.length === 0 
-                ? 'Generate ideas from your strategies by selecting a strategy and clicking "Ideas Generator".'
-                : 'Try adjusting your filters to see more ideas.'
-              }
-            </p>
-            {allIdeas.length === 0 && (
-              <div className="text-center">
-                <p className="text-sm text-gray-500">
-                  Go to <strong>Strategies</strong> → View a strategy → Select an angle → Click <strong>Ideas Generator</strong>
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+      {/* Content disabled */}
     </div>
   )
 }
