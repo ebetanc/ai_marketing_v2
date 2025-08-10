@@ -450,7 +450,7 @@ export function Strategies() {
                     />
                   ) : (
                     <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                      {viewAngleModal.angle?.description}
+                      {viewAngleModal.angle?.description || 'No description available'}
                     </p>
                   )}
                 </CardContent>
