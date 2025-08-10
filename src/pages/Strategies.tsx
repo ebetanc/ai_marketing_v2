@@ -40,6 +40,7 @@ export function Strategies() {
     tonality: ''
   })
   const [saving, setSaving] = useState(false)
+  const [generatingIdeas, setGeneratingIdeas] = useState(false)
 
   useEffect(() => {
     fetchStrategies()
@@ -232,6 +233,59 @@ export function Strategies() {
       alert(`Failed to save changes: ${error.message || 'Unknown error'}`)
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleGenerateIdeas = async () => {
+    if (!viewAngleModal.strategy || !viewAngleModal.angle) return
+    
+    setGeneratingIdeas(true)
+    
+    try {
+      const angleData = {
+        angleNumber: viewAngleModal.angle.number,
+        header: viewAngleModal.angle.header,
+        description: viewAngleModal.angle.description,
+        objective: viewAngleModal.angle.objective,
+        tonality: viewAngleModal.angle.tonality,
+        strategy: {
+          id: viewAngleModal.strategy.id,
+          brand: viewAngleModal.strategy.brand,
+          platforms: viewAngleModal.strategy.platforms,
+          created_at: viewAngleModal.strategy.created_at
+        }
+      }
+
+      console.log('=== GENERATE IDEAS DEBUG ===')
+      console.log('Sending angle data to webhook:', angleData)
+      
+      const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          identifier: 'generateIdeas',
+          angle: angleData
+        })
+      })
+
+      console.log('Webhook response status:', response.status)
+      
+      if (!response.ok) {
+        throw new Error(`Webhook request failed with status: ${response.status}`)
+      }
+
+      const result = await response.text()
+      console.log('Webhook response:', result)
+      
+      alert('Ideas generated successfully! Check your Ideas page to see the generated content ideas.')
+      
+    } catch (error) {
+      console.error('Error generating ideas:', error)
+      alert(`Failed to generate ideas: ${error.message || 'Unknown error'}`)
+    } finally {
+      setGeneratingIdeas(false)
     }
   }
 
@@ -464,6 +518,14 @@ export function Strategies() {
                       onClick={handleEditToggle}
                     >
                       Edit
+                    </Button>
+                    <Button 
+                      onClick={handleGenerateIdeas}
+                      loading={generatingIdeas}
+                      disabled={generatingIdeas}
+                      className="bg-purple-600 hover:bg-purple-700"
+                    >
+                      {generatingIdeas ? 'Generating...' : 'Generate Ideas'}
                     </Button>
                     <Button 
                       variant="outline" 
