@@ -165,7 +165,9 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
       console.log('Webhook response status:', response.status)
       
       if (!response.ok) {
-        throw new Error(`Webhook request failed with status: ${response.status}`)
+        console.error('Webhook request failed with status:', response.status)
+        alert('Failed to create company. Please try again.')
+        return
       }
       
       console.log('Brand data sent to webhook successfully')
@@ -178,12 +180,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
       
     } catch (error) {
       console.error('Error creating company:', error)
-      alert('Company created successfully!')
-      
-      // Reset form and close modal even on error
-      resetForm()
-      refetchCompanies()
-      onSubmit()
+      alert('Failed to create company. Please try again.')
     } finally {
       setSubmitLoading(false)
     }
