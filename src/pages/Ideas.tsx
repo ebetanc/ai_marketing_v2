@@ -22,8 +22,7 @@ import {
   Users
 } from 'lucide-react'
 import { formatDate, truncateText } from '../lib/utils'
-import { db } from '../lib/firebase'
-import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore'
+import { supabase } from '../lib/supabase'
 
 // Helper function to extract and format idea content
 const extractIdeaContent = (idea: any) => {
@@ -122,10 +121,8 @@ const extractIdeaSummary = (idea: any) => {
 }
 
 export function Ideas() {
-  const [firebaseBrands, setFirebaseBrands] = useState<any[]>([])
-  const [generatedIdeas, setGeneratedIdeas] = useState<any[]>([])
-  const [loadingBrands, setLoadingBrands] = useState(false)
-  const [loadingIdeas, setLoadingIdeas] = useState(false)
+  const [supabaseIdeas, setSupabaseIdeas] = useState<any[]>([])
+  const [loadingIdeas, setLoadingIdeas] = useState(true)
   const [selectedCompany, setSelectedCompany] = useState('')
   const [filterStatus, setFilterStatus] = useState<'all' | 'draft' | 'approved'>('all')
   const [filterType, setFilterType] = useState<'all' | string>('all')
@@ -145,14 +142,40 @@ export function Ideas() {
     loading: false
   })
 
-  // Fetch brands from Firebase
+  // Fetch ideas from Supabase
   useEffect(() => {
-    // Firebase fetching disabled
+    fetchIdeasFromSupabase()
   }, [])
 
-  // Refresh ideas after operations
+  const fetchIdeasFromSupabase = async () => {
+    try {
+      setLoadingIdeas(true)
+      console.log('Fetching ideas from Supabase...')
+      
+      const { data, error } = await supabase
+        .from('ideas')
+        .select('*')
+        .order('created_at', { ascending: false })
+      
+      console.log('Supabase ideas response:', { data, error })
+      
+      if (error) {
+        console.error('Supabase error:', error)
+        throw error
+      }
+      
+      console.log('Ideas fetched successfully:', data?.length || 0, 'records')
+      setSupabaseIdeas(data || [])
+    } catch (error) {
+      console.error('Error fetching ideas from Supabase:', error)
+      setSupabaseIdeas([])
+    } finally {
+      setLoadingIdeas(false)
+    }
+  }
+
   const refreshIdeas = async () => {
-    // Refresh disabled
+    await fetchIdeasFromSupabase()
   }
 
   const handleDeleteClick = (idea: any) => {
@@ -169,32 +192,35 @@ export function Ideas() {
     setDeleteDialog(prev => ({ ...prev, loading: true }))
 
     try {
-      // Use the actual Firebase document ID, not the custom id field
-      const firebaseDocId = deleteDialog.idea.firebaseId || deleteDialog.idea.id
-      console.log('Attempting to delete idea with Firebase ID:', firebaseDocId)
-      console.log('Original idea ID:', deleteDialog.idea.id)
+      console.log('Attempting to delete idea with Supabase ID:', deleteDialog.idea.id)
       console.log('Full idea object:', deleteDialog.idea)
       
-      // Delete from Firebase ideas collection
-      const docRef = doc(db, 'ideas', firebaseDocId)
-      console.log('Document reference path:', docRef.path)
-      await deleteDoc(docRef)
+      // Delete from Supabase ideas table
+      const { error } = await supabase
+        .from('ideas')
+        .delete()
+        .eq('id', deleteDialog.idea.id)
       
-      console.log('Successfully deleted idea from Firebase:', firebaseDocId)
+      if (error) {
+        console.error('Supabase delete error:', error)
+        throw error
+      }
+      
+      console.log('Successfully deleted idea from Supabase:', deleteDialog.idea.id)
       
       // Update local state
-      setGeneratedIdeas(prev => prev.filter(idea => idea.id !== deleteDialog.idea.id))
+      setSupabaseIdeas(prev => prev.filter(idea => idea.id !== deleteDialog.idea.id))
       
       console.log('Updated local state, removed idea from UI')
       
       // Close dialog
       setDeleteDialog({ isOpen: false, idea: null, loading: false })
       
-      console.log('Idea deleted successfully from database and UI updated')
+      console.log('Idea deleted successfully from Supabase and UI updated')
     } catch (error) {
       console.error('Error deleting idea:', error)
       console.error('Error details:', error.message)
-      console.error('Firebase Document ID that failed:', deleteDialog.idea.firebaseId || deleteDialog.idea.id)
+      console.error('Supabase ID that failed:', deleteDialog.idea.id)
       alert('Failed to delete idea. Please try again.')
       setDeleteDialog(prev => ({ ...prev, loading: false }))
     } finally {
@@ -208,9 +234,9 @@ export function Ideas() {
   }
 
   // Filter ideas
-  const allIdeas = generatedIdeas.map(idea => ({
+  const allIdeas = supabaseIdeas.map(idea => ({
     ...idea,
-    source: 'generated',
+    source: 'supabase',
     company_id: idea.brand_id,
     brand_name: idea.brand_name || 'Unknown Brand'
   }))
@@ -257,7 +283,7 @@ export function Ideas() {
 
   const brandOptions = [
     { value: '', label: 'All Companies' },
-    ...firebaseBrands.map(brand => ({ value: brand.id, label: brand.name || 'Unnamed Brand' }))
+    // Note: You may want to fetch brands from Supabase as well if needed
   ]
 
   const getStatusBadge = (status: string) => {
@@ -343,7 +369,121 @@ export function Ideas() {
       </Card>
 
       {/* Ideas Grid */}
-      {/* Content disabled */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        {filteredIdeas.map((idea) => (
+          <Card key={idea.id} className="hover:shadow-md transition-shadow duration-200">
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div className="flex items-start space-x-3 flex-1">
+                  <div className="text-2xl">💡</div>
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-sm sm:text-base line-clamp-2">
+                      {idea.title}
+                    </CardTitle>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {idea.brand_name}
+                      <Badge variant="primary" className="ml-2 text-xs">
+                        AI Generated
+                      </Badge>
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <button 
+                    onClick={() => handleDeleteClick(idea)}
+                    className="p-1 hover:bg-red-50 rounded-lg transition-colors group"
+                    title="Delete idea"
+                  >
+                    <Trash2 className="h-4 w-4 text-gray-400 group-hover:text-red-600" />
+                  </button>
+                  <button className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
+                    <MoreVertical className="h-4 w-4 text-gray-400" />
+                  </button>
+                </div>
+              </div>
+            </CardHeader>
+            
+            <CardContent className="space-y-4">
+              {/* Idea Summary */}
+              {extractIdeaSummary(idea) && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
+                    <Target className="h-4 w-4 mr-1 text-blue-600" />
+                    Topic
+                  </h4>
+                  <p className="text-sm text-blue-700 bg-blue-50 px-3 py-2 rounded-lg">
+                    {extractIdeaSummary(idea)}
+                  </p>
+                </div>
+              )}
+
+              {/* Idea Content */}
+              <div>
+                <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
+                  <Lightbulb className="h-4 w-4 mr-1 text-yellow-600" />
+                  Generated Idea
+                </h4>
+                <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                  <p className="text-sm text-gray-700 leading-relaxed line-clamp-4">
+                    {truncateText(extractIdeaContent(idea), 200)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-xs text-gray-500">
+                <span>{formatDate(idea.created_at)}</span>
+                <span>From Supabase</span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                {getStatusBadge(idea.status)}
+                <Badge variant="secondary" className="text-xs capitalize">
+                  {idea.type?.replace('_', ' ') || 'idea'}
+                </Badge>
+              </div>
+
+              <div className="flex space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={() => handleViewIdea(idea)}
+                >
+                  <Eye className="h-3 w-3 mr-1" />
+                  View
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      {/* Loading State */}
+      {loadingIdeas && (
+        <Card>
+          <CardContent className="text-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading ideas from Supabase...</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Empty State */}
+      {!loadingIdeas && filteredIdeas.length === 0 && (
+        <Card>
+          <CardContent className="text-center py-12">
+            <Lightbulb className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {allIdeas.length === 0 ? 'No ideas found' : 'No ideas match your filters'}
+            </h3>
+            <p className="text-gray-500 mb-6">
+              {allIdeas.length === 0 
+                ? 'The ideas table in your Supabase database is empty.'
+                : 'Try adjusting your filters to see more ideas.'
+              }
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }
