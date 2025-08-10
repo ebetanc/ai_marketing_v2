@@ -449,9 +449,9 @@ export function Strategies() {
                       placeholder="Enter angle description..."
                     />
                   ) : (
-                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                      {viewAngleModal.angle?.description || 'No description available'}
-                    </p>
+                    <div className="text-gray-700 leading-relaxed">
+                      {formatDescription(viewAngleModal.angle?.description || 'No description available')}
+                    </div>
                   )}
                 </CardContent>
               </Card>
