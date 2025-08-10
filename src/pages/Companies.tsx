@@ -175,6 +175,7 @@ export function Companies() {
         isOpen={viewCompanyModal.isOpen}
         onClose={handleCloseViewModal}
         company={viewCompanyModal.company}
+        onDelete={fetchCompaniesFromSupabase}
       />
 
       {/* Delete Confirmation Dialog */}

@@ -2,17 +2,52 @@ import React from 'react'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card'
-import { X, Building2, Globe, Target, Zap, Calendar, User } from 'lucide-react'
+import { X, Building2, Globe, Target, Zap, Calendar, User, Trash2 } from 'lucide-react'
 import { formatDate } from '../../lib/utils'
+import { supabase } from '../../lib/supabase'
 
 interface ViewCompanyModalProps {
   isOpen: boolean
   onClose: () => void
   company: any
+  onDelete?: () => void
 }
 
-export function ViewCompanyModal({ isOpen, onClose, company }: ViewCompanyModalProps) {
+export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCompanyModalProps) {
+  const [deleting, setDeleting] = React.useState(false)
+
   if (!isOpen || !company) return null
+
+  const handleDelete = async () => {
+    if (!company?.id) return
+    
+    const confirmed = window.confirm(`Are you sure you want to delete "${company.brand_name || company.name}"? This action cannot be undone.`)
+    if (!confirmed) return
+    
+    setDeleting(true)
+    
+    try {
+      const { error } = await supabase
+        .from('companies')
+        .delete()
+        .eq('id', company.id)
+      
+      if (error) {
+        console.error('Error deleting company:', error)
+        alert(`Failed to delete company: ${error.message}`)
+        return
+      }
+      
+      alert('Company deleted successfully!')
+      onDelete?.() // Call the callback to refresh the companies list
+      onClose() // Close the modal
+    } catch (error) {
+      console.error('Error deleting company:', error)
+      alert('Failed to delete company. Please try again.')
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -259,9 +294,21 @@ export function ViewCompanyModal({ isOpen, onClose, company }: ViewCompanyModalP
 
         {/* Footer */}
         <div className="flex justify-end p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
-          <Button variant="outline" onClick={onClose}>
-            Close
-          </Button>
+          <div className="flex space-x-3">
+            <Button 
+              variant="outline" 
+              onClick={handleDelete}
+              loading={deleting}
+              disabled={deleting}
+              className="bg-red-50 border-red-200 text-red-700 hover:bg-red-100 hover:border-red-300"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              {deleting ? 'Deleting...' : 'Delete Company'}
+            </Button>
+            <Button variant="outline" onClick={onClose} disabled={deleting}>
+              Close
+            </Button>
+          </div>
         </div>
       </div>
     </div>
