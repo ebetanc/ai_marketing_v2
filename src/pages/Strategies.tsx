@@ -25,11 +25,21 @@ export function Strategies() {
     isOpen: boolean
     strategy: Strategy | null
     angle: any
+    isEditing: boolean
   }>({
     isOpen: false,
     strategy: null,
-    angle: null
+    angle: null,
+    isEditing: false
   })
+
+  const [editForm, setEditForm] = useState({
+    header: '',
+    description: '',
+    objective: '',
+    tonality: ''
+  })
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     fetchStrategies()
@@ -105,7 +115,15 @@ export function Strategies() {
     setViewAngleModal({
       isOpen: true,
       strategy,
-      angle
+      angle,
+      isEditing: false
+    })
+    // Initialize edit form with current values
+    setEditForm({
+      header: angle.header || '',
+      description: angle.description || '',
+      objective: angle.objective || '',
+      tonality: angle.tonality || ''
     })
   }
 
@@ -113,8 +131,102 @@ export function Strategies() {
     setViewAngleModal({
       isOpen: false,
       strategy: null,
-      angle: null
+      angle: null,
+      isEditing: false
     })
+    setEditForm({
+      header: '',
+      description: '',
+      objective: '',
+      tonality: ''
+    })
+    setSaving(false)
+  }
+
+  const handleEditToggle = () => {
+    setViewAngleModal(prev => ({
+      ...prev,
+      isEditing: !prev.isEditing
+    }))
+    
+    // Reset form when canceling edit
+    if (viewAngleModal.isEditing) {
+      setEditForm({
+        header: viewAngleModal.angle?.header || '',
+        description: viewAngleModal.angle?.description || '',
+        objective: viewAngleModal.angle?.objective || '',
+        tonality: viewAngleModal.angle?.tonality || ''
+      })
+    }
+  }
+
+  const handleSaveChanges = async () => {
+    if (!viewAngleModal.strategy || !viewAngleModal.angle) return
+    
+    setSaving(true)
+    
+    try {
+      const angleNumber = viewAngleModal.angle.number
+      const updateData = {
+        [`angle${angleNumber}_header`]: editForm.header,
+        [`angle${angleNumber}_description`]: editForm.description,
+        [`angle${angleNumber}_objective`]: editForm.objective,
+        [`angle${angleNumber}_tonality`]: editForm.tonality
+      }
+      
+      console.log('Updating strategy with data:', updateData)
+      
+      const { error } = await supabase
+        .from('strategies')
+        .update(updateData)
+        .eq('id', viewAngleModal.strategy.id)
+      
+      if (error) {
+        console.error('Error updating strategy:', error)
+        alert('Failed to save changes. Please try again.')
+        return
+      }
+      
+      console.log('Strategy updated successfully')
+      
+      // Update local state
+      setStrategies(prev => prev.map(strategy => {
+        if (strategy.id === viewAngleModal.strategy!.id) {
+          return { ...strategy, ...updateData }
+        }
+        return strategy
+      }))
+      
+      // Update the modal's angle data
+      const updatedAngle = {
+        ...viewAngleModal.angle,
+        header: editForm.header,
+        description: editForm.description,
+        objective: editForm.objective,
+        tonality: editForm.tonality
+      }
+      
+      setViewAngleModal(prev => ({
+        ...prev,
+        angle: updatedAngle,
+        isEditing: false
+      }))
+      
+      alert('Changes saved successfully!')
+      
+    } catch (error) {
+      console.error('Error saving changes:', error)
+      alert('Failed to save changes. Please try again.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleFormChange = (field: string, value: string) => {
+    setEditForm(prev => ({
+      ...prev,
+      [field]: value
+    }))
   }
 
   // Group strategies by brand
@@ -153,7 +265,9 @@ export function Strategies() {
                   <Target className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">{viewAngleModal.angle?.header}</h2>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    {viewAngleModal.isEditing ? 'Edit Angle' : viewAngleModal.angle?.header}
+                  </h2>
                   <p className="text-sm text-gray-500">
                     {viewAngleModal.strategy?.brand} • Strategy #{viewAngleModal.strategy?.id} • Angle {viewAngleModal.angle?.number}
                   </p>
@@ -163,6 +277,7 @@ export function Strategies() {
               <button
                 onClick={handleCloseViewModal}
                 className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+                disabled={saving}
               >
                 <X className="h-5 w-5 text-gray-400" />
               </button>
@@ -170,6 +285,31 @@ export function Strategies() {
 
             {/* Content */}
             <div className="flex-1 p-6 overflow-y-auto space-y-6 min-h-0">
+              {/* Header */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center text-lg">
+                    <FileText className="h-5 w-5 mr-2 text-blue-600" />
+                    Header
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {viewAngleModal.isEditing ? (
+                    <input
+                      type="text"
+                      value={editForm.header}
+                      onChange={(e) => handleFormChange('header', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter angle header..."
+                    />
+                  ) : (
+                    <p className="text-gray-700 leading-relaxed">
+                      {viewAngleModal.angle?.header}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+
               {/* Description */}
               <Card>
                 <CardHeader>
@@ -179,9 +319,19 @@ export function Strategies() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                    {viewAngleModal.angle?.description}
-                  </p>
+                  {viewAngleModal.isEditing ? (
+                    <textarea
+                      value={editForm.description}
+                      onChange={(e) => handleFormChange('description', e.target.value)}
+                      rows={4}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      placeholder="Enter angle description..."
+                    />
+                  ) : (
+                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                      {viewAngleModal.angle?.description}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
 
@@ -194,9 +344,19 @@ export function Strategies() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                    {viewAngleModal.angle?.objective}
-                  </p>
+                  {viewAngleModal.isEditing ? (
+                    <textarea
+                      value={editForm.objective}
+                      onChange={(e) => handleFormChange('objective', e.target.value)}
+                      rows={3}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      placeholder="Enter angle objective..."
+                    />
+                  ) : (
+                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                      {viewAngleModal.angle?.objective}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
 
@@ -209,11 +369,21 @@ export function Strategies() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center space-x-3">
-                    <Badge variant="secondary" className="text-sm px-4 py-2">
-                      {viewAngleModal.angle?.tonality}
-                    </Badge>
-                  </div>
+                  {viewAngleModal.isEditing ? (
+                    <input
+                      type="text"
+                      value={editForm.tonality}
+                      onChange={(e) => handleFormChange('tonality', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter angle tonality..."
+                    />
+                  ) : (
+                    <div className="flex items-center space-x-3">
+                      <Badge variant="secondary" className="text-sm px-4 py-2">
+                        {viewAngleModal.angle?.tonality}
+                      </Badge>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -256,9 +426,41 @@ export function Strategies() {
 
             {/* Footer */}
             <div className="flex justify-end p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
-              <Button variant="outline" onClick={handleCloseViewModal}>
-                Close
-              </Button>
+              <div className="flex space-x-3">
+                {viewAngleModal.isEditing ? (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      onClick={handleEditToggle}
+                      disabled={saving}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={handleSaveChanges}
+                      loading={saving}
+                      disabled={saving}
+                    >
+                      {saving ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      onClick={handleEditToggle}
+                    >
+                      Edit
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={handleCloseViewModal}
+                    >
+                      Close
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
