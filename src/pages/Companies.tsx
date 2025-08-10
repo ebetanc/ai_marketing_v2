@@ -130,7 +130,7 @@ export function Companies() {
 
   // Group companies by brand name for better organization
   const companiesByBrand = companies.reduce((acc, company) => {
-    const brandName = company.name || 'Unknown Brand'
+    const brandName = company.brand_name || 'Unknown Brand'
     if (!acc[brandName]) {
       acc[brandName] = []
     }
@@ -227,7 +227,7 @@ export function Companies() {
                       <Building2 className="h-8 w-8 text-white" />
                     </div>
                     <div>
-                      <h2 className="text-3xl font-bold text-gray-900">{brandName}</h2>
+                      <CardTitle className="text-xl">{company.brand_name}</CardTitle>
                       <p className="text-blue-600 font-medium">{brandCompanies.length} compan{brandCompanies.length === 1 ? 'y' : 'ies'}</p>
                     </div>
                   </div>
@@ -326,6 +326,23 @@ export function Companies() {
                             <CardContent className="pt-0">
                               <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed">
                                 {truncateText(company.key_offer, 100)}
+                              </p>
+                            </CardContent>
+                          </Card>
+                        )}
+                        
+                        {/* Additional Information */}
+                        {company.additional_information && (
+                          <Card className="bg-white border border-gray-200">
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-sm font-semibold text-gray-900 flex items-center">
+                                <FileText className="h-4 w-4 mr-2 text-purple-600" />
+                                Additional Info
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                              <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed">
+                                {truncateText(company.additional_information, 100)}
                               </p>
                             </CardContent>
                           </Card>
