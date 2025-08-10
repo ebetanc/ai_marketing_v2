@@ -50,7 +50,12 @@ export function Ideas() {
         .select('*')
         .order('created_at', { ascending: false })
       
-      console.log('Supabase ideas response:', { data, error })
+      console.log('=== SUPABASE IDEAS DEBUG ===')
+      console.log('Raw Supabase response:', { data, error })
+      console.log('Data array length:', data?.length)
+      console.log('First idea object:', data?.[0])
+      console.log('All idea objects:', data)
+      console.log('Available columns in first idea:', data?.[0] ? Object.keys(data[0]) : 'No data')
       
       if (error) {
         console.error('Supabase error:', error)
@@ -58,6 +63,7 @@ export function Ideas() {
       }
       
       console.log('Ideas fetched successfully:', data?.length || 0, 'records')
+      console.log('Setting ideas state with:', data)
       setIdeas(data || [])
     } catch (error) {
       console.error('Error fetching ideas from Supabase:', error)
@@ -135,24 +141,46 @@ export function Ideas() {
                   {ideas.map((idea) => (
                     <tr key={idea.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="p-3 text-sm text-gray-900">{idea.id}</td>
-                      <td className="p-3 text-sm text-gray-900">{idea.brand || 'N/A'}</td>
-                      <td className="p-3 text-sm text-gray-900">{idea.topic || 'N/A'}</td>
+                      <td className="p-3 text-sm text-gray-900">
+                        <div className="font-mono text-xs bg-gray-100 p-1 rounded mb-1">
+                          Raw: {JSON.stringify(idea.brand)}
+                        </div>
+                        {idea.brand || 'N/A'}
+                      </td>
+                      <td className="p-3 text-sm text-gray-900">
+                        <div className="font-mono text-xs bg-gray-100 p-1 rounded mb-1">
+                          Raw: {JSON.stringify(idea.topic)}
+                        </div>
+                        {idea.topic || 'N/A'}
+                      </td>
                       <td className="p-3 text-sm text-gray-900 max-w-xs">
+                        <div className="font-mono text-xs bg-gray-100 p-1 rounded mb-1">
+                          Raw: {JSON.stringify(idea.header)}
+                        </div>
                         <div className="truncate" title={idea.header}>
                           {idea.header || 'N/A'}
                         </div>
                       </td>
                       <td className="p-3 text-sm text-gray-900 max-w-xs">
+                        <div className="font-mono text-xs bg-gray-100 p-1 rounded mb-1">
+                          Raw: {JSON.stringify(idea.description)}
+                        </div>
                         <div className="truncate" title={idea.description}>
                           {idea.description || 'N/A'}
                         </div>
                       </td>
                       <td className="p-3 text-sm text-gray-900 max-w-xs">
+                        <div className="font-mono text-xs bg-gray-100 p-1 rounded mb-1">
+                          Raw: {JSON.stringify(idea.image_prompt)}
+                        </div>
                         <div className="truncate" title={idea.image_prompt}>
                           {idea.image_prompt || 'N/A'}
                         </div>
                       </td>
                       <td className="p-3 text-sm">
+                        <div className="font-mono text-xs bg-gray-100 p-1 rounded mb-1">
+                          Raw: {JSON.stringify(idea.platforms)}
+                        </div>
                         {idea.platforms ? (
                           <div className="flex flex-wrap gap-1">
                             {(Array.isArray(idea.platforms) ? idea.platforms : [idea.platforms]).map((platform, index) => (
