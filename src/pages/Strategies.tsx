@@ -41,6 +41,7 @@ export function Strategies() {
   })
   const [saving, setSaving] = useState(false)
   const [generatingIdeas, setGeneratingIdeas] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   // Helper function to format markdown-like text
   const formatDescription = (text: string) => {
