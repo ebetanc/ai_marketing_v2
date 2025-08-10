@@ -174,20 +174,45 @@ export function Strategies() {
         [`angle${angleNumber}_tonality`]: editForm.tonality
       }
       
-      console.log('Updating strategy with data:', updateData)
+      console.log('=== SAVE OPERATION DEBUG ===')
+      console.log('Strategy ID:', viewAngleModal.strategy.id)
+      console.log('Angle Number:', angleNumber)
+      console.log('Update Data:', updateData)
+      console.log('Original Strategy:', viewAngleModal.strategy)
+      
+      // Check current user authentication
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      console.log('Current User:', user)
+      console.log('Auth Error:', authError)
       
       const { error } = await supabase
         .from('strategies')
         .update(updateData)
         .eq('id', viewAngleModal.strategy.id)
       
+      console.log('Supabase Update Response Error:', error)
+      
       if (error) {
-        console.error('Error updating strategy:', error)
-        alert('Failed to save changes. Please try again.')
+        console.error('=== SUPABASE UPDATE ERROR ===')
+        console.error('Error Code:', error.code)
+        console.error('Error Message:', error.message)
+        console.error('Error Details:', error.details)
+        console.error('Error Hint:', error.hint)
+        alert(`Failed to save changes: ${error.message}`)
         return
       }
       
       console.log('Strategy updated successfully')
+      
+      // Verify the update by fetching the record
+      const { data: verifyData, error: verifyError } = await supabase
+        .from('strategies')
+        .select('*')
+        .eq('id', viewAngleModal.strategy.id)
+        .single()
+      
+      console.log('Verification Query Result:', verifyData)
+      console.log('Verification Query Error:', verifyError)
       
       // Update local state
       setStrategies(prev => prev.map(strategy => {
@@ -216,7 +241,7 @@ export function Strategies() {
       
     } catch (error) {
       console.error('Error saving changes:', error)
-      alert('Failed to save changes. Please try again.')
+      alert(`Failed to save changes: ${error.message || 'Unknown error'}`)
     } finally {
       setSaving(false)
     }
