@@ -659,12 +659,13 @@ export function Strategies() {
                               <Database className="h-6 w-6 text-blue-600" />
                             </div>
                             <div>
-                              <CardTitle className="text-xl">Strategy #{strategy.id}</CardTitle>
+                              <CardTitle className="text-xl">{strategy.brand || 'Unknown Brand'}</CardTitle>
                               <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
                                 <span className="flex items-center">
                                   <Calendar className="h-4 w-4 mr-1" />
                                   {formatDate(strategy.created_at)}
                                 </span>
+                                <span className="font-medium">Strategy #{strategy.id}</span>
                                 <span className="font-medium">{angles.length} angle{angles.length === 1 ? '' : 's'}</span>
                               </div>
                             </div>
