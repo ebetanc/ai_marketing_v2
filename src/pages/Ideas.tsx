@@ -26,6 +26,16 @@ import { supabase } from '../lib/supabase'
 
 // Helper function to extract and format idea content
 const extractIdeaContent = (idea: any) => {
+  // First check if we have a direct description field from Supabase
+  if (idea.description && typeof idea.description === 'string') {
+    return idea.description
+  }
+  
+  // Then check body field
+  if (idea.body && typeof idea.body === 'string' && !idea.body.startsWith('[') && !idea.body.startsWith('{')) {
+    return idea.body
+  }
+  
   // Try to parse the body if it's JSON
   let parsedContent = null
   try {
@@ -92,6 +102,16 @@ const extractIdeaContent = (idea: any) => {
 
 // Helper function to extract idea summary/topic
 const extractIdeaSummary = (idea: any) => {
+  // First check if we have a direct header field from Supabase
+  if (idea.header && typeof idea.header === 'string') {
+    return idea.header
+  }
+  
+  // Then check title field
+  if (idea.title && typeof idea.title === 'string') {
+    return idea.title
+  }
+  
   let parsedContent = null
   try {
     if (typeof idea.body === 'string' && (idea.body.startsWith('[') || idea.body.startsWith('{'))) {
@@ -237,20 +257,33 @@ export function Ideas() {
   const allIdeas = supabaseIdeas.map(idea => ({
     ...idea,
     source: 'supabase',
-    company_id: idea.brand_id,
-    brand_name: idea.brand_name || 'Unknown Brand'
+    company_id: idea.brand || idea.brand_id,
+    brand_name: idea.brand || idea.brand_name || 'Unknown Brand',
+    title: idea.header || idea.title || 'Untitled Idea',
+    body: idea.description || idea.body || 'No description available',
+    type: idea.type || 'idea',
+    status: idea.status || 'draft',
+    platforms: idea.platforms || [],
+    created_at: idea.created_at || new Date().toISOString()
   }))
 
   const filteredIdeas = allIdeas.filter(idea => {
-    const matchesCompany = !selectedCompany || idea.company_id === selectedCompany
+    const matchesCompany = !selectedCompany || 
+      idea.company_id === selectedCompany || 
+      idea.brand === selectedCompany ||
+      idea.brand_name === selectedCompany
     const matchesStatus = filterStatus === 'all' || idea.status === filterStatus
     const matchesType = filterType === 'all' || idea.type === filterType
     const matchesPlatform = filterPlatform === 'all' || 
-      (idea.platforms && idea.platforms.includes(filterPlatform)) ||
+      (Array.isArray(idea.platforms) && idea.platforms.includes(filterPlatform)) ||
+      (typeof idea.platforms === 'string' && idea.platforms.includes(filterPlatform)) ||
       (idea.metadata?.platforms && idea.metadata.platforms.includes(filterPlatform))
-    const matchesSearch = !searchQuery || 
+    const matchesSearch = !searchQuery || (
       idea.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      idea.body.toLowerCase().includes(searchQuery.toLowerCase())
+      idea.body.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (idea.header && idea.header.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (idea.description && idea.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    )
     
     return matchesCompany && matchesStatus && matchesType && matchesPlatform && matchesSearch
   })
