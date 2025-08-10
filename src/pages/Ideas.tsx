@@ -26,11 +26,19 @@ export function Ideas() {
     isOpen: boolean
     idea: any
     topic: any
+    isEditing: boolean
   }>({
     isOpen: false,
     idea: null,
-    topic: null
+    topic: null,
+    isEditing: false
   })
+  const [editForm, setEditForm] = useState({
+    topic: '',
+    description: '',
+    image_prompt: ''
+  })
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     fetchIdeas()
@@ -114,7 +122,14 @@ export function Ideas() {
     setViewIdeaModal({
       isOpen: true,
       idea,
-      topic
+      topic,
+      isEditing: false
+    })
+    // Initialize edit form with current values
+    setEditForm({
+      topic: topic.topic || '',
+      description: topic.description || '',
+      image_prompt: topic.image_prompt || ''
     })
   }
 
@@ -122,8 +137,127 @@ export function Ideas() {
     setViewIdeaModal({
       isOpen: false,
       idea: null,
-      topic: null
+      topic: null,
+      isEditing: false
     })
+    setEditForm({
+      topic: '',
+      description: '',
+      image_prompt: ''
+    })
+    setSaving(false)
+  }
+
+  const handleEditToggle = () => {
+    setViewIdeaModal(prev => ({
+      ...prev,
+      isEditing: !prev.isEditing
+    }))
+    
+    // Reset form when canceling edit
+    if (viewIdeaModal.isEditing) {
+      setEditForm({
+        topic: viewIdeaModal.topic?.topic || '',
+        description: viewIdeaModal.topic?.description || '',
+        image_prompt: viewIdeaModal.topic?.image_prompt || ''
+      })
+    }
+  }
+
+  const handleSaveChanges = async () => {
+    if (!viewIdeaModal.idea || !viewIdeaModal.topic) return
+    
+    setSaving(true)
+    
+    try {
+      const topicNumber = viewIdeaModal.topic.number
+      
+      // Determine the column names based on topic number
+      // Columns 9-11 for topic 1, 12-14 for topic 2, etc.
+      const baseColumnIndex = 8 + (topicNumber - 1) * 3 // 9 for topic 1, 12 for topic 2, etc.
+      
+      // Get all column names from the idea object
+      const columns = Object.keys(viewIdeaModal.idea).sort()
+      
+      // Map to the correct column names
+      const topicColumn = columns[baseColumnIndex] || `topic${topicNumber}`
+      const descriptionColumn = columns[baseColumnIndex + 1] || `description${topicNumber}`
+      const imagePromptColumn = columns[baseColumnIndex + 2] || `image_prompt${topicNumber}`
+      
+      const updateData = {
+        [topicColumn]: editForm.topic,
+        [descriptionColumn]: editForm.description,
+        [imagePromptColumn]: editForm.image_prompt
+      }
+      
+      console.log('=== SAVE TOPIC OPERATION DEBUG ===')
+      console.log('Idea ID:', viewIdeaModal.idea.id)
+      console.log('Topic Number:', topicNumber)
+      console.log('Column mappings:', {
+        topicColumn,
+        descriptionColumn,
+        imagePromptColumn
+      })
+      console.log('Update Data:', updateData)
+      
+      const { error } = await supabase
+        .from('ideas')
+        .update(updateData)
+        .eq('id', viewIdeaModal.idea.id)
+      
+      console.log('Supabase Update Response Error:', error)
+      
+      if (error) {
+        console.error('=== SUPABASE UPDATE ERROR ===')
+        console.error('Error Code:', error.code)
+        console.error('Error Message:', error.message)
+        console.error('Error Details:', error.details)
+        alert(`Failed to save changes: ${error.message}`)
+        return
+      }
+      
+      console.log('Topic updated successfully')
+      
+      // Update local state
+      setIdeas(prev => prev.map(idea => {
+        if (idea.id === viewIdeaModal.idea!.id) {
+          return { ...idea, ...updateData }
+        }
+        return idea
+      }))
+      
+      // Update the modal's topic data
+      const updatedTopic = {
+        ...viewIdeaModal.topic,
+        topic: editForm.topic,
+        description: editForm.description,
+        image_prompt: editForm.image_prompt
+      }
+      
+      setViewIdeaModal(prev => ({
+        ...prev,
+        topic: updatedTopic,
+        isEditing: false
+      }))
+      
+      // Force a refresh of the data from the database to ensure consistency
+      await fetchIdeas()
+      
+      alert('Changes saved successfully!')
+      
+    } catch (error) {
+      console.error('Error saving changes:', error)
+      alert(`Failed to save changes: ${error.message || 'Unknown error'}`)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleFormChange = (field: string, value: string) => {
+    setEditForm(prev => ({
+      ...prev,
+      [field]: value
+    }))
   }
 
   // Group ideas by brand
@@ -163,7 +297,7 @@ export function Ideas() {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">
-                    {viewIdeaModal.topic?.topic || `Topic ${viewIdeaModal.topic?.number}`}
+                    {viewIdeaModal.isEditing ? 'Edit Topic' : (viewIdeaModal.topic?.topic || `Topic ${viewIdeaModal.topic?.number}`)}
                   </h2>
                   <p className="text-sm text-gray-500">{viewIdeaModal.idea?.brand || 'Unknown Brand'}</p>
                 </div>
@@ -172,6 +306,7 @@ export function Ideas() {
               <button
                 onClick={handleCloseViewModal}
                 className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+                disabled={saving}
               >
                 <X className="h-5 w-5 text-gray-400" />
               </button>
@@ -188,9 +323,19 @@ export function Ideas() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-700 leading-relaxed">
-                    {viewIdeaModal.topic?.topic || 'No topic specified'}
-                  </p>
+                  {viewIdeaModal.isEditing ? (
+                    <input
+                      type="text"
+                      value={editForm.topic}
+                      onChange={(e) => handleFormChange('topic', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter topic..."
+                    />
+                  ) : (
+                    <p className="text-gray-700 leading-relaxed">
+                      {viewIdeaModal.topic?.topic || 'No topic specified'}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
 
@@ -203,9 +348,19 @@ export function Ideas() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                    {viewIdeaModal.topic?.description || 'No description available'}
-                  </p>
+                  {viewIdeaModal.isEditing ? (
+                    <textarea
+                      value={editForm.description}
+                      onChange={(e) => handleFormChange('description', e.target.value)}
+                      rows={4}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      placeholder="Enter description..."
+                    />
+                  ) : (
+                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                      {viewIdeaModal.topic?.description || 'No description available'}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
 
@@ -219,57 +374,61 @@ export function Ideas() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                      {viewIdeaModal.topic.image_prompt}
-                    </p>
+                    {viewIdeaModal.isEditing ? (
+                      <textarea
+                        value={editForm.image_prompt}
+                        onChange={(e) => handleFormChange('image_prompt', e.target.value)}
+                        rows={3}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                        placeholder="Enter image prompt..."
+                      />
+                    ) : (
+                      <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                        {viewIdeaModal.topic.image_prompt}
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
               )}
-
-              {/* Idea Set Details */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center text-lg">
-                    <Zap className="h-5 w-5 mr-2 text-orange-600" />
-                    Idea Set Details
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Idea Set ID</p>
-                    <p className="text-gray-700">#{viewIdeaModal.idea?.id}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Topic Number</p>
-                    <p className="text-gray-700">{viewIdeaModal.topic?.number}</p>
-                  </div>
-                  {viewIdeaModal.idea?.strategy_id && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Strategy ID</p>
-                      <p className="text-gray-700">#{viewIdeaModal.idea.strategy_id}</p>
-                    </div>
-                  )}
-                  {viewIdeaModal.idea?.angle_number && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Angle Number</p>
-                      <p className="text-gray-700">{viewIdeaModal.idea.angle_number}</p>
-                    </div>
-                  )}
-                  {viewIdeaModal.idea?.created_at && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Created</p>
-                      <p className="text-gray-700">{formatDate(viewIdeaModal.idea.created_at)}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
             </div>
 
             {/* Footer */}
             <div className="flex justify-end p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
-              <Button variant="outline" onClick={handleCloseViewModal}>
-                Close
-              </Button>
+              <div className="flex space-x-3">
+                {viewIdeaModal.isEditing ? (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      onClick={handleEditToggle}
+                      disabled={saving}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={handleSaveChanges}
+                      loading={saving}
+                      disabled={saving}
+                    >
+                      {saving ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      onClick={handleEditToggle}
+                    >
+                      Edit
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={handleCloseViewModal}
+                    >
+                      Close
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
