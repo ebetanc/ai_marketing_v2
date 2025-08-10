@@ -42,6 +42,7 @@ export function Strategies() {
     tonality: ''
   })
   const [saving, setSaving] = useState(false)
+  const [generatingIdea, setGeneratingIdea] = useState(false)
 
   useEffect(() => {
     fetchStrategies()
@@ -127,6 +128,120 @@ export function Strategies() {
       objective: angle.objective || '',
       tonality: angle.tonality || ''
     })
+  }
+
+  const handleGenerateIdea = async () => {
+    if (!viewAngleModal.strategy || !viewAngleModal.angle) return
+    
+    setGeneratingIdea(true)
+    
+    try {
+      // Prepare the angle data for idea generation
+      const angleData = {
+        header: viewAngleModal.angle.header,
+        description: viewAngleModal.angle.description,
+        objective: viewAngleModal.angle.objective,
+        tonality: viewAngleModal.angle.tonality,
+        brand: viewAngleModal.strategy.brand,
+        platforms: viewAngleModal.strategy.platforms ? viewAngleModal.strategy.platforms.split(',').map(p => p.trim()) : []
+      }
+      
+      console.log('Generating idea for angle:', angleData)
+      
+      const webhookPayload = {
+        identifier: "generateIdea",
+        angle: angleData,
+        brand: {
+          name: viewAngleModal.strategy.brand,
+          id: `strategy_${viewAngleModal.strategy.id}`
+        },
+        context: {
+          requestType: 'idea_generation_from_angle',
+          timestamp: new Date().toISOString(),
+          strategy_id: viewAngleModal.strategy.id,
+          angle_number: viewAngleModal.angle.number
+        }
+      }
+      
+      const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(webhookPayload)
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate idea')
+      }
+      
+      const responseText = await response.text()
+      let result
+      
+      if (!responseText.trim()) {
+        result = {}
+      } else {
+        try {
+          result = JSON.parse(responseText)
+        } catch (parseError) {
+          console.error('Failed to parse JSON response:', parseError)
+          result = {
+            content: {
+              title: 'Generated Content Idea',
+              body: responseText
+            }
+          }
+        }
+      }
+      
+      console.log('Idea generation result:', result)
+      
+      // Save the generated idea to Firebase
+      await saveGeneratedIdeaToFirebase(result)
+      
+      alert('Content idea generated and saved successfully!')
+      
+    } catch (error) {
+      console.error('Error generating idea:', error)
+      alert('Failed to generate idea. Please try again.')
+    } finally {
+      setGeneratingIdea(false)
+    }
+  }
+  
+  const saveGeneratedIdeaToFirebase = async (webhookResponse: any) => {
+    try {
+      const { collection, addDoc } = await import('firebase/firestore')
+      const { db } = await import('../../lib/firebase')
+      
+      console.log('Saving generated idea to Firebase...')
+      
+      const ideaData = {
+        id: `idea_${Date.now()}`,
+        brand_id: `strategy_${viewAngleModal.strategy!.id}`,
+        brand_name: viewAngleModal.strategy!.brand,
+        title: `Content Idea from ${viewAngleModal.angle!.header}`,
+        type: 'content_idea',
+        status: 'draft',
+        body: JSON.stringify(webhookResponse, null, 2),
+        platforms: viewAngleModal.strategy!.platforms ? viewAngleModal.strategy!.platforms.split(',').map(p => p.trim()) : [],
+        metadata: {
+          prompt: `Generated from angle: ${viewAngleModal.angle!.header}`,
+          generated_at: new Date().toISOString(),
+          source_strategy_id: viewAngleModal.strategy!.id,
+          source_angle_number: viewAngleModal.angle!.number,
+          webhook_response: webhookResponse
+        },
+        created_at: new Date().toISOString()
+      }
+      
+      const docRef = await addDoc(collection(db, 'ideas'), ideaData)
+      console.log('Idea saved to Firebase with ID:', docRef.id)
+      
+    } catch (error) {
+      console.error('Error saving idea to Firebase:', error)
+      throw error
+    }
   }
 
   const handleCloseViewModal = () => {
@@ -465,7 +580,17 @@ export function Strategies() {
                       variant="outline" 
                       onClick={handleEditToggle}
                     >
+                      <Edit className="h-4 w-4 mr-2" />
                       Edit
+                    </Button>
+                    <Button 
+                      onClick={handleGenerateIdea}
+                      loading={generatingIdea}
+                      disabled={generatingIdea}
+                      className="bg-purple-600 hover:bg-purple-700"
+                    >
+                      <Lightbulb className="h-4 w-4 mr-2" />
+                      {generatingIdea ? 'Generating...' : 'Generate Idea'}
                     </Button>
                     <Button 
                       variant="outline" 
