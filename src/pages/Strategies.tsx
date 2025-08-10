@@ -379,10 +379,31 @@ export function Strategies() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">{currentBrand}</h1>
           <p className="mt-2 text-gray-600">
-            Content strategies and angles for {currentBrand}
+            Content strategies and angles for {currentBrand}.
           </p>
         </div>
         <div className="flex items-center space-x-3">
+          {/* Strategy Dropdown */}
+          {brandStrategies.length > 0 && (
+            <div className="relative">
+              <select
+                value={selectedStrategyId || ''}
+                onChange={(e) => setSelectedStrategyId(Number(e.target.value))}
+                className="appearance-none bg-white border border-gray-200 rounded-xl px-4 py-2 pr-8 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                {brandStrategies.map((strategy) => (
+                  <option key={strategy.id} value={strategy.id}>
+                    Strategy #{strategy.id} ({extractAnglesFromStrategy(strategy).length} angles)
+                  </option>
+                ))}
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+          )}
           <Button onClick={fetchStrategies} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
@@ -637,7 +658,7 @@ export function Strategies() {
       {/* Strategies Table */}
       {!loading && !error && selectedStrategy && (
         <div className="space-y-6">
-          {/* Brand Header with Strategy Dropdown */}
+          {/* Strategy Info Header */}
           <div className="bg-gradient-to-r from-blue-50 to-teal-50 rounded-2xl p-6 border border-blue-100">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
@@ -645,7 +666,7 @@ export function Strategies() {
                   <Building2 className="h-8 w-8 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">{currentBrand}</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">Strategy #{selectedStrategy.id}</h2>
                   <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
                     <span className="flex items-center">
                       <Calendar className="h-4 w-4 mr-1" />
@@ -656,39 +677,14 @@ export function Strategies() {
                 </div>
               </div>
               
-              <div className="flex items-center space-x-4">
-                {/* Strategy Dropdown */}
-                {brandStrategies.length > 0 && (
-                  <div className="relative">
-                    <select
-                      value={selectedStrategyId || ''}
-                      onChange={(e) => setSelectedStrategyId(Number(e.target.value))}
-                      className="appearance-none bg-white border border-gray-200 rounded-xl px-4 py-2 pr-8 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[200px]"
-                    >
-                      {brandStrategies.map((strategy) => (
-                        <option key={strategy.id} value={strategy.id}>
-                          Strategy #{strategy.id} ({extractAnglesFromStrategy(strategy).length} angles)
-                        </option>
-                      ))}
-                    </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Platform Badges */}
-                {selectedStrategy.platforms && (
-                  <div className="flex flex-wrap gap-2">
-                    {selectedStrategy.platforms.split(',').map((platform, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs capitalize">
-                        {platform.trim()}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
+              {/* Platform Badges */}
+              {selectedStrategy.platforms && (
+                <div className="flex flex-wrap gap-2">
+                  {selectedStrategy.platforms.split(',').map((platform, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs capitalize">
+                      {platform.trim()}
+                    </Badge>
+                  ))}
                 </div>
               )}
             </div>
@@ -732,7 +728,6 @@ export function Strategies() {
                           </Badge>
                         </div>
                       </div>
-      )}
 
                       {/* View Button */}
                       <div className="pt-0.5">
@@ -753,6 +748,8 @@ export function Strategies() {
             </CardContent>
           </Card>
         </div>
+      )}
+
       {/* Empty State */}
       {!loading && !error && strategies.length === 0 && (
         <Card>
