@@ -340,6 +340,22 @@ export function Strategies() {
     setGeneratingIdeas(true)
     
     try {
+      // Find the full company details from the companies array
+      const company = companies.find(c => 
+        c.brand_name === viewAngleModal.strategy!.brand || 
+        c.name === viewAngleModal.strategy!.brand
+      )
+      
+      console.log('=== GENERATE IDEAS COMPANY LOOKUP ===')
+      console.log('Looking for brand:', viewAngleModal.strategy.brand)
+      console.log('Available companies:', companies.map(c => ({ id: c.id, name: c.brand_name || c.name })))
+      console.log('Found company:', company)
+      
+      // Parse platforms from strategy (comma-separated string to array)
+      const strategyPlatforms = viewAngleModal.strategy.platforms 
+        ? viewAngleModal.strategy.platforms.split(',').map(p => p.trim())
+        : ["twitter", "linkedin", "newsletter"]
+      
       const angleData = {
         angleNumber: viewAngleModal.angle.number,
         header: viewAngleModal.angle.header,
@@ -349,7 +365,7 @@ export function Strategies() {
         strategy: {
           id: viewAngleModal.strategy.id,
           brand: viewAngleModal.strategy.brand,
-          platforms: ["twitter", "linkedin", "newsletter"],
+          platforms: strategyPlatforms,
           created_at: viewAngleModal.strategy.created_at
         }
       }
@@ -357,10 +373,34 @@ export function Strategies() {
       const webhookPayload = {
         identifier: 'generateIdeas',
         angle: angleData,
+        brandDetails: company ? {
+          // Include ALL company data from Supabase
+          ...company,
+          // Add computed/formatted fields for backward compatibility
+          name: company.brand_name || company.name || 'Unknown Brand',
+          brandTone: company.brand_tone || '',
+          keyOffer: company.key_offer || '',
+          targetAudience: company.target_audience || '',
+          additionalInfo: company.additional_information || '',
+          website: company.website || '',
+          // Platform-specific data
+          selectedPlatforms: strategyPlatforms,
+          platformCount: strategyPlatforms.length
+        } : null,
+        context: {
+          requestType: 'generate_ideas_from_angle',
+          timestamp: new Date().toISOString(),
+          brandDetailsIncluded: !!company,
+          platformCount: strategyPlatforms.length,
+          strategyId: viewAngleModal.strategy.id,
+          angleNumber: viewAngleModal.angle.number
+        }
       }
 
       console.log('=== GENERATE IDEAS DEBUG ===')
       console.log('Sending payload to webhook:', webhookPayload)
+      console.log('Brand details included:', !!company)
+      console.log('Full brand data:', company)
       
       const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
         method: 'POST',
