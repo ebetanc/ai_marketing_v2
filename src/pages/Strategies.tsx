@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
+import { Select } from '../components/ui/Select'
 import { supabase } from '../lib/supabase'
 import { 
   RefreshCw,
@@ -12,15 +13,23 @@ import {
   FileText,
   Calendar,
   Eye,
-  X
+  X,
+  Plus,
+  Sparkles
 } from 'lucide-react'
 import type { Strategy } from '../lib/supabase'
 import { formatDate } from '../lib/utils'
 
 export function Strategies() {
   const [strategies, setStrategies] = useState<Strategy[]>([])
+  const [companies, setCompanies] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingCompanies, setLoadingCompanies] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showGenerateModal, setShowGenerateModal] = useState(false)
+  const [selectedCompany, setSelectedCompany] = useState('')
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([])
+  const [generating, setGenerating] = useState(false)
   const [viewAngleModal, setViewAngleModal] = useState<{
     isOpen: boolean
     strategy: Strategy | null
@@ -41,6 +50,17 @@ export function Strategies() {
   })
   const [saving, setSaving] = useState(false)
   const [generatingIdeas, setGeneratingIdeas] = useState(false)
+
+  const platforms = [
+    { id: 'twitter', name: 'Twitter', color: 'bg-blue-500' },
+    { id: 'linkedin', name: 'LinkedIn', color: 'bg-blue-600' },
+    { id: 'newsletter', name: 'Newsletter', color: 'bg-gray-600' },
+    { id: 'facebook', name: 'Facebook', color: 'bg-blue-700' },
+    { id: 'instagram', name: 'Instagram', color: 'bg-pink-500' },
+    { id: 'youtube', name: 'YouTube', color: 'bg-red-500' },
+    { id: 'tiktok', name: 'TikTok', color: 'bg-black' },
+    { id: 'blog', name: 'Blog', color: 'bg-green-600' }
+  ]
 
   // Helper function to format markdown-like text
   const formatDescription = (text: string) => {
@@ -96,7 +116,33 @@ export function Strategies() {
 
   useEffect(() => {
     fetchStrategies()
+    fetchCompanies()
   }, [])
+
+  const fetchCompanies = async () => {
+    try {
+      setLoadingCompanies(true)
+      console.log('Fetching companies from Supabase...')
+      
+      const { data, error } = await supabase
+        .from('companies')
+        .select('*')
+        .order('created_at', { ascending: false })
+      
+      if (error) {
+        console.error('Error fetching companies:', error)
+        throw error
+      }
+      
+      console.log('Companies fetched successfully:', data?.length || 0, 'records')
+      setCompanies(data || [])
+    } catch (error) {
+      console.error('Error fetching companies:', error)
+      setCompanies([])
+    } finally {
+      setLoadingCompanies(false)
+    }
+  }
 
   const fetchStrategies = async () => {
     try {
@@ -343,6 +389,108 @@ export function Strategies() {
     }
   }
 
+  const togglePlatform = (platformId: string) => {
+    setSelectedPlatforms(prev => 
+      prev.includes(platformId)
+        ? prev.filter(id => id !== platformId)
+        : [...prev, platformId]
+    )
+  }
+
+  const handleGenerateStrategy = async () => {
+    if (!selectedCompany) {
+      alert('Please select a company')
+      return
+    }
+    
+    if (selectedPlatforms.length === 0) {
+      alert('Please select at least one platform')
+      return
+    }
+
+    setGenerating(true)
+    
+    try {
+      // Find the selected company data
+      const company = companies.find(c => c.id === selectedCompany)
+      if (!company) {
+        throw new Error('Selected company not found')
+      }
+
+      // Prepare comprehensive brand data payload
+      const brandData = {
+        id: company.id,
+        name: company.brand_name || company.name || 'Unknown Brand',
+        website: company.website || '',
+        brandTone: company.brand_tone || '',
+        keyOffer: company.key_offer || '',
+        targetAudience: company.target_audience || '',
+        additionalInfo: company.additional_information || '',
+        createdAt: company.created_at || '',
+        selectedPlatforms: selectedPlatforms,
+        platformCount: selectedPlatforms.length
+      }
+
+      const webhookPayload = {
+        identifier: "generateAngles",
+        brand: brandData,
+        platforms: selectedPlatforms,
+        context: {
+          requestType: 'content_strategy_generation',
+          timestamp: new Date().toISOString(),
+          platformCount: selectedPlatforms.length,
+          brandHasWebsite: !!(company.website),
+          brandHasAdditionalInfo: !!(company.additional_information)
+        }
+      }
+
+      console.log('=== GENERATE STRATEGY WEBHOOK ===')
+      console.log('Sending payload:', webhookPayload)
+
+      const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(webhookPayload)
+      })
+
+      console.log('Webhook response status:', response.status)
+
+      if (!response.ok) {
+        throw new Error(`Webhook request failed with status: ${response.status}`)
+      }
+
+      const result = await response.text()
+      console.log('Webhook response:', result)
+
+      alert('Strategy generation started successfully! Check back in a few moments to see the new strategy.')
+      
+      // Close modal and reset form
+      setShowGenerateModal(false)
+      setSelectedCompany('')
+      setSelectedPlatforms([])
+      
+      // Refresh strategies after a short delay
+      setTimeout(() => {
+        fetchStrategies()
+      }, 2000)
+      
+    } catch (error) {
+      console.error('Error generating strategy:', error)
+      alert(`Failed to generate strategy: ${error.message || 'Unknown error'}`)
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  const handleCloseGenerateModal = () => {
+    setShowGenerateModal(false)
+    setSelectedCompany('')
+    setSelectedPlatforms([])
+    setGenerating(false)
+  }
+
   const handleFormChange = (field: string, value: string) => {
     setEditForm(prev => ({
       ...prev,
@@ -373,7 +521,137 @@ export function Strategies() {
           <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
           Refresh
         </Button>
+        <Button onClick={() => setShowGenerateModal(true)} disabled={loadingCompanies}>
+          <Plus className="h-4 w-4 mr-2" />
+          Generate Strategy
+        </Button>
       </div>
+
+      {/* Generate Strategy Modal */}
+      {showGenerateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                  <Sparkles className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Generate Strategy</h2>
+                  <p className="text-sm text-gray-500">Create AI-powered content angles</p>
+                </div>
+              </div>
+              
+              <button
+                onClick={handleCloseGenerateModal}
+                className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+                disabled={generating}
+              >
+                <X className="h-5 w-5 text-gray-400" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-6">
+              {/* Company Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Company
+                </label>
+                <Select
+                  options={[
+                    { value: '', label: 'Choose a company...' },
+                    ...companies.map(company => ({
+                      value: company.id,
+                      label: company.brand_name || company.name || 'Unnamed Company'
+                    }))
+                  ]}
+                  value={selectedCompany}
+                  onChange={(e) => setSelectedCompany(e.target.value)}
+                  disabled={generating || loadingCompanies}
+                />
+                {loadingCompanies && (
+                  <p className="text-xs text-gray-500 mt-1">Loading companies...</p>
+                )}
+              </div>
+
+              {/* Platform Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Select Platforms ({selectedPlatforms.length} selected)
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  {platforms.map((platform) => (
+                    <button
+                      key={platform.id}
+                      onClick={() => togglePlatform(platform.id)}
+                      disabled={generating}
+                      className={`p-3 rounded-xl border-2 transition-all duration-200 text-sm font-medium ${
+                        selectedPlatforms.includes(platform.id)
+                          ? `${platform.color} text-white border-transparent shadow-md`
+                          : 'bg-gray-50 text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-100'
+                      } ${generating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      {platform.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Selected Company Info */}
+              {selectedCompany && (
+                <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                  <h4 className="font-medium text-blue-900 mb-2">Selected Company:</h4>
+                  {(() => {
+                    const company = companies.find(c => c.id === selectedCompany)
+                    return company ? (
+                      <div className="text-sm text-blue-800">
+                        <p className="font-medium">{company.brand_name || company.name}</p>
+                        {company.website && (
+                          <p className="text-blue-600">{company.website}</p>
+                        )}
+                        {company.brand_tone && (
+                          <p className="mt-1 text-xs">{company.brand_tone.substring(0, 100)}...</p>
+                        )}
+                      </div>
+                    ) : null
+                  })()}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end space-x-3 p-6 border-t border-gray-200">
+              <Button
+                variant="outline"
+                onClick={handleCloseGenerateModal}
+                disabled={generating}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleGenerateStrategy}
+                loading={generating}
+                disabled={!selectedCompany || selectedPlatforms.length === 0 || generating}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {generating ? (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2 animate-pulse" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Generate Strategy
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* View Angle Modal */}
       {viewAngleModal.isOpen && (
