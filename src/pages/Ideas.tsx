@@ -39,6 +39,7 @@ export function Ideas() {
     image_prompt: ''
   })
   const [saving, setSaving] = useState(false)
+  const [generatingContent, setGeneratingContent] = useState(false)
 
   useEffect(() => {
     fetchIdeas()
@@ -419,6 +420,14 @@ export function Ideas() {
                       onClick={handleEditToggle}
                     >
                       Edit
+                    </Button>
+                    <Button 
+                      onClick={handleGenerateContent}
+                      loading={generatingContent}
+                      disabled={generatingContent}
+                      className="bg-purple-600 hover:bg-purple-700"
+                    >
+                      {generatingContent ? 'Generating...' : 'Generate Content'}
                     </Button>
                     <Button 
                       variant="outline" 
