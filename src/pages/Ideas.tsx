@@ -301,7 +301,19 @@ export function Ideas() {
         throw new Error(`Webhook failed with status: ${response.status}`)
       }
       
-      const result = await response.json()
+      const responseText = await response.text()
+      console.log('Raw webhook response:', responseText)
+      
+      let result
+      try {
+        result = JSON.parse(responseText)
+      } catch (parseError) {
+        console.error('Failed to parse JSON response:', parseError)
+        console.error('Raw response text:', responseText)
+        // If JSON parsing fails, treat as success if status is ok
+        result = { message: 'Content generation started' }
+      }
+      
       console.log('Webhook response:', result)
       
       alert('Content generation started! Check the Content page for results.')
