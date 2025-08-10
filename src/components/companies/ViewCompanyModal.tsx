@@ -50,7 +50,7 @@ export function ViewCompanyModal({ isOpen, onClose, company }: ViewCompanyModalP
             <CardContent className="space-y-4">
               <div>
                 <p className="text-sm font-medium text-gray-900">Company Name</p>
-                <p className="text-gray-700">{company.name}</p>
+                <p className="text-gray-700">{company.brand_name || company.name}</p>
               </div>
               
               {company.website && (
@@ -78,11 +78,74 @@ export function ViewCompanyModal({ isOpen, onClose, company }: ViewCompanyModalP
             </CardContent>
           </Card>
 
-          {/* Brand Voice */}
+          {/* Brand Tone */}
+          {company.brand_tone && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <Zap className="h-5 w-5 mr-2 text-purple-600" />
+                  Brand Tone
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-700 leading-relaxed">{company.brand_tone}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Target Audience */}
+          {company.target_audience && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <Target className="h-5 w-5 mr-2 text-teal-600" />
+                  Target Audience
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-700 leading-relaxed">{company.target_audience}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Key Offer */}
+          {company.key_offer && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <Building2 className="h-5 w-5 mr-2 text-green-600" />
+                  Key Offer
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-700 leading-relaxed">{company.key_offer}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Additional Information */}
+          {company.additional_information && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <User className="h-5 w-5 mr-2 text-gray-600" />
+                  Additional Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  {company.additional_information}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Legacy Brand Voice Support */}
+          {company.brand_voice && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center text-lg">
-                <Zap className="h-5 w-5 mr-2 text-purple-600" />
+                <Zap className="h-5 w-5 mr-2 text-orange-600" />
                 Brand Voice & Tone
               </CardTitle>
             </CardHeader>
@@ -111,12 +174,14 @@ export function ViewCompanyModal({ isOpen, onClose, company }: ViewCompanyModalP
               )}
             </CardContent>
           </Card>
+          )}
 
-          {/* Target Audience */}
+          {/* Legacy Target Audience Support */}
+          {company.target_audience && typeof company.target_audience === 'object' && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center text-lg">
-                <Target className="h-5 w-5 mr-2 text-teal-600" />
+                <Target className="h-5 w-5 mr-2 text-pink-600" />
                 Target Audience
               </CardTitle>
             </CardHeader>
@@ -155,13 +220,14 @@ export function ViewCompanyModal({ isOpen, onClose, company }: ViewCompanyModalP
               )}
             </CardContent>
           </Card>
+          )}
 
-          {/* Additional Information */}
+          {/* Legacy Additional Information Support */}
           {company.additionalInfo && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center text-lg">
-                  <User className="h-5 w-5 mr-2 text-gray-600" />
+                  <User className="h-5 w-5 mr-2 text-indigo-600" />
                   Additional Information
                 </CardTitle>
               </CardHeader>
@@ -173,7 +239,7 @@ export function ViewCompanyModal({ isOpen, onClose, company }: ViewCompanyModalP
             </Card>
           )}
 
-          {/* Image Guidelines */}
+          {/* Legacy Image Guidelines Support */}
           {company.imageGuidelines && (
             <Card>
               <CardHeader>
