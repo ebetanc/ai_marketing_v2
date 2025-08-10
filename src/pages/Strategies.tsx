@@ -50,6 +50,15 @@ export function Strategies() {
   })
   const [saving, setSaving] = useState(false)
   const [generatingIdeas, setGeneratingIdeas] = useState(false)
+  const [strategyDetailsModal, setStrategyDetailsModal] = useState<{
+    isOpen: boolean
+    strategy: Strategy | null
+    angles: any[]
+  }>({
+    isOpen: false,
+    strategy: null,
+    angles: []
+  })
 
   const platforms = [
     { id: 'twitter', name: 'Twitter', color: 'bg-blue-500' },
@@ -429,6 +438,23 @@ export function Strategies() {
     }
   }
 
+  const handleViewStrategyDetails = (strategy: Strategy) => {
+    const angles = extractAnglesFromStrategy(strategy)
+    setStrategyDetailsModal({
+      isOpen: true,
+      strategy,
+      angles
+    })
+  }
+
+  const handleCloseStrategyDetailsModal = () => {
+    setStrategyDetailsModal({
+      isOpen: false,
+      strategy: null,
+      angles: []
+    })
+  }
+
   const togglePlatform = (platformId: string) => {
     setSelectedPlatforms(prev => 
       prev.includes(platformId)
@@ -715,6 +741,93 @@ export function Strategies() {
                   </>
                 )}
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Strategy Details Modal */}
+      {strategyDetailsModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
+                  <Database className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Strategy #{strategyDetailsModal.strategy?.id} - {strategyDetailsModal.strategy?.brand}
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    {strategyDetailsModal.angles.length} content angles • Created {strategyDetailsModal.strategy?.created_at ? formatDate(strategyDetailsModal.strategy.created_at) : 'Unknown'}
+                  </p>
+                </div>
+              </div>
+              
+              <button
+                onClick={handleCloseStrategyDetailsModal}
+                className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+              >
+                <X className="h-5 w-5 text-gray-400" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 p-6 overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {strategyDetailsModal.angles.map((angle) => (
+                  <Card key={angle.number} className="bg-white border border-gray-200 hover:shadow-md hover:border-blue-300 transition-all duration-200 group">
+                    <CardHeader className="pb-1 p-3">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-sm flex-shrink-0">
+                          {angle.number}
+                        </div>
+                        <CardTitle className="text-xs font-semibold text-gray-900 line-clamp-2 leading-tight">
+                          {angle.header}
+                        </CardTitle>
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent className="space-y-2 pt-0 pb-3 p-3">
+                      {/* Description */}
+                      <div>
+                        <div className="text-xs text-gray-600 line-clamp-2 leading-relaxed bg-gray-50 p-2 rounded text-xs">
+                          {formatDescription(angle.description || 'No description available')}
+                        </div>
+                      </div>
+                      
+                      {/* Objective & Tonality in one row */}
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center space-x-1 min-w-0 flex-1">
+                          <Target className="h-2.5 w-2.5 text-green-500 flex-shrink-0" />
+                          <span className="text-xs text-gray-500 truncate">Goal</span>
+                        </div>
+                        <div className="flex items-center space-x-1 min-w-0">
+                          <Zap className="h-2.5 w-2.5 text-purple-500 flex-shrink-0" />
+                          <Badge variant="secondary" className="text-xs px-1.5 py-0.5 truncate max-w-16">
+                            {angle.tonality.length > 8 ? angle.tonality.substring(0, 8) + '...' : angle.tonality}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* View Button */}
+                      <div className="pt-0.5">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full text-xs py-1 px-2 group-hover:bg-blue-50 group-hover:border-blue-300 group-hover:text-blue-700 transition-colors"
+                          onClick={() => handleViewAngle(strategyDetailsModal.strategy!, angle)}
+                        >
+                          <Eye className="h-2.5 w-2.5 mr-1" />
+                          View
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -1035,58 +1148,109 @@ export function Strategies() {
                       </CardHeader>
                       
                       <CardContent>
-                        {/* Individual Angle Cards */}
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
-                          {angles.map((angle) => (
-                            <Card key={angle.number} className="bg-white border border-gray-200 hover:shadow-md hover:border-blue-300 transition-all duration-200 group">
-                              <CardHeader className="pb-1 p-3">
-                                <div className="flex items-center space-x-2">
-                                  <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-sm flex-shrink-0">
-                                    {angle.number}
-                                  </div>
-                                  <CardTitle className="text-xs font-semibold text-gray-900 line-clamp-2 leading-tight">
-                                    {angle.header}
-                                  </CardTitle>
+                        {/* Strategy Summary */}
+                        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-100">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg">
+                                <FileText className="h-8 w-8 text-white" />
+                              </div>
+                              <div>
+                                <h3 className="text-xl font-bold text-gray-900">Content Strategy #{strategy.id}</h3>
+                                <p className="text-blue-600 font-medium">{angles.length} content angles ready for execution</p>
+                                <div className="flex items-center space-x-4 text-sm text-gray-600 mt-2">
+                                  <span className="flex items-center">
+                                    <Calendar className="h-4 w-4 mr-1" />
+                                    {formatDate(strategy.created_at)}
+                                  </span>
+                                  {platforms.length > 0 && (
+                                    <div className="flex items-center space-x-2">
+                                      <span>Platforms:</span>
+                                      <div className="flex space-x-1">
+                                        {platforms.slice(0, 3).map((platform, index) => (
+                                          <Badge key={index} variant="secondary" className="text-xs">
+                                            {platform}
+                                          </Badge>
+                                        ))}
+                                        {platforms.length > 3 && (
+                                          <Badge variant="secondary" className="text-xs">
+                                            +{platforms.length - 3}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
-                              </CardHeader>
-                              
-                              <CardContent className="space-y-2 pt-0 pb-3 p-3">
-                                {/* Description */}
-                                <div>
-                                  <div className="text-xs text-gray-600 line-clamp-2 leading-relaxed bg-gray-50 p-2 rounded text-xs">
-                                    {formatDescription(angle.description || 'No description available')}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <Button
+                                onClick={() => handleViewStrategyDetails(strategy)}
+                                className="bg-blue-600 hover:bg-blue-700"
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                View All Angles
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Quick Preview of First 3 Angles */}
+                        <div className="mt-6">
+                          <div className="flex items-center justify-between mb-4">
+                            <h4 className="text-lg font-semibold text-gray-900">Quick Preview</h4>
+                            <span className="text-sm text-gray-500">Showing {Math.min(3, angles.length)} of {angles.length} angles</span>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {angles.slice(0, 3).map((angle) => (
+                              <Card key={angle.number} className="bg-white border border-gray-200 hover:shadow-md hover:border-blue-300 transition-all duration-200 group">
+                                <CardHeader className="pb-2 p-4">
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-sm">
+                                      {angle.number}
+                                    </div>
+                                    <CardTitle className="text-sm font-semibold text-gray-900 line-clamp-2">
+                                      {angle.header}
+                                    </CardTitle>
                                   </div>
-                                </div>
+                                </CardHeader>
                                 
-                                {/* Objective & Tonality in one row */}
-                                <div className="flex items-center justify-between text-xs">
-                                  <div className="flex items-center space-x-1 min-w-0 flex-1">
-                                    <Target className="h-2.5 w-2.5 text-green-500 flex-shrink-0" />
-                                    <span className="text-xs text-gray-500 truncate">Goal</span>
-                                  </div>
-                                  <div className="flex items-center space-x-1 min-w-0">
-                                    <Zap className="h-2.5 w-2.5 text-purple-500 flex-shrink-0" />
-                                    <Badge variant="secondary" className="text-xs px-1.5 py-0.5 truncate max-w-16">
-                                      {angle.tonality.length > 8 ? angle.tonality.substring(0, 8) + '...' : angle.tonality}
+                                <CardContent className="pt-0 pb-4 p-4">
+                                  <p className="text-sm text-gray-600 line-clamp-3 leading-relaxed mb-3">
+                                    {angle.description || 'No description available'}
+                                  </p>
+                                  
+                                  <div className="flex items-center justify-between">
+                                    <Badge variant="secondary" className="text-xs">
+                                      {angle.tonality}
                                     </Badge>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="text-xs"
+                                      onClick={() => handleViewAngle(strategy, angle)}
+                                    >
+                                      <Eye className="h-3 w-3 mr-1" />
+                                      View
+                                    </Button>
                                   </div>
-                                </div>
-
-                                {/* View Button */}
-                                <div className="pt-0.5">
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    className="w-full text-xs py-1 px-2 group-hover:bg-blue-50 group-hover:border-blue-300 group-hover:text-blue-700 transition-colors"
-                                    onClick={() => handleViewAngle(strategy, angle)}
-                                  >
-                                    <Eye className="h-2.5 w-2.5 mr-1" />
-                                    View
-                                  </Button>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))}
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
+                          
+                          {angles.length > 3 && (
+                            <div className="mt-4 text-center">
+                              <Button
+                                variant="outline"
+                                onClick={() => handleViewStrategyDetails(strategy)}
+                                className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                              >
+                                View {angles.length - 3} More Angles
+                                <Eye className="h-4 w-4 ml-2" />
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
