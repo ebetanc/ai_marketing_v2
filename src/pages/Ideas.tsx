@@ -12,7 +12,8 @@ import {
   Building2,
   Calendar,
   Zap,
-  RefreshCw
+  RefreshCw,
+  X
 } from 'lucide-react'
 import { formatDate, truncateText } from '../lib/utils'
 import { supabase } from '../lib/supabase'
