@@ -242,7 +242,7 @@ export function Strategies() {
     setGeneratingIdeas(true)
     
     try {
-      // Parse platforms string into array if it exists
+      // Parse platforms string into native JavaScript array
       const platformsArray = viewAngleModal.strategy.platforms 
         ? viewAngleModal.strategy.platforms.split(',').map(p => p.trim())
         : []
@@ -258,22 +258,24 @@ export function Strategies() {
           brand: viewAngleModal.strategy.brand,
           platforms: platformsArray,
           created_at: viewAngleModal.strategy.created_at
-        },
+        }
+      }
+
+      const webhookPayload = {
+        identifier: 'generateIdeas',
+        angle: angleData,
         platforms: platformsArray
       }
 
       console.log('=== GENERATE IDEAS DEBUG ===')
-      console.log('Sending angle data to webhook:', angleData)
+      console.log('Sending payload to webhook:', webhookPayload)
       
       const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          identifier: 'generateIdeas',
-          angle: angleData
-        })
+        body: JSON.stringify(webhookPayload)
       })
 
       console.log('Webhook response status:', response.status)
