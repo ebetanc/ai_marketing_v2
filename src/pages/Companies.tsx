@@ -37,15 +37,15 @@ export function Companies() {
   })
 
   React.useEffect(() => {
-    fetchCompanies()
+    fetchCompaniesFromSupabase()
   }, [])
 
-  const fetchCompanies = async () => {
+  const fetchCompaniesFromSupabase = async () => {
     try {
       setLoading(true)
       setError(null)
       
-      console.log('Fetching companies from Supabase...')
+      console.log('Fetching companies from Supabase companies table...')
       
       const { data, error } = await supabase
         .from('companies')
@@ -73,7 +73,7 @@ export function Companies() {
   const handleCreateBrand = async () => {
     setShowCreateModal(false)
     // Refresh companies list after creation
-    await fetchCompanies()
+    await fetchCompaniesFromSupabase()
   }
 
   const handleViewClick = (company: any) => {
@@ -114,7 +114,7 @@ export function Companies() {
       } else {
         // Close dialog and refresh
         setDeleteDialog({ isOpen: false, company: null, loading: false })
-        await fetchCompanies()
+        await fetchCompaniesFromSupabase()
       }
     } catch (error) {
       console.error('Error deleting company:', error)
@@ -165,7 +165,7 @@ export function Companies() {
         onSubmit={handleCreateBrand}
         loading={false}
         createCompany={() => Promise.resolve({ data: null, error: null })}
-        refetchCompanies={fetchCompanies}
+        refetchCompanies={fetchCompaniesFromSupabase}
       />
 
       {/* View Company Modal */}
