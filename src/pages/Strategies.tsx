@@ -264,7 +264,6 @@ export function Strategies() {
       const webhookPayload = {
         identifier: 'generateIdeas',
         angle: angleData,
-        platforms: platformsArray
       }
 
       console.log('=== GENERATE IDEAS DEBUG ===')
