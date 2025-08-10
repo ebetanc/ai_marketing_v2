@@ -242,6 +242,11 @@ export function Strategies() {
     setGeneratingIdeas(true)
     
     try {
+      // Parse platforms string into array if it exists
+      const platformsArray = viewAngleModal.strategy.platforms 
+        ? viewAngleModal.strategy.platforms.split(',').map(p => p.trim())
+        : []
+
       const angleData = {
         angleNumber: viewAngleModal.angle.number,
         header: viewAngleModal.angle.header,
@@ -251,10 +256,10 @@ export function Strategies() {
         strategy: {
           id: viewAngleModal.strategy.id,
           brand: viewAngleModal.strategy.brand,
-          platforms: viewAngleModal.strategy.platforms ? viewAngleModal.strategy.platforms.split(',').map(p => p.trim()) : [],
+          platforms: platformsArray,
           created_at: viewAngleModal.strategy.created_at
         },
-        platforms: viewAngleModal.strategy.platforms ? viewAngleModal.strategy.platforms.split(',').map(p => p.trim()) : []
+        platforms: platformsArray
       }
 
       console.log('=== GENERATE IDEAS DEBUG ===')
