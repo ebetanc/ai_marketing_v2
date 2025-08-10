@@ -141,7 +141,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
     setSubmitLoading(true)
     
     try {
-      // Save to Firebase first
+      // Send to webhook instead of Firebase
       const brandData = {
         name: formData.name,
         website: formData.website,
@@ -153,9 +153,40 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
         createdAt: new Date().toISOString()
       }
 
-      const docRef = await addDoc(collection(db, 'brands'), brandData)
-      console.log('Brand saved to Firebase with ID:', docRef.id)
-      alert(`Brand saved to Firebase with ID: ${docRef.id}`)
+      console.log('Sending brand data to webhook:', brandData)
+      
+      const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/dacf25b7-b505-4b10-a6f7-a2ac0e21a1ec', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(brandData)
+      })
+      
+      console.log('Webhook response status:', response.status)
+      
+      if (!response.ok) {
+        throw new Error(`Webhook request failed with status: ${response.status}`)
+      }
+      
+      // Handle response
+      const responseText = await response.text()
+      console.log('Webhook response:', responseText)
+      
+      let result
+      if (responseText.trim()) {
+        try {
+          result = JSON.parse(responseText)
+        } catch (parseError) {
+          console.log('Response is not JSON, treating as text:', responseText)
+          result = { message: responseText }
+        }
+      } else {
+        result = { message: 'Brand created successfully' }
+      }
+      
+      console.log('Brand creation result:', result)
+      alert('Brand created successfully!')
       
       // Create the company using the createCompany function passed from parent
       await createCompany({
