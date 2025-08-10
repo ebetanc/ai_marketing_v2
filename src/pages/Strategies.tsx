@@ -251,7 +251,7 @@ export function Strategies() {
         strategy: {
           id: viewAngleModal.strategy.id,
           brand: viewAngleModal.strategy.brand,
-          platforms: viewAngleModal.strategy.platforms,
+          platforms: viewAngleModal.strategy.platforms ? viewAngleModal.strategy.platforms.split(',').map(p => p.trim()) : [],
           created_at: viewAngleModal.strategy.created_at
         }
       }
