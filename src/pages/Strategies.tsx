@@ -707,9 +707,9 @@ export function Strategies() {
                               <CardContent className="space-y-3 pt-0 pb-4">
                                 {/* Description */}
                                 <div>
-                                  <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed bg-gray-50 p-2 rounded-lg">
-                                    {angle.description}
-                                  </p>
+                                  <div className="text-xs text-gray-600 line-clamp-3 leading-relaxed bg-gray-50 p-2 rounded-lg">
+                                    {formatDescription(angle.description || 'No description available')}
+                                  </div>
                                 </div>
                                 
                                 {/* Objective & Tonality in one row */}
