@@ -424,36 +424,40 @@ export function Ideas() {
       console.log('Angle details included:', !!angleDetails)
       console.log('Strategy context included:', !!strategyData)
       
-      const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(webhookPayload)
-      })
+      // WEBHOOK SENDING DISABLED FOR ANALYSIS
+      // const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify(webhookPayload)
+      // })
       
-      console.log('Webhook response status:', response.status)
+      // console.log('Webhook response status:', response.status)
       
-      if (!response.ok) {
-        throw new Error(`Webhook failed with status: ${response.status}`)
-      }
+      // if (!response.ok) {
+      //   throw new Error(`Webhook failed with status: ${response.status}`)
+      // }
       
-      const responseText = await response.text()
-      console.log('Raw webhook response:', responseText)
+      // const responseText = await response.text()
+      // console.log('Raw webhook response:', responseText)
       
-      let result
-      try {
-        result = JSON.parse(responseText)
-      } catch (parseError) {
-        console.error('Failed to parse JSON response:', parseError)
-        console.error('Raw response text:', responseText)
-        // If JSON parsing fails, treat as success if status is ok
-        result = { message: 'Content generation started' }
-      }
+      // let result
+      // try {
+      //   result = JSON.parse(responseText)
+      // } catch (parseError) {
+      //   console.error('Failed to parse JSON response:', parseError)
+      //   console.error('Raw response text:', responseText)
+      //   // If JSON parsing fails, treat as success if status is ok
+      //   result = { message: 'Content generation started' }
+      // }
       
-      console.log('Webhook response:', result)
+      // console.log('Webhook response:', result)
       
-      alert('Content generation started! Check the Content page for results.')
+      console.log('=== FINAL WEBHOOK PAYLOAD FOR ANALYSIS ===')
+      console.log(JSON.stringify(webhookPayload, null, 2))
+      
+      alert('Webhook payload logged to console for analysis. Check browser developer tools.')
       
     } catch (error) {
       console.error('Error generating content:', error)
