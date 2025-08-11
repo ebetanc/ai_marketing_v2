@@ -358,12 +358,13 @@ export function Content() {
       } finally {
         setLoadingContent(false)
       }
+    }
 
   // Filter content
   const allContent = generatedContent.map(content => ({
     ...content,
-    company_id: content.company_id || content.brand_id,
-    brand_name: content.brand_name || content.company?.brand_name || 'Unknown Brand'
+    company_id: content.brand_id,
+    brand_name: content.brand_name || 'Unknown Brand'
   }))
 
   const filteredContent = allContent.filter(content => {
@@ -371,8 +372,8 @@ export function Content() {
     const matchesStatus = filterStatus === 'all' || content.status === filterStatus
     const matchesType = filterType === 'all' || content.type === filterType
     const matchesSearch = !searchQuery ||
-      (content.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (content.body || '').toLowerCase().includes(searchQuery.toLowerCase())
+      content.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      content.body.toLowerCase().includes(searchQuery.toLowerCase())
 
     return matchesCompany && matchesStatus && matchesType && matchesSearch
   })
@@ -408,10 +409,7 @@ export function Content() {
 
   const brandOptions = [
     { value: '', label: 'All Companies' },
-    ...companies.map(company => ({ 
-      value: company.id, 
-      label: company.brand_name || company.name || 'Unnamed Company' 
-    }))
+    ...companies.map(brand => ({ value: brand.id, label: brand.name || 'Unnamed Brand' }))
   ]
 
   const getStatusBadge = (status: string) => {
@@ -522,7 +520,7 @@ export function Content() {
                     </CardTitle>
                     <p className="text-sm text-gray-500 mt-1">
                       {content.brand_name}
-                          {content.platform || 'AI Generated'}
+                      <Badge variant="primary" className="ml-2 text-xs">
                         AI Generated
                       </Badge>
                       {content.strategy_id && (
@@ -582,7 +580,7 @@ export function Content() {
 
               <div className="flex items-center justify-between text-xs text-gray-500">
                 <span>{formatDate(content.created_at)}</span>
-                <span>{content.metadata?.word_count || content.word_count || 0} words</span>
+                <span>{content.metadata?.word_count || 0} words</span>
               </div>
 
               <div className="flex items-center justify-between">
