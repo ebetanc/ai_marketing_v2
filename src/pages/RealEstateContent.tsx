@@ -21,7 +21,6 @@ export function RealEstateContent() {
     try {
       console.log('Sending URL to webhook:', url)
       
-      const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/1776dcc3-2b3e-4cfa-abfd-0ad9cabaf6ea', {
       const webhookUrl = `${import.meta.env.VITE_N8N_WEBHOOK_URL}/1776dcc3-2b3e-4cfa-abfd-0ad9cabaf6ea`
       
       const response = await fetch(webhookUrl, {
