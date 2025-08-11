@@ -6,7 +6,7 @@ import { Badge } from '../components/ui/Badge'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { ViewContentModal } from '../components/content/ViewContentModal'
 import { supabase } from '../lib/supabase'
-import { FileText, Eye, CheckCircle, Clock, Search, MoreVertical, Trash2 } from 'lucide-react'
+import { FileText, Eye, CheckCircle, Clock, Search, MoreVertical, Trash2, RefreshCw } from 'lucide-react'
 import { formatDate, truncateText } from '../lib/utils'
 
 // Helper function to extract and format content from JSON
