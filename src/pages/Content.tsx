@@ -409,7 +409,10 @@ export function Content() {
 
   const brandOptions = [
     { value: '', label: 'All Companies' },
-    ...companies.map(brand => ({ value: brand.id, label: brand.name || 'Unnamed Brand' }))
+    ...companies.map(company => ({ 
+      value: company.id, 
+      label: company.brand_name || company.name || 'Unnamed Company' 
+    }))
   ]
 
   const getStatusBadge = (status: string) => {
@@ -520,8 +523,10 @@ export function Content() {
                     </CardTitle>
                     <p className="text-sm text-gray-500 mt-1">
                       {content.brand_name}
-                      <Badge variant="primary" className="ml-2 text-xs">
-                        AI Generated
+                    </p>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      <Badge variant="secondary" className="text-xs">
+                        {content.platform || 'AI Generated'}
                       </Badge>
                       {content.strategy_id && (
                         <Badge variant="secondary" className="ml-1 text-xs">
@@ -533,7 +538,7 @@ export function Content() {
                           {content.platform}
                         </Badge>
                       )}
-                    </p>
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-1">
