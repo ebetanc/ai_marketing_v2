@@ -27,6 +27,7 @@ const navigation = [
   { name: 'Trend Based Blog Generation', href: '/trend-blog', icon: TrendingUp },
   { name: 'Semantic Cluster → SEO Article', href: '/semantic-seo', icon: Network },
   { name: 'Keyword Research Agent', href: '/keyword-research', icon: Search },
+  { name: 'Real Estate Content Agent', href: '/real-estate-content', icon: Building2 },
 ]
 
 export function Sidebar() {

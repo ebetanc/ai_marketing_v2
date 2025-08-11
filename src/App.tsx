@@ -11,6 +11,7 @@ import { YouTubeSEO } from './pages/YouTubeSEO'
 import { TrendBlog } from './pages/TrendBlog'
 import { SemanticSEO } from './pages/SemanticSEO'
 import { KeywordResearch } from './pages/KeywordResearch'
+import { RealEstateContent } from './pages/RealEstateContent'
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
           <Route path="/trend-blog" element={<TrendBlog />} />
           <Route path="/semantic-seo" element={<SemanticSEO />} />
           <Route path="/keyword-research" element={<KeywordResearch />} />
+          <Route path="/real-estate-content" element={<RealEstateContent />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Layout>
