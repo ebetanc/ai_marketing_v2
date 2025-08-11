@@ -26,7 +26,7 @@ export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: Genera
   const [isGenerating, setIsGenerating] = useState(false)
 
   const togglePlatform = (platformId: string) => {
-    setSelectedPlatforms(prev => 
+    setSelectedPlatforms(prev =>
       prev.includes(platformId)
         ? prev.filter(id => id !== platformId)
         : [...prev, platformId]
@@ -40,7 +40,7 @@ export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: Genera
     }
 
     setIsGenerating(true)
-    
+
     try {
       // Prepare comprehensive brand data payload
       const comprehensiveBrandData = {
@@ -48,7 +48,7 @@ export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: Genera
         id: selectedBrand.id,
         name: selectedBrand.name || 'Unknown Brand',
         website: selectedBrand.website || '',
-        
+
         // Brand voice and tone
         brandTone: selectedBrand.brandTone || selectedBrand.brand_voice?.tone || '',
         keyOffer: selectedBrand.keyOffer || selectedBrand.brand_voice?.style || '',
@@ -57,7 +57,7 @@ export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: Genera
           style: selectedBrand.keyOffer || selectedBrand.brand_voice?.style || '',
           keywords: selectedBrand.brand_voice?.keywords || []
         },
-        
+
         // Target audience information
         targetAudience: selectedBrand.targetAudience || selectedBrand.target_audience?.demographics || '',
         target_audience: {
@@ -65,14 +65,14 @@ export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: Genera
           interests: selectedBrand.target_audience?.interests || [],
           pain_points: selectedBrand.target_audience?.pain_points || []
         },
-        
+
         // Additional information
         additionalInfo: selectedBrand.additionalInfo || '',
         imageGuidelines: selectedBrand.imageGuidelines || '',
-        
+
         // Metadata
         createdAt: selectedBrand.createdAt || selectedBrand.created_at || '',
-        
+
         // Platform-specific data
         selectedPlatforms: selectedPlatforms,
         platformCount: selectedPlatforms.length
@@ -107,7 +107,7 @@ export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: Genera
 
       // Read response as text first to handle empty or malformed JSON
       const responseText = await response.text()
-      
+
       let result
       if (!responseText.trim()) {
         // Handle empty response
@@ -128,16 +128,16 @@ export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: Genera
           }
         }
       }
-      
+
       console.log('Content strategy generation result:', result)
-      
+
       // Save the generated content to Firebase
       await saveGeneratedContentToFirebase(result)
-      
+
       console.log('Strategy generation and save completed successfully')
       alert('Content strategy generated and saved to Firebase successfully!')
       onClose()
-      
+
     } catch (error) {
       console.error('Error generating content strategy:', error)
       console.error('Full error details:', error)
@@ -152,10 +152,10 @@ export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: Genera
       // Import Firebase functions
       const { collection, addDoc } = await import('firebase/firestore')
       const { db } = await import('../../lib/firebase')
-      
+
       console.log('Saving strategy and content pieces to Firebase...')
       console.log('Webhook response:', webhookResponse)
-      
+
       // First, create the main strategy document
       const strategyData = {
         id: `strategy_${Date.now()}`,
@@ -175,22 +175,22 @@ export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: Genera
         },
         created_at: new Date().toISOString()
       }
-      
+
       console.log('Strategy data to save:', strategyData)
-      
+
       // Save strategy to Firebase
       const docRef = await addDoc(collection(db, 'strategy'), strategyData)
       console.log('Strategy saved to Firebase with ID:', docRef.id)
-      
+
       // Now save individual content pieces for each platform
       if (Array.isArray(webhookResponse)) {
         console.log('Saving individual content pieces for each platform...')
         console.log('Strategy document ID for linking:', docRef.id)
-        
+
         for (let i = 0; i < webhookResponse.length; i++) {
           const item = webhookResponse[i]
           console.log(`Processing platform ${i + 1}:`, item)
-          
+
           // Map platform to content type
           const getContentType = (platform: string) => {
             const platformLower = (platform || '').toLowerCase()
@@ -209,7 +209,7 @@ export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: Genera
                 return 'social_post'
             }
           }
-          
+
           const contentPieceData = {
             id: `content_${Date.now()}_${i}`,
             brand_id: selectedBrand.id,
@@ -230,21 +230,21 @@ export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: Genera
             },
             created_at: new Date().toISOString()
           }
-          
+
           console.log(`Saving ${item.platform || 'platform'} content piece:`, contentPieceData)
-          
+
           // Save content piece to Firebase
           const contentDocRef = await addDoc(collection(db, 'content'), contentPieceData)
           console.log(`${item.platform || 'platform'} content saved to Firebase with ID:`, contentDocRef.id)
-          
+
           // Add a small delay to ensure unique timestamps
           await new Promise(resolve => setTimeout(resolve, 100))
         }
-        
+
         console.log('All content pieces saved successfully to Firebase')
       } else {
         console.log('Webhook response is not an array, saving as single content piece')
-        
+
         // If not an array, save as single content piece
         const contentPieceData = {
           id: `content_${Date.now()}`,
@@ -264,15 +264,17 @@ export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: Genera
           },
           created_at: new Date().toISOString()
         }
-        
+
         const contentDocRef = await addDoc(collection(db, 'content'), contentPieceData)
         console.log('Single content piece saved to Firebase with ID:', contentDocRef.id)
       }
-      
+
       console.log('Strategy and all content pieces saved successfully to Firebase')
     } catch (error) {
       console.error('Error saving to Firebase:', error)
-      console.error('Error details:', error.message)
+      if (error instanceof Error) {
+        console.error('Error details:', error.message)
+      }
       throw error
     }
   }
@@ -286,22 +288,22 @@ export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: Genera
   const generateContentTitle = (item: any, index: number, brand: any) => {
     // If item has a title, use it
     if (item.title) return item.title
-    
+
     // Check if this is a content strategy with angles
     if (item.angles && Array.isArray(item.angles)) {
       return `Content Strategy for ${brand?.name || 'Brand'} (${item.angles.length} Angles)`
     }
-    
+
     // Check if the item itself is part of an angles array or strategy
     if (item.header || item.description || item.contentStructure) {
       return `Content Angle ${index + 1} for ${brand?.name || 'Brand'}`
     }
-    
+
     // Default titles based on type
     if (item.platform) {
       return `${item.platform.charAt(0).toUpperCase() + item.platform.slice(1)} Content for ${brand?.name || 'Brand'}`
     }
-    
+
     return `Generated Content for ${brand?.name || 'Brand'}`
   }
 
@@ -310,17 +312,17 @@ export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: Genera
     if (item.angles && Array.isArray(item.angles)) {
       return 'content_strategy'
     }
-    
+
     // Check if the full response contains angles (indicating this is part of a strategy)
     if (fullResponse?.angles && Array.isArray(fullResponse.angles)) {
       return 'content_strategy'
     }
-    
+
     // Check if item has strategy-like properties
     if (item.contentStructure || item.growthPlan || item.publishingSchedule) {
       return 'content_strategy'
     }
-    
+
     // Existing logic for other content types
     if (item.type) return item.type
     if (item.platform) {
@@ -339,7 +341,7 @@ export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: Genera
           return 'blog_post'
       }
     }
-    
+
     // Default to content_strategy for generated content from this modal
     return 'content_strategy'
   }
@@ -366,7 +368,7 @@ export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: Genera
             </button>
             <div className="text-sm text-gray-500">Back to Dashboard</div>
           </div>
-          
+
           <button
             onClick={handleClose}
             className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
@@ -395,7 +397,7 @@ export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: Genera
           <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <Sparkles className="h-8 w-8 text-white" />
           </div>
-          
+
           <h2 className="text-2xl font-bold text-gray-900 mb-3">Generate Content Strategy</h2>
           <p className="text-gray-600 mb-8">
             Create AI-powered content angles for {selectedBrand?.name || 'your brand'} to guide your content creation

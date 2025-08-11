@@ -39,12 +39,12 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
       if (Array.isArray(parsedContent)) {
         return parsedContent
       }
-      
+
       // If it has an angles property
       if (parsedContent.angles && Array.isArray(parsedContent.angles)) {
         return parsedContent.angles
       }
-      
+
       // If it's a single object, wrap it in an array
       if (typeof parsedContent === 'object') {
         return [parsedContent]
@@ -66,7 +66,7 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
 
   const expandAllAngles = () => {
     const newExpandedState: { [key: number]: boolean } = {}
-    angles.forEach((_, index) => {
+    angles.forEach((_: unknown, index: number) => {
       newExpandedState[index] = true
     })
     setExpandedAngles(newExpandedState)
@@ -78,17 +78,17 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
 
   const renderAngleProperty = (key: string, value: any) => {
     if (!value) return null
-    
+
     const displayKey = key.replace(/([A-Z])/g, ' $1').trim()
     const capitalizedKey = displayKey.charAt(0).toUpperCase() + displayKey.slice(1)
-    
+
     let displayValue = value
     if (typeof value === 'string') {
       displayValue = value.replace(/^["']|["']$/g, '').trim()
     } else if (typeof value === 'object') {
       displayValue = JSON.stringify(value, null, 2)
     }
-    
+
     return (
       <div key={key}>
         <h5 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
@@ -105,27 +105,27 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
   }
   const renderAngleContent = (angle: any, index: number) => {
     const isExpanded = expandedAngles[index]
-    
+
     // Get angle title/header
     const angleTitle = angle.header || angle.title || angle.topic || `Content Angle ${index + 1}`
-    
+
     // Get main content preview
     const getPreviewContent = () => {
       if (angle.description) {
-        const desc = typeof angle.description === 'string' 
+        const desc = typeof angle.description === 'string'
           ? angle.description.replace(/^["']|["']$/g, '').trim()
           : JSON.stringify(angle.description)
         return desc.length > 150 ? desc.substring(0, 150) + '...' : desc
       }
       if (angle.content) {
-        const content = typeof angle.content === 'string' 
+        const content = typeof angle.content === 'string'
           ? angle.content.replace(/^["']|["']$/g, '').trim()
           : JSON.stringify(angle.content)
         return content.length > 150 ? content.substring(0, 150) + '...' : content
       }
       return 'Click to view angle details...'
     }
-    
+
     return (
       <Card key={index} className="border border-gray-200">
         <CardHeader className="pb-3">
@@ -166,7 +166,7 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
             </Button>
           </div>
         </CardHeader>
-        
+
         {isExpanded && (
           <CardContent className="pt-0">
             <div className="space-y-4">
@@ -197,7 +197,7 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
               </p>
             </div>
           </div>
-          
+
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
@@ -224,12 +224,12 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
                     {content.status || 'draft'}
                   </Badge>
                 </div>
-                
+
                 <div>
                   <p className="text-sm font-medium text-gray-900">Type</p>
                   <p className="text-gray-700 capitalize">{content.type?.replace('_', ' ') || 'Content'}</p>
                 </div>
-                
+
                 <div>
                   <p className="text-sm font-medium text-gray-900">Created</p>
                   <p className="text-gray-700 flex items-center">
@@ -237,7 +237,7 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
                     {formatDate(content.created_at)}
                   </p>
                 </div>
-                
+
                 {content.metadata?.word_count && (
                   <div>
                     <p className="text-sm font-medium text-gray-900">Word Count</p>
@@ -287,7 +287,7 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {angles.map((angle, index) => renderAngleContent(angle, index))}
+                {angles.map((angle: any, index: number) => renderAngleContent(angle, index))}
               </CardContent>
             </Card>
           ) : (

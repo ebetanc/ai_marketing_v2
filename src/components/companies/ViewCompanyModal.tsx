@@ -20,24 +20,24 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
 
   const handleDelete = async () => {
     if (!company?.id) return
-    
+
     const confirmed = window.confirm(`Are you sure you want to delete "${company.brand_name || company.name}"? This action cannot be undone.`)
     if (!confirmed) return
-    
+
     setDeleting(true)
-    
+
     try {
       const { error } = await supabase
         .from('companies')
         .delete()
         .eq('id', company.id)
-      
+
       if (error) {
         console.error('Error deleting company:', error)
         alert(`Failed to delete company: ${error.message}`)
         return
       }
-      
+
       alert('Company deleted successfully!')
       onDelete?.() // Call the callback to refresh the companies list
       onClose() // Close the modal
@@ -63,7 +63,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
               <p className="text-sm text-gray-500">Company Details</p>
             </div>
           </div>
-          
+
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
@@ -87,13 +87,13 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
                 <p className="text-sm font-medium text-gray-900">Company Name</p>
                 <p className="text-gray-700">{company.brand_name || company.name}</p>
               </div>
-              
+
               {company.website && (
                 <div>
                   <p className="text-sm font-medium text-gray-900">Website</p>
-                  <a 
-                    href={company.website} 
-                    target="_blank" 
+                  <a
+                    href={company.website}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:text-blue-800 flex items-center"
                   >
@@ -102,7 +102,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
                   </a>
                 </div>
               )}
-              
+
               <div>
                 <p className="text-sm font-medium text-gray-900">Created</p>
                 <p className="text-gray-700 flex items-center">
@@ -177,84 +177,84 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
 
           {/* Legacy Brand Voice Support */}
           {company.brand_voice && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center text-lg">
-                <Zap className="h-5 w-5 mr-2 text-orange-600" />
-                Brand Voice & Tone
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm font-medium text-gray-900">Brand Tone</p>
-                <p className="text-gray-700 leading-relaxed">{company.brand_voice?.tone || company.brandTone || 'Not specified'}</p>
-              </div>
-              
-              <div>
-                <p className="text-sm font-medium text-gray-900">Key Offer / Style</p>
-                <p className="text-gray-700 leading-relaxed">{company.brand_voice?.style || company.keyOffer || 'Not specified'}</p>
-              </div>
-              
-              {company.brand_voice?.keywords && company.brand_voice.keywords.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <Zap className="h-5 w-5 mr-2 text-orange-600" />
+                  Brand Voice & Tone
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-900 mb-2">Keywords</p>
-                  <div className="flex flex-wrap gap-2">
-                    {company.brand_voice.keywords.map((keyword, index) => (
-                      <Badge key={index} variant="secondary">
-                        {keyword}
-                      </Badge>
-                    ))}
-                  </div>
+                  <p className="text-sm font-medium text-gray-900">Brand Tone</p>
+                  <p className="text-gray-700 leading-relaxed">{company.brand_voice?.tone || company.brandTone || 'Not specified'}</p>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Key Offer / Style</p>
+                  <p className="text-gray-700 leading-relaxed">{company.brand_voice?.style || company.keyOffer || 'Not specified'}</p>
+                </div>
+
+                {company.brand_voice?.keywords && company.brand_voice.keywords.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 mb-2">Keywords</p>
+                    <div className="flex flex-wrap gap-2">
+                      {company.brand_voice.keywords.map((keyword: string, index: number) => (
+                        <Badge key={index} variant="secondary">
+                          {keyword}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           )}
 
           {/* Legacy Target Audience Support */}
           {company.target_audience && typeof company.target_audience === 'object' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center text-lg">
-                <Target className="h-5 w-5 mr-2 text-pink-600" />
-                Target Audience
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm font-medium text-gray-900">Demographics</p>
-                <p className="text-gray-700 leading-relaxed">
-                  {company.target_audience?.demographics || company.targetAudience || 'Not specified'}
-                </p>
-              </div>
-              
-              {company.target_audience?.interests && company.target_audience.interests.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <Target className="h-5 w-5 mr-2 text-pink-600" />
+                  Target Audience
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-900 mb-2">Interests</p>
-                  <div className="flex flex-wrap gap-2">
-                    {company.target_audience.interests.map((interest, index) => (
-                      <Badge key={index} variant="secondary">
-                        {interest}
-                      </Badge>
-                    ))}
-                  </div>
+                  <p className="text-sm font-medium text-gray-900">Demographics</p>
+                  <p className="text-gray-700 leading-relaxed">
+                    {company.target_audience?.demographics || company.targetAudience || 'Not specified'}
+                  </p>
                 </div>
-              )}
-              
-              {company.target_audience?.pain_points && company.target_audience.pain_points.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium text-gray-900 mb-2">Pain Points</p>
-                  <div className="flex flex-wrap gap-2">
-                    {company.target_audience.pain_points.map((point, index) => (
-                      <Badge key={index} variant="warning">
-                        {point}
-                      </Badge>
-                    ))}
+
+                {company.target_audience?.interests && company.target_audience.interests.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 mb-2">Interests</p>
+                    <div className="flex flex-wrap gap-2">
+                      {company.target_audience.interests.map((interest: string, index: number) => (
+                        <Badge key={index} variant="secondary">
+                          {interest}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                )}
+
+                {company.target_audience?.pain_points && company.target_audience.pain_points.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 mb-2">Pain Points</p>
+                    <div className="flex flex-wrap gap-2">
+                      {company.target_audience.pain_points.map((point: string, index: number) => (
+                        <Badge key={index} variant="warning">
+                          {point}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           )}
 
           {/* Legacy Additional Information Support */}
@@ -295,8 +295,8 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
         {/* Footer */}
         <div className="flex justify-end p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
           <div className="flex space-x-3">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={handleDelete}
               loading={deleting}
               disabled={deleting}

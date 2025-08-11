@@ -17,12 +17,12 @@ export function RealEstateContent() {
     }
 
     setIsGenerating(true)
-    
+
     try {
       console.log('Sending URL to webhook:', url)
-      
+
       const webhookUrl = 'https://n8n.srv856940.hstgr.cloud/webhook/1776dcc3-2b3e-4cfa-abfd-0ad9cabaf6ea'
-      
+
       const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
@@ -34,20 +34,24 @@ export function RealEstateContent() {
       })
 
       console.log('Webhook response status:', response.status)
-      
+
       if (!response.ok) {
         throw new Error(`Webhook request failed with status: ${response.status}`)
       }
 
       const result = await response.text()
       console.log('Webhook response:', result)
-      
+
       alert('The content will be generated and will take some minutes. Please come back later to see the result.')
       setShowUrlModal(false)
       setUrl('')
     } catch (error) {
       console.error('Error generating content:', error)
-      alert(`Failed to generate content: ${error.message || 'Please try again.'}`)
+      if (error instanceof Error) {
+        alert(`Failed to generate content: ${error.message || 'Please try again.'}`)
+      } else {
+        alert('Failed to generate content: Please try again.')
+      }
     } finally {
       setIsGenerating(false)
     }
@@ -89,7 +93,7 @@ export function RealEstateContent() {
                   <p className="text-sm text-gray-500">Provide a URL to analyze and generate content</p>
                 </div>
               </div>
-              
+
               <button
                 onClick={handleCloseModal}
                 className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
@@ -108,10 +112,10 @@ export function RealEstateContent() {
                 onChange={(e) => setUrl(e.target.value)}
                 disabled={isGenerating}
               />
-              
+
               <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
                 <p className="text-sm text-blue-800">
-                  <strong>Tip:</strong> You can enter URLs for property listings, real estate websites, 
+                  <strong>Tip:</strong> You can enter URLs for property listings, real estate websites,
                   or any real estate-related page to generate targeted content.
                 </p>
               </div>
@@ -148,10 +152,10 @@ export function RealEstateContent() {
           </div>
           <h3 className="text-xl font-semibold text-gray-900 mb-3">AI-Powered Real Estate Content Generator</h3>
           <p className="text-gray-600 max-w-md mx-auto mb-8">
-            Create compelling content tailored specifically for real estate professionals, 
+            Create compelling content tailored specifically for real estate professionals,
             including property listings, market insights, client communications, and marketing materials.
           </p>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
             <div className="text-center">
               <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
@@ -160,7 +164,7 @@ export function RealEstateContent() {
               <h4 className="font-medium text-gray-900 mb-2">Property Listings</h4>
               <p className="text-sm text-gray-600">Generate compelling property descriptions and listings</p>
             </div>
-            
+
             <div className="text-center">
               <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                 <TrendingUp className="h-6 w-6 text-green-600" />
@@ -168,7 +172,7 @@ export function RealEstateContent() {
               <h4 className="font-medium text-gray-900 mb-2">Market Analysis</h4>
               <p className="text-sm text-gray-600">Create market reports and trend analysis content</p>
             </div>
-            
+
             <div className="text-center">
               <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                 <Users className="h-6 w-6 text-purple-600" />

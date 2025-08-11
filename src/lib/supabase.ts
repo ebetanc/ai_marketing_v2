@@ -1,4 +1,3 @@
-// Mock data types for development without Supabase
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
@@ -6,13 +5,12 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-// Strategy type based on Supabase table
 export type Strategy = {
   id: number
   created_at: string
   description: string | null
   platforms: string | null
-  brand: string | null
+  company_id?: string | null
   angle1_header: string | null
   angle1_description: string | null
   angle1_objective: string | null

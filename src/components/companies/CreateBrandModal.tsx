@@ -69,18 +69,18 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
       }
 
       const responseText = await response.text()
-      
+
       if (!responseText) {
         throw new Error('Empty response from server')
       }
-      
+
       let data
       try {
         data = JSON.parse(responseText)
       } catch (parseError) {
         throw new Error('Invalid JSON response from server')
       }
-      
+
       setFormData(prev => ({
         ...prev,
         targetAudience: data.targetAudience || prev.targetAudience,
@@ -105,7 +105,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
     try {
       const docRef = doc(db, 'brands', brandIdToLoad.trim())
       const docSnap = await getDoc(docRef)
-      
+
       if (docSnap.exists()) {
         const data = docSnap.data()
         setFormData(prev => ({
@@ -148,9 +148,9 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
       alert('Please fill out all required fields')
       return
     }
-    
+
     setSubmitLoading(true)
-    
+
     try {
       const brandData = {
         name: formData.name,
@@ -164,7 +164,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
       }
 
       console.log('Sending brand data to webhook:', brandData)
-      
+
       const response = await fetch(`${import.meta.env.VITE_N8N_WEBHOOK_URL}/dacf25b7-b505-4b10-a6f7-a2ac0e21a1ec`, {
         method: 'POST',
         headers: {
@@ -172,23 +172,23 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
         },
         body: JSON.stringify(brandData)
       })
-      
+
       console.log('Webhook response status:', response.status)
-      
+
       if (!response.ok) {
         console.error('Webhook request failed with status:', response.status)
         alert('Failed to create company. Please try again.')
         return
       }
-      
+
       console.log('Brand data sent to webhook successfully')
       alert('Company created successfully!')
-      
+
       // Reset form and close modal
       resetForm()
       refetchCompanies() // Refresh the companies list
       onSubmit()
-      
+
     } catch (error) {
       console.error('Error creating company:', error)
       alert('Failed to create company. Please try again.')
@@ -231,13 +231,13 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
               <ArrowLeft className="h-5 w-5 text-gray-600" />
             </button>
             <div className="text-sm text-gray-500">Back to Dashboard</div>
-            
+
             {/* Step Indicators */}
             <div className="flex items-center space-x-3 ml-8">
               <div className={cn(
                 "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
-                currentStep === 1 
-                  ? "bg-gray-900 text-white" 
+                currentStep === 1
+                  ? "bg-gray-900 text-white"
                   : "bg-gray-200 text-gray-600"
               )}>
                 1
@@ -245,8 +245,8 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
               <div className="w-8 h-0.5 bg-gray-200"></div>
               <div className={cn(
                 "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
-                currentStep === 2 
-                  ? "bg-gray-900 text-white" 
+                currentStep === 2
+                  ? "bg-gray-900 text-white"
                   : "bg-gray-200 text-gray-600"
               )}>
                 2
@@ -254,7 +254,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
               <div className="ml-3 text-gray-600 font-medium">Create Brand</div>
             </div>
           </div>
-          
+
           <button
             onClick={handleClose}
             className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
@@ -373,7 +373,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Previous
                   </Button>
-                  
+
                   <Button
                     type="submit"
                     loading={submitLoading}

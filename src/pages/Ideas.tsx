@@ -1,22 +1,23 @@
-import React, { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
-import { Button } from '../components/ui/Button'
-import { Badge } from '../components/ui/Badge'
-import { 
-  Lightbulb, 
-  Eye, 
-  CheckCircle, 
-  Clock,
-  FileText,
-  Target,
+
+import {
   Building2,
   Calendar,
-  Zap,
+  Eye,
+  // CheckCircle,
+  // Clock,
+  FileText,
+  Lightbulb,
+  // Zap,
   RefreshCw,
+  Target,
   X
-} from 'lucide-react'
-import { formatDate, truncateText } from '../lib/utils'
-import { supabase } from '../lib/supabase'
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Badge } from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { supabase } from '../lib/supabase';
+import { formatDate, truncateText } from '../lib/utils';
 
 export function Ideas() {
   const [ideas, setIdeas] = useState<any[]>([])
@@ -59,24 +60,45 @@ export function Ideas() {
       setLoading(true)
       setError(null)
       console.log('Fetching ideas from Supabase...')
-      
-      const { data, error } = await supabase
-        .from('ideas')
-        .select('*')
-        .order('created_at', { ascending: false })
-      
+
+
+      let data: any[] | null = null
+      let error: any = null
+      try {
+        const res = await supabase
+          .from('ideas')
+          .select(`
+            *,
+            strategy:strategies (*),
+            company:companies (*)
+          `)
+          .order('created_at', { ascending: false })
+        data = res.data as any[] | null
+        error = res.error
+      } catch (e) {
+        console.warn('Relational select failed, falling back to basic select. Error:', e)
+      }
+      if (!data || error) {
+        const res2 = await supabase
+          .from('ideas')
+          .select('*')
+          .order('created_at', { ascending: false })
+        data = res2.data as any[] | null
+        error = res2.error
+      }
+
       console.log('=== SUPABASE IDEAS DEBUG ===')
       console.log('Raw Supabase response:', { data, error })
       console.log('Data array length:', data?.length)
       console.log('First idea object:', data?.[0])
       console.log('All idea objects:', data)
       console.log('Available columns in first idea:', data?.[0] ? Object.keys(data[0]) : 'No data')
-      
+
       if (error) {
         console.error('Supabase error:', error)
         throw error
       }
-      
+
       console.log('Ideas fetched successfully:', data?.length || 0, 'records')
       console.log('Setting ideas state with:', data)
       setIdeas(data || [])
@@ -89,27 +111,27 @@ export function Ideas() {
     }
   }
 
-  // Helper function to extract topics from grouped columns
+
   const extractTopicsFromIdea = (idea: any) => {
     const topics = []
     const columns = Object.keys(idea).sort() // Sort to ensure consistent order
-    
+
     let topicIndex = 1
-    
+
     while (true) {
       const topicKey = `topic${topicIndex}`
       const descriptionKey = `description${topicIndex}` || `topic${topicIndex}_description`
       const imagePromptKey = `image_prompt${topicIndex}` || `topic${topicIndex}_image_prompt`
-      
+
       const baseIndex = 8 + (topicIndex - 1) * 3 // 9-11 for topic 1, 12-14 for topic 2, etc.
       const columnTopic = columns[baseIndex]
       const columnDescription = columns[baseIndex + 1]
       const columnImagePrompt = columns[baseIndex + 2]
-      
+
       const topic = idea[topicKey] || idea[columnTopic]
       const description = idea[descriptionKey] || idea[columnDescription]
       const imagePrompt = idea[imagePromptKey] || idea[columnImagePrompt]
-      
+
       if (topic || description || imagePrompt) {
         topics.push({
           number: topicIndex,
@@ -121,10 +143,10 @@ export function Ideas() {
       } else {
         break
       }
-      
+
       if (topicIndex > 20) break
     }
-    
+
     return topics
   }
 
@@ -163,7 +185,7 @@ export function Ideas() {
       ...prev,
       isEditing: !prev.isEditing
     }))
-    
+
     // Reset form when canceling edit
     if (viewIdeaModal.isEditing) {
       setEditForm({
@@ -176,30 +198,30 @@ export function Ideas() {
 
   const handleSaveChanges = async () => {
     if (!viewIdeaModal.idea || !viewIdeaModal.topic) return
-    
+
     setSaving(true)
-    
+
     try {
       const topicNumber = viewIdeaModal.topic.number
-      
-      // Determine the column names based on topic number
-      // Columns 9-11 for topic 1, 12-14 for topic 2, etc.
+
+
+
       const baseColumnIndex = 8 + (topicNumber - 1) * 3 // 9 for topic 1, 12 for topic 2, etc.
-      
-      // Get all column names from the idea object
+
+
       const columns = Object.keys(viewIdeaModal.idea).sort()
-      
-      // Map to the correct column names
+
+
       const topicColumn = columns[baseColumnIndex] || `topic${topicNumber}`
       const descriptionColumn = columns[baseColumnIndex + 1] || `description${topicNumber}`
       const imagePromptColumn = columns[baseColumnIndex + 2] || `image_prompt${topicNumber}`
-      
+
       const updateData = {
         [topicColumn]: editForm.topic,
         [descriptionColumn]: editForm.description,
         [imagePromptColumn]: editForm.image_prompt
       }
-      
+
       console.log('=== SAVE TOPIC OPERATION DEBUG ===')
       console.log('Idea ID:', viewIdeaModal.idea.id)
       console.log('Topic Number:', topicNumber)
@@ -209,55 +231,55 @@ export function Ideas() {
         imagePromptColumn
       })
       console.log('Update Data:', updateData)
-      
+
       const { error } = await supabase
         .from('ideas')
         .update(updateData)
         .eq('id', viewIdeaModal.idea.id)
-      
+
       console.log('Supabase Update Response Error:', error)
-      
+
       if (error) {
         console.error('=== SUPABASE UPDATE ERROR ===')
         console.error('Error Code:', error.code)
         console.error('Error Message:', error.message)
         console.error('Error Details:', error.details)
-        alert(`Failed to save changes: ${error.message}`)
+        alert(`Failed to save changes: ${error instanceof Error ? error.message : 'Unknown error'}`)
         return
       }
-      
+
       console.log('Topic updated successfully')
-      
-      // Update local state
+
+
       setIdeas(prev => prev.map(idea => {
         if (idea.id === viewIdeaModal.idea!.id) {
           return { ...idea, ...updateData }
         }
         return idea
       }))
-      
-      // Update the modal's topic data
+
+
       const updatedTopic = {
         ...viewIdeaModal.topic,
         topic: editForm.topic,
         description: editForm.description,
         image_prompt: editForm.image_prompt
       }
-      
+
       setViewIdeaModal(prev => ({
         ...prev,
         topic: updatedTopic,
         isEditing: false
       }))
-      
-      // Force a refresh of the data from the database to ensure consistency
+
+
       await fetchIdeas()
-      
+
       alert('Changes saved successfully!')
-      
+
     } catch (error) {
       console.error('Error saving changes:', error)
-      alert(`Failed to save changes: ${error.message || 'Unknown error'}`)
+      alert(`Failed to save changes: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setSaving(false)
     }
@@ -289,49 +311,64 @@ export function Ideas() {
 
   const handleGenerateContent = async () => {
     if (!viewIdeaModal.idea || !viewIdeaModal.topic) return
-    
+
     setGeneratingContent(true)
-    
+
     try {
-      // Fetch full company details from Supabase
+
       console.log('=== FETCHING COMPANY DETAILS ===')
-      console.log('Looking for company with brand name:', viewIdeaModal.idea.brand)
-      
-      const { data: companyData, error: companyError } = await supabase
-        .from('companies')
-        .select('*')
-        .eq('brand_name', viewIdeaModal.idea.brand)
-        .single()
-      
+      console.log('Idea company_id:', viewIdeaModal.idea.company_id)
+      console.log('Fallback brand name:', viewIdeaModal.idea.brand)
+
+      let companyData = null as any
+      let companyError = null as any
+      if (viewIdeaModal.idea.company_id) {
+        const res = await supabase
+          .from('companies')
+          .select('*')
+          .eq('id', viewIdeaModal.idea.company_id)
+          .single()
+        companyData = res.data
+        companyError = res.error
+      } else {
+        const res = await supabase
+          .from('companies')
+          .select('*')
+          .eq('brand_name', viewIdeaModal.idea.brand)
+          .single()
+        companyData = res.data
+        companyError = res.error
+      }
+
       if (companyError) {
         console.error('Error fetching company details:', companyError)
         console.log('Continuing without company details...')
       }
-      
+
       console.log('Company data fetched:', companyData)
-      
-      // Fetch strategy and angle details from Supabase
+
+
       console.log('=== FETCHING STRATEGY AND ANGLE DETAILS ===')
       console.log('Strategy ID:', viewIdeaModal.idea.strategy_id)
       console.log('Angle Number:', viewIdeaModal.idea.angle_number)
-      
+
       let strategyData = null
       let angleDetails = null
-      
+
       if (viewIdeaModal.idea.strategy_id && viewIdeaModal.idea.angle_number) {
         const { data: strategy, error: strategyError } = await supabase
           .from('strategies')
           .select('*')
           .eq('id', viewIdeaModal.idea.strategy_id)
           .single()
-        
+
         if (strategyError) {
           console.error('Error fetching strategy details:', strategyError)
           console.log('Continuing without strategy details...')
         } else {
           strategyData = strategy
-          
-          // Extract specific angle details
+
+
           const angleNumber = viewIdeaModal.idea.angle_number
           angleDetails = {
             number: angleNumber,
@@ -340,12 +377,12 @@ export function Ideas() {
             objective: strategy[`angle${angleNumber}_objective`] || '',
             tonality: strategy[`angle${angleNumber}_tonality`] || ''
           }
-          
+
           console.log('Strategy data fetched:', strategyData)
           console.log('Angle details extracted:', angleDetails)
         }
       }
-      
+
       const topicData = {
         topicNumber: viewIdeaModal.topic.number,
         topic: viewIdeaModal.topic.topic,
@@ -401,7 +438,7 @@ export function Ideas() {
           tonality: angleDetails?.tonality || 'No tonality specified',
           objective: angleDetails?.objective || 'No objective specified',
           keyOffer: companyData?.key_offer || companyData?.keyOffer || 'No key offer specified',
-          // Additional context for better content generation
+
           brandTone: companyData?.brand_tone || companyData?.brandTone || 'No brand tone specified',
           targetAudience: companyData?.target_audience || companyData?.targetAudience || 'No target audience specified',
           platforms: ["twitter", "linkedin", "newsletter"],
@@ -417,13 +454,13 @@ export function Ideas() {
           topicNumber: viewIdeaModal.topic.number
         }
       }
-      
+
       console.log('=== ENHANCED GENERATE CONTENT WEBHOOK ===')
       console.log('Sending payload:', webhookPayload)
       console.log('Company details included:', !!companyData)
       console.log('Angle details included:', !!angleDetails)
       console.log('Strategy context included:', !!strategyData)
-      
+
       // WEBHOOK SENDING DISABLED FOR ANALYSIS
       // const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
       //   method: 'POST',
@@ -432,16 +469,16 @@ export function Ideas() {
       //   },
       //   body: JSON.stringify(webhookPayload)
       // })
-      
+
       // console.log('Webhook response status:', response.status)
-      
+
       // if (!response.ok) {
       //   throw new Error(`Webhook failed with status: ${response.status}`)
       // }
-      
+
       // const responseText = await response.text()
       // console.log('Raw webhook response:', responseText)
-      
+
       // let result
       // try {
       //   result = JSON.parse(responseText)
@@ -451,31 +488,30 @@ export function Ideas() {
       //   // If JSON parsing fails, treat as success if status is ok
       //   result = { message: 'Content generation started' }
       // }
-      
+
       // console.log('Webhook response:', result)
-      
+
       console.log('=== FINAL WEBHOOK PAYLOAD FOR ANALYSIS ===')
       console.log(JSON.stringify(webhookPayload, null, 2))
-      
+
       alert('Webhook payload logged to console for analysis. Check browser developer tools.')
-      
+
     } catch (error) {
       console.error('Error generating content:', error)
-      alert(`Failed to generate content: ${error.message || 'Unknown error'}`)
+      alert(`Failed to generate content: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setGeneratingContent(false)
     }
   }
 
-  // Group ideas by brand
+
+  // Group ideas by brand name (from joined company)
   const ideasByBrand = ideas.reduce((acc, idea) => {
-    const brand = idea.brand || 'Unknown Brand'
-    if (!acc[brand]) {
-      acc[brand] = []
-    }
-    acc[brand].push(idea)
-    return acc
-  }, {} as Record<string, any[]>)
+    const brandName = idea.company?.brand_name || 'Unknown Brand';
+    if (!acc[brandName]) acc[brandName] = [] as any[];
+    acc[brandName].push(idea);
+    return acc;
+  }, {} as Record<string, any[]>);
 
   return (
     <div className="space-y-6">
@@ -509,7 +545,7 @@ export function Ideas() {
                   <p className="text-sm text-gray-500">{viewIdeaModal.idea?.brand || 'Unknown Brand'}</p>
                 </div>
               </div>
-              
+
               <button
                 onClick={handleCloseViewModal}
                 className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
@@ -604,14 +640,14 @@ export function Ideas() {
               <div className="flex space-x-3">
                 {viewIdeaModal.isEditing ? (
                   <>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={handleEditToggle}
                       disabled={saving}
                     >
                       Cancel
                     </Button>
-                    <Button 
+                    <Button
                       onClick={handleSaveChanges}
                       loading={saving}
                       disabled={saving}
@@ -621,13 +657,13 @@ export function Ideas() {
                   </>
                 ) : (
                   <>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={handleEditToggle}
                     >
                       Edit
                     </Button>
-                    <Button 
+                    <Button
                       onClick={handleGenerateContent}
                       loading={generatingContent}
                       disabled={generatingContent}
@@ -635,8 +671,8 @@ export function Ideas() {
                     >
                       {generatingContent ? 'Generating...' : 'Generate Content'}
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={handleCloseViewModal}
                     >
                       Close
@@ -668,7 +704,7 @@ export function Ideas() {
                   </p>
                 </div>
               </div>
-              
+
               <button
                 onClick={handleCloseIdeaSetModal}
                 className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
@@ -681,8 +717,8 @@ export function Ideas() {
             <div className="flex-1 p-6 overflow-y-auto">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {viewIdeaSetModal.topics.map((topic) => (
-                  <Card 
-                    key={topic.number} 
+                  <Card
+                    key={topic.number}
                     className="bg-white border border-gray-200 hover:shadow-lg hover:border-blue-300 transition-all duration-200 group cursor-pointer"
                     onClick={() => handleViewTopic(viewIdeaSetModal.idea, topic)}
                   >
@@ -696,7 +732,7 @@ export function Ideas() {
                         </CardTitle>
                       </div>
                     </CardHeader>
-                    
+
                     <CardContent className="space-y-3 pt-0 pb-4">
                       {/* Description */}
                       <div>
@@ -704,7 +740,7 @@ export function Ideas() {
                           {truncateText(topic.description, 100)}
                         </p>
                       </div>
-                      
+
                       {/* Image Prompt */}
                       {topic.image_prompt && topic.image_prompt !== 'No image prompt provided' && (
                         <div>
@@ -714,7 +750,7 @@ export function Ideas() {
                           </p>
                         </div>
                       )}
-                      
+
                       {/* View indicator */}
                       <div className="pt-1">
                         <div className="text-xs text-blue-600 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
@@ -757,7 +793,7 @@ export function Ideas() {
       {/* Ideas by Brand */}
       {!loading && !error && ideas.length > 0 && (
         <div className="space-y-12">
-          {Object.entries(ideasByBrand).map(([brandName, brandIdeas]) => (
+          {(Object.entries(ideasByBrand ?? {}) as [string, any[]][]).map(([brandName, brandIdeas]) => (
             <div key={brandName} className="space-y-6">
               {/* Brand Header */}
               <div className="bg-gradient-to-r from-blue-50 to-teal-50 rounded-2xl p-6 border border-blue-100">
@@ -781,9 +817,9 @@ export function Ideas() {
 
               {/* Ideas Grid for this Brand */}
               <div className="space-y-8">
-                {brandIdeas.map((idea) => {
+                {brandIdeas.map((idea: any) => {
                   const topics = extractTopicsFromIdea(idea)
-                  
+
                   return (
                     <Card key={idea.id} className="border-l-4 border-l-blue-500 shadow-md">
                       <CardContent>
@@ -809,7 +845,7 @@ export function Ideas() {
                               </div>
                             </div>
                           </div>
-                          
+
                           <Button
                             onClick={() => handleViewIdeaSet(idea)}
                             size="lg"

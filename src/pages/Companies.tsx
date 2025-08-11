@@ -6,10 +6,10 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { CreateBrandModal } from '../components/companies/CreateBrandModal'
 import { ViewCompanyModal } from '../components/companies/ViewCompanyModal'
 import { supabase } from '../lib/supabase'
-import { 
-  Plus, 
-  Building2, 
-  Users, 
+import {
+  Plus,
+  Building2,
+  Users,
   Calendar,
   Eye,
   MoreVertical,
@@ -45,21 +45,21 @@ export function Companies() {
     try {
       setLoading(true)
       setError(null)
-      
+
       console.log('Fetching companies from Supabase companies table...')
-      
+
       const { data, error } = await supabase
         .from('companies')
         .select('*')
         .order('created_at', { ascending: false })
-      
+
       console.log('Supabase response:', { data, error })
-      
+
       if (error) {
         console.error('Supabase error:', error)
         throw error
       }
-      
+
       console.log('Companies fetched successfully:', data?.length || 0, 'records')
       setCompanies(data || [])
     } catch (error) {
@@ -109,7 +109,7 @@ export function Companies() {
         .from('companies')
         .delete()
         .eq('id', deleteDialog.company.id)
-      
+
       if (error) {
         alert(error.message)
       } else {
@@ -138,7 +138,7 @@ export function Companies() {
     acc[brandName].push(company)
     return acc
   }, {} as Record<string, any[]>)
-  
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -220,104 +220,107 @@ export function Companies() {
       {/* Companies Table */}
       {!loading && !error && companies.length > 0 && (
         <div className="space-y-8">
-          {Object.entries(companiesByBrand).map(([brandName, brandCompanies]) => (
-            <div key={brandName} className="space-y-4">
-              {/* Brand Header */}
-              <div className="bg-gradient-to-r from-blue-50 to-teal-50 rounded-xl p-4 border border-blue-100">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg">
-                      <Building2 className="h-6 w-6 text-white" />
+          {Object.entries(companiesByBrand).map(([brandName, brandCompanies]) => {
+            const companiesArr = brandCompanies as any[];
+            return (
+              <div key={brandName} className="space-y-4">
+                {/* Brand Header */}
+                <div className="bg-gradient-to-r from-blue-50 to-teal-50 rounded-xl p-4 border border-blue-100">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg">
+                        <Building2 className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">{brandName}</CardTitle>
+                        <p className="text-blue-600 font-medium">{companiesArr.length} compan{companiesArr.length === 1 ? 'y' : 'ies'}</p>
+                      </div>
                     </div>
-                    <div>
-                      <CardTitle className="text-lg">{brandName}</CardTitle>
-                      <p className="text-blue-600 font-medium">{brandCompanies.length} compan{brandCompanies.length === 1 ? 'y' : 'ies'}</p>
+                    <div className="text-right">
+                      <Badge variant="primary" className="text-sm px-4 py-2 font-semibold">
+                        {companiesArr.length} Total
+                      </Badge>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <Badge variant="primary" className="text-sm px-4 py-2 font-semibold">
-                      {brandCompanies.length} Total
-                    </Badge>
                   </div>
                 </div>
-              </div>
 
-              {/* Company Cards for this Brand */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-                {brandCompanies.map((company) => (
-                  <Card key={company.id} className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-3 flex-1">
-                          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <Building2 className="h-5 w-5 text-blue-600" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <CardTitle className="text-base leading-tight">{company.brand_name}</CardTitle>
-                            <div className="flex items-center space-x-2 text-xs text-gray-500 mt-1">
-                              <span className="flex items-center">
-                                <Calendar className="h-3 w-3 mr-1" />
-                                {formatDate(company.created_at)}
-                              </span>
-                              {company.website && (
-                                <span className="text-blue-600 truncate">
-                                  {company.website.replace(/^https?:\/\//, '')}
+                {/* Company Cards for this Brand */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {companiesArr.map((company) => (
+                    <Card key={company.id} className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start space-x-3 flex-1">
+                            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <Building2 className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <CardTitle className="text-base leading-tight">{company.brand_name}</CardTitle>
+                              <div className="flex items-center space-x-2 text-xs text-gray-500 mt-1">
+                                <span className="flex items-center">
+                                  <Calendar className="h-3 w-3 mr-1" />
+                                  {formatDate(company.created_at)}
                                 </span>
-                              )}
+                                {company.website && (
+                                  <span className="text-blue-600 truncate">
+                                    {company.website.replace(/^https?:\/\//, '')}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="space-y-3">
-                        {/* Company Summary */}
-                        <div className="bg-gray-50 rounded-lg p-3">
-                          <p className="text-xs text-gray-700 leading-relaxed">
-                            {company.brand_tone ? truncateText(company.brand_tone, 150) : 'No brand description available'}
-                          </p>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <div className="space-y-3">
+                          {/* Company Summary */}
+                          <div className="bg-gray-50 rounded-lg p-3">
+                            <p className="text-xs text-gray-700 leading-relaxed">
+                              {company.brand_tone ? truncateText(company.brand_tone, 150) : 'No brand description available'}
+                            </p>
+                          </div>
+
+                          {/* Quick Info */}
+                          <div className="flex flex-wrap gap-1">
+                            {company.target_audience && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                <Target className="h-2.5 w-2.5 mr-1" />
+                                Target Audience Defined
+                              </span>
+                            )}
+                            {company.key_offer && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <Building2 className="h-2.5 w-2.5 mr-1" />
+                                Key Offer Defined
+                              </span>
+                            )}
+                            {company.additional_information && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                <FileText className="h-2.5 w-2.5 mr-1" />
+                                Additional Info
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="pt-2 flex justify-end">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewClick(company)}
+                              className="text-xs"
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              View Details
+                            </Button>
+                          </div>
                         </div>
-                        
-                        {/* Quick Info */}
-                        <div className="flex flex-wrap gap-1">
-                          {company.target_audience && (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              <Target className="h-2.5 w-2.5 mr-1" />
-                              Target Audience Defined
-                            </span>
-                          )}
-                          {company.key_offer && (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              <Building2 className="h-2.5 w-2.5 mr-1" />
-                              Key Offer Defined
-                            </span>
-                          )}
-                          {company.additional_information && (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                              <FileText className="h-2.5 w-2.5 mr-1" />
-                              Additional Info
-                            </span>
-                          )}
-                        </div>
-                        
-                        <div className="pt-2 flex justify-end">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleViewClick(company)}
-                            className="text-xs"
-                          >
-                            <Eye className="h-3 w-3 mr-1" />
-                            View Details
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

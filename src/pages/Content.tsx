@@ -7,10 +7,10 @@ import { Select } from '../components/ui/Select'
 import { Badge } from '../components/ui/Badge'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { ViewContentModal } from '../components/content/ViewContentModal'
-import { 
-  FileText, 
-  Eye, 
-  CheckCircle, 
+import {
+  FileText,
+  Eye,
+  CheckCircle,
   Clock,
   Filter,
   Search,
@@ -54,15 +54,15 @@ const extractContentBody = (content: any) => {
         return firstContent.replace(/^["']|["']$/g, '').trim()
       }
     }
-    
+
     if (parsedContent.content) {
       return parsedContent.content.replace(/^["']|["']$/g, '').trim()
     }
-    
+
     if (parsedContent.body) {
       return parsedContent.body.replace(/^["']|["']$/g, '').trim()
     }
-    
+
     if (parsedContent.description) {
       return parsedContent.description.replace(/^["']|["']$/g, '').trim()
     }
@@ -70,22 +70,22 @@ const extractContentBody = (content: any) => {
 
   // Fallback to original body or a default message
   const fallbackContent = content.body || 'AI-generated content ready for review and publishing.'
-  
+
   // If it's still JSON-like, try to clean it up
   if (typeof fallbackContent === 'string' && fallbackContent.includes('"')) {
     // Try to extract readable content from JSON strings
     const cleanContent = fallbackContent
       .replace(/^\[|\]$/g, '') // Remove array brackets
-      .replace(/^\{|\}$/g, '') // Remove object brackets  
+      .replace(/^\{|\}$/g, '') // Remove object brackets
       .replace(/"[^"]*":\s*/g, '') // Remove JSON keys
       .replace(/[{}[\]"]/g, '') // Remove remaining JSON characters
       .replace(/,\s*/g, '. ') // Replace commas with periods
       .replace(/\.\s*\./g, '.') // Remove double periods
       .trim()
-    
+
     return cleanContent || 'AI-generated content ready for review and publishing.'
   }
-  
+
   return fallbackContent
 }
 
@@ -113,11 +113,11 @@ const extractContentTopic = (content: any) => {
         return firstContent.subject
       }
     }
-    
+
     if (parsedContent.topic) {
       return parsedContent.topic
     }
-    
+
     if (parsedContent.title) {
       return parsedContent.title
     }
@@ -156,12 +156,12 @@ export function Content() {
       try {
         const brandsCollection = collection(db, 'brands')
         const brandsSnapshot = await getDocs(brandsCollection)
-        
+
         const brands = brandsSnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         }))
-        
+
         setFirebaseBrands(brands)
       } catch (error) {
         console.error('Error fetching brands from Firebase:', error)
@@ -175,14 +175,14 @@ export function Content() {
       try {
         // Fetch only from 'content' collection
         const contentSnapshot = await getDocs(collection(db, 'content'))
-        
+
         const contentItems = contentSnapshot.docs.map(doc => ({
           id: doc.id,
           firebaseId: doc.id, // Store the actual Firebase document ID
           source: 'content',
           ...doc.data()
         }))
-        
+
         setGeneratedContent(contentItems)
       } catch (error) {
         console.error('Error fetching content from Firebase:', error)
@@ -208,7 +208,7 @@ export function Content() {
         source: 'content',
         ...doc.data()
       }))
-      
+
       setGeneratedContent(contentItems)
     } catch (error) {
       console.error('Error refreshing content:', error)
@@ -234,25 +234,27 @@ export function Content() {
       // Use the actual Firebase document ID and determine collection
       const firebaseDocId = deleteDialog.content.firebaseId || deleteDialog.content.id
       const collectionName = 'content' // Always use content collection
-      
+
       console.log(`Attempting to delete document with Firebase ID: ${firebaseDocId} from content collection`)
       console.log('Full content object:', deleteDialog.content)
-      
+
       // Delete from content collection
       await deleteDoc(doc(db, collectionName, firebaseDocId))
-      
+
       console.log(`Successfully deleted document ${firebaseDocId} from content collection`)
-      
+
       // Update local state
       setGeneratedContent(prev => prev.filter(content => content.id !== deleteDialog.content.id))
-      
+
       // Close dialog
       setDeleteDialog({ isOpen: false, content: null, loading: false })
-      
+
       console.log('Content deleted successfully from database and UI updated')
     } catch (error) {
       console.error('Error deleting content:', error)
-      console.error('Error details:', error.message)
+      if (error instanceof Error) {
+        console.error('Error details:', error.message)
+      }
       console.error('Firebase Document ID that failed:', deleteDialog.content.firebaseId || deleteDialog.content.id)
       alert('Failed to delete content. Please try again.')
       setDeleteDialog(prev => ({ ...prev, loading: false }))
@@ -277,18 +279,18 @@ export function Content() {
     const matchesCompany = !selectedCompany || content.company_id === selectedCompany
     const matchesStatus = filterStatus === 'all' || content.status === filterStatus
     const matchesType = filterType === 'all' || content.type === filterType
-    const matchesSearch = !searchQuery || 
+    const matchesSearch = !searchQuery ||
       content.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       content.body.toLowerCase().includes(searchQuery.toLowerCase())
-    
+
     return matchesCompany && matchesStatus && matchesType && matchesSearch
   })
 
   const handleViewContent = (content: any) => {
     console.log('Opening content modal for:', content)
     console.log('Content has strategy_id:', content.strategy_id)
-    setViewContentModal({ 
-      isOpen: true, 
+    setViewContentModal({
+      isOpen: true,
       content,
       strategyId: content.strategy_id || content.metadata?.parent_strategy_id // Pass strategy_id if it exists
     })
@@ -388,20 +390,20 @@ export function Content() {
                 className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
-            
+
             <div className="flex gap-3">
               <Select
                 options={brandOptions}
                 value={selectedCompany}
                 onChange={(e) => setSelectedCompany(e.target.value)}
               />
-              
+
               <Select
                 options={typeOptions}
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value as typeof filterType)}
               />
-              
+
               <Select
                 options={statusOptions}
                 value={filterStatus}
@@ -443,7 +445,7 @@ export function Content() {
                   </div>
                 </div>
                 <div className="flex items-center space-x-1">
-                  <button 
+                  <button
                     onClick={() => handleDeleteClick(content)}
                     className="p-1 hover:bg-red-50 rounded-lg transition-colors group"
                     title="Delete content"
@@ -456,7 +458,7 @@ export function Content() {
                 </div>
               </div>
             </CardHeader>
-            
+
             <CardContent className="space-y-4">
               {/* Content Topic/Subject */}
               {extractContentTopic(content) && (
@@ -497,9 +499,9 @@ export function Content() {
               </div>
 
               <div className="flex space-x-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   className="w-full"
                   onClick={() => handleViewContent(content)}
                 >
@@ -520,7 +522,7 @@ export function Content() {
               {allContent.length === 0 ? 'No content yet' : 'No content matches your filters'}
             </h3>
             <p className="text-gray-500 mb-6">
-              {allContent.length === 0 
+              {allContent.length === 0
                 ? 'Generate content from your ideas to see them here.'
                 : 'Try adjusting your filters to see more content.'
               }

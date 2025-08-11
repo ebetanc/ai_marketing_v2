@@ -41,10 +41,10 @@ export function useContentPieces(companyId?: string) {
   useEffect(() => {
     // Simulate loading delay
     setTimeout(() => {
-      const filteredContent = companyId 
+      const filteredContent = companyId
         ? mockContent.filter(content => content.company_id === companyId)
         : mockContent
-      
+
       setContentPieces(filteredContent)
       setLoading(false)
     }, 500)
@@ -52,10 +52,10 @@ export function useContentPieces(companyId?: string) {
 
   const generateContent = async (prompt: string, type: ContentPiece['type'], companyId: string) => {
     setGenerating(true)
-    
+
     // Simulate AI generation delay
     await new Promise(resolve => setTimeout(resolve, 3000))
-    
+
     const newContent: ContentPiece = {
       id: Date.now().toString(),
       company_id: companyId,
@@ -73,13 +73,13 @@ export function useContentPieces(companyId?: string) {
 
     setContentPieces(prev => [newContent, ...prev])
     setGenerating(false)
-    
+
     return { data: newContent, error: null }
   }
 
   const updateContentStatus = async (id: string, status: ContentPiece['status']) => {
-    setContentPieces(prev => 
-      prev.map(content => 
+    setContentPieces(prev =>
+      prev.map(content =>
         content.id === id ? { ...content, status } : content
       )
     )
@@ -88,10 +88,10 @@ export function useContentPieces(companyId?: string) {
   const refetch = () => {
     setLoading(true)
     setTimeout(() => {
-      const filteredContent = companyId 
+      const filteredContent = companyId
         ? mockContent.filter(content => content.company_id === companyId)
         : mockContent
-      
+
       setContentPieces(filteredContent)
       setLoading(false)
     }, 500)
@@ -138,8 +138,8 @@ function generateTitleFromPrompt(prompt: string, type: ContentPiece['type']): st
       'The Next Step in Your Journey'
     ]
   }
-  
-  const typeTitle = titles[type] || titles.blog_post
+
+  const typeTitle = titles[type as keyof typeof titles] || titles.blog_post
   return typeTitle[Math.floor(Math.random() * typeTitle.length)]
 }
 
@@ -150,6 +150,6 @@ function generateBodyFromPrompt(prompt: string, type: ContentPiece['type']): str
     ad_copy: 'Don\'t let your competition get ahead. Our industry-leading solutions have helped over 10,000 businesses increase their efficiency by 40% in just 30 days. With our proven methodology and expert support, you\'ll see results faster than you ever thought possible. Ready to see what we can do for you? Get started today with our risk-free trial!',
     email: 'Hi there!\n\nI hope this email finds you well. I wanted to personally reach out because I believe our solution could make a significant impact on your business goals. We\'ve helped companies just like yours achieve remarkable results, and I\'d love to show you how we can do the same for you.\n\nOur approach is different - we focus on understanding your unique challenges and crafting solutions that fit your specific needs. No one-size-fits-all approaches here.\n\nWould you be interested in a brief conversation to explore how we might be able to help?\n\nBest regards,\nThe Team'
   }
-  
-  return bodies[type] || bodies.blog_post
+
+  return bodies[type as keyof typeof bodies] || bodies.blog_post
 }

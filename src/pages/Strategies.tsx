@@ -1,23 +1,23 @@
-import React, { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
-import { Button } from '../components/ui/Button'
-import { Badge } from '../components/ui/Badge'
-import { Select } from '../components/ui/Select'
-import { supabase } from '../lib/supabase'
-import { 
-  RefreshCw,
-  Database,
+import {
   Building2,
-  Target,
-  Zap,
-  FileText,
   Calendar,
+  Database,
   Eye,
-  X,
+  FileText,
   Plus,
-  Sparkles
+  RefreshCw,
+  Sparkles,
+  Target,
+  X,
+  Zap
 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Badge } from '../components/ui/Badge'
+import { Button } from '../components/ui/Button'
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
+import { Select } from '../components/ui/Select'
 import type { Strategy } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
 import { formatDate } from '../lib/utils'
 
 export function Strategies() {
@@ -48,6 +48,24 @@ export function Strategies() {
     objective: '',
     tonality: ''
   })
+
+  // Helper: compare potentially mixed-type IDs (bigint from DB may arrive as string)
+  const equalIds = (a: string | number | null | undefined, b: string | number | null | undefined) => {
+    if (a == null || b == null) return false
+    return String(a) === String(b)
+  }
+
+  // Helper: find company by id using safe comparison
+  const getCompanyById = (id: string | number | null | undefined) => {
+    if (id == null) return undefined
+    return companies.find((c) => equalIds(c.id, id))
+  }
+
+  // Helper: derive brand display name from strategy -> company
+  const getBrandNameForStrategy = (strategy: Strategy) => {
+    const company = getCompanyById(strategy.company_id as any)
+    return company?.brand_name || company?.name || 'Unknown Brand'
+  }
   const [saving, setSaving] = useState(false)
   const [generatingIdeas, setGeneratingIdeas] = useState(false)
   const [strategyDetailsModal, setStrategyDetailsModal] = useState<{
@@ -74,7 +92,7 @@ export function Strategies() {
   // Helper function to format markdown-like text
   const formatDescription = (text: string) => {
     if (!text) return 'No description available'
-    
+
     return text.split('\n').map((line, index) => {
       // Handle headers (###)
       if (line.startsWith('### ')) {
@@ -84,7 +102,7 @@ export function Strategies() {
           </h4>
         )
       }
-      
+
       // Handle numbered lists
       if (/^\d+\.\s/.test(line)) {
         const content = line.replace(/^\d+\.\s/, '')
@@ -97,7 +115,7 @@ export function Strategies() {
           </div>
         )
       }
-      
+
       // Handle bullet points with dashes
       if (line.startsWith('- ')) {
         const content = line.replace(/^- /, '')
@@ -109,7 +127,7 @@ export function Strategies() {
           </div>
         )
       }
-      
+
       // Handle regular paragraphs with bold formatting
       if (line.trim()) {
         const formattedContent = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -117,7 +135,7 @@ export function Strategies() {
           <p key={index} className="mb-2" dangerouslySetInnerHTML={{ __html: formattedContent }} />
         )
       }
-      
+
       // Empty lines for spacing
       return <br key={index} />
     })
@@ -132,17 +150,17 @@ export function Strategies() {
     try {
       setLoadingCompanies(true)
       console.log('Fetching companies from Supabase...')
-      
+
       const { data, error } = await supabase
         .from('companies')
         .select('*')
         .order('created_at', { ascending: false })
-      
+
       if (error) {
         console.error('Error fetching companies:', error)
         throw error
       }
-      
+
       console.log('Companies fetched successfully:', data?.length || 0, 'records')
       setCompanies(data || [])
     } catch (error) {
@@ -157,25 +175,45 @@ export function Strategies() {
     try {
       setLoading(true)
       setError(null)
-      
+
       console.log('Fetching strategies from Supabase...')
       console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL)
       console.log('Supabase client:', supabase)
-      
+
       // First, let's try to get the current user/session
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       console.log('Current user:', user)
       console.log('Auth error:', authError)
-      
-      const { data, error } = await supabase
-        .from('strategies')
-        .select('*')
-        .order('created_at', { ascending: false })
-      
+
+      // Try relational select (requires strategies.company_id FK). Fallback to * if it fails
+      let data: any[] | null = null
+      let error: any = null
+      try {
+        const res = await supabase
+          .from('strategies')
+          .select(`
+            *,
+            company:companies (*)
+          `)
+          .order('created_at', { ascending: false })
+        data = res.data as any[] | null
+        error = res.error
+      } catch (e) {
+        console.warn('Relational select failed, falling back to basic select. Error:', e)
+      }
+      if (!data || error) {
+        const res2 = await supabase
+          .from('strategies')
+          .select('*')
+          .order('created_at', { ascending: false })
+        data = res2.data as any[] | null
+        error = res2.error
+      }
+
       console.log('Supabase response:', { data, error })
       console.log('Data length:', data?.length)
       console.log('Error details:', error)
-      
+
       if (error) {
         console.error('Supabase error:', error)
         console.error('Error code:', error.code)
@@ -183,7 +221,7 @@ export function Strategies() {
         console.error('Error details:', error.details)
         throw error
       }
-      
+
       console.log('Strategies fetched successfully:', data?.length || 0, 'records')
       console.log('First strategy (if any):', data?.[0])
       setStrategies(data || [])
@@ -205,7 +243,7 @@ export function Strategies() {
       const description = strategy[`angle${i}_description` as keyof Strategy] as string
       const objective = strategy[`angle${i}_objective` as keyof Strategy] as string
       const tonality = strategy[`angle${i}_tonality` as keyof Strategy] as string
-      
+
       if (header || description || objective || tonality) {
         angles.push({
           number: i,
@@ -256,7 +294,7 @@ export function Strategies() {
       ...prev,
       isEditing: !prev.isEditing
     }))
-    
+
     // Reset form when canceling edit
     if (viewAngleModal.isEditing) {
       setEditForm({
@@ -270,9 +308,9 @@ export function Strategies() {
 
   const handleSaveChanges = async () => {
     if (!viewAngleModal.strategy || !viewAngleModal.angle) return
-    
+
     setSaving(true)
-    
+
     try {
       const angleNumber = viewAngleModal.angle.number
       const updateData = {
@@ -281,20 +319,20 @@ export function Strategies() {
         [`angle${angleNumber}_objective`]: editForm.objective,
         [`angle${angleNumber}_tonality`]: editForm.tonality
       }
-      
+
       console.log('=== SAVE OPERATION DEBUG ===')
       console.log('Strategy ID:', viewAngleModal.strategy.id)
       console.log('Angle Number:', angleNumber)
       console.log('Update Data:', updateData)
       console.log('Original Strategy:', viewAngleModal.strategy)
-      
+
       const { error } = await supabase
         .from('strategies')
         .update(updateData)
         .eq('id', viewAngleModal.strategy.id)
-      
+
       console.log('Supabase Update Response Error:', error)
-      
+
       if (error) {
         console.error('=== SUPABASE UPDATE ERROR ===')
         console.error('Error Code:', error.code)
@@ -304,9 +342,9 @@ export function Strategies() {
         alert(`Failed to save changes: ${error.message}`)
         return
       }
-      
+
       console.log('Strategy updated successfully')
-      
+
       // Update local state
       setStrategies(prev => prev.map(strategy => {
         if (strategy.id === viewAngleModal.strategy!.id) {
@@ -314,7 +352,7 @@ export function Strategies() {
         }
         return strategy
       }))
-      
+
       // Update the modal's angle data
       const updatedAngle = {
         ...viewAngleModal.angle,
@@ -323,21 +361,21 @@ export function Strategies() {
         objective: editForm.objective,
         tonality: editForm.tonality
       }
-      
+
       setViewAngleModal(prev => ({
         ...prev,
         angle: updatedAngle,
         isEditing: false
       }))
-      
+
       // Force a refresh of the data from the database to ensure consistency
       await fetchStrategies()
-      
+
       alert('Changes saved successfully!')
-      
+
     } catch (error) {
       console.error('Error saving changes:', error)
-      alert(`Failed to save changes: ${error.message || 'Unknown error'}`)
+      alert(`Failed to save changes: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setSaving(false)
     }
@@ -345,26 +383,26 @@ export function Strategies() {
 
   const handleGenerateIdeas = async () => {
     if (!viewAngleModal.strategy || !viewAngleModal.angle) return
-    
+
     setGeneratingIdeas(true)
-    
+
     try {
       // Find the full company details from the companies array
-      const company = companies.find(c => 
-        c.brand_name === viewAngleModal.strategy!.brand || 
-        c.name === viewAngleModal.strategy!.brand
+      const company = companies.find(c =>
+        viewAngleModal.strategy!.company_id && c.id === viewAngleModal.strategy!.company_id
       )
-      
+
       console.log('=== GENERATE IDEAS COMPANY LOOKUP ===')
-      console.log('Looking for brand:', viewAngleModal.strategy.brand)
+      console.log('Looking for company_id:', viewAngleModal.strategy.company_id)
       console.log('Available companies:', companies.map(c => ({ id: c.id, name: c.brand_name || c.name })))
       console.log('Found company:', company)
-      
+
       // Parse platforms from strategy (comma-separated string to array)
-      const strategyPlatforms = viewAngleModal.strategy.platforms 
-        ? viewAngleModal.strategy.platforms.split(',').map(p => p.trim())
-        : ["twitter", "linkedin", "newsletter"]
-      
+      // Prefer strategy.platforms if needed in the future
+      // const strategyPlatforms = viewAngleModal.strategy.platforms
+      //   ? viewAngleModal.strategy.platforms.split(',').map(p => p.trim())
+      //   : ["twitter", "linkedin", "newsletter"]
+
       const angleData = {
         angleNumber: viewAngleModal.angle.number,
         header: viewAngleModal.angle.header,
@@ -373,7 +411,7 @@ export function Strategies() {
         tonality: viewAngleModal.angle.tonality,
         strategy: {
           id: viewAngleModal.strategy.id,
-          brand: viewAngleModal.strategy.brand,
+          // brand removed: use company_id instead
           platforms: ["twitter", "linkedin", "newsletter"],
           created_at: viewAngleModal.strategy.created_at
         }
@@ -410,7 +448,7 @@ export function Strategies() {
       console.log('Sending payload to webhook:', webhookPayload)
       console.log('Brand details included:', !!company)
       console.log('Full brand data:', company)
-      
+
       const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
         method: 'POST',
         headers: {
@@ -420,19 +458,19 @@ export function Strategies() {
       })
 
       console.log('Webhook response status:', response.status)
-      
+
       if (!response.ok) {
         throw new Error(`Webhook request failed with status: ${response.status}`)
       }
 
       const result = await response.text()
       console.log('Webhook response:', result)
-      
+
       alert('Ideas generated successfully! Check your Ideas page to see the generated content ideas.')
-      
+
     } catch (error) {
       console.error('Error generating ideas:', error)
-      alert(`Failed to generate ideas: ${error.message || 'Unknown error'}`)
+      alert(`Failed to generate ideas: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setGeneratingIdeas(false)
     }
@@ -456,7 +494,7 @@ export function Strategies() {
   }
 
   const togglePlatform = (platformId: string) => {
-    setSelectedPlatforms(prev => 
+    setSelectedPlatforms(prev =>
       prev.includes(platformId)
         ? prev.filter(id => id !== platformId)
         : [...prev, platformId]
@@ -468,14 +506,14 @@ export function Strategies() {
       alert('Please select a company')
       return
     }
-    
+
     if (selectedPlatforms.length === 0) {
       alert('Please select at least one platform')
       return
     }
 
     setGenerating(true)
-    
+
     try {
       // Debug logs to diagnose the "Selected company not found" error
       console.log('=== DEBUG: SELECTED COMPANY AND COMPANIES ARRAY ===')
@@ -484,7 +522,7 @@ export function Strategies() {
       console.log('companies array:', companies)
       console.log('companies array length:', companies.length)
       console.log('companies array IDs:', companies.map(c => ({ id: c.id, type: typeof c.id, name: c.brand_name || c.name })))
-      
+
       // Find the selected company data
       const company = companies.find(c => c.id == selectedCompany) // Use == for type coercion
       if (!company) {
@@ -498,18 +536,18 @@ export function Strategies() {
       const brandData = {
         // Include ALL company data from Supabase
         ...company, // Spread all company properties
-        
+
         // Add computed/formatted fields for backward compatibility
         name: company.brand_name || company.name || 'Unknown Brand',
         brandTone: company.brand_tone || '',
         keyOffer: company.key_offer || '',
         targetAudience: company.target_audience || '',
         additionalInfo: company.additional_information || '',
-        
+
         // Platform-specific data
         selectedPlatforms: selectedPlatforms,
         platformCount: selectedPlatforms.length,
-        
+
         // Metadata for webhook processing
         webhook_metadata: {
           source: 'strategies_page',
@@ -558,20 +596,20 @@ export function Strategies() {
       console.log('Webhook response:', result)
 
       alert('Strategy generation started successfully! Check back in a few moments to see the new strategy.')
-      
+
       // Close modal and reset form
       setShowGenerateModal(false)
       setSelectedCompany('')
       setSelectedPlatforms([])
-      
+
       // Refresh strategies after a short delay
       setTimeout(() => {
         fetchStrategies()
       }, 2000)
-      
+
     } catch (error) {
       console.error('Error generating strategy:', error)
-      alert(`Failed to generate strategy: ${error.message || 'Unknown error'}`)
+      alert(`Failed to generate strategy: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setGenerating(false)
     }
@@ -591,12 +629,10 @@ export function Strategies() {
     }))
   }
 
-  // Group strategies by brand
+  // Group strategies by company_id (3NF compliant)
   const strategiesByBrand = strategies.reduce((acc, strategy) => {
-    const brand = strategy.brand || 'Unknown Brand'
-    if (!acc[brand]) {
-      acc[brand] = []
-    }
+    const brand = getBrandNameForStrategy(strategy)
+    if (!acc[brand]) acc[brand] = []
     acc[brand].push(strategy)
     return acc
   }, {} as Record<string, Strategy[]>)
@@ -635,7 +671,7 @@ export function Strategies() {
                   <p className="text-sm text-gray-500">Create AI-powered content angles</p>
                 </div>
               </div>
-              
+
               <button
                 onClick={handleCloseGenerateModal}
                 className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
@@ -680,11 +716,10 @@ export function Strategies() {
                       key={platform.id}
                       onClick={() => togglePlatform(platform.id)}
                       disabled={generating}
-                      className={`p-3 rounded-xl border-2 transition-all duration-200 text-sm font-medium ${
-                        selectedPlatforms.includes(platform.id)
-                          ? `${platform.color} text-white border-transparent shadow-md`
-                          : 'bg-gray-50 text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-100'
-                      } ${generating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`p-3 rounded-xl border-2 transition-all duration-200 text-sm font-medium ${selectedPlatforms.includes(platform.id)
+                        ? `${platform.color} text-white border-transparent shadow-md`
+                        : 'bg-gray-50 text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-100'
+                        } ${generating ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       {platform.name}
                     </button>
@@ -758,14 +793,14 @@ export function Strategies() {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">
-                    Strategy #{strategyDetailsModal.strategy?.id} - {strategyDetailsModal.strategy?.brand}
+                    Strategy #{strategyDetailsModal.strategy?.id} - {(strategyDetailsModal.strategy as any)?.brand}
                   </h2>
                   <p className="text-sm text-gray-500">
                     {strategyDetailsModal.angles.length} content angles • Created {strategyDetailsModal.strategy?.created_at ? formatDate(strategyDetailsModal.strategy.created_at) : 'Unknown'}
                   </p>
                 </div>
               </div>
-              
+
               <button
                 onClick={handleCloseStrategyDetailsModal}
                 className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
@@ -789,15 +824,15 @@ export function Strategies() {
                         </CardTitle>
                       </div>
                     </CardHeader>
-                    
+
                     <CardContent className="space-y-2 pt-0 pb-3 p-3">
                       {/* Description */}
                       <div>
-                        <div className="text-xs text-gray-600 line-clamp-2 leading-relaxed bg-gray-50 p-2 rounded text-xs">
+                        <div className="text-xs text-gray-600 line-clamp-2 leading-relaxed bg-gray-50 p-2 rounded">
                           {formatDescription(angle.description || 'No description available')}
                         </div>
                       </div>
-                      
+
                       {/* Objective & Tonality in one row */}
                       <div className="flex items-center justify-between text-xs">
                         <div className="flex items-center space-x-1 min-w-0 flex-1">
@@ -814,9 +849,9 @@ export function Strategies() {
 
                       {/* View Button */}
                       <div className="pt-0.5">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
+                        <Button
+                          variant="outline"
+                          size="sm"
                           className="w-full text-xs py-1 px-2 group-hover:bg-blue-50 group-hover:border-blue-300 group-hover:text-blue-700 transition-colors"
                           onClick={() => handleViewAngle(strategyDetailsModal.strategy!, angle)}
                         >
@@ -848,11 +883,11 @@ export function Strategies() {
                     {viewAngleModal.isEditing ? 'Edit Angle' : viewAngleModal.angle?.header}
                   </h2>
                   <p className="text-sm text-gray-500">
-                    {viewAngleModal.strategy?.brand} • Strategy #{viewAngleModal.strategy?.id} • Angle {viewAngleModal.angle?.number}
+                    {(viewAngleModal.strategy as any)?.brand} • Strategy #{viewAngleModal.strategy?.id} • Angle {viewAngleModal.angle?.number}
                   </p>
                 </div>
               </div>
-              
+
               <button
                 onClick={handleCloseViewModal}
                 className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
@@ -977,7 +1012,7 @@ export function Strategies() {
                 <CardContent className="space-y-3">
                   <div>
                     <p className="text-sm font-medium text-gray-900">Brand</p>
-                    <p className="text-gray-700">{viewAngleModal.strategy?.brand}</p>
+                    <p className="text-gray-700">{(viewAngleModal.strategy as any)?.brand}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-900">Strategy ID</p>
@@ -1008,14 +1043,14 @@ export function Strategies() {
               <div className="flex space-x-3">
                 {viewAngleModal.isEditing ? (
                   <>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={handleEditToggle}
                       disabled={saving}
                     >
                       Cancel
                     </Button>
-                    <Button 
+                    <Button
                       onClick={handleSaveChanges}
                       loading={saving}
                       disabled={saving}
@@ -1025,13 +1060,13 @@ export function Strategies() {
                   </>
                 ) : (
                   <>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={handleEditToggle}
                     >
                       Edit
                     </Button>
-                    <Button 
+                    <Button
                       onClick={handleGenerateIdeas}
                       loading={generatingIdeas}
                       disabled={generatingIdeas}
@@ -1039,8 +1074,8 @@ export function Strategies() {
                     >
                       {generatingIdeas ? 'Generating...' : 'Generate Ideas'}
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={handleCloseViewModal}
                     >
                       Close
@@ -1108,7 +1143,7 @@ export function Strategies() {
                 {brandStrategies.map((strategy) => {
                   const angles = extractAnglesFromStrategy(strategy)
                   const platforms = strategy.platforms ? strategy.platforms.split(',').map(p => p.trim()) : []
-                  
+
                   return (
                     <Card key={strategy.id} className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
                       <CardContent className="p-8">
