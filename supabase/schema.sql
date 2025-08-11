@@ -58,23 +58,17 @@ CREATE TABLE public.ideas (
 CREATE TABLE public.linkedin_content (
     id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
     created_at timestamp with time zone NOT NULL DEFAULT now(),
-    company_id bigint NOT NULL,
-    strategy_id bigint,
     idea_id bigint NOT NULL,
+    content_body text,
     CONSTRAINT linkedin_content_pkey PRIMARY KEY (id),
-    CONSTRAINT linkedin_content_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id),
-    CONSTRAINT linkedin_content_strategy_id_fkey FOREIGN KEY (strategy_id) REFERENCES public.strategies(id),
     CONSTRAINT linkedin_content_idea_id_fkey FOREIGN KEY (idea_id) REFERENCES public.ideas(id)
 );
 CREATE TABLE public.newsletter_content (
     id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
     created_at timestamp with time zone NOT NULL DEFAULT now(),
-    company_id bigint NOT NULL,
-    strategy_id bigint,
     idea_id bigint NOT NULL,
+    content_body text,
     CONSTRAINT newsletter_content_pkey PRIMARY KEY (id),
-    CONSTRAINT newsletter_content_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id),
-    CONSTRAINT newsletter_content_strategy_id_fkey FOREIGN KEY (strategy_id) REFERENCES public.strategies(id),
     CONSTRAINT newsletter_content_idea_id_fkey FOREIGN KEY (idea_id) REFERENCES public.ideas(id)
 );
 CREATE TABLE public.real_estate_content (
@@ -134,12 +128,8 @@ CREATE TABLE public.strategies (
 CREATE TABLE public.twitter_content (
     id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
     created_at timestamp with time zone NOT NULL DEFAULT now(),
-    company_id bigint NOT NULL,
-    strategy_id bigint,
     idea_id bigint NOT NULL,
     content_body text,
     CONSTRAINT twitter_content_pkey PRIMARY KEY (id),
-    CONSTRAINT twitter_content_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id),
-    CONSTRAINT twitter_content_strategy_id_fkey FOREIGN KEY (strategy_id) REFERENCES public.strategies(id),
     CONSTRAINT twitter_content_idea_id_fkey FOREIGN KEY (idea_id) REFERENCES public.ideas(id)
 );

@@ -176,13 +176,15 @@ export function Content() {
       // Prefer relational select to join company for brand name; fallback to * if relation not available
       const [twitterRes, linkedinRes, newsletterRes] = await Promise.all([
         (async () => {
+          // Prefer relational select via idea -> company/strategy (post-3NF)
           try {
             const res = await supabase
               .from('twitter_content')
-              .select(`*, company:companies(*)`)
+              .select(`*, idea:ideas(*, company:companies(*), strategy:strategies(*))`)
               .order('created_at', { ascending: false })
             return res
           } catch (e) {
+            // Fallback to basic select
             return await supabase.from('twitter_content').select('*').order('created_at', { ascending: false })
           }
         })(),
@@ -190,7 +192,7 @@ export function Content() {
           try {
             const res = await supabase
               .from('linkedin_content')
-              .select(`*, company:companies(*)`)
+              .select(`*, idea:ideas(*, company:companies(*), strategy:strategies(*))`)
               .order('created_at', { ascending: false })
             return res
           } catch (e) {
@@ -201,7 +203,7 @@ export function Content() {
           try {
             const res = await supabase
               .from('newsletter_content')
-              .select(`*, company:companies(*)`)
+              .select(`*, idea:ideas(*, company:companies(*), strategy:strategies(*))`)
               .order('created_at', { ascending: false })
             return res
           } catch (e) {
@@ -226,8 +228,10 @@ export function Content() {
           type: 'social_post',
           title: item.title || 'Twitter Content',
           status: item.status || 'draft',
-          company_id: item.company_id ?? item.brand_id,
-          brand_name: item.company?.brand_name || item.brand_name || item.company?.name || 'Unknown Brand'
+          // Derive company/strategy via idea relation after 3NF
+          company_id: item.idea?.company_id ?? item.company_id ?? item.brand_id,
+          strategy_id: item.idea?.strategy_id ?? item.strategy_id,
+          brand_name: item.idea?.company?.brand_name || item.company?.brand_name || item.brand_name || item.company?.name || 'Unknown Brand'
         }))
         allContent.push(...twitterContent)
         console.log('Twitter content processed:', twitterContent.length, 'items')
@@ -244,8 +248,9 @@ export function Content() {
           type: 'social_post',
           title: item.title || 'LinkedIn Content',
           status: item.status || 'draft',
-          company_id: item.company_id ?? item.brand_id,
-          brand_name: item.company?.brand_name || item.brand_name || item.company?.name || 'Unknown Brand'
+          company_id: item.idea?.company_id ?? item.company_id ?? item.brand_id,
+          strategy_id: item.idea?.strategy_id ?? item.strategy_id,
+          brand_name: item.idea?.company?.brand_name || item.company?.brand_name || item.brand_name || item.company?.name || 'Unknown Brand'
         }))
         allContent.push(...linkedinContent)
         console.log('LinkedIn content processed:', linkedinContent.length, 'items')
@@ -262,8 +267,9 @@ export function Content() {
           type: 'email',
           title: item.title || 'Newsletter Content',
           status: item.status || 'draft',
-          company_id: item.company_id ?? item.brand_id,
-          brand_name: item.company?.brand_name || item.brand_name || item.company?.name || 'Unknown Brand'
+          company_id: item.idea?.company_id ?? item.company_id ?? item.brand_id,
+          strategy_id: item.idea?.strategy_id ?? item.strategy_id,
+          brand_name: item.idea?.company?.brand_name || item.company?.brand_name || item.brand_name || item.company?.name || 'Unknown Brand'
         }))
         allContent.push(...newsletterContent)
         console.log('Newsletter content processed:', newsletterContent.length, 'items')
@@ -387,8 +393,9 @@ export function Content() {
   // Filter content
   const allContent = generatedContent.map(content => ({
     ...content,
-    company_id: content.company_id ?? content.brand_id,
-    brand_name: content.brand_name || content.company?.brand_name || content.company?.name || 'Unknown Brand'
+    company_id: content.company_id ?? content.idea?.company_id ?? content.brand_id,
+    strategy_id: content.strategy_id ?? content.idea?.strategy_id,
+    brand_name: content.brand_name || content.idea?.company?.brand_name || content.company?.brand_name || content.company?.name || 'Unknown Brand'
   }))
 
   const filteredContent = allContent.filter(content => {
@@ -404,11 +411,11 @@ export function Content() {
 
   const handleViewContent = (content: any) => {
     console.log('Opening content modal for:', content)
-    console.log('Content has strategy_id:', content.strategy_id)
+    console.log('Content has strategy_id (from idea or legacy column):', content.strategy_id)
     setViewContentModal({
       isOpen: true,
       content,
-      strategyId: content.strategy_id || content.metadata?.parent_strategy_id // Pass strategy_id if it exists
+      strategyId: content.strategy_id || content.idea?.strategy_id || content.metadata?.parent_strategy_id // Prefer idea.strategy_id post-3NF
     })
   }
 
