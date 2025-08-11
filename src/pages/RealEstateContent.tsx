@@ -19,18 +19,35 @@ export function RealEstateContent() {
     setIsGenerating(true)
     
     try {
-      // Here you would send the URL to your webhook/API
-      console.log('Generating real estate content for URL:', url)
+      console.log('Sending URL to webhook:', url)
       
-      // Simulate processing time
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/1776dcc3-2b3e-4cfa-abfd-0ad9cabaf6ea', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url: url.trim(),
+          timestamp: new Date().toISOString(),
+          source: 'real_estate_content_agent'
+        })
+      })
+
+      console.log('Webhook response status:', response.status)
+      
+      if (!response.ok) {
+        throw new Error(`Webhook request failed with status: ${response.status}`)
+      }
+
+      const result = await response.text()
+      console.log('Webhook response:', result)
       
       alert('Real estate content generated successfully!')
       setShowUrlModal(false)
       setUrl('')
     } catch (error) {
       console.error('Error generating content:', error)
-      alert('Failed to generate content. Please try again.')
+      alert(`Failed to generate content: ${error.message || 'Please try again.'}`)
     } finally {
       setIsGenerating(false)
     }
