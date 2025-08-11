@@ -384,6 +384,11 @@ export function Strategies() {
   const handleGenerateIdeas = async () => {
     if (!viewAngleModal.strategy || !viewAngleModal.angle) return
 
+    console.log('=== GENERATE IDEAS BUTTON CLICKED ===')
+    console.log('Current viewAngleModal state:', viewAngleModal)
+    console.log('Strategy object:', viewAngleModal.strategy)
+    console.log('Angle object:', viewAngleModal.angle)
+
     setGeneratingIdeas(true)
 
     try {
@@ -417,6 +422,9 @@ export function Strategies() {
         }
       }
 
+      console.log('=== ANGLE DATA PREPARED ===')
+      console.log('Angle data object:', angleData)
+
       const webhookPayload = {
         identifier: 'generateIdeas',
         angle: angleData,
@@ -446,9 +454,12 @@ export function Strategies() {
 
       console.log('=== GENERATE IDEAS DEBUG ===')
       console.log('Sending payload to webhook:', webhookPayload)
+      console.log('Webhook payload as JSON string:', JSON.stringify(webhookPayload, null, 2))
       console.log('Brand details included:', !!company)
       console.log('Full brand data:', company)
+      console.log('Webhook URL:', 'https://n8n.srv856940.hstgr.cloud/webhook/content-saas')
 
+      console.log('=== MAKING WEBHOOK REQUEST ===')
       const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
         method: 'POST',
         headers: {
@@ -458,20 +469,35 @@ export function Strategies() {
       })
 
       console.log('Webhook response status:', response.status)
+      console.log('Webhook response headers:', Object.fromEntries(response.headers.entries()))
 
       if (!response.ok) {
+        console.error('=== WEBHOOK REQUEST FAILED ===')
+        console.error('Response status:', response.status)
+        console.error('Response status text:', response.statusText)
         throw new Error(`Webhook request failed with status: ${response.status}`)
       }
 
       const result = await response.text()
       console.log('Webhook response:', result)
+      console.log('Webhook response type:', typeof result)
+      console.log('Webhook response length:', result.length)
 
+      console.log('=== SUCCESS - SHOWING ALERT ===')
       alert('Ideas generated successfully! Check your Ideas page to see the generated content ideas.')
 
     } catch (error) {
       console.error('Error generating ideas:', error)
+      console.error('Error type:', typeof error)
+      console.error('Error constructor:', error.constructor.name)
+      if (error instanceof Error) {
+        console.error('Error message:', error.message)
+        console.error('Error stack:', error.stack)
+      }
       alert(`Failed to generate ideas: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
+      console.log('=== GENERATE IDEAS COMPLETED ===')
+      console.log('Setting generatingIdeas to false')
       setGeneratingIdeas(false)
     }
   }
