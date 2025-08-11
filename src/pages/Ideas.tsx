@@ -135,9 +135,9 @@ export function Ideas() {
       if (topic || description || imagePrompt) {
         topics.push({
           number: topicIndex,
-          topic: topic || `Topic ${topicIndex}`,
-          description: description || 'No description provided',
-          image_prompt: imagePrompt || 'No image prompt provided',
+          topic: String(topic || `Topic ${topicIndex}`),
+          description: String(description || 'No description provided'),
+          image_prompt: String(imagePrompt || 'No image prompt provided'),
         })
         topicIndex++
       } else {
