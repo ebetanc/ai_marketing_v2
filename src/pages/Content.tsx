@@ -246,14 +246,16 @@ export function Content() {
           source: 'linkedin_content',
           platform: 'LinkedIn',
           type: 'social_post',
-          title: item.title || 'LinkedIn Content',
+          title: item.title || item.content_body?.substring(0, 50) + '...' || 'LinkedIn Content',
           status: item.status || 'draft',
           company_id: item.idea?.company_id ?? item.company_id ?? item.brand_id,
           strategy_id: item.idea?.strategy_id ?? item.strategy_id,
-          brand_name: item.idea?.company?.brand_name || item.company?.brand_name || item.brand_name || item.company?.name || 'Unknown Brand'
+          brand_name: item.idea?.company?.brand_name || item.company?.brand_name || item.brand_name || item.company?.name || 'Unknown Brand',
+          body: item.content_body || item.body || 'No content available'
         }))
         allContent.push(...linkedinContent)
         console.log('LinkedIn content processed:', linkedinContent.length, 'items')
+        console.log('LinkedIn content sample:', linkedinContent[0])
       } else if (linkedinRes.error) {
         console.error('Error fetching LinkedIn content:', linkedinRes.error)
       }
