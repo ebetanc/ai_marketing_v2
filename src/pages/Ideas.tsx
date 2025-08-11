@@ -494,7 +494,37 @@ export function Ideas() {
       console.log('=== FINAL WEBHOOK PAYLOAD FOR ANALYSIS ===')
       console.log(JSON.stringify(webhookPayload, null, 2))
 
-      alert('Webhook payload logged to console for analysis. Check browser developer tools.')
+      console.log('=== MAKING WEBHOOK REQUEST ===')
+      const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(webhookPayload)
+      })
+
+      console.log('Webhook response status:', response.status)
+      console.log('Webhook response headers:', Object.fromEntries(response.headers.entries()))
+
+      if (!response.ok) {
+        throw new Error(`Webhook failed with status: ${response.status}`)
+      }
+
+      const responseText = await response.text()
+      console.log('Raw webhook response:', responseText)
+
+      let result
+      try {
+        result = JSON.parse(responseText)
+      } catch (parseError) {
+        console.error('Failed to parse JSON response:', parseError)
+        console.error('Raw response text:', responseText)
+        // If JSON parsing fails, treat as success if status is ok
+        result = { message: 'Content generation started' }
+      }
+
+      console.log('Webhook response:', result)
+      alert('Content generated successfully! Check your Content page to see the generated content.')
 
     } catch (error) {
       console.error('Error generating content:', error)
