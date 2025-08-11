@@ -21,7 +21,7 @@ export function RealEstateContent() {
     try {
       console.log('Sending URL to webhook:', url)
       
-      const webhookUrl = `${import.meta.env.VITE_N8N_WEBHOOK_URL}/content-saas`
+      const webhookUrl = `${import.meta.env.VITE_N8N_WEBHOOK_URL}/1776dcc3-2b3e-4cfa-abfd-0ad9cabaf6ea`
       
       const response = await fetch(webhookUrl, {
         method: 'POST',
