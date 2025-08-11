@@ -68,7 +68,18 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
         throw new Error('Failed to fetch brand analysis')
       }
 
-      const data = await response.json()
+      const responseText = await response.text()
+      
+      if (!responseText) {
+        throw new Error('Empty response from server')
+      }
+      
+      let data
+      try {
+        data = JSON.parse(responseText)
+      } catch (parseError) {
+        throw new Error('Invalid JSON response from server')
+      }
       
       setFormData(prev => ({
         ...prev,
