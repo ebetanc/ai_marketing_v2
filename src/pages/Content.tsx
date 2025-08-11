@@ -7,6 +7,7 @@ import { Select } from '../components/ui/Select'
 import { Badge } from '../components/ui/Badge'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { ViewContentModal } from '../components/content/ViewContentModal'
+import { supabase } from '../lib/supabase'
 import {
   FileText,
   Eye,
@@ -20,8 +21,6 @@ import {
   Share2
 } from 'lucide-react'
 import { formatDate, truncateText } from '../lib/utils'
-import { db } from '../lib/firebase'
-import { collection, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore'
 
 // Helper function to extract and format content from JSON
 const extractContentBody = (content: any) => {
@@ -127,9 +126,9 @@ const extractContentTopic = (content: any) => {
 }
 
 export function Content() {
-  const [firebaseBrands, setFirebaseBrands] = useState<any[]>([])
+  const [companies, setCompanies] = useState<any[]>([])
   const [generatedContent, setGeneratedContent] = useState<any[]>([])
-  const [loadingBrands, setLoadingBrands] = useState(true)
+  const [loadingCompanies, setLoadingCompanies] = useState(true)
   const [loadingContent, setLoadingContent] = useState(true)
   const [selectedCompany, setSelectedCompany] = useState('')
   const [filterStatus, setFilterStatus] = useState<'all' | 'draft' | 'approved'>('all')
@@ -150,71 +149,122 @@ export function Content() {
     loading: false
   })
 
-  // Fetch brands from Firebase
+  // Fetch companies and content from Supabase
   useEffect(() => {
-    const fetchBrandsFromFirebase = async () => {
-      try {
-        const brandsCollection = collection(db, 'brands')
-        const brandsSnapshot = await getDocs(brandsCollection)
-
-        const brands = brandsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }))
-
-        setFirebaseBrands(brands)
-      } catch (error) {
-        console.error('Error fetching brands from Firebase:', error)
-        setFirebaseBrands([])
-      } finally {
-        setLoadingBrands(false)
-      }
-    }
-
-    const fetchGeneratedContentFromFirebase = async () => {
-      try {
-        // Fetch only from 'content' collection
-        const contentSnapshot = await getDocs(collection(db, 'content'))
-
-        const contentItems = contentSnapshot.docs.map(doc => ({
-          id: doc.id,
-          firebaseId: doc.id, // Store the actual Firebase document ID
-          source: 'content',
-          ...doc.data()
-        }))
-
-        setGeneratedContent(contentItems)
-      } catch (error) {
-        console.error('Error fetching content from Firebase:', error)
-        setGeneratedContent([])
-      } finally {
-        setLoadingContent(false)
-      }
-    }
-
-    fetchBrandsFromFirebase()
-    fetchGeneratedContentFromFirebase()
+    fetchCompanies()
+    fetchContent()
   }, [])
 
-  // Refresh content after operations
-  const refreshContent = async () => {
-    setLoadingContent(true)
+  const fetchCompanies = async () => {
     try {
-      // Fetch only from 'content' collection
-      const contentSnapshot = await getDocs(collection(db, 'content'))
-      const contentItems = contentSnapshot.docs.map(doc => ({
-        id: doc.id,
-        firebaseId: doc.id, // Store the actual Firebase document ID
-        source: 'content',
-        ...doc.data()
-      }))
+      setLoadingCompanies(true)
+      console.log('Fetching companies from Supabase...')
 
-      setGeneratedContent(contentItems)
+      const { data, error } = await supabase
+        .from('companies')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching companies:', error)
+        throw error
+      }
+
+      console.log('Companies fetched successfully:', data?.length || 0, 'records')
+      setCompanies(data || [])
     } catch (error) {
-      console.error('Error refreshing content:', error)
+      console.error('Error fetching companies:', error)
+      setCompanies([])
+    } finally {
+      setLoadingCompanies(false)
+    }
+  }
+
+  const fetchContent = async () => {
+    try {
+      setLoadingContent(true)
+      console.log('Fetching content from Supabase tables...')
+
+      // Fetch from all three content tables
+      const [twitterRes, linkedinRes, newsletterRes] = await Promise.all([
+        supabase.from('twitter_content').select('*').order('created_at', { ascending: false }),
+        supabase.from('linkedin_content').select('*').order('created_at', { ascending: false }),
+        supabase.from('newsletter_content').select('*').order('created_at', { ascending: false })
+      ])
+
+      console.log('=== SUPABASE CONTENT FETCH DEBUG ===')
+      console.log('Twitter content response:', twitterRes)
+      console.log('LinkedIn content response:', linkedinRes)
+      console.log('Newsletter content response:', newsletterRes)
+
+      const allContent = []
+
+      // Process Twitter content
+      if (twitterRes.data && !twitterRes.error) {
+        const twitterContent = twitterRes.data.map(item => ({
+          ...item,
+          source: 'twitter_content',
+          platform: 'Twitter',
+          type: 'social_post',
+          title: item.title || 'Twitter Content',
+          status: item.status || 'draft'
+        }))
+        allContent.push(...twitterContent)
+        console.log('Twitter content processed:', twitterContent.length, 'items')
+      } else if (twitterRes.error) {
+        console.error('Error fetching Twitter content:', twitterRes.error)
+      }
+
+      // Process LinkedIn content
+      if (linkedinRes.data && !linkedinRes.error) {
+        const linkedinContent = linkedinRes.data.map(item => ({
+          ...item,
+          source: 'linkedin_content',
+          platform: 'LinkedIn',
+          type: 'social_post',
+          title: item.title || 'LinkedIn Content',
+          status: item.status || 'draft'
+        }))
+        allContent.push(...linkedinContent)
+        console.log('LinkedIn content processed:', linkedinContent.length, 'items')
+      } else if (linkedinRes.error) {
+        console.error('Error fetching LinkedIn content:', linkedinRes.error)
+      }
+
+      // Process Newsletter content
+      if (newsletterRes.data && !newsletterRes.error) {
+        const newsletterContent = newsletterRes.data.map(item => ({
+          ...item,
+          source: 'newsletter_content',
+          platform: 'Newsletter',
+          type: 'email',
+          title: item.title || 'Newsletter Content',
+          status: item.status || 'draft'
+        }))
+        allContent.push(...newsletterContent)
+        console.log('Newsletter content processed:', newsletterContent.length, 'items')
+      } else if (newsletterRes.error) {
+        console.error('Error fetching Newsletter content:', newsletterRes.error)
+      }
+
+      // Sort all content by created_at (most recent first)
+      allContent.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+      console.log('Total content items fetched:', allContent.length)
+      console.log('All content:', allContent)
+      setGeneratedContent(allContent)
+
+    } catch (error) {
+      console.error('Error fetching content from Supabase:', error)
+      setGeneratedContent([])
     } finally {
       setLoadingContent(false)
     }
+  }
+
+  // Refresh content after operations
+  const refreshContent = async () => {
+    await fetchContent()
   }
 
   const handleDeleteClick = (content: any) => {
@@ -231,17 +281,21 @@ export function Content() {
     setDeleteDialog(prev => ({ ...prev, loading: true }))
 
     try {
-      // Use the actual Firebase document ID and determine collection
-      const firebaseDocId = deleteDialog.content.firebaseId || deleteDialog.content.id
-      const collectionName = 'content' // Always use content collection
+      console.log(`Attempting to delete content from ${deleteDialog.content.source}`)
+      console.log('Content to delete:', deleteDialog.content)
 
-      console.log(`Attempting to delete document with Firebase ID: ${firebaseDocId} from content collection`)
-      console.log('Full content object:', deleteDialog.content)
+      const { error } = await supabase
+        .from(deleteDialog.content.source)
+        .delete()
+        .eq('id', deleteDialog.content.id)
 
-      // Delete from content collection
-      await deleteDoc(doc(db, collectionName, firebaseDocId))
+      if (error) {
+        console.error('Supabase delete error:', error)
+        alert(`Failed to delete content: ${error.message}`)
+        return
+      }
 
-      console.log(`Successfully deleted document ${firebaseDocId} from content collection`)
+      console.log('Content deleted successfully from Supabase')
 
       // Update local state
       setGeneratedContent(prev => prev.filter(content => content.id !== deleteDialog.content.id))
@@ -249,17 +303,11 @@ export function Content() {
       // Close dialog
       setDeleteDialog({ isOpen: false, content: null, loading: false })
 
-      console.log('Content deleted successfully from database and UI updated')
+      console.log('Content deleted successfully and UI updated')
     } catch (error) {
       console.error('Error deleting content:', error)
-      if (error instanceof Error) {
-        console.error('Error details:', error.message)
-      }
-      console.error('Firebase Document ID that failed:', deleteDialog.content.firebaseId || deleteDialog.content.id)
       alert('Failed to delete content. Please try again.')
-      setDeleteDialog(prev => ({ ...prev, loading: false }))
     } finally {
-      // Ensure loading state is reset
       setDeleteDialog(prev => ({ ...prev, loading: false }))
     }
   }
@@ -268,11 +316,54 @@ export function Content() {
     setDeleteDialog({ isOpen: false, content: null, loading: false })
   }
 
+  // Legacy Firebase code removed - keeping for reference if needed
+  const legacyFetchBrandsFromFirebase = async () => {
+      try {
+        const { db } = await import('../lib/firebase')
+        const { collection, getDocs } = await import('firebase/firestore')
+        const brandsCollection = collection(db, 'brands')
+        const brandsSnapshot = await getDocs(brandsCollection)
+
+        const brands = brandsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+
+        setCompanies(brands)
+      } catch (error) {
+        console.error('Error fetching brands from Firebase:', error)
+        setCompanies([])
+      } finally {
+        setLoadingCompanies(false)
+      }
+    }
+
+  const legacyFetchGeneratedContentFromFirebase = async () => {
+      try {
+        const { db } = await import('../lib/firebase')
+        const { collection, getDocs } = await import('firebase/firestore')
+        const contentSnapshot = await getDocs(collection(db, 'content'))
+
+        const contentItems = contentSnapshot.docs.map(doc => ({
+          id: doc.id,
+          firebaseId: doc.id, // Store the actual Firebase document ID
+          source: 'content',
+          ...doc.data()
+        }))
+
+        setGeneratedContent(contentItems)
+      } catch (error) {
+        console.error('Error fetching content from Firebase:', error)
+        setGeneratedContent([])
+      } finally {
+        setLoadingContent(false)
+      }
+
   // Filter content
   const allContent = generatedContent.map(content => ({
     ...content,
-    company_id: content.brand_id,
-    brand_name: content.brand_name || 'Unknown Brand'
+    company_id: content.company_id || content.brand_id,
+    brand_name: content.brand_name || content.company?.brand_name || 'Unknown Brand'
   }))
 
   const filteredContent = allContent.filter(content => {
@@ -280,8 +371,8 @@ export function Content() {
     const matchesStatus = filterStatus === 'all' || content.status === filterStatus
     const matchesType = filterType === 'all' || content.type === filterType
     const matchesSearch = !searchQuery ||
-      content.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      content.body.toLowerCase().includes(searchQuery.toLowerCase())
+      (content.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (content.body || '').toLowerCase().includes(searchQuery.toLowerCase())
 
     return matchesCompany && matchesStatus && matchesType && matchesSearch
   })
@@ -317,7 +408,10 @@ export function Content() {
 
   const brandOptions = [
     { value: '', label: 'All Companies' },
-    ...firebaseBrands.map(brand => ({ value: brand.id, label: brand.name || 'Unnamed Brand' }))
+    ...companies.map(company => ({ 
+      value: company.id, 
+      label: company.brand_name || company.name || 'Unnamed Company' 
+    }))
   ]
 
   const getStatusBadge = (status: string) => {
@@ -428,7 +522,7 @@ export function Content() {
                     </CardTitle>
                     <p className="text-sm text-gray-500 mt-1">
                       {content.brand_name}
-                      <Badge variant="primary" className="ml-2 text-xs">
+                          {content.platform || 'AI Generated'}
                         AI Generated
                       </Badge>
                       {content.strategy_id && (
@@ -488,7 +582,7 @@ export function Content() {
 
               <div className="flex items-center justify-between text-xs text-gray-500">
                 <span>{formatDate(content.created_at)}</span>
-                <span>{content.metadata?.word_count || 0} words</span>
+                <span>{content.metadata?.word_count || content.word_count || 0} words</span>
               </div>
 
               <div className="flex items-center justify-between">
