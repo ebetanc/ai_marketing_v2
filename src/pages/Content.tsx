@@ -1,25 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
-import { Input } from '../components/ui/Input'
-import { Textarea } from '../components/ui/Textarea'
 import { Select } from '../components/ui/Select'
 import { Badge } from '../components/ui/Badge'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { ViewContentModal } from '../components/content/ViewContentModal'
 import { supabase } from '../lib/supabase'
-import {
-  FileText,
-  Eye,
-  CheckCircle,
-  Clock,
-  Filter,
-  Search,
-  MoreVertical,
-  Trash2,
-  Download,
-  Share2
-} from 'lucide-react'
+import { FileText, Eye, CheckCircle, Clock, Search, MoreVertical, Trash2 } from 'lucide-react'
 import { formatDate, truncateText } from '../lib/utils'
 
 // Helper function to extract and format content from JSON
@@ -186,10 +173,41 @@ export function Content() {
       console.log('Fetching content from Supabase tables...')
 
       // Fetch from all three content tables
+      // Prefer relational select to join company for brand name; fallback to * if relation not available
       const [twitterRes, linkedinRes, newsletterRes] = await Promise.all([
-        supabase.from('twitter_content').select('*').order('created_at', { ascending: false }),
-        supabase.from('linkedin_content').select('*').order('created_at', { ascending: false }),
-        supabase.from('newsletter_content').select('*').order('created_at', { ascending: false })
+        (async () => {
+          try {
+            const res = await supabase
+              .from('twitter_content')
+              .select(`*, company:companies(*)`)
+              .order('created_at', { ascending: false })
+            return res
+          } catch (e) {
+            return await supabase.from('twitter_content').select('*').order('created_at', { ascending: false })
+          }
+        })(),
+        (async () => {
+          try {
+            const res = await supabase
+              .from('linkedin_content')
+              .select(`*, company:companies(*)`)
+              .order('created_at', { ascending: false })
+            return res
+          } catch (e) {
+            return await supabase.from('linkedin_content').select('*').order('created_at', { ascending: false })
+          }
+        })(),
+        (async () => {
+          try {
+            const res = await supabase
+              .from('newsletter_content')
+              .select(`*, company:companies(*)`)
+              .order('created_at', { ascending: false })
+            return res
+          } catch (e) {
+            return await supabase.from('newsletter_content').select('*').order('created_at', { ascending: false })
+          }
+        })()
       ])
 
       console.log('=== SUPABASE CONTENT FETCH DEBUG ===')
@@ -207,7 +225,9 @@ export function Content() {
           platform: 'Twitter',
           type: 'social_post',
           title: item.title || 'Twitter Content',
-          status: item.status || 'draft'
+          status: item.status || 'draft',
+          company_id: item.company_id ?? item.brand_id,
+          brand_name: item.company?.brand_name || item.brand_name || item.company?.name || 'Unknown Brand'
         }))
         allContent.push(...twitterContent)
         console.log('Twitter content processed:', twitterContent.length, 'items')
@@ -223,7 +243,9 @@ export function Content() {
           platform: 'LinkedIn',
           type: 'social_post',
           title: item.title || 'LinkedIn Content',
-          status: item.status || 'draft'
+          status: item.status || 'draft',
+          company_id: item.company_id ?? item.brand_id,
+          brand_name: item.company?.brand_name || item.brand_name || item.company?.name || 'Unknown Brand'
         }))
         allContent.push(...linkedinContent)
         console.log('LinkedIn content processed:', linkedinContent.length, 'items')
@@ -239,7 +261,9 @@ export function Content() {
           platform: 'Newsletter',
           type: 'email',
           title: item.title || 'Newsletter Content',
-          status: item.status || 'draft'
+          status: item.status || 'draft',
+          company_id: item.company_id ?? item.brand_id,
+          brand_name: item.company?.brand_name || item.brand_name || item.company?.name || 'Unknown Brand'
         }))
         allContent.push(...newsletterContent)
         console.log('Newsletter content processed:', newsletterContent.length, 'items')
@@ -318,57 +342,57 @@ export function Content() {
 
   // Legacy Firebase code removed - keeping for reference if needed
   const legacyFetchBrandsFromFirebase = async () => {
-      try {
-        const { db } = await import('../lib/firebase')
-        const { collection, getDocs } = await import('firebase/firestore')
-        const brandsCollection = collection(db, 'brands')
-        const brandsSnapshot = await getDocs(brandsCollection)
+    try {
+      const { db } = await import('../lib/firebase')
+      const { collection, getDocs } = await import('firebase/firestore')
+      const brandsCollection = collection(db, 'brands')
+      const brandsSnapshot = await getDocs(brandsCollection)
 
-        const brands = brandsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }))
+      const brands = brandsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
 
-        setCompanies(brands)
-      } catch (error) {
-        console.error('Error fetching brands from Firebase:', error)
-        setCompanies([])
-      } finally {
-        setLoadingCompanies(false)
-      }
+      setCompanies(brands)
+    } catch (error) {
+      console.error('Error fetching brands from Firebase:', error)
+      setCompanies([])
+    } finally {
+      setLoadingCompanies(false)
     }
+  }
 
   const legacyFetchGeneratedContentFromFirebase = async () => {
-      try {
-        const { db } = await import('../lib/firebase')
-        const { collection, getDocs } = await import('firebase/firestore')
-        const contentSnapshot = await getDocs(collection(db, 'content'))
+    try {
+      const { db } = await import('../lib/firebase')
+      const { collection, getDocs } = await import('firebase/firestore')
+      const contentSnapshot = await getDocs(collection(db, 'content'))
 
-        const contentItems = contentSnapshot.docs.map(doc => ({
-          id: doc.id,
-          firebaseId: doc.id, // Store the actual Firebase document ID
-          source: 'content',
-          ...doc.data()
-        }))
+      const contentItems = contentSnapshot.docs.map(doc => ({
+        id: doc.id,
+        firebaseId: doc.id, // Store the actual Firebase document ID
+        source: 'content',
+        ...doc.data()
+      }))
 
-        setGeneratedContent(contentItems)
-      } catch (error) {
-        console.error('Error fetching content from Firebase:', error)
-        setGeneratedContent([])
-      } finally {
-        setLoadingContent(false)
-      }
+      setGeneratedContent(contentItems)
+    } catch (error) {
+      console.error('Error fetching content from Firebase:', error)
+      setGeneratedContent([])
+    } finally {
+      setLoadingContent(false)
     }
+  }
 
   // Filter content
   const allContent = generatedContent.map(content => ({
     ...content,
-    company_id: content.company_id || content.brand_id,
-    brand_name: content.brand_name || content.company?.brand_name || 'Unknown Brand'
+    company_id: content.company_id ?? content.brand_id,
+    brand_name: content.brand_name || content.company?.brand_name || content.company?.name || 'Unknown Brand'
   }))
 
   const filteredContent = allContent.filter(content => {
-    const matchesCompany = !selectedCompany || content.company_id === selectedCompany
+    const matchesCompany = !selectedCompany || String(content.company_id) === String(selectedCompany)
     const matchesStatus = filterStatus === 'all' || content.status === filterStatus
     const matchesType = filterType === 'all' || content.type === filterType
     const matchesSearch = !searchQuery ||
@@ -409,9 +433,9 @@ export function Content() {
 
   const brandOptions = [
     { value: '', label: 'All Companies' },
-    ...companies.map(company => ({ 
-      value: company.id, 
-      label: company.brand_name || company.name || 'Unnamed Company' 
+    ...companies.map(company => ({
+      value: company.id,
+      label: company.brand_name || company.name || 'Unnamed Company'
     }))
   ]
 
@@ -530,7 +554,7 @@ export function Content() {
                       </Badge>
                       {content.strategy_id && (
                         <Badge variant="secondary" className="ml-1 text-xs">
-                          Strategy: {content.strategy_id.slice(-6)}
+                          Strategy: {String(content.strategy_id).slice(-6)}
                         </Badge>
                       )}
                       {content.platform && (
