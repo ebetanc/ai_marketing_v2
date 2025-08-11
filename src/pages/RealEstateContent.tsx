@@ -42,7 +42,7 @@ export function RealEstateContent() {
       const result = await response.text()
       console.log('Webhook response:', result)
       
-      alert('Real estate content generated successfully!')
+      alert('Real estate content generation started! Come back later to get the URL of the content generated.')
       setShowUrlModal(false)
       setUrl('')
     } catch (error) {
