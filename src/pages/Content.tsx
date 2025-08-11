@@ -473,6 +473,10 @@ export function Content() {
             View and manage all your AI-generated content pieces.
           </p>
         </div>
+        <Button onClick={fetchContent} disabled={loadingContent}>
+          <RefreshCw className={`h-4 w-4 mr-2 ${loadingContent ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </div>
 
       <ViewContentModal
