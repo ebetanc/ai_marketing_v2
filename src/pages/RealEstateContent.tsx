@@ -29,9 +29,7 @@ export function RealEstateContent() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          url: url.trim(),
-          timestamp: new Date().toISOString(),
-          source: 'real_estate_content_agent'
+          url: url.trim()
         })
       })
 
