@@ -1,9 +1,47 @@
 import React from 'react'
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
-import { Building2, Home, MapPin, TrendingUp, Users, FileText } from 'lucide-react'
+import { Input } from '../components/ui/Input'
+import { Building2, Home, MapPin, TrendingUp, Users, FileText, X, Link, Sparkles } from 'lucide-react'
 
 export function RealEstateContent() {
+  const [showUrlModal, setShowUrlModal] = useState(false)
+  const [url, setUrl] = useState('')
+  const [isGenerating, setIsGenerating] = useState(false)
+
+  const handleGenerateContent = async () => {
+    if (!url.trim()) {
+      alert('Please enter a URL')
+      return
+    }
+
+    setIsGenerating(true)
+    
+    try {
+      // Here you would send the URL to your webhook/API
+      console.log('Generating real estate content for URL:', url)
+      
+      // Simulate processing time
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      alert('Real estate content generated successfully!')
+      setShowUrlModal(false)
+      setUrl('')
+    } catch (error) {
+      console.error('Error generating content:', error)
+      alert('Failed to generate content. Please try again.')
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  const handleCloseModal = () => {
+    setShowUrlModal(false)
+    setUrl('')
+    setIsGenerating(false)
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -13,11 +51,77 @@ export function RealEstateContent() {
             Generate specialized content for real estate professionals, agents, and property businesses.
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setShowUrlModal(true)}>
           <Building2 className="h-4 w-4 mr-2" />
           Generate Real Estate Content
         </Button>
       </div>
+
+      {/* URL Input Modal */}
+      {showUrlModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center">
+                  <Link className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Enter Property URL</h2>
+                  <p className="text-sm text-gray-500">Provide a URL to analyze and generate content</p>
+                </div>
+              </div>
+              
+              <button
+                onClick={handleCloseModal}
+                className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+                disabled={isGenerating}
+              >
+                <X className="h-5 w-5 text-gray-400" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-4">
+              <Input
+                label="Property or Real Estate URL"
+                placeholder="https://example.com/property-listing"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                disabled={isGenerating}
+              />
+              
+              <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                <p className="text-sm text-blue-800">
+                  <strong>Tip:</strong> You can enter URLs for property listings, real estate websites, 
+                  or any real estate-related page to generate targeted content.
+                </p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end space-x-3 p-6 border-t border-gray-200">
+              <Button
+                variant="outline"
+                onClick={handleCloseModal}
+                disabled={isGenerating}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleGenerateContent}
+                loading={isGenerating}
+                disabled={!url.trim() || isGenerating}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                {isGenerating ? 'Generating...' : 'Generate Content'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Coming Soon */}
       <Card>
