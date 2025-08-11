@@ -363,8 +363,8 @@ export function Content() {
   // Filter content
   const allContent = generatedContent.map(content => ({
     ...content,
-    company_id: content.brand_id,
-    brand_name: content.brand_name || 'Unknown Brand'
+    company_id: content.company_id || content.brand_id,
+    brand_name: content.brand_name || content.company?.brand_name || 'Unknown Brand'
   }))
 
   const filteredContent = allContent.filter(content => {
@@ -372,8 +372,8 @@ export function Content() {
     const matchesStatus = filterStatus === 'all' || content.status === filterStatus
     const matchesType = filterType === 'all' || content.type === filterType
     const matchesSearch = !searchQuery ||
-      content.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      content.body.toLowerCase().includes(searchQuery.toLowerCase())
+      (content.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (content.body || '').toLowerCase().includes(searchQuery.toLowerCase())
 
     return matchesCompany && matchesStatus && matchesType && matchesSearch
   })
