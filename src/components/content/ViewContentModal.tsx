@@ -12,6 +12,7 @@ interface ViewContentModalProps {
   strategyId?: string
 }
 
+import { supabase } from '../../lib/supabase'
 // Helper function to format markdown-like text
 const formatContentBody = (content: string) => {
   if (!content) return content
@@ -62,6 +63,7 @@ const formatContentBody = (content: string) => {
 
 export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewContentModalProps) {
   const [expandedAngles, setExpandedAngles] = useState<{ [key: number]: boolean }>({})
+  const [posting, setPosting] = useState(false)
 
   if (!isOpen || !content) return null
 
@@ -122,6 +124,39 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
 
   const collapseAllAngles = () => {
     setExpandedAngles({})
+  }
+
+  const handlePost = async () => {
+    if (!content?.id || !content?.source) return
+
+    setPosting(true)
+
+    try {
+      console.log('Posting content:', content.id, 'from table:', content.source)
+
+      const { error } = await supabase
+        .from(content.source)
+        .update({ post: true })
+        .eq('id', content.id)
+
+      if (error) {
+        console.error('Error posting content:', error)
+        alert(`Failed to post content: ${error.message}`)
+        return
+      }
+
+      console.log('Content posted successfully')
+      alert('Content posted successfully!')
+      
+      // Close the modal after successful posting
+      onClose()
+
+    } catch (error) {
+      console.error('Error posting content:', error)
+      alert('Failed to post content. Please try again.')
+    } finally {
+      setPosting(false)
+    }
   }
 
   const renderAngleProperty = (key: string, value: any) => {
@@ -379,9 +414,19 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
 
         {/* Footer */}
         <div className="flex justify-end p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
-          <Button variant="outline" onClick={onClose}>
-            Close
-          </Button>
+          <div className="flex space-x-3">
+            <Button
+              onClick={handlePost}
+              loading={posting}
+              disabled={posting}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {posting ? 'Posting...' : 'Post'}
+            </Button>
+            <Button variant="outline" onClick={onClose} disabled={posting}>
+              Close
+            </Button>
+          </div>
         </div>
       </div>
     </div>
