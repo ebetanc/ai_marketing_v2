@@ -165,7 +165,6 @@ export function Content() {
   const [generatedContent, setGeneratedContent] = useState<any[]>([])
   const [loadingCompanies, setLoadingCompanies] = useState(true)
   const [loadingContent, setLoadingContent] = useState(true)
-  const [selectedCompany, setSelectedCompany] = useState('')
   const [filterStatus, setFilterStatus] = useState<'all' | 'draft' | 'approved'>('all')
   const [filterType, setFilterType] = useState<'all' | string>('all')
   const [searchQuery, setSearchQuery] = useState('')
@@ -184,7 +183,6 @@ export function Content() {
     loading: false
   })
 
-  // Fetch companies and content from Supabase
   useEffect(() => {
     fetchCompanies()
     fetchContent()
@@ -344,7 +342,6 @@ export function Content() {
     }
   }
 
-  // Refresh content after operations
   const refreshContent = async () => {
     await fetchContent()
   }
@@ -398,51 +395,6 @@ export function Content() {
     setDeleteDialog({ isOpen: false, content: null, loading: false })
   }
 
-  // Legacy Firebase code removed - keeping for reference if needed
-  const legacyFetchBrandsFromFirebase = async () => {
-    try {
-      const { db } = await import('../lib/firebase')
-      const { collection, getDocs } = await import('firebase/firestore')
-      const brandsCollection = collection(db, 'brands')
-      const brandsSnapshot = await getDocs(brandsCollection)
-
-      const brands = brandsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }))
-
-      setCompanies(brands)
-    } catch (error) {
-      console.error('Error fetching brands from Firebase:', error)
-      setCompanies([])
-    } finally {
-      setLoadingCompanies(false)
-    }
-  }
-
-  const legacyFetchGeneratedContentFromFirebase = async () => {
-    try {
-      const { db } = await import('../lib/firebase')
-      const { collection, getDocs } = await import('firebase/firestore')
-      const contentSnapshot = await getDocs(collection(db, 'content'))
-
-      const contentItems = contentSnapshot.docs.map(doc => ({
-        id: doc.id,
-        firebaseId: doc.id, // Store the actual Firebase document ID
-        source: 'content',
-        ...doc.data()
-      }))
-
-      setGeneratedContent(contentItems)
-    } catch (error) {
-      console.error('Error fetching content from Firebase:', error)
-      setGeneratedContent([])
-    } finally {
-      setLoadingContent(false)
-    }
-  }
-
-  // Filter content
   const allContent = generatedContent.map(content => ({
     ...content,
     company_id: content.company_id ?? content.idea?.company_id ?? content.brand_id,
@@ -451,14 +403,13 @@ export function Content() {
   }))
 
   const filteredContent = allContent.filter(content => {
-    const matchesCompany = !selectedCompany || String(content.company_id) === String(selectedCompany)
     const matchesStatus = filterStatus === 'all' || content.status === filterStatus
     const matchesType = filterType === 'all' || content.type === filterType
     const matchesSearch = !searchQuery ||
       (content.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (content.body || '').toLowerCase().includes(searchQuery.toLowerCase())
 
-    return matchesCompany && matchesStatus && matchesType && matchesSearch
+    return matchesStatus && matchesType && matchesSearch
   })
 
   const handleViewContent = (content: any) => {
@@ -493,7 +444,7 @@ export function Content() {
   const brandOptions = [
     { value: '', label: 'All Companies' },
     ...companies.map(company => ({
-      value: company.id,
+      value: String(company.id),
       label: company.brand_name || company.name || 'Unnamed Company'
     }))
   ]
@@ -576,8 +527,8 @@ export function Content() {
             <div className="flex gap-3">
               <Select
                 options={brandOptions}
-                value={selectedCompany}
-                onChange={(e) => setSelectedCompany(e.target.value)}
+                value=""
+                onChange={() => {}}
               />
 
               <Select
