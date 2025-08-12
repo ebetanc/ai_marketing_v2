@@ -271,6 +271,50 @@ export function Content() {
     setDeleteDialog({ isOpen: false, content: null, loading: false })
   }
 
+  // Legacy Firebase code removed - keeping for reference if needed
+  const legacyFetchBrandsFromFirebase = async () => {
+    try {
+      const { db } = await import('../lib/firebase')
+      const { collection, getDocs } = await import('firebase/firestore')
+      const brandsCollection = collection(db, 'brands')
+      const brandsSnapshot = await getDocs(brandsCollection)
+
+      const brands = brandsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+
+      setCompanies(brands)
+    } catch (error) {
+      console.error('Error fetching brands from Firebase:', error)
+      setCompanies([])
+    } finally {
+      setLoadingCompanies(false)
+    }
+  }
+
+  const legacyFetchGeneratedContentFromFirebase = async () => {
+    try {
+      const { db } = await import('../lib/firebase')
+      const { collection, getDocs } = await import('firebase/firestore')
+      const contentSnapshot = await getDocs(collection(db, 'content'))
+
+      const contentItems = contentSnapshot.docs.map(doc => ({
+        id: doc.id,
+        firebaseId: doc.id, // Store the actual Firebase document ID
+        source: 'content',
+        ...doc.data()
+      }))
+
+      setGeneratedContent(contentItems)
+    } catch (error) {
+      console.error('Error fetching content from Firebase:', error)
+      setGeneratedContent([])
+    } finally {
+      setLoadingContent(false)
+    }
+  }
+
   // Filter content
   const allContent = generatedContent.map(content => ({
     ...content,
