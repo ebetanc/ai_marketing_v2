@@ -1,251 +1,623 @@
-import React, { useState } from 'react'
-import { Button } from '../ui/Button'
-import { Card, CardContent } from '../ui/Card'
-import { ArrowLeft, X, Sparkles } from 'lucide-react'
-import { cn } from '../../lib/utils'
+import React, { useState, useEffect } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
+import { Button } from '../components/ui/Button'
+import { Badge } from '../components/ui/Badge'
+import { supabase } from '../lib/supabase'
+import { 
+  FileText, 
+  Building2, 
+  Eye, 
+  RefreshCw, 
+  Calendar,
+  Target,
+  Zap,
+  Plus,
+  HelpCircle,
+  X,
+  ChevronDown,
+  ChevronUp,
+  Lightbulb
+} from 'lucide-react'
+import { formatDate } from '../lib/utils'
 
-interface GenerateStrategyModalProps {
-  isOpen: boolean
-  onClose: () => void
-  selectedBrand: any
-  onStrategyGenerated?: (strategyData: any) => void
+interface Strategy {
+  id: number
+  created_at: string
+  platforms: string | null
+  company_id: number
+  company?: {
+    id: number
+    brand_name: string
+    created_at: string
+  }
+  // Angle fields
+  angle1_header: string | null
+  angle1_description: string | null
+  angle1_objective: string | null
+  angle1_tonality: string | null
+  angle2_header: string | null
+  angle2_description: string | null
+  angle2_objective: string | null
+  angle2_tonality: string | null
+  angle3_header: string | null
+  angle3_description: string | null
+  angle3_objective: string | null
+  angle3_tonality: string | null
+  angle4_header: string | null
+  angle4_description: string | null
+  angle4_objective: string | null
+  angle4_tonality: string | null
+  angle5_header: string | null
+  angle5_description: string | null
+  angle5_objective: string | null
+  angle5_tonality: string | null
+  angle6_header: string | null
+  angle6_description: string | null
+  angle6_objective: string | null
+  angle6_tonality: string | null
+  angle7_header: string | null
+  angle7_description: string | null
+  angle7_objective: string | null
+  angle7_tonality: string | null
+  angle8_header: string | null
+  angle8_description: string | null
+  angle8_objective: string | null
+  angle8_tonality: string | null
+  angle9_header: string | null
+  angle9_description: string | null
+  angle9_objective: string | null
+  angle9_tonality: string | null
+  angle10_header: string | null
+  angle10_description: string | null
+  angle10_objective: string | null
+  angle10_tonality: string | null
 }
 
-const platforms = [
-  { id: 'twitter', name: 'Twitter', color: 'bg-blue-500' },
-  { id: 'linkedin', name: 'LinkedIn', color: 'bg-blue-600' },
-  { id: 'newsletter', name: 'Newsletter', color: 'bg-gray-600' },
-  { id: 'facebook', name: 'Facebook', color: 'bg-blue-700' },
-  { id: 'instagram', name: 'Instagram', color: 'bg-pink-500' },
-  { id: 'youtube', name: 'YouTube', color: 'bg-red-500' },
-  { id: 'tiktok', name: 'TikTok', color: 'bg-black' },
-  { id: 'blog', name: 'Blog', color: 'bg-green-600' }
-]
+interface Company {
+  id: number
+  brand_name: string
+  created_at: string
+  strategies: Strategy[]
+}
 
-export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: GenerateStrategyModalProps) {
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([])
-  const [isGenerating, setIsGenerating] = useState(false)
+export function Strategies() {
+  const [companies, setCompanies] = useState<Company[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [generatingIdeas, setGeneratingIdeas] = useState<number | null>(null)
+  const [viewModal, setViewModal] = useState<{
+    isOpen: boolean
+    strategy: Strategy | null
+    company: Company | null
+  }>({
+    isOpen: false,
+    strategy: null,
+    company: null
+  })
 
-  const togglePlatform = (platformId: string) => {
-    setSelectedPlatforms(prev =>
-      prev.includes(platformId)
-        ? prev.filter(id => id !== platformId)
-        : [...prev, platformId]
-    )
+  useEffect(() => {
+    fetchStrategies()
+  }, [])
+
+  const fetchStrategies = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      console.log('Fetching strategies from Supabase...')
+
+      // Fetch strategies with company information
+      const { data: strategies, error: strategiesError } = await supabase
+        .from('strategies')
+        .select(`
+          *,
+          company:companies (
+            id,
+            brand_name,
+            created_at
+          )
+        `)
+        .order('created_at', { ascending: false })
+
+      if (strategiesError) {
+        console.error('Supabase error:', strategiesError)
+        throw strategiesError
+      }
+
+      console.log('Strategies fetched successfully:', strategies?.length || 0, 'records')
+
+      // Group strategies by company
+      const companiesMap = new Map<number, Company>()
+
+      strategies?.forEach((strategy: any) => {
+        const companyId = strategy.company?.id || strategy.company_id
+        const companyName = strategy.company?.brand_name || 'Unknown Company'
+        const companyCreatedAt = strategy.company?.created_at || strategy.created_at
+
+        if (!companiesMap.has(companyId)) {
+          companiesMap.set(companyId, {
+            id: companyId,
+            brand_name: companyName,
+            created_at: companyCreatedAt,
+            strategies: []
+          })
+        }
+
+        companiesMap.get(companyId)?.strategies.push(strategy)
+      })
+
+      const companiesArray = Array.from(companiesMap.values())
+      console.log('Companies with strategies:', companiesArray)
+      setCompanies(companiesArray)
+
+    } catch (error) {
+      console.error('Error fetching strategies from Supabase:', error)
+      setError(error instanceof Error ? error.message : 'Failed to fetch strategies')
+      setCompanies([])
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleGenerateStrategy = async () => {
-    if (selectedPlatforms.length === 0) {
-      alert('Please select at least one platform')
-      return
-    }
-
-    setIsGenerating(true)
-
-    try {
-      // Prepare comprehensive brand data payload
-      const comprehensiveBrandData = {
-        // Basic brand information
-        id: selectedBrand.id,
-        name: selectedBrand.brand_name || selectedBrand.name || 'Unknown Brand',
-        website: selectedBrand.website || '',
-
-        // Brand voice and tone
-        brandTone: selectedBrand.brand_tone || selectedBrand.brandTone || selectedBrand.brand_voice?.tone || '',
-        keyOffer: selectedBrand.key_offer || selectedBrand.keyOffer || selectedBrand.brand_voice?.style || '',
-        brandVoice: {
-          tone: selectedBrand.brand_tone || selectedBrand.brandTone || selectedBrand.brand_voice?.tone || '',
-          style: selectedBrand.key_offer || selectedBrand.keyOffer || selectedBrand.brand_voice?.style || '',
-          keywords: selectedBrand.brand_voice?.keywords || []
-        },
-
-        // Target audience information
-        targetAudience: selectedBrand.target_audience || selectedBrand.targetAudience || selectedBrand.target_audience?.demographics || '',
-        target_audience: {
-          demographics: selectedBrand.target_audience || selectedBrand.targetAudience || selectedBrand.target_audience?.demographics || '',
-          interests: selectedBrand.target_audience?.interests || [],
-          pain_points: selectedBrand.target_audience?.pain_points || []
-        },
-
-        // Additional information
-        additionalInfo: selectedBrand.additional_information || selectedBrand.additionalInfo || '',
-        imageGuidelines: selectedBrand.imageGuidelines || '',
-
-        // Metadata
-        createdAt: selectedBrand.createdAt || selectedBrand.created_at || '',
-
-        // Platform-specific data
-        selectedPlatforms: selectedPlatforms,
-        platformCount: selectedPlatforms.length
+  const countAngles = (strategy: Strategy): number => {
+    let count = 0
+    for (let i = 1; i <= 10; i++) {
+      const header = strategy[`angle${i}_header` as keyof Strategy] as string | null
+      if (header && header.trim()) {
+        count++
       }
+    }
+    return count
+  }
 
-      const webhookPayload = {
-        identifier: "generateAngles",
-        brand: comprehensiveBrandData,
-        platforms: selectedPlatforms,
-        // Additional context for the AI
-        context: {
-          requestType: 'content_strategy_generation',
-          timestamp: new Date().toISOString(),
-          platformCount: selectedPlatforms.length,
-          brandHasWebsite: !!(selectedBrand.website),
-  const [showGenerateStrategyModal, setShowGenerateStrategyModal] = useState(false)
-  const [selectedCompanyForStrategy, setSelectedCompanyForStrategy] = useState<Company | null>(null)
+  const getPlatformBadges = (platforms: string | null) => {
+    if (!platforms) return []
+    
+    try {
+      // Try to parse as JSON array first
+      const parsed = JSON.parse(platforms)
+      if (Array.isArray(parsed)) {
+        return parsed.filter(p => p && p.trim())
+      }
+    } catch {
+      // If not JSON, split by comma
+      return platforms.split(',').map(p => p.trim()).filter(p => p)
+    }
+    
+    return []
+  }
+
+  const handleViewStrategy = (strategy: Strategy, company: Company) => {
+    console.log('Opening modal for strategy:', strategy.id, 'company:', company.brand_name)
+    setViewModal({
+      isOpen: true,
+      strategy,
+      company
+    })
+  }
+
+  const handleCloseModal = () => {
+    setViewModal({
+      isOpen: false,
+      strategy: null,
+      company: null
+    })
+  }
+
+  const handleGenerateIdeas = async (angle: any) => {
+    if (!viewModal.strategy || !viewModal.company) return
+    
+    try {
+      setGeneratingIdeas(angle.number)
+      
+      const payload = {
+        company: {
+          id: viewModal.company.id,
+          brand_name: viewModal.company.brand_name
+        },
+        strategy: {
+          id: viewModal.strategy.id,
+          platforms: viewModal.strategy.platforms,
+          created_at: viewModal.strategy.created_at
+        },
+        angle: {
+          number: angle.number,
+          header: angle.header,
+          description: angle.description,
+          objective: angle.objective,
+          tonality: angle.tonality
         }
       }
-
+      
       const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(webhookPayload)
+        body: JSON.stringify(payload)
       })
-
+      
       if (!response.ok) {
-        throw new Error('Failed to generate content strategy')
+        throw new Error('Failed to generate ideas')
       }
-
-      // Read response as text first to handle empty or malformed JSON
-      const responseText = await response.text()
-
-      let result
-      if (!responseText.trim()) {
-        // Handle empty response
-        result = {}
-      } else {
-        try {
-          // Attempt to parse as JSON
-          result = JSON.parse(responseText)
-        } catch (parseError) {
-          console.error('Failed to parse JSON response:', parseError)
-          console.log('Raw response:', responseText)
-          // Treat malformed JSON as plain text content
-          result = {
-            content: {
-              title: 'Generated Content Strategy',
-              body: responseText
-            }
-          }
-        }
-      }
-
-      console.log('Content strategy generation result:', result)
-
-      // Save the generated content to Firebase
-      await saveGeneratedContentToFirebase(result)
-
-      console.log('Strategy generation and save completed successfully')
-      alert('Content strategy generated and saved to Firebase successfully!')
-      onClose()
-
+      
+      console.log('Ideas generation started successfully')
     } catch (error) {
-      console.error('Error generating content strategy:', error)
-      console.error('Full error details:', error)
-      alert('Failed to generate content strategy. Please try again.')
+      console.error('Error generating ideas:', error)
     } finally {
-      setIsGenerating(false)
+      setGeneratingIdeas(null)
     }
   }
 
-  const handleClose = () => {
-    setSelectedPlatforms([])
-    setIsGenerating(false)
-    onClose()
+  const getAnglesFromStrategy = (strategy: Strategy) => {
+    const angles = []
+    for (let i = 1; i <= 10; i++) {
+      const header = strategy[`angle${i}_header` as keyof Strategy] as string | null
+      const description = strategy[`angle${i}_description` as keyof Strategy] as string | null
+      const objective = strategy[`angle${i}_objective` as keyof Strategy] as string | null
+      const tonality = strategy[`angle${i}_tonality` as keyof Strategy] as string | null
+      
+      if (header && header.trim()) {
+        angles.push({
+          number: i,
+          header: header.trim(),
+          description: description?.trim() || '',
+          objective: objective?.trim() || '',
+          tonality: tonality?.trim() || ''
+        })
+      }
+    }
+    return angles
   }
 
-  if (!isOpen) return null
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Content Strategies</h1>
+            <p className="mt-2 text-gray-600">
+              AI-generated content strategies organized by company.
+            </p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="text-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading strategies...</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Content Strategies</h1>
+            <p className="mt-2 text-gray-600">
+              AI-generated content strategies organized by company.
+            </p>
+          </div>
+          <Button onClick={fetchStrategies}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Retry
+          </Button>
+        </div>
+        <Card>
+          <CardContent className="text-center py-12">
+            <FileText className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Strategies</h3>
+            <p className="text-red-600 mb-4">{error}</p>
+            <Button onClick={fetchStrategies} variant="outline">
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={handleClose}
-              className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
-            >
-              <ArrowLeft className="h-5 w-5 text-gray-600" />
-            </button>
-            <div className="text-sm text-gray-500">Back to Dashboard</div>
-          </div>
-
-          <button
-            onClick={handleClose}
-            className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
-          >
-            <X className="h-5 w-5 text-gray-400" />
-          </button>
-        </div>
-
-        {/* Brand Info */}
-        <div className="px-6 py-4 border-b border-gray-100">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-              <span className="text-blue-600 font-semibold text-sm">
-                {selectedBrand?.name?.charAt(0) || 'B'}
-              </span>
-            </div>
-            <div>
-              <h3 className="font-medium text-gray-900">{selectedBrand?.name || 'Brand'}</h3>
-              <p className="text-sm text-gray-500">{selectedBrand?.website || ''}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="p-8 text-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <Sparkles className="h-8 w-8 text-white" />
-          </div>
-
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">Generate Content Strategy</h2>
-          <p className="text-gray-600 mb-8">
-            Create AI-powered content angles for {selectedBrand?.name || 'your brand'} to guide your content creation
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Content Strategies</h1>
+          <p className="mt-2 text-gray-600">
+            AI-generated content strategies organized by company.
           </p>
-
-          <div className="mb-8">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Select Platforms:</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {platforms.map((platform) => (
-                <button
-                  key={platform.id}
-                  onClick={() => togglePlatform(platform.id)}
-                  className={cn(
-                    'p-3 rounded-xl border-2 transition-all duration-200 text-sm font-medium',
-                    selectedPlatforms.includes(platform.id)
-                      ? `${platform.color} text-white border-transparent shadow-md`
-                      : 'bg-gray-50 text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-100'
-                  )}
-                >
-                  {platform.name}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <Button
-            onClick={handleGenerateStrategy}
-            loading={isGenerating}
-            disabled={selectedPlatforms.length === 0}
-            size="lg"
-            className="w-full bg-blue-600 hover:bg-blue-700"
-          >
-            {isGenerating ? (
-              <>
-                <Sparkles className="h-4 w-4 mr-2 animate-pulse" />
-                Generating Strategy...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Generate Strategy
-              </>
-            )}
+        </div>
+        <div className="flex space-x-3">
+          <Button onClick={fetchStrategies} variant="outline">
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Generate Strategy
           </Button>
         </div>
       </div>
+
+      {/* Strategy Details Modal */}
+      {viewModal.isOpen && viewModal.strategy && viewModal.company && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
+                  <FileText className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Strategy #{viewModal.strategy.id}
+                  </h2>
+                  <p className="text-sm text-gray-500">{viewModal.company.brand_name}</p>
+                </div>
+              </div>
+
+              <button
+                onClick={handleCloseModal}
+                className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+              >
+                <X className="h-5 w-5 text-gray-400" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 p-6 overflow-y-auto space-y-6 min-h-0">
+              {/* Strategy Info Header */}
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 border border-blue-100">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">Created</p>
+                    <p className="font-semibold text-gray-900">{formatDate(viewModal.strategy.created_at)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">Platforms</p>
+                    <p className="font-semibold text-gray-900">{getPlatformBadges(viewModal.strategy.platforms).join(', ')}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">Total Angles</p>
+                    <p className="font-semibold text-gray-900">{countAngles(viewModal.strategy)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">Company</p>
+                    <p className="font-semibold text-gray-900">{viewModal.company.brand_name}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Content Angles Grid */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Target className="h-5 w-5 mr-2 text-purple-600" />
+                  Content Angles ({countAngles(viewModal.strategy)})
+                </h3>
+                <div className="space-y-4">
+                  {getAnglesFromStrategy(viewModal.strategy).map((angle, index) => (
+                    <div 
+                      key={index} 
+                      className="group bg-white border-2 border-gray-200 rounded-xl p-6 hover:border-blue-300 hover:shadow-lg transition-all duration-200 cursor-pointer"
+                    >
+                      {/* Angle Header */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                            <span className="text-white font-bold text-lg">{angle.number}</span>
+                          </div>
+                          <div>
+                            <h4 className="text-xl font-bold text-gray-900 group-hover:text-blue-700 transition-colors">
+                              {angle.header}
+                            </h4>
+                            <p className="text-sm text-gray-500">Click to expand details</p>
+                          </div>
+                        </div>
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleGenerateIdeas(angle)
+                          }}
+                          loading={generatingIdeas === angle.number}
+                          disabled={generatingIdeas !== null}
+                          className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                        >
+                          <Lightbulb className="h-4 w-4 mr-2" />
+                          {generatingIdeas === angle.number ? 'Generating...' : 'Generate Ideas'}
+                        </Button>
+                      </div>
+
+                      {/* Angle Details */}
+                      <div className="space-y-4">
+                        {angle.description && (
+                          <div className="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-400">
+                            <div className="flex items-center mb-2">
+                              <FileText className="h-4 w-4 text-blue-600 mr-2" />
+                              <h5 className="font-semibold text-blue-900">Description</h5>
+                            </div>
+                            <p className="text-blue-800 leading-relaxed">{angle.description}</p>
+                          </div>
+                        )}
+                        
+                        {angle.objective && (
+                          <div className="bg-green-50 rounded-lg p-4 border-l-4 border-green-400">
+                            <div className="flex items-center mb-2">
+                              <Target className="h-4 w-4 text-green-600 mr-2" />
+                              <h5 className="font-semibold text-green-900">Objective</h5>
+                            </div>
+                            <p className="text-green-800 leading-relaxed">{angle.objective}</p>
+                          </div>
+                        )}
+                        
+                        {angle.tonality && (
+                          <div className="bg-purple-50 rounded-lg p-4 border-l-4 border-purple-400">
+                            <div className="flex items-center mb-2">
+                              <Zap className="h-4 w-4 text-purple-600 mr-2" />
+                              <h5 className="font-semibold text-purple-900">Tonality</h5>
+                            </div>
+                            <p className="text-purple-800 leading-relaxed">{angle.tonality}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+              <Button variant="outline" onClick={handleCloseModal}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Companies with Strategies */}
+      {companies.length > 0 ? (
+        <div className="space-y-6">
+          {companies.map((company) => (
+            <div key={company.id} className="w-full max-w-full p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+              {/* Company Header */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center">
+                    <Building2 className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h5 className="text-xl font-semibold text-gray-900">
+                      {company.brand_name}
+                    </h5>
+                    <p className="text-sm text-gray-500">
+                      {company.strategies.length} content strateg{company.strategies.length === 1 ? 'y' : 'ies'} available
+                    </p>
+                  </div>
+                </div>
+                <Badge variant="primary" className="text-sm px-3 py-1">
+                  {company.strategies.length} Strategies
+                </Badge>
+              </div>
+
+              <p className="text-sm font-normal text-gray-500 mb-4">
+                Choose from available content strategies to generate targeted content ideas and campaigns.
+              </p>
+
+              {/* Strategies List */}
+              <ul className="space-y-3">
+                {company.strategies.map((strategy) => {
+                  const angleCount = countAngles(strategy)
+                  const platformBadges = getPlatformBadges(strategy.platforms)
+                  
+                  return (
+                    <li key={strategy.id}>
+                      <div className="flex items-center justify-between p-4 text-base font-bold text-gray-900 rounded-lg bg-gray-50 hover:bg-gray-100 group hover:shadow transition-all duration-200">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
+                            <FileText className="h-5 w-5 text-white" />
+                          </div>
+                          
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3 mb-2">
+                              <span className="font-semibold text-gray-900">
+                                Strategy #{strategy.id}
+                              </span>
+                              {angleCount > 0 && (
+                                <Badge variant="success" className="text-xs">
+                                  {angleCount} Angles
+                                </Badge>
+                              )}
+                            </div>
+                            
+                            <div className="flex items-center space-x-4 text-sm text-gray-600">
+                              <span className="flex items-center">
+                                <Calendar className="h-3 w-3 mr-1" />
+                                {formatDate(strategy.created_at)}
+                              </span>
+                              
+                              {platformBadges.length > 0 && (
+                                <div className="flex items-center space-x-1">
+                                  <Target className="h-3 w-3" />
+                                  <span>{platformBadges.join(', ')}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewStrategy(strategy, company)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Details
+                        </Button>
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+
+              {/* Footer */}
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <button className="inline-flex items-center text-xs font-normal text-gray-500 hover:underline hover:text-gray-700 transition-colors">
+                  <HelpCircle className="w-3 h-3 me-2" />
+                  How do content strategies work?
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        /* Empty State */
+        <Card>
+          <CardContent className="text-center py-16">
+            <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <FileText className="h-8 w-8 text-white" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-3">No Strategies Found</h3>
+            <p className="text-gray-600 max-w-md mx-auto mb-8">
+              No content strategies have been generated yet. Create your first strategy to get started with AI-powered content planning.
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto mb-8">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Target className="h-6 w-6 text-blue-600" />
+                </div>
+                <h4 className="font-medium text-gray-900 mb-2">Multi-Platform</h4>
+                <p className="text-sm text-gray-600">Strategies for all your marketing channels</p>
+              </div>
+              
+              <div className="text-center">
+                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Zap className="h-6 w-6 text-purple-600" />
+                </div>
+                <h4 className="font-medium text-gray-900 mb-2">AI-Powered</h4>
+                <p className="text-sm text-gray-600">Generated using advanced AI algorithms</p>
+              </div>
+              
+              <div className="text-center">
+                <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Building2 className="h-6 w-6 text-teal-600" />
+                </div>
+                <h4 className="font-medium text-gray-900 mb-2">Brand-Specific</h4>
+                <p className="text-sm text-gray-600">Tailored to your company's voice and goals</p>
+              </div>
+            </div>
+
+            <Button size="lg">
+              <Plus className="h-4 w-4 mr-2" />
+              Generate Your First Strategy
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

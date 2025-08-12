@@ -8,7 +8,6 @@ interface GenerateStrategyModalProps {
   isOpen: boolean
   onClose: () => void
   selectedBrand: any
-  onStrategyGenerated?: (strategyData: any) => void
 }
 
 const platforms = [
@@ -47,28 +46,28 @@ export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: Genera
       const comprehensiveBrandData = {
         // Basic brand information
         id: selectedBrand.id,
-        name: selectedBrand.brand_name || selectedBrand.name || 'Unknown Brand',
+        name: selectedBrand.name || 'Unknown Brand',
         website: selectedBrand.website || '',
 
         // Brand voice and tone
-        brandTone: selectedBrand.brand_tone || selectedBrand.brandTone || selectedBrand.brand_voice?.tone || '',
-        keyOffer: selectedBrand.key_offer || selectedBrand.keyOffer || selectedBrand.brand_voice?.style || '',
+        brandTone: selectedBrand.brandTone || selectedBrand.brand_voice?.tone || '',
+        keyOffer: selectedBrand.keyOffer || selectedBrand.brand_voice?.style || '',
         brandVoice: {
-          tone: selectedBrand.brand_tone || selectedBrand.brandTone || selectedBrand.brand_voice?.tone || '',
-          style: selectedBrand.key_offer || selectedBrand.keyOffer || selectedBrand.brand_voice?.style || '',
+          tone: selectedBrand.brandTone || selectedBrand.brand_voice?.tone || '',
+          style: selectedBrand.keyOffer || selectedBrand.brand_voice?.style || '',
           keywords: selectedBrand.brand_voice?.keywords || []
         },
 
         // Target audience information
-        targetAudience: selectedBrand.target_audience || selectedBrand.targetAudience || selectedBrand.target_audience?.demographics || '',
+        targetAudience: selectedBrand.targetAudience || selectedBrand.target_audience?.demographics || '',
         target_audience: {
-          demographics: selectedBrand.target_audience || selectedBrand.targetAudience || selectedBrand.target_audience?.demographics || '',
+          demographics: selectedBrand.targetAudience || selectedBrand.target_audience?.demographics || '',
           interests: selectedBrand.target_audience?.interests || [],
           pain_points: selectedBrand.target_audience?.pain_points || []
         },
 
         // Additional information
-        additionalInfo: selectedBrand.additional_information || selectedBrand.additionalInfo || '',
+        additionalInfo: selectedBrand.additionalInfo || '',
         imageGuidelines: selectedBrand.imageGuidelines || '',
 
         // Metadata
@@ -132,17 +131,11 @@ export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: Genera
 
       console.log('Content strategy generation result:', result)
 
-      // Call the callback with the generated strategy data
-      if (onStrategyGenerated) {
-        const strategyData = {
-          platforms: selectedPlatforms,
-          angles: result.angles || [],
-          ...result
-        }
-        onStrategyGenerated(strategyData)
-      }
+      // Save the generated content to Firebase
+      await saveGeneratedContentToFirebase(result)
 
-      console.log('Strategy generation completed successfully')
+      console.log('Strategy generation and save completed successfully')
+      alert('Content strategy generated and saved to Firebase successfully!')
       onClose()
 
     } catch (error) {
