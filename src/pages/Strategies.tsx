@@ -87,7 +87,6 @@ export function Strategies() {
   const [error, setError] = useState<string | null>(null)
   const [generatingIdeas, setGeneratingIdeas] = useState<number | null>(null)
   const [showGenerateModal, setShowGenerateModal] = useState(false)
-  const [selectedBrand, setSelectedBrand] = useState<any>(null)
   const [viewModal, setViewModal] = useState<{
     isOpen: boolean
     strategy: Strategy | null
@@ -100,6 +99,7 @@ export function Strategies() {
 
   useEffect(() => {
     fetchStrategies()
+    fetchCompanies()
   }, [])
 
   const fetchStrategies = async () => {
@@ -161,6 +161,25 @@ export function Strategies() {
     }
   }
 
+  const fetchCompanies = async () => {
+    try {
+      console.log('Fetching companies for strategy generation...')
+      const { data, error } = await supabase
+        .from('companies')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching companies:', error)
+        return
+      }
+
+      console.log('Companies fetched for modal:', data?.length || 0, 'records')
+      setCompanies(data || [])
+    } catch (error) {
+      console.error('Error fetching companies:', error)
+    }
+  }
   const countAngles = (strategy: Strategy): number => {
     let count = 0
     for (let i = 1; i <= 10; i++) {
@@ -252,24 +271,15 @@ export function Strategies() {
   }
 
   const handleGenerateStrategy = () => {
-    // For now, we'll use the first company as selected brand
-    // In a real implementation, you might want to show a company selection first
-    if (companies.length > 0) {
-      setSelectedBrand(companies[0])
-      setShowGenerateModal(true)
-    } else {
-      alert('Please create a company first before generating strategies.')
-    }
+    setShowGenerateModal(true)
   }
 
   const handleCloseGenerateModal = () => {
     setShowGenerateModal(false)
-    setSelectedBrand(null)
   }
 
   const handleStrategyGenerated = () => {
     setShowGenerateModal(false)
-    setSelectedBrand(null)
     // Refresh strategies after generation
     fetchStrategies()
   }
@@ -370,7 +380,7 @@ export function Strategies() {
       <GenerateStrategyModal
         isOpen={showGenerateModal}
         onClose={handleCloseGenerateModal}
-        selectedBrand={selectedBrand}
+        companies={companies}
       />
 
       {/* Strategy Details Modal */}

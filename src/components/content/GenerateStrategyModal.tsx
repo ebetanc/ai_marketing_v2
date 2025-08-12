@@ -7,7 +7,7 @@ import { cn } from '../../lib/utils'
 interface GenerateStrategyModalProps {
   isOpen: boolean
   onClose: () => void
-  selectedBrand: any
+  companies: any[]
 }
 
 const platforms = [
@@ -21,8 +21,9 @@ const platforms = [
   { id: 'blog', name: 'Blog', color: 'bg-green-600' }
 ]
 
-export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: GenerateStrategyModalProps) {
+export function GenerateStrategyModal({ isOpen, onClose, companies }: GenerateStrategyModalProps) {
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([])
+  const [selectedCompany, setSelectedCompany] = useState<any>(null)
   const [isGenerating, setIsGenerating] = useState(false)
 
   const togglePlatform = (platformId: string) => {
@@ -34,6 +35,11 @@ export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: Genera
   }
 
   const handleGenerateStrategy = async () => {
+    if (!selectedCompany) {
+      alert('Please select a company')
+      return
+    }
+
     if (selectedPlatforms.length === 0) {
       alert('Please select at least one platform')
       return
@@ -45,33 +51,33 @@ export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: Genera
       // Prepare comprehensive brand data payload
       const comprehensiveBrandData = {
         // Basic brand information
-        id: selectedBrand.id,
-        name: selectedBrand.name || 'Unknown Brand',
-        website: selectedBrand.website || '',
+        id: selectedCompany.id,
+        name: selectedCompany.brand_name || selectedCompany.name || 'Unknown Brand',
+        website: selectedCompany.website || '',
 
         // Brand voice and tone
-        brandTone: selectedBrand.brandTone || selectedBrand.brand_voice?.tone || '',
-        keyOffer: selectedBrand.keyOffer || selectedBrand.brand_voice?.style || '',
+        brandTone: selectedCompany.brand_tone || selectedCompany.brandTone || selectedCompany.brand_voice?.tone || '',
+        keyOffer: selectedCompany.key_offer || selectedCompany.keyOffer || selectedCompany.brand_voice?.style || '',
         brandVoice: {
-          tone: selectedBrand.brandTone || selectedBrand.brand_voice?.tone || '',
-          style: selectedBrand.keyOffer || selectedBrand.brand_voice?.style || '',
-          keywords: selectedBrand.brand_voice?.keywords || []
+          tone: selectedCompany.brand_tone || selectedCompany.brandTone || selectedCompany.brand_voice?.tone || '',
+          style: selectedCompany.key_offer || selectedCompany.keyOffer || selectedCompany.brand_voice?.style || '',
+          keywords: selectedCompany.brand_voice?.keywords || []
         },
 
         // Target audience information
-        targetAudience: selectedBrand.targetAudience || selectedBrand.target_audience?.demographics || '',
+        targetAudience: selectedCompany.target_audience || selectedCompany.targetAudience || selectedCompany.target_audience?.demographics || '',
         target_audience: {
-          demographics: selectedBrand.targetAudience || selectedBrand.target_audience?.demographics || '',
-          interests: selectedBrand.target_audience?.interests || [],
-          pain_points: selectedBrand.target_audience?.pain_points || []
+          demographics: selectedCompany.target_audience || selectedCompany.targetAudience || selectedCompany.target_audience?.demographics || '',
+          interests: selectedCompany.target_audience?.interests || [],
+          pain_points: selectedCompany.target_audience?.pain_points || []
         },
 
         // Additional information
-        additionalInfo: selectedBrand.additionalInfo || '',
-        imageGuidelines: selectedBrand.imageGuidelines || '',
+        additionalInfo: selectedCompany.additional_information || selectedCompany.additionalInfo || '',
+        imageGuidelines: selectedCompany.imageGuidelines || '',
 
         // Metadata
-        createdAt: selectedBrand.createdAt || selectedBrand.created_at || '',
+        createdAt: selectedCompany.createdAt || selectedCompany.created_at || '',
 
         // Platform-specific data
         selectedPlatforms: selectedPlatforms,
@@ -87,9 +93,9 @@ export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: Genera
           requestType: 'content_strategy_generation',
           timestamp: new Date().toISOString(),
           platformCount: selectedPlatforms.length,
-          brandHasWebsite: !!(selectedBrand.website),
-          brandHasAdditionalInfo: !!(selectedBrand.additionalInfo),
-          brandHasImageGuidelines: !!(selectedBrand.imageGuidelines)
+          brandHasWebsite: !!(selectedCompany.website),
+          brandHasAdditionalInfo: !!(selectedCompany.additional_information || selectedCompany.additionalInfo),
+          brandHasImageGuidelines: !!(selectedCompany.imageGuidelines)
         }
       }
 
@@ -149,6 +155,7 @@ export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: Genera
 
   const handleClose = () => {
     setSelectedPlatforms([])
+    setSelectedCompany(null)
     setIsGenerating(false)
     onClose()
   }
@@ -179,19 +186,21 @@ export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: Genera
         </div>
 
         {/* Brand Info */}
-        <div className="px-6 py-4 border-b border-gray-100">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-              <span className="text-blue-600 font-semibold text-sm">
-                {selectedBrand?.name?.charAt(0) || 'B'}
-              </span>
-            </div>
-            <div>
-              <h3 className="font-medium text-gray-900">{selectedBrand?.name || 'Brand'}</h3>
-              <p className="text-sm text-gray-500">{selectedBrand?.website || ''}</p>
+        {selectedCompany && (
+          <div className="px-6 py-4 border-b border-gray-100">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                <span className="text-blue-600 font-semibold text-sm">
+                  {(selectedCompany.brand_name || selectedCompany.name || 'B').charAt(0)}
+                </span>
+              </div>
+              <div>
+                <h3 className="font-medium text-gray-900">{selectedCompany.brand_name || selectedCompany.name || 'Brand'}</h3>
+                <p className="text-sm text-gray-500">{selectedCompany.website || ''}</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Content */}
         <div className="p-8 text-center">
@@ -201,8 +210,40 @@ export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: Genera
 
           <h2 className="text-2xl font-bold text-gray-900 mb-3">Generate Content Strategy</h2>
           <p className="text-gray-600 mb-8">
-            Create AI-powered content angles for {selectedBrand?.name || 'your brand'} to guide your content creation
+            Create AI-powered content angles for your selected brand to guide your content creation
           </p>
+
+          <div className="mb-8">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Select Company:</h3>
+            <div className="space-y-2">
+              {companies.map((company) => (
+                <button
+                  key={company.id}
+                  onClick={() => setSelectedCompany(company)}
+                  className={cn(
+                    'w-full p-3 rounded-xl border-2 transition-all duration-200 text-left',
+                    selectedCompany?.id === company.id
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  )}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <span className="text-blue-600 font-semibold text-xs">
+                        {(company.brand_name || company.name || 'B').charAt(0)}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{company.brand_name || company.name}</p>
+                      {company.website && (
+                        <p className="text-xs text-gray-500">{company.website}</p>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div className="mb-8">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Select Platforms:</h3>
@@ -227,7 +268,7 @@ export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: Genera
           <Button
             onClick={handleGenerateStrategy}
             loading={isGenerating}
-            disabled={selectedPlatforms.length === 0}
+            disabled={!selectedCompany || selectedPlatforms.length === 0}
             size="lg"
             className="w-full bg-blue-600 hover:bg-blue-700"
           >
