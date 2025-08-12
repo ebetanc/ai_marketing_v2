@@ -12,7 +12,8 @@ import {
   Target,
   Zap,
   Plus,
-  HelpCircle
+  HelpCircle,
+  X
 } from 'lucide-react'
 import { formatDate } from '../lib/utils'
 
@@ -80,6 +81,15 @@ export function Strategies() {
   const [companies, setCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [viewStrategyModal, setViewStrategyModal] = useState<{
+    isOpen: boolean
+    strategy: Strategy | null
+    company: Company | null
+  }>({
+    isOpen: false,
+    strategy: null,
+    company: null
+  })
 
   useEffect(() => {
     fetchStrategies()
@@ -170,6 +180,43 @@ export function Strategies() {
     }
     
     return []
+  }
+
+  const handleViewStrategy = (strategy: Strategy, company: Company) => {
+    setViewStrategyModal({
+      isOpen: true,
+      strategy,
+      company
+    })
+  }
+
+  const handleCloseModal = () => {
+    setViewStrategyModal({
+      isOpen: false,
+      strategy: null,
+      company: null
+    })
+  }
+
+  const getAnglesFromStrategy = (strategy: Strategy) => {
+    const angles = []
+    for (let i = 1; i <= 10; i++) {
+      const header = strategy[`angle${i}_header` as keyof Strategy] as string | null
+      const description = strategy[`angle${i}_description` as keyof Strategy] as string | null
+      const objective = strategy[`angle${i}_objective` as keyof Strategy] as string | null
+      const tonality = strategy[`angle${i}_tonality` as keyof Strategy] as string | null
+      
+      if (header && header.trim()) {
+        angles.push({
+          number: i,
+          header: header.trim(),
+          description: description?.trim() || '',
+          objective: objective?.trim() || '',
+          tonality: tonality?.trim() || ''
+        })
+      }
+    }
+    return angles
   }
 
   if (loading) {
