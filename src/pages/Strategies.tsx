@@ -13,7 +13,9 @@ import {
   Zap,
   Plus,
   HelpCircle,
-  X
+  X,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react'
 import { formatDate } from '../lib/utils'
 
@@ -81,7 +83,7 @@ export function Strategies() {
   const [companies, setCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [viewStrategyModal, setViewStrategyModal] = useState<{
+  const [viewModal, setViewModal] = useState<{
     isOpen: boolean
     strategy: Strategy | null
     company: Company | null
@@ -183,7 +185,8 @@ export function Strategies() {
   }
 
   const handleViewStrategy = (strategy: Strategy, company: Company) => {
-    setViewStrategyModal({
+    console.log('Opening modal for strategy:', strategy.id, 'company:', company.brand_name)
+    setViewModal({
       isOpen: true,
       strategy,
       company
@@ -191,7 +194,7 @@ export function Strategies() {
   }
 
   const handleCloseModal = () => {
-    setViewStrategyModal({
+    setViewModal({
       isOpen: false,
       strategy: null,
       company: null
