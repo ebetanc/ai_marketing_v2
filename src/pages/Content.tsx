@@ -9,6 +9,54 @@ import { supabase } from '../lib/supabase'
 import { FileText, Eye, CheckCircle, Clock, Search, MoreVertical, Trash2, RefreshCw } from 'lucide-react'
 import { formatDate, truncateText } from '../lib/utils'
 
+// Helper function to format content body with markdown-like styling
+const formatContentBody = (content: string) => {
+  if (!content) return content
+
+  return content
+    .split('\n')
+    .map((line, index) => {
+      // Main headers (# )
+      if (line.startsWith('# ')) {
+        return (
+          <h3 key={index} className="text-lg font-bold text-gray-900 mb-2 mt-4 first:mt-0">
+            {line.substring(2)}
+          </h3>
+        )
+      }
+      
+      // Sub headers (## )
+      if (line.startsWith('## ')) {
+        return (
+          <h4 key={index} className="text-base font-semibold text-gray-800 mb-2 mt-3 first:mt-0">
+            {line.substring(3)}
+          </h4>
+        )
+      }
+      
+      // Horizontal rules (---)
+      if (line.trim() === '---') {
+        return <hr key={index} className="my-3 border-gray-200" />
+      }
+      
+      // Empty lines
+      if (line.trim() === '') {
+        return <div key={index} className="h-2" />
+      }
+      
+      // Regular paragraphs with bold text formatting
+      const formattedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      
+      return (
+        <p 
+          key={index} 
+          className="text-sm text-gray-700 mb-2 leading-relaxed"
+          dangerouslySetInnerHTML={{ __html: formattedLine }}
+        />
+      )
+    })
+}
+
 // Helper function to extract and format content from JSON
 const extractContentBody = (content: any) => {
   // Try to parse the body if it's JSON
