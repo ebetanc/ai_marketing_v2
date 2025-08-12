@@ -1,14 +1,58 @@
 import React from 'react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
-import { Building2, Home, MapPin, TrendingUp, Users, FileText, X, Link, Sparkles } from 'lucide-react'
+import { Badge } from '../components/ui/Badge'
+import { Building2, Home, MapPin, TrendingUp, Users, FileText, X, Link, Sparkles, RefreshCw, ExternalLink, Calendar } from 'lucide-react'
+import { supabase } from '../lib/supabase'
+import { formatDate } from '../lib/utils'
+
+interface RealEstateContent {
+  id: number
+  created_at: string
+  link_origin: string | null
+  link_final: string | null
+}
 
 export function RealEstateContent() {
   const [showUrlModal, setShowUrlModal] = useState(false)
   const [url, setUrl] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
+  const [realEstateData, setRealEstateData] = useState<RealEstateContent[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetchRealEstateContent()
+  }, [])
+
+  const fetchRealEstateContent = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      console.log('Fetching real estate content from Supabase...')
+
+      const { data, error } = await supabase
+        .from('real_estate_content')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Supabase error:', error)
+        throw error
+      }
+
+      console.log('Real estate content fetched successfully:', data?.length || 0, 'records')
+      setRealEstateData(data || [])
+    } catch (error) {
+      console.error('Error fetching real estate content from Supabase:', error)
+      setError(error instanceof Error ? error.message : 'Failed to fetch real estate content')
+      setRealEstateData([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleGenerateContent = async () => {
     if (!url.trim()) {
@@ -45,6 +89,11 @@ export function RealEstateContent() {
       alert('The content will be generated and will take some minutes. Please come back later to see the result.')
       setShowUrlModal(false)
       setUrl('')
+      
+      // Refresh the data after successful generation
+      setTimeout(() => {
+        fetchRealEstateContent()
+      }, 2000)
     } catch (error) {
       console.error('Error generating content:', error)
       if (error instanceof Error) {
@@ -72,10 +121,16 @@ export function RealEstateContent() {
             Generate specialized content for real estate professionals, agents, and property businesses.
           </p>
         </div>
-        <Button onClick={() => setShowUrlModal(true)}>
-          <Building2 className="h-4 w-4 mr-2" />
-          Generate Real Estate Content
-        </Button>
+        <div className="flex space-x-3">
+          <Button onClick={fetchRealEstateContent} disabled={loading} variant="outline">
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button onClick={() => setShowUrlModal(true)}>
+            <Building2 className="h-4 w-4 mr-2" />
+            Generate Real Estate Content
+          </Button>
+        </div>
       </div>
 
       {/* URL Input Modal */}
@@ -144,75 +199,158 @@ export function RealEstateContent() {
         </div>
       )}
 
-      {/* Coming Soon */}
-      <Card>
-        <CardContent className="text-center py-16">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-green-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <Building2 className="h-8 w-8 text-white" />
-          </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-3">AI-Powered Real Estate Content Generator</h3>
-          <p className="text-gray-600 max-w-md mx-auto mb-8">
-            Create compelling content tailored specifically for real estate professionals,
-            including property listings, market insights, client communications, and marketing materials.
-          </p>
+      {/* Loading State */}
+      {loading && (
+        <Card>
+          <CardContent className="text-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading real estate content...</p>
+          </CardContent>
+        </Card>
+      )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
-            <div className="text-center">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <Home className="h-6 w-6 text-blue-600" />
-              </div>
-              <h4 className="font-medium text-gray-900 mb-2">Property Listings</h4>
-              <p className="text-sm text-gray-600">Generate compelling property descriptions and listings</p>
-            </div>
+      {/* Error State */}
+      {error && (
+        <Card>
+          <CardContent className="text-center py-12">
+            <Building2 className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Real Estate Content</h3>
+            <p className="text-red-600 mb-4">{error}</p>
+            <Button onClick={fetchRealEstateContent} variant="outline">
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
-            <div className="text-center">
-              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <TrendingUp className="h-6 w-6 text-green-600" />
-              </div>
-              <h4 className="font-medium text-gray-900 mb-2">Market Analysis</h4>
-              <p className="text-sm text-gray-600">Create market reports and trend analysis content</p>
-            </div>
+      {/* Real Estate Content Grid */}
+      {!loading && !error && realEstateData.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {realEstateData.map((content) => (
+            <Card key={content.id} className="hover:shadow-md transition-shadow duration-200">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start space-x-3 flex-1">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Building2 className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-lg font-bold leading-tight">
+                        Real Estate Content #{content.id}
+                      </CardTitle>
+                      <div className="flex items-center space-x-2 text-xs text-gray-500 mt-1">
+                        <Calendar className="h-3 w-3" />
+                        <span>{formatDate(content.created_at)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
 
-            <div className="text-center">
-              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <Users className="h-6 w-6 text-purple-600" />
-              </div>
-              <h4 className="font-medium text-gray-900 mb-2">Client Communication</h4>
-              <p className="text-sm text-gray-600">Craft professional emails and client updates</p>
-            </div>
-          </div>
+              <CardContent className="space-y-4">
+                {/* Origin Link */}
+                {content.link_origin && (
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
+                      <Link className="h-4 w-4 mr-1 text-blue-600" />
+                      Origin Link
+                    </h4>
+                    <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
+                      <a
+                        href={content.link_origin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-700 hover:text-blue-900 text-sm break-all flex items-center"
+                      >
+                        <ExternalLink className="h-3 w-3 mr-1 flex-shrink-0" />
+                        {content.link_origin}
+                      </a>
+                    </div>
+                  </div>
+                )}
 
-          <div className="mt-8 bg-gray-50 rounded-xl p-6 max-w-lg mx-auto">
-            <h4 className="font-semibold text-gray-900 mb-3">Content Types Available:</h4>
-            <div className="space-y-2 text-sm text-gray-700">
-              <div className="flex items-center">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
-                <span>Property listing descriptions</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-                <span>Neighborhood guides and area insights</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-2 h-2 bg-purple-500 rounded-full mr-3"></div>
-                <span>Market trend reports and analysis</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-2 h-2 bg-orange-500 rounded-full mr-3"></div>
-                <span>Social media posts for real estate</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-2 h-2 bg-teal-500 rounded-full mr-3"></div>
-                <span>Client newsletters and updates</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-2 h-2 bg-red-500 rounded-full mr-3"></div>
-                <span>Blog posts about buying/selling tips</span>
-              </div>
-            </div>
-          </div>
+                {/* Final Link */}
+                {content.link_final && (
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
+                      <FileText className="h-4 w-4 mr-1 text-green-600" />
+                      Final Link
+                    </h4>
+                    <div className="bg-green-50 rounded-lg p-3 border border-green-100">
+                      <a
+                        href={content.link_final}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-green-700 hover:text-green-900 text-sm break-all flex items-center"
+                      >
+                        <ExternalLink className="h-3 w-3 mr-1 flex-shrink-0" />
+                        {content.link_final}
+                      </a>
+                    </div>
+                  </div>
+                )}
         </CardContent>
-      </Card>
+      )}
     </div>
   )
 }
+
+                {/* Status Badge */}
+                <div className="flex justify-between items-center pt-2">
+                  <Badge 
+                    variant={content.link_final ? 'success' : 'warning'}
+                    className="text-xs"
+                  >
+                    {content.link_final ? 'Processed' : 'Processing'}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!loading && !error && realEstateData.length === 0 && (
+        <Card>
+          <CardContent className="text-center py-16">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-green-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <Building2 className="h-8 w-8 text-white" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-3">No Real Estate Content Yet</h3>
+            <p className="text-gray-600 max-w-md mx-auto mb-8">
+              Generate your first real estate content by providing a property URL. 
+              The AI will analyze the content and create specialized real estate materials.
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto mb-8">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Home className="h-6 w-6 text-blue-600" />
+                </div>
+                <h4 className="font-medium text-gray-900 mb-2">Property Analysis</h4>
+                <p className="text-sm text-gray-600">AI analyzes property URLs and extracts key information</p>
+              </div>
+              
+              <div className="text-center">
+                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <FileText className="h-6 w-6 text-green-600" />
+                </div>
+                <h4 className="font-medium text-gray-900 mb-2">Content Generation</h4>
+                <p className="text-sm text-gray-600">Creates specialized real estate marketing content</p>
+              </div>
+              
+              <div className="text-center">
+                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <TrendingUp className="h-6 w-6 text-purple-600" />
+                </div>
+                <h4 className="font-medium text-gray-900 mb-2">Ready to Use</h4>
+                <p className="text-sm text-gray-600">Get professional content ready for your campaigns</p>
+              </div>
+            </div>
+
+            <Button onClick={() => setShowUrlModal(true)} size="lg">
+              <Building2 className="h-4 w-4 mr-2" />
+              Generate Your First Content
+            </Button>
+          </CardContent>
