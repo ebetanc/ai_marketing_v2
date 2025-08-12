@@ -267,14 +267,16 @@ export function Content() {
           source: 'newsletter_content',
           platform: 'Newsletter',
           type: 'email',
-          title: item.title || 'Newsletter Content',
+          title: item.title || item.content_body?.substring(0, 50) + '...' || 'Newsletter Content',
           status: item.status || 'draft',
           company_id: item.idea?.company_id ?? item.company_id ?? item.brand_id,
           strategy_id: item.idea?.strategy_id ?? item.strategy_id,
-          brand_name: item.idea?.company?.brand_name || item.company?.brand_name || item.brand_name || item.company?.name || 'Unknown Brand'
+          brand_name: item.idea?.company?.brand_name || item.company?.brand_name || item.brand_name || item.company?.name || 'Unknown Brand',
+          body: item.content_body || item.body || 'No content available'
         }))
         allContent.push(...newsletterContent)
         console.log('Newsletter content processed:', newsletterContent.length, 'items')
+        console.log('Newsletter content sample:', newsletterContent[0])
       } else if (newsletterRes.error) {
         console.error('Error fetching Newsletter content:', newsletterRes.error)
       }
