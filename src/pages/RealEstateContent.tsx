@@ -254,6 +254,13 @@ export function RealEstateContent() {
                       </div>
                     </div>
                   </div>
+                  <button
+                    onClick={() => handleDeleteClick(content)}
+                    className="p-2 hover:bg-red-50 rounded-lg transition-colors group"
+                    title="Delete content"
+                  >
+                    <Trash2 className="h-4 w-4 text-gray-400 group-hover:text-red-600" />
+                  </button>
                 </div>
               </CardHeader>
 
