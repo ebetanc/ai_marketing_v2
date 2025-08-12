@@ -273,6 +273,9 @@ export function Strategies() {
 
   const handleGenerateStrategy = () => {
     if (companiesForModal.length === 0) {
+      return
+    }
+    setShowGenerateModal(true)
   }
 
   const handleCloseGenerateModal = () => {
@@ -348,7 +351,10 @@ export function Strategies() {
             <FileText className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Strategies</h3>
             <p className="text-red-600 mb-4">{error}</p>
-            <Button onClick={fetchStrategies} variant="outline">
+            <Button onClick={() => {
+              fetchStrategies()
+              fetchCompanies()
+            }} variant="outline">
               Try Again
             </Button>
           </CardContent>
@@ -383,6 +389,7 @@ export function Strategies() {
         isOpen={showGenerateModal}
         onClose={handleCloseGenerateModal}
         companies={companiesForModal}
+        onStrategyGenerated={handleStrategyGenerated}
       />
 
       {/* Strategy Details Modal */}
@@ -656,7 +663,7 @@ export function Strategies() {
               </div>
             </div>
 
-            <Button size="lg">
+            <Button onClick={handleGenerateStrategy} size="lg">
               <Plus className="h-4 w-4 mr-2" />
               Generate Your First Strategy
             </Button>
