@@ -114,23 +114,17 @@ export function Ideas() {
 
   const extractTopicsFromIdea = (idea: any) => {
     const topics = []
-    const columns = Object.keys(idea).sort() // Sort to ensure consistent order
 
     let topicIndex = 1
 
     while (true) {
       const topicKey = `topic${topicIndex}`
-      const descriptionKey = `description${topicIndex}` || `topic${topicIndex}_description`
-      const imagePromptKey = `image_prompt${topicIndex}` || `topic${topicIndex}_image_prompt`
+      const descriptionKey = `idea_description${topicIndex}`
+      const imagePromptKey = `image_prompt${topicIndex}`
 
-      const baseIndex = 8 + (topicIndex - 1) * 3 // 9-11 for topic 1, 12-14 for topic 2, etc.
-      const columnTopic = columns[baseIndex]
-      const columnDescription = columns[baseIndex + 1]
-      const columnImagePrompt = columns[baseIndex + 2]
-
-      const topic = idea[topicKey] || idea[columnTopic]
-      const description = idea[descriptionKey] || idea[columnDescription]
-      const imagePrompt = idea[imagePromptKey] || idea[columnImagePrompt]
+      const topic = idea[topicKey]
+      const description = idea[descriptionKey]
+      const imagePrompt = idea[imagePromptKey]
 
       if (topic || description || imagePrompt) {
         topics.push({
@@ -204,33 +198,15 @@ export function Ideas() {
     try {
       const topicNumber = viewIdeaModal.topic.number
 
-
-
-      const baseColumnIndex = 8 + (topicNumber - 1) * 3 // 9 for topic 1, 12 for topic 2, etc.
-
-
-      const columns = Object.keys(viewIdeaModal.idea).sort()
-
-
-      const topicColumn = columns[baseColumnIndex] || `topic${topicNumber}`
-      const descriptionColumn = columns[baseColumnIndex + 1] || `description${topicNumber}`
-      const imagePromptColumn = columns[baseColumnIndex + 2] || `image_prompt${topicNumber}`
+      const topicColumn = `topic${topicNumber}`
+      const descriptionColumn = `idea_description${topicNumber}`
+      const imagePromptColumn = `image_prompt${topicNumber}`
 
       const updateData = {
         [topicColumn]: editForm.topic,
         [descriptionColumn]: editForm.description,
         [imagePromptColumn]: editForm.image_prompt
       }
-
-      console.log('=== SAVE TOPIC OPERATION DEBUG ===')
-      console.log('Idea ID:', viewIdeaModal.idea.id)
-      console.log('Topic Number:', topicNumber)
-      console.log('Column mappings:', {
-        topicColumn,
-        descriptionColumn,
-        imagePromptColumn
-      })
-      console.log('Update Data:', updateData)
 
       const { error } = await supabase
         .from('ideas')
@@ -240,16 +216,9 @@ export function Ideas() {
       console.log('Supabase Update Response Error:', error)
 
       if (error) {
-        console.error('=== SUPABASE UPDATE ERROR ===')
-        console.error('Error Code:', error.code)
-        console.error('Error Message:', error.message)
-        console.error('Error Details:', error.details)
         alert(`Failed to save changes: ${error instanceof Error ? error.message : 'Unknown error'}`)
         return
       }
-
-      console.log('Topic updated successfully')
-
 
       setIdeas(prev => prev.map(idea => {
         if (idea.id === viewIdeaModal.idea!.id) {
@@ -257,7 +226,6 @@ export function Ideas() {
         }
         return idea
       }))
-
 
       const updatedTopic = {
         ...viewIdeaModal.topic,
@@ -272,13 +240,10 @@ export function Ideas() {
         isEditing: false
       }))
 
-
       await fetchIdeas()
 
       alert('Changes saved successfully!')
-
     } catch (error) {
-      console.error('Error saving changes:', error)
       alert(`Failed to save changes: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setSaving(false)
@@ -572,7 +537,7 @@ export function Ideas() {
                   <h2 className="text-xl font-bold text-gray-900">
                     {viewIdeaModal.isEditing ? 'Edit Topic' : (viewIdeaModal.topic?.topic || `Topic ${viewIdeaModal.topic?.number}`)}
                   </h2>
-                  <p className="text-sm text-gray-500">{viewIdeaModal.idea?.brand || 'Unknown Brand'}</p>
+                  <p className="text-sm text-gray-500">{viewIdeaModal.idea?.company?.brand_name || 'Unknown Brand'}</p>
                 </div>
               </div>
 
@@ -727,7 +692,7 @@ export function Ideas() {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">
-                    Content Ideas Set #{viewIdeaSetModal.idea?.id} - {viewIdeaSetModal.idea?.brand}
+                    Content Ideas Set #{viewIdeaSetModal.idea?.id} - {viewIdeaSetModal.idea?.company?.brand_name || 'Unknown Brand'}
                   </h2>
                   <p className="text-sm text-gray-500">
                     {viewIdeaSetModal.topics.length} content ideas • Created {viewIdeaSetModal.idea?.created_at ? formatDate(viewIdeaSetModal.idea.created_at) : 'Unknown'}

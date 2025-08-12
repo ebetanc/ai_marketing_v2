@@ -176,15 +176,6 @@ export function Strategies() {
       setLoading(true)
       setError(null)
 
-      console.log('Fetching strategies from Supabase...')
-      console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL)
-      console.log('Supabase client:', supabase)
-
-      // First, let's try to get the current user/session
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      console.log('Current user:', user)
-      console.log('Auth error:', authError)
-
       // Try relational select (requires strategies.company_id FK). Fallback to * if it fails
       let data: any[] | null = null
       let error: any = null
@@ -210,25 +201,13 @@ export function Strategies() {
         error = res2.error
       }
 
-      console.log('Supabase response:', { data, error })
-      console.log('Data length:', data?.length)
-      console.log('Error details:', error)
-
       if (error) {
-        console.error('Supabase error:', error)
-        console.error('Error code:', error.code)
-        console.error('Error message:', error.message)
-        console.error('Error details:', error.details)
         throw error
       }
 
-      console.log('Strategies fetched successfully:', data?.length || 0, 'records')
-      console.log('First strategy (if any):', data?.[0])
       setStrategies(data || [])
     } catch (error) {
-      console.error('Error fetching strategies:', error)
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch strategies'
-      console.error('Final error message:', errorMessage)
       setError(errorMessage)
     } finally {
       setLoading(false)
@@ -819,7 +798,7 @@ export function Strategies() {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">
-                    Strategy #{strategyDetailsModal.strategy?.id} - {(strategyDetailsModal.strategy as any)?.brand}
+                    Strategy #{strategyDetailsModal.strategy?.id} - {getBrandNameForStrategy(strategyDetailsModal.strategy!)}
                   </h2>
                   <p className="text-sm text-gray-500">
                     {strategyDetailsModal.angles.length} content angles • Created {strategyDetailsModal.strategy?.created_at ? formatDate(strategyDetailsModal.strategy.created_at) : 'Unknown'}
@@ -906,10 +885,10 @@ export function Strategies() {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">
-                    {viewAngleModal.isEditing ? 'Edit Angle' : viewAngleModal.angle?.header}
+                    {viewAngleModal.isEditing ? 'Edit Angle' : (viewAngleModal.angle?.header || 'Angle Details')}
                   </h2>
                   <p className="text-sm text-gray-500">
-                    {(viewAngleModal.strategy as any)?.brand} • Strategy #{viewAngleModal.strategy?.id} • Angle {viewAngleModal.angle?.number}
+                    {getBrandNameForStrategy(viewAngleModal.strategy!)} • Strategy #{viewAngleModal.strategy?.id} • Angle {viewAngleModal.angle?.number}
                   </p>
                 </div>
               </div>
@@ -1038,7 +1017,7 @@ export function Strategies() {
                 <CardContent className="space-y-3">
                   <div>
                     <p className="text-sm font-medium text-gray-900">Brand</p>
-                    <p className="text-gray-700">{(viewAngleModal.strategy as any)?.brand}</p>
+                    <p className="text-gray-700">{getBrandNameForStrategy(viewAngleModal.strategy!)}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-900">Strategy ID</p>
