@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Button } from '../components/ui/Button'
+import { Button } from '../ui/Button'
 import { Card, CardContent } from '../ui/Card'
 import { ArrowLeft, X, Sparkles } from 'lucide-react'
 import { cn } from '../../lib/utils'
@@ -89,6 +89,8 @@ export function GenerateStrategyModal({ isOpen, onClose, selectedBrand }: Genera
           timestamp: new Date().toISOString(),
           platformCount: selectedPlatforms.length,
           brandHasWebsite: !!(selectedBrand.website),
+  const [showGenerateStrategyModal, setShowGenerateStrategyModal] = useState(false)
+  const [selectedCompanyForStrategy, setSelectedCompanyForStrategy] = useState<Company | null>(null)
         }
       }
 
