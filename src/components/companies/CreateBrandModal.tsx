@@ -51,6 +51,9 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
 
     setAutofillLoading(true)
     try {
+      console.log('=== AUTOFILL WEBHOOK REQUEST ===')
+      console.log('Sending autofill request for website:', formData.website)
+      
       const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
         method: 'POST',
         headers: {
@@ -64,11 +67,15 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
         })
       })
 
+      console.log('Autofill webhook response status:', response.status)
+      console.log('Autofill webhook response headers:', Object.fromEntries(response.headers.entries()))
+
       if (!response.ok) {
-        throw new Error('Failed to fetch brand analysis')
+        throw new Error(`Webhook request failed with status: ${response.status}`)
       }
 
       const responseText = await response.text()
+      console.log('Raw autofill webhook response:', responseText)
 
       if (!responseText) {
         throw new Error('Empty response from server')
@@ -77,19 +84,31 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
       let data
       try {
         data = JSON.parse(responseText)
+        console.log('Parsed autofill webhook response:', data)
       } catch (parseError) {
+        console.error('Failed to parse JSON response:', parseError)
+        console.error('Raw response text:', responseText)
         throw new Error('Invalid JSON response from server')
       }
 
+      console.log('=== UPDATING FORM DATA ===')
+      console.log('Target Audience from webhook:', data.targetAudience)
+      console.log('Brand Tone from webhook:', data.brandTone)
+      console.log('Key Offer from webhook:', data.keyOffer)
+
       setFormData(prev => ({
         ...prev,
-        targetAudience: data.targetAudience || prev.targetAudience,
-        brandTone: data.brandTone || prev.brandTone,
-        keyOffer: data.keyOffer || prev.keyOffer
+        targetAudience: data.targetAudience ? String(data.targetAudience).replace(/^"|"$/g, '') : prev.targetAudience,
+        brandTone: data.brandTone ? String(data.brandTone).replace(/^"|"$/g, '') : prev.brandTone,
+        keyOffer: data.keyOffer ? String(data.keyOffer).replace(/^"|"$/g, '') : prev.keyOffer
       }))
+
+      console.log('Form data updated successfully')
+      alert('Website analysis completed! Form fields have been updated.')
+      
     } catch (error) {
       console.error('Autofill error:', error)
-      alert('Failed to analyze website. Please fill out the fields manually.')
+      alert(`Failed to analyze website: ${error instanceof Error ? error.message : 'Unknown error'}. Please fill out the fields manually.`)
     } finally {
       setAutofillLoading(false)
     }
