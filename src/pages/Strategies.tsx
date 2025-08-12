@@ -588,10 +588,15 @@ export function Strategies() {
       console.log('Enhanced brand data for webhook:', brandData)
       console.log('Brand data JSON:', JSON.stringify(brandData, null, 2))
 
+      // Create formatted platforms array with fixed positions
+      const formattedPlatforms = platforms.map(platform => 
+        selectedPlatforms.includes(platform.id) ? platform.id : ""
+      )
+
       const webhookPayload = {
         identifier: "generateAngles",
         brand: brandData,
-        platforms: formattedPlatforms,
+        platforms: formattedPlatforms, // This will be the array with fixed positions
         context: {
           requestType: 'content_strategy_generation',
           timestamp: new Date().toISOString(),
@@ -600,11 +605,6 @@ export function Strategies() {
           brandHasAdditionalInfo: !!(company.additional_information)
         }
       }
-
-      // Create formatted platforms array with fixed positions
-      const formattedPlatforms = platforms.map(platform => 
-        selectedPlatforms.includes(platform.id) ? platform.id : ""
-      )
 
       console.log('=== GENERATE STRATEGY WEBHOOK ===')
       console.log('Sending payload:', webhookPayload)
