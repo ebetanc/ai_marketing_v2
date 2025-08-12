@@ -591,7 +591,7 @@ export function Strategies() {
       const webhookPayload = {
         identifier: "generateAngles",
         brand: brandData,
-        platforms: selectedPlatforms,
+        platforms: formattedPlatforms,
         context: {
           requestType: 'content_strategy_generation',
           timestamp: new Date().toISOString(),
@@ -601,8 +601,15 @@ export function Strategies() {
         }
       }
 
+      // Create formatted platforms array with fixed positions
+      const formattedPlatforms = platforms.map(platform => 
+        selectedPlatforms.includes(platform.id) ? platform.id : ""
+      )
+
       console.log('=== GENERATE STRATEGY WEBHOOK ===')
       console.log('Sending payload:', webhookPayload)
+      console.log('Formatted platforms array:', formattedPlatforms)
+      console.log('Platform positions:', platforms.map((p, i) => `${i}: ${p.name} = "${formattedPlatforms[i]}"`))
 
       const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
         method: 'POST',
