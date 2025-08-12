@@ -280,7 +280,8 @@ export function Content() {
           // Derive company/strategy via idea relation after 3NF
           company_id: item.idea?.company_id ?? item.company_id ?? item.brand_id,
           strategy_id: item.idea?.strategy_id ?? item.strategy_id,
-          brand_name: item.idea?.company?.brand_name || item.company?.brand_name || item.brand_name || item.company?.name || 'Unknown Brand'
+          brand_name: item.idea?.company?.brand_name || item.company?.brand_name || item.brand_name || item.company?.name || 'Unknown Brand',
+          body: item.content_body || item.body || 'No content available'
         }))
         allContent.push(...twitterContent)
         console.log('Twitter content processed:', twitterContent.length, 'items')
