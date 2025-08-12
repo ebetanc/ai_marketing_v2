@@ -289,11 +289,6 @@ export function RealEstateContent() {
                     </div>
                   </div>
                 )}
-        </CardContent>
-      )}
-    </div>
-  )
-}
 
                 {/* Status Badge */}
                 <div className="flex justify-between items-center pt-2">
@@ -354,3 +349,8 @@ export function RealEstateContent() {
               Generate Your First Content
             </Button>
           </CardContent>
+        </Card>
+      )}
+    </div>
+  )
+}
