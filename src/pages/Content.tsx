@@ -281,7 +281,8 @@ export function Content() {
           company_id: item.idea?.company_id ?? item.company_id ?? item.brand_id,
           strategy_id: item.idea?.strategy_id ?? item.strategy_id,
           brand_name: item.idea?.company?.brand_name || item.company?.brand_name || item.brand_name || item.company?.name || 'Unknown Brand',
-          body: item.content_body || item.body || 'No content available'
+          body: item.content_body || item.body || 'No content available',
+          body_text: item.content_body || item.body || 'No content available'
         }))
         allContent.push(...twitterContent)
         console.log('Twitter content processed:', twitterContent.length, 'items')
@@ -301,7 +302,8 @@ export function Content() {
           company_id: item.idea?.company_id ?? item.company_id ?? item.brand_id,
           strategy_id: item.idea?.strategy_id ?? item.strategy_id,
           brand_name: item.idea?.company?.brand_name || item.company?.brand_name || item.brand_name || item.company?.name || 'Unknown Brand',
-          body: item.content_body || item.body || 'No content available'
+          body: item.content_body || item.body || 'No content available',
+          body_text: item.content_body || item.body || 'No content available'
         }))
         allContent.push(...linkedinContent)
         console.log('LinkedIn content processed:', linkedinContent.length, 'items')
@@ -322,7 +324,8 @@ export function Content() {
           company_id: item.idea?.company_id ?? item.company_id ?? item.brand_id,
           strategy_id: item.idea?.strategy_id ?? item.strategy_id,
           brand_name: item.idea?.company?.brand_name || item.company?.brand_name || item.brand_name || item.company?.name || 'Unknown Brand',
-          body: item.content_body || item.body || 'No content available'
+          body: item.content_body || item.body || 'No content available',
+          body_text: item.content_body || item.body || 'No content available'
         }))
         allContent.push(...newsletterContent)
         console.log('Newsletter content processed:', newsletterContent.length, 'items')
