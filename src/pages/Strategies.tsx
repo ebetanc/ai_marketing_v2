@@ -82,7 +82,8 @@ interface Company {
 }
 
 export function Strategies() {
-  const [companies, setCompanies] = useState<Company[]>([])
+  const [companiesWithStrategies, setCompaniesWithStrategies] = useState<Company[]>([])
+  const [companiesForModal, setCompaniesForModal] = useState<{ id: number; brand_name: string; created_at: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [generatingIdeas, setGeneratingIdeas] = useState<number | null>(null)
@@ -150,12 +151,12 @@ export function Strategies() {
 
       const companiesArray = Array.from(companiesMap.values())
       console.log('Companies with strategies:', companiesArray)
-      setCompanies(companiesArray)
+      setCompaniesWithStrategies(companiesArray)
 
     } catch (error) {
       console.error('Error fetching strategies from Supabase:', error)
       setError(error instanceof Error ? error.message : 'Failed to fetch strategies')
-      setCompanies([])
+      setCompaniesWithStrategies([])
     } finally {
       setLoading(false)
     }
@@ -175,7 +176,7 @@ export function Strategies() {
       }
 
       console.log('Companies fetched for modal:', data?.length || 0, 'records')
-      setCompanies(data || [])
+      setCompaniesForModal(data || [])
     } catch (error) {
       console.error('Error fetching companies:', error)
     }
@@ -271,7 +272,7 @@ export function Strategies() {
   }
 
   const handleGenerateStrategy = () => {
-    setShowGenerateModal(true)
+    if (companiesForModal.length === 0) {
   }
 
   const handleCloseGenerateModal = () => {
@@ -282,6 +283,7 @@ export function Strategies() {
     setShowGenerateModal(false)
     // Refresh strategies after generation
     fetchStrategies()
+    fetchCompanies()
   }
 
   const getAnglesFromStrategy = (strategy: Strategy) => {
@@ -366,7 +368,7 @@ export function Strategies() {
         </div>
         <div className="flex space-x-3">
           <Button onClick={fetchStrategies} variant="outline">
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
           <Button onClick={handleGenerateStrategy}>
@@ -380,7 +382,7 @@ export function Strategies() {
       <GenerateStrategyModal
         isOpen={showGenerateModal}
         onClose={handleCloseGenerateModal}
-        companies={companies}
+        companies={companiesForModal}
       />
 
       {/* Strategy Details Modal */}
@@ -521,9 +523,9 @@ export function Strategies() {
       )}
 
       {/* Companies with Strategies */}
-      {companies.length > 0 ? (
+      {companiesWithStrategies.length > 0 ? (
         <div className="space-y-6">
-          {companies.map((company) => (
+          {companiesWithStrategies.map((company) => (
             <div key={company.id} className="w-full max-w-full p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
               {/* Company Header */}
               <div className="flex items-center justify-between mb-3">
