@@ -84,6 +84,7 @@ export function Strategies() {
   const [companies, setCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [generatingIdeas, setGeneratingIdeas] = useState<number | null>(null)
   const [viewModal, setViewModal] = useState<{
     isOpen: boolean
     strategy: Strategy | null
@@ -200,6 +201,51 @@ export function Strategies() {
       strategy: null,
       company: null
     })
+  }
+
+  const handleGenerateIdeas = async (angle: any) => {
+    if (!viewModal.strategy || !viewModal.company) return
+    
+    try {
+      setGeneratingIdeas(angle.number)
+      
+      const payload = {
+        company: {
+          id: viewModal.company.id,
+          brand_name: viewModal.company.brand_name
+        },
+        strategy: {
+          id: viewModal.strategy.id,
+          platforms: viewModal.strategy.platforms,
+          created_at: viewModal.strategy.created_at
+        },
+        angle: {
+          number: angle.number,
+          header: angle.header,
+          description: angle.description,
+          objective: angle.objective,
+          tonality: angle.tonality
+        }
+      }
+      
+      const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate ideas')
+      }
+      
+      console.log('Ideas generation started successfully')
+    } catch (error) {
+      console.error('Error generating ideas:', error)
+    } finally {
+      setGeneratingIdeas(null)
+    }
   }
 
   const getAnglesFromStrategy = (strategy: Strategy) => {
