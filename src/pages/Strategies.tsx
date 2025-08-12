@@ -15,7 +15,8 @@ import {
   HelpCircle,
   X,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Lightbulb
 } from 'lucide-react'
 import { formatDate } from '../lib/utils'
 
