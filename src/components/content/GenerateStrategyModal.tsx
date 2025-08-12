@@ -48,6 +48,11 @@ export function GenerateStrategyModal({ isOpen, onClose, companies }: GenerateSt
     setIsGenerating(true)
 
     try {
+      // Create platforms array with all 8 platforms, empty string if not selected
+      const platformsPayload = platforms.map(platform => 
+        selectedPlatforms.includes(platform.id) ? platform.id : ""
+      )
+
       // Prepare comprehensive brand data payload
       const comprehensiveBrandData = {
         // Basic brand information
@@ -87,7 +92,7 @@ export function GenerateStrategyModal({ isOpen, onClose, companies }: GenerateSt
       const webhookPayload = {
         identifier: "generateAngles",
         brand: comprehensiveBrandData,
-        platforms: selectedPlatforms,
+        platforms: platformsPayload,
         // Additional context for the AI
         context: {
           requestType: 'content_strategy_generation',
