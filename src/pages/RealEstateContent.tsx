@@ -5,6 +5,7 @@ import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Badge } from '../components/ui/Badge'
 import { Building2, Home, MapPin, TrendingUp, Users, FileText, X, Link, Sparkles, RefreshCw, ExternalLink, Calendar } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { formatDate } from '../lib/utils'
 
@@ -22,6 +23,15 @@ export function RealEstateContent() {
   const [realEstateData, setRealEstateData] = useState<RealEstateContent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean
+    content: RealEstateContent | null
+    loading: boolean
+  }>({
+    isOpen: false,
+    content: null,
+    loading: false
+  })
 
   useEffect(() => {
     fetchRealEstateContent()
