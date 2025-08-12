@@ -59,7 +59,105 @@ const formatContentBody = (content: string) => {
 
 // Helper function to extract and format content from JSON
 const extractContentBody = (content: any) => {
-  return content.body || content.content_body || 'No content available'
+  // Try to parse the body if it's JSON
+  let parsedContent = null
+  try {
+    if (typeof content.body === 'string' && (content.body.startsWith('[') || content.body.startsWith('{'))) {
+      parsedContent = JSON.parse(content.body)
+    }
+  } catch (error) {
+    // If parsing fails, use the raw body
+  }
+
+  // Extract meaningful content from parsed JSON
+  if (parsedContent) {
+    if (Array.isArray(parsedContent) && parsedContent.length > 0) {
+      const firstContent = parsedContent[0]
+      if (firstContent.content) {
+        // Clean up the content by removing extra quotes and formatting
+        return firstContent.content.replace(/^["']|["']$/g, '').trim()
+      }
+      if (firstContent.body) {
+        return firstContent.body.replace(/^["']|["']$/g, '').trim()
+      }
+      if (firstContent.description) {
+        return firstContent.description.replace(/^["']|["']$/g, '').trim()
+      }
+      // If it's an array of content, try to extract a meaningful summary
+      if (typeof firstContent === 'string') {
+        return firstContent.replace(/^["']|["']$/g, '').trim()
+      }
+    }
+
+    if (parsedContent.content) {
+      return parsedContent.content.replace(/^["']|["']$/g, '').trim()
+    }
+
+    if (parsedContent.body) {
+      return parsedContent.body.replace(/^["']|["']$/g, '').trim()
+    }
+
+    if (parsedContent.description) {
+      return parsedContent.description.replace(/^["']|["']$/g, '').trim()
+    }
+  }
+
+  // Fallback to original body or a default message
+  const fallbackContent = content.body || 'AI-generated content ready for review and publishing.'
+
+  // If it's still JSON-like, try to clean it up
+  if (typeof fallbackContent === 'string' && fallbackContent.includes('"')) {
+    // Try to extract readable content from JSON strings
+    const cleanContent = fallbackContent
+      .replace(/^\[|\]$/g, '') // Remove array brackets
+      .replace(/^\{|\}$/g, '') // Remove object brackets
+      .replace(/"[^"]*":\s*/g, '') // Remove JSON keys
+      .replace(/[{}[\]"]/g, '') // Remove remaining JSON characters
+      .replace(/,\s*/g, '. ') // Replace commas with periods
+      .replace(/\.\s*\./g, '.') // Remove double periods
+      .trim()
+
+    return cleanContent || 'AI-generated content ready for review and publishing.'
+  }
+
+  return fallbackContent
+}
+
+// Helper function to extract content type/topic
+const extractContentTopic = (content: any) => {
+  let parsedContent = null
+  try {
+    if (typeof content.body === 'string' && (content.body.startsWith('[') || content.body.startsWith('{'))) {
+      parsedContent = JSON.parse(content.body)
+    }
+  } catch (error) {
+    // If parsing fails, return null
+  }
+
+  if (parsedContent) {
+    if (Array.isArray(parsedContent) && parsedContent.length > 0) {
+      const firstContent = parsedContent[0]
+      if (firstContent.topic) {
+        return firstContent.topic
+      }
+      if (firstContent.title) {
+        return firstContent.title
+      }
+      if (firstContent.subject) {
+        return firstContent.subject
+      }
+    }
+
+    if (parsedContent.topic) {
+      return parsedContent.topic
+    }
+
+    if (parsedContent.title) {
+      return parsedContent.title
+    }
+  }
+
+  return null
 }
 
 export function Content() {
@@ -120,6 +218,7 @@ export function Content() {
   const fetchContent = async () => {
     try {
       setLoadingContent(true)
+      console.log('Fetching content from Supabase tables...')
 
       // Fetch from all three content tables
       // Prefer relational select to join company for brand name; fallback to * if relation not available
@@ -161,6 +260,11 @@ export function Content() {
         })()
       ])
 
+      console.log('=== SUPABASE CONTENT FETCH DEBUG ===')
+      console.log('Twitter content response:', twitterRes)
+      console.log('LinkedIn content response:', linkedinRes)
+      console.log('Newsletter content response:', newsletterRes)
+
       const allContent = []
 
       // Process Twitter content
@@ -178,6 +282,9 @@ export function Content() {
           brand_name: item.idea?.company?.brand_name || item.company?.brand_name || item.brand_name || item.company?.name || 'Unknown Brand'
         }))
         allContent.push(...twitterContent)
+        console.log('Twitter content processed:', twitterContent.length, 'items')
+      } else if (twitterRes.error) {
+        console.error('Error fetching Twitter content:', twitterRes.error)
       }
 
       // Process LinkedIn content
@@ -195,6 +302,10 @@ export function Content() {
           body: item.content_body || item.body || 'No content available'
         }))
         allContent.push(...linkedinContent)
+        console.log('LinkedIn content processed:', linkedinContent.length, 'items')
+        console.log('LinkedIn content sample:', linkedinContent[0])
+      } else if (linkedinRes.error) {
+        console.error('Error fetching LinkedIn content:', linkedinRes.error)
       }
 
       // Process Newsletter content
@@ -212,14 +323,21 @@ export function Content() {
           body: item.content_body || item.body || 'No content available'
         }))
         allContent.push(...newsletterContent)
+        console.log('Newsletter content processed:', newsletterContent.length, 'items')
+        console.log('Newsletter content sample:', newsletterContent[0])
+      } else if (newsletterRes.error) {
+        console.error('Error fetching Newsletter content:', newsletterRes.error)
       }
 
       // Sort all content by created_at (most recent first)
       allContent.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
+      console.log('Total content items fetched:', allContent.length)
+      console.log('All content:', allContent)
       setGeneratedContent(allContent)
 
     } catch (error) {
+      console.error('Error fetching content from Supabase:', error)
       setGeneratedContent([])
     } finally {
       setLoadingContent(false)
@@ -245,22 +363,31 @@ export function Content() {
     setDeleteDialog(prev => ({ ...prev, loading: true }))
 
     try {
+      console.log(`Attempting to delete content from ${deleteDialog.content.source}`)
+      console.log('Content to delete:', deleteDialog.content)
+
       const { error } = await supabase
         .from(deleteDialog.content.source)
         .delete()
         .eq('id', deleteDialog.content.id)
 
       if (error) {
+        console.error('Supabase delete error:', error)
         alert(`Failed to delete content: ${error.message}`)
         return
       }
+
+      console.log('Content deleted successfully from Supabase')
 
       // Update local state
       setGeneratedContent(prev => prev.filter(content => content.id !== deleteDialog.content.id))
 
       // Close dialog
       setDeleteDialog({ isOpen: false, content: null, loading: false })
+
+      console.log('Content deleted successfully and UI updated')
     } catch (error) {
+      console.error('Error deleting content:', error)
       alert('Failed to delete content. Please try again.')
     } finally {
       setDeleteDialog(prev => ({ ...prev, loading: false }))
@@ -335,6 +462,8 @@ export function Content() {
   })
 
   const handleViewContent = (content: any) => {
+    console.log('Opening content modal for:', content)
+    console.log('Content has strategy_id (from idea or legacy column):', content.strategy_id)
     setViewContentModal({
       isOpen: true,
       content,
@@ -515,6 +644,19 @@ export function Content() {
             </CardHeader>
 
             <CardContent className="space-y-4">
+              {/* Content Topic/Subject */}
+              {extractContentTopic(content) && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
+                    <FileText className="h-4 w-4 mr-1 text-blue-600" />
+                    Content Focus
+                  </h4>
+                  <p className="text-sm text-blue-700 bg-blue-50 px-3 py-2 rounded-lg">
+                    {extractContentTopic(content)}
+                  </p>
+                </div>
+              )}
+
               {/* Content Body */}
               <div>
                 <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">

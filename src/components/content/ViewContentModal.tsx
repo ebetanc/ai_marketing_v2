@@ -61,7 +61,173 @@ const formatContentBody = (content: string) => {
 }
 
 export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewContentModalProps) {
+  const [expandedAngles, setExpandedAngles] = useState<{ [key: number]: boolean }>({})
+
   if (!isOpen || !content) return null
+
+  // Helper function to parse and extract angles from content
+  const extractAngles = (content: any) => {
+    // If content already has angles array (from Supabase transformation)
+    if (content?.angles && Array.isArray(content.angles)) {
+      return content.angles
+    }
+
+    let parsedContent = null
+    try {
+      if (typeof content.body === 'string' && (content.body.startsWith('[') || content.body.startsWith('{'))) {
+        parsedContent = JSON.parse(content.body)
+      }
+    } catch (error) {
+      console.error('Error parsing content body:', error)
+      return []
+    }
+
+    if (parsedContent) {
+      // If it's an array, return it directly
+      if (Array.isArray(parsedContent)) {
+        return parsedContent
+      }
+
+      // If it has an angles property
+      if (parsedContent.angles && Array.isArray(parsedContent.angles)) {
+        return parsedContent.angles
+      }
+
+      // If it's a single object, wrap it in an array
+      if (typeof parsedContent === 'object') {
+        return [parsedContent]
+      }
+    }
+
+    return []
+  }
+
+  const angles = extractAngles(content)
+  const hasAngles = angles.length > 0
+
+  const toggleAngleExpansion = (index: number) => {
+    setExpandedAngles(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }))
+  }
+
+  const expandAllAngles = () => {
+    const newExpandedState: { [key: number]: boolean } = {}
+    angles.forEach((_: unknown, index: number) => {
+      newExpandedState[index] = true
+    })
+    setExpandedAngles(newExpandedState)
+  }
+
+  const collapseAllAngles = () => {
+    setExpandedAngles({})
+  }
+
+  const renderAngleProperty = (key: string, value: any) => {
+    if (!value) return null
+
+    const displayKey = key.replace(/([A-Z])/g, ' $1').trim()
+    const capitalizedKey = displayKey.charAt(0).toUpperCase() + displayKey.slice(1)
+
+    let displayValue = value
+    if (typeof value === 'string') {
+      displayValue = value.replace(/^["']|["']$/g, '').trim()
+    } else if (typeof value === 'object') {
+      displayValue = JSON.stringify(value, null, 2)
+    }
+
+    return (
+      <div key={key}>
+        <h5 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
+          <FileText className="h-4 w-4 mr-1 text-blue-600" />
+          {capitalizedKey}
+        </h5>
+        <div className="bg-gray-50 rounded-lg p-3">
+          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+            {displayValue}
+          </p>
+        </div>
+      </div>
+    )
+  }
+  const renderAngleContent = (angle: any, index: number) => {
+    const isExpanded = expandedAngles[index]
+
+    // Get angle title/header
+    const angleTitle = angle.header || angle.title || angle.topic || `Content Angle ${index + 1}`
+
+    // Get main content preview
+    const getPreviewContent = () => {
+      if (angle.description) {
+        const desc = typeof angle.description === 'string'
+          ? angle.description.replace(/^["']|["']$/g, '').trim()
+          : JSON.stringify(angle.description)
+        return desc.length > 150 ? desc.substring(0, 150) + '...' : desc
+      }
+      if (angle.content) {
+        const content = typeof angle.content === 'string'
+          ? angle.content.replace(/^["']|["']$/g, '').trim()
+          : JSON.stringify(angle.content)
+        return content.length > 150 ? content.substring(0, 150) + '...' : content
+      }
+      return 'Click to view angle details...'
+    }
+
+    return (
+      <Card key={index} className="border border-gray-200">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                <span className="text-blue-600 font-semibold text-sm">{index + 1}</span>
+              </div>
+              <div>
+                <h4 className="font-medium text-gray-900 text-base">
+                  {angleTitle}
+                </h4>
+                {angle.platform && (
+                  <Badge variant="secondary" className="text-xs mt-1">
+                    {angle.platform}
+                  </Badge>
+                )}
+                {!isExpanded && (
+                  <p className="text-sm text-gray-600 mt-2 leading-relaxed">
+                    {getPreviewContent()}
+                  </p>
+                )}
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => toggleAngleExpansion(index)}
+              className="flex items-center space-x-1"
+            >
+              <Eye className="h-3 w-3" />
+              <span>{isExpanded ? 'Collapse' : 'Expand'}</span>
+              {isExpanded ? (
+                <ChevronUp className="h-3 w-3" />
+              ) : (
+                <ChevronDown className="h-3 w-3" />
+              )}
+            </Button>
+          </div>
+        </CardHeader>
+
+        {isExpanded && (
+          <CardContent className="pt-0">
+            <div className="space-y-4">
+              {/* Render all angle properties dynamically */}
+              {Object.keys(angle)
+                .filter(key => !['header', 'title', 'topic', 'platform'].includes(key))
+                .map(key => renderAngleProperty(key, angle[key]))}
+            </div>
+          </CardContent>
+        )}
+      </Card>
+    )
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -139,22 +305,57 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
             </CardContent>
           </Card>
 
-          {/* Content Body */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center text-lg">
-                <Zap className="h-5 w-5 mr-2 text-green-600" />
-                Content Body
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto">
-                <div className="text-sm">
-                  {formatContentBody(content.body_text || content.body || 'No content available')}
+          {/* Angles Section */}
+          {hasAngles ? (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center text-lg">
+                    <Target className="h-5 w-5 mr-2 text-purple-600" />
+                    Content Angles ({angles.length})
+                  </CardTitle>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={expandAllAngles}
+                      className="text-xs"
+                    >
+                      Expand All
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={collapseAllAngles}
+                      className="text-xs"
+                    >
+                      Collapse All
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {angles.map((angle: any, index: number) => renderAngleContent(angle, index))}
+              </CardContent>
+            </Card>
+          ) : (
+            /* Raw Content */
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <Zap className="h-5 w-5 mr-2 text-green-600" />
+                  Content Body
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto">
+                  <div className="text-sm">
+                    {formatContentBody(content.body_text || content.body || 'No content available')}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Metadata */}
           {content.metadata && (
