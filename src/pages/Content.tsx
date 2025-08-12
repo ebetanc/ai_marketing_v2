@@ -615,10 +615,10 @@ export function Content() {
                   <FileText className="h-4 w-4 mr-1 text-green-600" />
                   Generated Content
                 </h4>
-                <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
-                  <p className="text-sm text-gray-700 leading-relaxed line-clamp-4">
-                    {truncateText(extractContentBody(content), 200)}
-                  </p>
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 max-h-48 overflow-y-auto">
+                  <div className="text-sm">
+                    {formatContentBody(truncateText(extractContentBody(content), 400))}
+                  </div>
                 </div>
               </div>
 
