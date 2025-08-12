@@ -142,11 +142,8 @@ export function GenerateStrategyModal({ isOpen, onClose, companies }: GenerateSt
 
       console.log('Content strategy generation result:', result)
 
-      // Save the generated content to Firebase
-      await saveGeneratedContentToFirebase(result)
-
       console.log('Strategy generation and save completed successfully')
-      alert('Content strategy generated and saved to Firebase successfully!')
+      alert('Content strategy generated successfully!')
       onClose()
 
     } catch (error) {
