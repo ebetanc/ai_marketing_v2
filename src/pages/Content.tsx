@@ -277,6 +277,7 @@ export function Content() {
           type: 'social_post',
           title: item.title || 'Twitter Content',
           status: item.status || 'draft',
+          post: item.post || false,
           // Derive company/strategy via idea relation after 3NF
           company_id: item.idea?.company_id ?? item.company_id ?? item.brand_id,
           strategy_id: item.idea?.strategy_id ?? item.strategy_id,
@@ -299,6 +300,7 @@ export function Content() {
           type: 'social_post',
           title: item.title || item.content_body?.substring(0, 50) + '...' || 'LinkedIn Content',
           status: item.status || 'draft',
+          post: item.post || false,
           company_id: item.idea?.company_id ?? item.company_id ?? item.brand_id,
           strategy_id: item.idea?.strategy_id ?? item.strategy_id,
           brand_name: item.idea?.company?.brand_name || item.company?.brand_name || item.brand_name || item.company?.name || 'Unknown Brand',
@@ -321,6 +323,7 @@ export function Content() {
           type: 'email',
           title: item.title || item.content_body?.substring(0, 50) + '...' || 'Newsletter Content',
           status: item.status || 'draft',
+          post: item.post || false,
           company_id: item.idea?.company_id ?? item.company_id ?? item.brand_id,
           strategy_id: item.idea?.strategy_id ?? item.strategy_id,
           brand_name: item.idea?.company?.brand_name || item.company?.brand_name || item.brand_name || item.company?.name || 'Unknown Brand',
@@ -603,7 +606,9 @@ export function Content() {
                     
                     return (
                       <li key={content.id}>
-                        <div className="flex items-center justify-between p-4 text-base font-bold text-gray-900 rounded-lg bg-gray-50 hover:bg-gray-100 group hover:shadow transition-all duration-200">
+                        <div className={`flex items-center justify-between p-4 text-base font-bold text-gray-900 rounded-lg bg-gray-50 hover:bg-gray-100 group hover:shadow transition-all duration-200 ${
+                          content.post ? 'opacity-50 pointer-events-none bg-gray-200' : ''
+                        }`}>
                           <div className="flex items-center space-x-4">
                             <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-500 rounded-lg flex items-center justify-center">
                               <span className="text-white text-lg">{getTypeIcon(content.type)}</span>
@@ -615,6 +620,11 @@ export function Content() {
                                   {content.title}
                                 </span>
                                 {getStatusBadge(content.status)}
+                                {content.post && (
+                                  <Badge variant="success" className="text-xs">
+                                    Posted
+                                  </Badge>
+                                )}
                                 <Badge variant="secondary" className="text-xs">
                                   {content.platform || content.type?.replace('_', ' ')}
                                 </Badge>
