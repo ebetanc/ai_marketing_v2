@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
+import { GenerateStrategyModal } from '../components/content/GenerateStrategyModal'
 import { supabase } from '../lib/supabase'
 import { 
   FileText, 
@@ -85,6 +86,8 @@ export function Strategies() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [generatingIdeas, setGeneratingIdeas] = useState<number | null>(null)
+  const [showGenerateModal, setShowGenerateModal] = useState(false)
+  const [selectedBrand, setSelectedBrand] = useState<any>(null)
   const [viewModal, setViewModal] = useState<{
     isOpen: boolean
     strategy: Strategy | null
@@ -248,6 +251,29 @@ export function Strategies() {
     }
   }
 
+  const handleGenerateStrategy = () => {
+    // For now, we'll use the first company as selected brand
+    // In a real implementation, you might want to show a company selection first
+    if (companies.length > 0) {
+      setSelectedBrand(companies[0])
+      setShowGenerateModal(true)
+    } else {
+      alert('Please create a company first before generating strategies.')
+    }
+  }
+
+  const handleCloseGenerateModal = () => {
+    setShowGenerateModal(false)
+    setSelectedBrand(null)
+  }
+
+  const handleStrategyGenerated = () => {
+    setShowGenerateModal(false)
+    setSelectedBrand(null)
+    // Refresh strategies after generation
+    fetchStrategies()
+  }
+
   const getAnglesFromStrategy = (strategy: Strategy) => {
     const angles = []
     for (let i = 1; i <= 10; i++) {
@@ -333,12 +359,19 @@ export function Strategies() {
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button>
+          <Button onClick={handleGenerateStrategy}>
             <Plus className="h-4 w-4 mr-2" />
             Generate Strategy
           </Button>
         </div>
       </div>
+
+      {/* Generate Strategy Modal */}
+      <GenerateStrategyModal
+        isOpen={showGenerateModal}
+        onClose={handleCloseGenerateModal}
+        selectedBrand={selectedBrand}
+      />
 
       {/* Strategy Details Modal */}
       {viewModal.isOpen && viewModal.strategy && viewModal.company && (
