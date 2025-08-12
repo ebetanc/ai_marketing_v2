@@ -351,10 +351,7 @@ export function Strategies() {
             <FileText className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Strategies</h3>
             <p className="text-red-600 mb-4">{error}</p>
-            <Button onClick={() => {
-              fetchStrategies()
-              fetchCompanies()
-            }} variant="outline">
+            <Button onClick={fetchStrategies} variant="outline">
               Try Again
             </Button>
           </CardContent>
