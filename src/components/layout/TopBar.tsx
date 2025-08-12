@@ -4,7 +4,6 @@ import { Bell, Plus, Search } from 'lucide-react'
 import { useCompanies } from '../../hooks/useCompanies'
 
 export function TopBar() {
-  const [searchQuery, setSearchQuery] = useState('')
   const { companies } = useCompanies()
 
   return (
@@ -16,8 +15,6 @@ export function TopBar() {
             <input
               type="text"
               placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>

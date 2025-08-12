@@ -123,43 +123,6 @@ const extractContentBody = (content: any) => {
   return fallbackContent
 }
 
-// Helper function to extract content type/topic
-const extractContentTopic = (content: any) => {
-  let parsedContent = null
-  try {
-    if (typeof content.body === 'string' && (content.body.startsWith('[') || content.body.startsWith('{'))) {
-      parsedContent = JSON.parse(content.body)
-    }
-  } catch (error) {
-    // If parsing fails, return null
-  }
-
-  if (parsedContent) {
-    if (Array.isArray(parsedContent) && parsedContent.length > 0) {
-      const firstContent = parsedContent[0]
-      if (firstContent.topic) {
-        return firstContent.topic
-      }
-      if (firstContent.title) {
-        return firstContent.title
-      }
-      if (firstContent.subject) {
-        return firstContent.subject
-      }
-    }
-
-    if (parsedContent.topic) {
-      return parsedContent.topic
-    }
-
-    if (parsedContent.title) {
-      return parsedContent.title
-    }
-  }
-
-  return null
-}
-
 export function Content() {
   const [companies, setCompanies] = useState<any[]>([])
   const [generatedContent, setGeneratedContent] = useState<any[]>([])
@@ -644,19 +607,6 @@ export function Content() {
             </CardHeader>
 
             <CardContent className="space-y-4">
-              {/* Content Topic/Subject */}
-              {extractContentTopic(content) && (
-                <div>
-                  <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
-                    <FileText className="h-4 w-4 mr-1 text-blue-600" />
-                    Content Focus
-                  </h4>
-                  <p className="text-sm text-blue-700 bg-blue-50 px-3 py-2 rounded-lg">
-                    {extractContentTopic(content)}
-                  </p>
-                </div>
-              )}
-
               {/* Content Body */}
               <div>
                 <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">

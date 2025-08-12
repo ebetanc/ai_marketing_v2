@@ -1,84 +1,47 @@
 import { useState, useEffect } from 'react'
-import type { Company } from '../lib/supabase'
-import { db } from '../lib/firebase'
-import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore'
-
+import { supabase } from '../lib/supabase'
 
 export function useCompanies() {
-  const [companies, setCompanies] = useState<Company[]>([])
+  const [companies, setCompanies] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  const fetchCompaniesFromFirebase = async () => {
+  const fetchCompaniesFromSupabase = async () => {
     try {
-      const brandsCollection = collection(db, 'brands')
-      const brandsSnapshot = await getDocs(brandsCollection)
-      
-      const firebaseCompanies: Company[] = brandsSnapshot.docs.map(doc => {
-        const data = doc.data()
-        return {
-          id: doc.id,
-          name: data.name || 'Unnamed Brand',
-          brand_voice: {
-            tone: data.brandTone || 'Not specified',
-            style: data.keyOffer || 'Not specified',
-            keywords: data.keyOffer ? data.keyOffer.split(' ').slice(0, 4) : []
-          },
-          target_audience: {
-            demographics: data.targetAudience || 'Not specified',
-            interests: [],
-            pain_points: []
-          },
-          created_at: data.createdAt || new Date().toISOString()
-        }
-      })
-      
-      setCompanies(firebaseCompanies)
+      setLoading(true)
+      console.log('Fetching companies from Supabase...')
+
+      const { data, error } = await supabase
+        .from('companies')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching companies:', error)
+        throw error
+      }
+
+      console.log('Companies fetched successfully:', data?.length || 0, 'records')
+      setCompanies(data || [])
     } catch (error) {
-      console.error('Error fetching brands from Firebase:', error)
+      console.error('Error fetching companies:', error)
       setCompanies([])
     } finally {
       setLoading(false)
     }
   }
+
   useEffect(() => {
-    fetchCompaniesFromFirebase()
+    fetchCompaniesFromSupabase()
   }, [])
 
-  const createCompany = async (companyData: Omit<Company, 'id' | 'created_at'>) => {
-    const newCompany: Company = {
-      id: Date.now().toString(),
-      created_at: new Date().toISOString(),
-      ...companyData
-    }
-    
-    setCompanies(prev => [...prev, newCompany])
-    return { data: newCompany, error: null }
-  }
-
-  const deleteCompany = async (companyId: string) => {
-    try {
-      // Delete from Firebase
-      await deleteDoc(doc(db, 'brands', companyId))
-      
-      // Update local state
-      setCompanies(prev => prev.filter(company => company.id !== companyId))
-      
-      return { error: null }
-    } catch (error) {
-      console.error('Error deleting company:', error)
-      return { error: 'Failed to delete company' }
-    }
-  }
   const refetch = () => {
     setLoading(true)
-    fetchCompaniesFromFirebase()
+    fetchCompaniesFromSupabase()
   }
 
   return {
     companies,
     loading,
-    createCompany,
-    deleteCompany,
     refetch
   }
 }

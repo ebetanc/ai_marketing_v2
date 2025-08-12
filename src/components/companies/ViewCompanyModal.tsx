@@ -60,6 +60,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900">{company.name}</h2>
+              <h2 className="text-xl font-bold text-gray-900">{company.brand_name}</h2>
               <p className="text-sm text-gray-500">Company Details</p>
             </div>
           </div>
@@ -85,7 +86,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
             <CardContent className="space-y-4">
               <div>
                 <p className="text-sm font-medium text-gray-900">Company Name</p>
-                <p className="text-gray-700">{company.brand_name || company.name}</p>
+                <p className="text-gray-700">{company.brand_name}</p>
               </div>
 
               {company.website && (
@@ -107,7 +108,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
                 <p className="text-sm font-medium text-gray-900">Created</p>
                 <p className="text-gray-700 flex items-center">
                   <Calendar className="h-4 w-4 mr-1 text-gray-400" />
-                  {formatDate(company.created_at || company.createdAt)}
+                  {formatDate(company.created_at)}
                 </p>
               </div>
             </CardContent>
@@ -170,122 +171,6 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
               <CardContent>
                 <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
                   {company.additional_information}
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Legacy Brand Voice Support */}
-          {company.brand_voice && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center text-lg">
-                  <Zap className="h-5 w-5 mr-2 text-orange-600" />
-                  Brand Voice & Tone
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Brand Tone</p>
-                  <p className="text-gray-700 leading-relaxed">{company.brand_voice?.tone || company.brandTone || 'Not specified'}</p>
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Key Offer / Style</p>
-                  <p className="text-gray-700 leading-relaxed">{company.brand_voice?.style || company.keyOffer || 'Not specified'}</p>
-                </div>
-
-                {company.brand_voice?.keywords && company.brand_voice.keywords.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 mb-2">Keywords</p>
-                    <div className="flex flex-wrap gap-2">
-                      {company.brand_voice.keywords.map((keyword: string, index: number) => (
-                        <Badge key={index} variant="secondary">
-                          {keyword}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Legacy Target Audience Support */}
-          {company.target_audience && typeof company.target_audience === 'object' && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center text-lg">
-                  <Target className="h-5 w-5 mr-2 text-pink-600" />
-                  Target Audience
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Demographics</p>
-                  <p className="text-gray-700 leading-relaxed">
-                    {company.target_audience?.demographics || company.targetAudience || 'Not specified'}
-                  </p>
-                </div>
-
-                {company.target_audience?.interests && company.target_audience.interests.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 mb-2">Interests</p>
-                    <div className="flex flex-wrap gap-2">
-                      {company.target_audience.interests.map((interest: string, index: number) => (
-                        <Badge key={index} variant="secondary">
-                          {interest}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {company.target_audience?.pain_points && company.target_audience.pain_points.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 mb-2">Pain Points</p>
-                    <div className="flex flex-wrap gap-2">
-                      {company.target_audience.pain_points.map((point: string, index: number) => (
-                        <Badge key={index} variant="warning">
-                          {point}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Legacy Additional Information Support */}
-          {company.additionalInfo && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center text-lg">
-                  <User className="h-5 w-5 mr-2 text-indigo-600" />
-                  Additional Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                  {company.additionalInfo}
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Legacy Image Guidelines Support */}
-          {company.imageGuidelines && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center text-lg">
-                  <Target className="h-5 w-5 mr-2 text-orange-600" />
-                  Image Guidelines
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                  {company.imageGuidelines}
                 </p>
               </CardContent>
             </Card>
