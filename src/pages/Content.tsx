@@ -545,110 +545,129 @@ export function Content() {
             </div>
           </div>
         </CardContent>
-      </Card>
+      )}
 
-      {/* Content Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {filteredContent.map((content) => (
-          <Card key={content.id} className="hover:shadow-md transition-shadow duration-200">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-3 flex-1">
-                  <div className="text-2xl">{getTypeIcon(content.type)}</div>
-                  <div className="flex-1 min-w-0">
-                    <CardTitle className="text-sm sm:text-base line-clamp-2">
-                      {content.title}
-                    </CardTitle>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {content.brand_name}
-                    </p>
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      <Badge variant="secondary" className="text-xs">
-                        {content.platform || 'AI Generated'}
-                      </Badge>
-                      {content.strategy_id && (
-                        <Badge variant="secondary" className="ml-1 text-xs">
-                          Strategy: {String(content.strategy_id).slice(-6)}
-                        </Badge>
-                      )}
-                      {content.platform && (
-                        <Badge variant="secondary" className="ml-1 text-xs">
-                          {content.platform}
-                        </Badge>
-                      )}
+      {/* Content by Company */}
+      {!loading && !error && filteredContent.length > 0 && (
+        <div className="space-y-6">
+          {Object.entries(
+            filteredContent.reduce((acc, content) => {
+              const brandName = content.brand_name || 'Unknown Brand'
+              if (!acc[brandName]) acc[brandName] = []
+              acc[brandName].push(content)
+              return acc
+            }, {} as Record<string, typeof filteredContent>)
+          ).map(([brandName, brandContent]) => {
+            const totalContent = brandContent.length
+            const approvedContent = brandContent.filter(c => c.status === 'approved').length
+            
+            return (
+              <div key={brandName} className="w-full max-w-full p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+                {/* Company Header */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-500 rounded-xl flex items-center justify-center">
+                      <FileText className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h5 className="text-xl font-semibold text-gray-900">
+                        {brandName}
+                      </h5>
+                      <p className="text-sm text-gray-500">
+                        {totalContent} content piece{totalContent === 1 ? '' : 's'} • {approvedContent} approved
+                      </p>
                     </div>
                   </div>
+                  <Badge variant="primary" className="text-sm px-3 py-1">
+                    {totalContent} Pieces
+                  </Badge>
                 </div>
-                <div className="flex items-center space-x-1">
-                  <button
-                    onClick={() => handleDeleteClick(content)}
-                    className="p-1 hover:bg-red-50 rounded-lg transition-colors group"
-                    title="Delete content"
-                  >
-                    <Trash2 className="h-4 w-4 text-gray-400 group-hover:text-red-600" />
+
+                <p className="text-sm font-normal text-gray-500 mb-4">
+                  AI-generated content ready for review and publishing. Click on any content piece to view details and manage approval status.
+                </p>
+
+                {/* Content List */}
+                <ul className="space-y-3">
+                  {brandContent.map((content) => {
+                    const contentTopic = extractContentTopic(content)
+                    
+                    return (
+                      <li key={content.id}>
+                        <div className="flex items-center justify-between p-4 text-base font-bold text-gray-900 rounded-lg bg-gray-50 hover:bg-gray-100 group hover:shadow transition-all duration-200">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-500 rounded-lg flex items-center justify-center">
+                              <span className="text-white text-lg">{getTypeIcon(content.type)}</span>
+                            </div>
+                            
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-3 mb-2">
+                                <span className="font-semibold text-gray-900">
+                                  {content.title}
+                                </span>
+                                {getStatusBadge(content.status)}
+                                <Badge variant="secondary" className="text-xs">
+                                  {content.platform || content.type?.replace('_', ' ')}
+                                </Badge>
+                                {content.strategy_id && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    Strategy #{content.strategy_id}
+                                  </Badge>
+                                )}
+                              </div>
+                              
+                              <div className="flex items-center space-x-4 text-sm text-gray-600">
+                                <span className="flex items-center">
+                                  <Calendar className="h-3 w-3 mr-1" />
+                                  {formatDate(content.created_at)}
+                                </span>
+                                <span>{content.metadata?.word_count || 0} words</span>
+                                {contentTopic && (
+                                  <span className="text-blue-600">Topic: {truncateText(contentTopic, 30)}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDeleteClick(content)
+                              }}
+                              className="p-2 hover:bg-red-50 rounded-lg transition-colors group opacity-0 group-hover:opacity-100"
+                              title="Delete content"
+                            >
+                              <Trash2 className="h-4 w-4 text-gray-400 group-hover:text-red-600" />
+                            </button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewContent(content)}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              View Details
+                            </Button>
+                          </div>
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
+
+                {/* Footer */}
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <button className="inline-flex items-center text-xs font-normal text-gray-500 hover:underline hover:text-gray-700 transition-colors">
+                    <HelpCircle className="w-3 h-3 me-2" />
+                    How does content generation work?
                   </button>
-                  <button className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
-                    <MoreVertical className="h-4 w-4 text-gray-400" />
-                  </button>
                 </div>
               </div>
-            </CardHeader>
-
-            <CardContent className="space-y-4">
-              {/* Content Topic/Subject */}
-              {extractContentTopic(content) && (
-                <div>
-                  <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
-                    <FileText className="h-4 w-4 mr-1 text-blue-600" />
-                    Content Focus
-                  </h4>
-                  <p className="text-sm text-blue-700 bg-blue-50 px-3 py-2 rounded-lg">
-                    {extractContentTopic(content)}
-                  </p>
-                </div>
-              )}
-
-              {/* Content Body */}
-              <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
-                  <FileText className="h-4 w-4 mr-1 text-green-600" />
-                  Generated Content
-                </h4>
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 max-h-48 overflow-y-auto">
-                  <div className="text-sm">
-                    {formatContentBody(truncateText(extractContentBody(content), 400))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <span>{formatDate(content.created_at)}</span>
-                <span>{content.metadata?.word_count || 0} words</span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                {getStatusBadge(content.status)}
-                <Badge variant="secondary" className="text-xs capitalize">
-                  {content.type?.replace('_', ' ')}
-                </Badge>
-              </div>
-
-              <div className="flex space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => handleViewContent(content)}
-                >
-                  <Eye className="h-3 w-3 mr-1" />
-                  View
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
+            )
+          })}
+        </div>
+      )}
       {filteredContent.length === 0 && (
         <Card>
           <CardContent className="text-center py-12">
