@@ -371,7 +371,7 @@ export function Strategies() {
         </div>
         <div className="flex space-x-3">
           <Button onClick={fetchStrategies} variant="outline">
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
           <Button onClick={handleGenerateStrategy}>
