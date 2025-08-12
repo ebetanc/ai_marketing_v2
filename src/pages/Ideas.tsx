@@ -822,11 +822,11 @@ export function Ideas() {
 
       {/* Ideas by Brand */}
       {!loading && !error && ideas.length > 0 && (
-        <div className="space-y-12">
+        <div className="space-y-8">
           {(Object.entries(ideasByBrand ?? {}) as [string, any[]][]).map(([brandName, brandIdeas]) => (
-            <div key={brandName} className="space-y-6">
+            <div key={brandName} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
               {/* Brand Header */}
-              <div className="bg-gradient-to-r from-blue-50 to-teal-50 rounded-2xl p-6 border border-blue-100">
+              <div className="bg-gradient-to-r from-blue-50 to-teal-50 p-6 border-b border-blue-100">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg">
@@ -846,12 +846,12 @@ export function Ideas() {
               </div>
 
               {/* Ideas Grid for this Brand */}
-              <div className="space-y-8">
+              <div className="p-6 space-y-6 bg-gray-50">
                 {brandIdeas.map((idea: any) => {
                   const topics = extractTopicsFromIdea(idea)
 
                   return (
-                    <Card key={idea.id} className="border-l-4 border-l-blue-500 shadow-md">
+                    <Card key={idea.id} className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow bg-white">
                       <CardContent>
                         <div className="flex items-center justify-between p-6">
                           <div className="flex items-center space-x-4">
@@ -861,15 +861,15 @@ export function Ideas() {
                             <div>
                               <h3 className="text-2xl font-bold text-gray-900">Content Ideas Set #{idea.id}</h3>
                               <p className="text-blue-600 font-medium text-lg">{topics.length} content idea{topics.length === 1 ? '' : 's'} ready for execution</p>
-                              <div className="flex items-center space-x-4 text-sm text-gray-500 mt-2">
+                              <div className="flex items-center space-x-4 text-sm text-gray-600 mt-2">
                                 <span className="flex items-center">
                                   <Calendar className="h-4 w-4 mr-1" />
                                   {formatDate(idea.created_at)}
                                 </span>
                                 {idea.strategy_id && (
                                   <>
-                                    <span>Strategy #{idea.strategy_id}</span>
-                                    {idea.angle_number && <span>Angle {idea.angle_number}</span>}
+                                    <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">Strategy #{idea.strategy_id}</span>
+                                    {idea.angle_number && <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">Angle {idea.angle_number}</span>}
                                   </>
                                 )}
                               </div>
