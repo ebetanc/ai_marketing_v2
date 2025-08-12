@@ -5,6 +5,8 @@ import { Textarea } from '../ui/Textarea'
 import { Card, CardContent } from '../ui/Card'
 import { X, ArrowLeft, ArrowRight, Sparkles, Globe, Database } from 'lucide-react'
 import { cn } from '../../lib/utils'
+import { db } from '../../lib/firebase'
+import { doc, getDoc, collection, addDoc } from 'firebase/firestore'
 
 interface CreateBrandModalProps {
   isOpen: boolean
@@ -29,6 +31,8 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
   const [currentStep, setCurrentStep] = useState(1)
   const [autofillLoading, setAutofillLoading] = useState(false)
   const [submitLoading, setSubmitLoading] = useState(false)
+  const [brandIdToLoad, setBrandIdToLoad] = useState('')
+  const [loadFromFirebaseLoading, setLoadFromFirebaseLoading] = useState(false)
   const [formData, setFormData] = useState<BrandFormData>({
     name: '',
     website: '',
@@ -110,6 +114,41 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
     }
   }
 
+  const handleLoadFromFirebase = async () => {
+    if (!brandIdToLoad.trim()) {
+      alert('Please enter a Brand ID')
+      return
+    }
+
+    setLoadFromFirebaseLoading(true)
+    try {
+      const docRef = doc(db, 'brands', brandIdToLoad.trim())
+      const docSnap = await getDoc(docRef)
+
+      if (docSnap.exists()) {
+        const data = docSnap.data()
+        setFormData(prev => ({
+          ...prev,
+          name: data.name || prev.name,
+          website: data.website || prev.website,
+          additionalInfo: data.additionalInfo || prev.additionalInfo,
+          targetAudience: data.targetAudience || prev.targetAudience,
+          brandTone: data.brandTone || prev.brandTone,
+          keyOffer: data.keyOffer || prev.keyOffer,
+          imageGuidelines: data.imageGuidelines || prev.imageGuidelines
+        }))
+        alert('Brand data loaded successfully!')
+      } else {
+        alert('No brand found with that ID')
+      }
+    } catch (error) {
+      console.error('Error loading from Firebase:', error)
+      alert('Failed to load brand data. Please try again.')
+    } finally {
+      setLoadFromFirebaseLoading(false)
+    }
+  }
+
   const handleNext = () => {
     if (currentStep === 1 && !formData.name) {
       alert('Please enter a brand name')
@@ -188,6 +227,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
       imageGuidelines: ''
     })
     setCurrentStep(1)
+    setBrandIdToLoad('')
   }
 
   const handleClose = () => {

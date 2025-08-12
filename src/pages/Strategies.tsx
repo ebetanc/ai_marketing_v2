@@ -180,6 +180,11 @@ export function Strategies() {
       console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL)
       console.log('Supabase client:', supabase)
 
+      // First, let's try to get the current user/session
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      console.log('Current user:', user)
+      console.log('Auth error:', authError)
+
       // Try relational select (requires strategies.company_id FK). Fallback to * if it fails
       let data: any[] | null = null
       let error: any = null
@@ -814,7 +819,7 @@ export function Strategies() {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">
-                    Strategy #{strategyDetailsModal.strategy?.id} - {getBrandNameForStrategy(strategyDetailsModal.strategy)}
+                    Strategy #{strategyDetailsModal.strategy?.id} - {(strategyDetailsModal.strategy as any)?.brand}
                   </h2>
                   <p className="text-sm text-gray-500">
                     {strategyDetailsModal.angles.length} content angles • Created {strategyDetailsModal.strategy?.created_at ? formatDate(strategyDetailsModal.strategy.created_at) : 'Unknown'}
@@ -904,7 +909,7 @@ export function Strategies() {
                     {viewAngleModal.isEditing ? 'Edit Angle' : viewAngleModal.angle?.header}
                   </h2>
                   <p className="text-sm text-gray-500">
-                    {getBrandNameForStrategy(viewAngleModal.strategy)} • Strategy #{viewAngleModal.strategy?.id} • Angle {viewAngleModal.angle?.number}
+                    {(viewAngleModal.strategy as any)?.brand} • Strategy #{viewAngleModal.strategy?.id} • Angle {viewAngleModal.angle?.number}
                   </p>
                 </div>
               </div>
@@ -1033,7 +1038,7 @@ export function Strategies() {
                 <CardContent className="space-y-3">
                   <div>
                     <p className="text-sm font-medium text-gray-900">Brand</p>
-                    <p className="text-gray-700">{getBrandNameForStrategy(viewAngleModal.strategy)}</p>
+                    <p className="text-gray-700">{(viewAngleModal.strategy as any)?.brand}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-900">Strategy ID</p>

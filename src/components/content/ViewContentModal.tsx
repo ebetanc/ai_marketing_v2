@@ -65,6 +65,46 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
 
   if (!isOpen || !content) return null
 
+  // Helper function to parse and extract angles from content
+  const extractAngles = (content: any) => {
+    // If content already has angles array (from Supabase transformation)
+    if (content?.angles && Array.isArray(content.angles)) {
+      return content.angles
+    }
+
+    let parsedContent = null
+    try {
+      if (typeof content.body === 'string' && (content.body.startsWith('[') || content.body.startsWith('{'))) {
+        parsedContent = JSON.parse(content.body)
+      }
+    } catch (error) {
+      console.error('Error parsing content body:', error)
+      return []
+    }
+
+    if (parsedContent) {
+      // If it's an array, return it directly
+      if (Array.isArray(parsedContent)) {
+        return parsedContent
+      }
+
+      // If it has an angles property
+      if (parsedContent.angles && Array.isArray(parsedContent.angles)) {
+        return parsedContent.angles
+      }
+
+      // If it's a single object, wrap it in an array
+      if (typeof parsedContent === 'object') {
+        return [parsedContent]
+      }
+    }
+
+    return []
+  }
+
+  const angles = extractAngles(content)
+  const hasAngles = angles.length > 0
+
   const toggleAngleExpansion = (index: number) => {
     setExpandedAngles(prev => ({
       ...prev,
@@ -265,22 +305,57 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
             </CardContent>
           </Card>
 
-          {/* Raw Content */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center text-lg">
-                <Zap className="h-5 w-5 mr-2 text-green-600" />
-                Content Body
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto">
-                <div className="text-sm">
-                  {formatContentBody(content.body_text || content.body || 'No content available')}
+          {/* Angles Section */}
+          {hasAngles ? (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center text-lg">
+                    <Target className="h-5 w-5 mr-2 text-purple-600" />
+                    Content Angles ({angles.length})
+                  </CardTitle>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={expandAllAngles}
+                      className="text-xs"
+                    >
+                      Expand All
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={collapseAllAngles}
+                      className="text-xs"
+                    >
+                      Collapse All
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {angles.map((angle: any, index: number) => renderAngleContent(angle, index))}
+              </CardContent>
+            </Card>
+          ) : (
+            /* Raw Content */
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <Zap className="h-5 w-5 mr-2 text-green-600" />
+                  Content Body
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto">
+                  <div className="text-sm">
+                    {formatContentBody(content.body_text || content.body || 'No content available')}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Metadata */}
           {content.metadata && (
