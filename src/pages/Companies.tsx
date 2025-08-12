@@ -255,7 +255,7 @@ export function Companies() {
                               <Building2 className="h-5 w-5 text-blue-600" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <CardTitle className="text-base leading-tight">{company.brand_name}</CardTitle>
+                              <CardTitle className="text-xl font-bold leading-tight">{company.brand_name}</CardTitle>
                               <div className="flex items-center space-x-2 text-xs text-gray-500 mt-1">
                                 <span className="flex items-center">
                                   <Calendar className="h-3 w-3 mr-1" />
