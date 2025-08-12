@@ -33,6 +33,51 @@ export function RealEstateContent() {
     loading: false
   })
 
+  const handleDeleteClick = (content: RealEstateContent) => {
+    setDeleteDialog({
+      isOpen: true,
+      content,
+      loading: false
+    })
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteDialog.content) return
+
+    setDeleteDialog(prev => ({ ...prev, loading: true }))
+
+    try {
+      const { error } = await supabase
+        .from('real_estate_content')
+        .delete()
+        .eq('id', deleteDialog.content.id)
+
+      if (error) throw error
+
+      // Remove from local state
+      setRealEstateData(prev => prev.filter(item => item.id !== deleteDialog.content!.id))
+      
+      // Close dialog
+      setDeleteDialog({
+        isOpen: false,
+        content: null,
+        loading: false
+      })
+    } catch (error) {
+      console.error('Error deleting real estate content:', error)
+      alert('Failed to delete content. Please try again.')
+      setDeleteDialog(prev => ({ ...prev, loading: false }))
+    }
+  }
+
+  const handleDeleteCancel = () => {
+    setDeleteDialog({
+      isOpen: false,
+      content: null,
+      loading: false
+    })
+  }
+
   useEffect(() => {
     fetchRealEstateContent()
   }, [])
@@ -367,6 +412,48 @@ export function RealEstateContent() {
             </Button>
           </CardContent>
         </Card>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {deleteDialog.isOpen && deleteDialog.content && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="p-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
+                  <Trash2 className="h-5 w-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">Delete Content</h3>
+                  <p className="text-sm text-gray-500">This action cannot be undone</p>
+                </div>
+              </div>
+              
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to delete Real Estate Content #{deleteDialog.content.id}?
+              </p>
+              
+              <div className="flex justify-end space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={handleDeleteCancel}
+                  disabled={deleteDialog.loading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleDeleteConfirm}
+                  loading={deleteDialog.loading}
+                  className="bg-red-600 hover:bg-red-700"
+                  disabled={deleteDialog.loading}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {deleteDialog.loading ? 'Deleting...' : 'Delete'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
