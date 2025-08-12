@@ -1,1141 +1,216 @@
-import {
-  Building2,
-  Calendar,
-  Database,
-  Eye,
-  FileText,
-  Plus,
-  RefreshCw,
-  Sparkles,
-  Target,
-  X,
-  Zap
-} from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { Badge } from '../components/ui/Badge'
-import { Button } from '../components/ui/Button'
+import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
-import { Select } from '../components/ui/Select'
-import type { Strategy } from '../lib/supabase'
+import { Button } from '../components/ui/Button'
+import { Badge } from '../components/ui/Badge'
 import { supabase } from '../lib/supabase'
+import { 
+  FileText, 
+  Building2, 
+  Eye, 
+  RefreshCw, 
+  Calendar,
+  Target,
+  Zap,
+  Plus,
+  HelpCircle
+} from 'lucide-react'
 import { formatDate } from '../lib/utils'
 
+interface Strategy {
+  id: number
+  created_at: string
+  platforms: string | null
+  company_id: number
+  company?: {
+    id: number
+    brand_name: string
+    created_at: string
+  }
+  // Angle fields
+  angle1_header: string | null
+  angle1_description: string | null
+  angle1_objective: string | null
+  angle1_tonality: string | null
+  angle2_header: string | null
+  angle2_description: string | null
+  angle2_objective: string | null
+  angle2_tonality: string | null
+  angle3_header: string | null
+  angle3_description: string | null
+  angle3_objective: string | null
+  angle3_tonality: string | null
+  angle4_header: string | null
+  angle4_description: string | null
+  angle4_objective: string | null
+  angle4_tonality: string | null
+  angle5_header: string | null
+  angle5_description: string | null
+  angle5_objective: string | null
+  angle5_tonality: string | null
+  angle6_header: string | null
+  angle6_description: string | null
+  angle6_objective: string | null
+  angle6_tonality: string | null
+  angle7_header: string | null
+  angle7_description: string | null
+  angle7_objective: string | null
+  angle7_tonality: string | null
+  angle8_header: string | null
+  angle8_description: string | null
+  angle8_objective: string | null
+  angle8_tonality: string | null
+  angle9_header: string | null
+  angle9_description: string | null
+  angle9_objective: string | null
+  angle9_tonality: string | null
+  angle10_header: string | null
+  angle10_description: string | null
+  angle10_objective: string | null
+  angle10_tonality: string | null
+}
+
+interface Company {
+  id: number
+  brand_name: string
+  created_at: string
+  strategies: Strategy[]
+}
+
 export function Strategies() {
-  const [strategies, setStrategies] = useState<Strategy[]>([])
-  const [companies, setCompanies] = useState<any[]>([])
+  const [companies, setCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(true)
-  const [loadingCompanies, setLoadingCompanies] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [showGenerateModal, setShowGenerateModal] = useState(false)
-  const [selectedCompany, setSelectedCompany] = useState('')
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([])
-  const [generating, setGenerating] = useState(false)
-  const [viewAngleModal, setViewAngleModal] = useState<{
-    isOpen: boolean
-    strategy: Strategy | null
-    angle: any
-    isEditing: boolean
-  }>({
-    isOpen: false,
-    strategy: null,
-    angle: null,
-    isEditing: false
-  })
-
-  const [editForm, setEditForm] = useState({
-    header: '',
-    description: '',
-    objective: '',
-    tonality: ''
-  })
-
-  // Helper: compare potentially mixed-type IDs (bigint from DB may arrive as string)
-  const equalIds = (a: string | number | null | undefined, b: string | number | null | undefined) => {
-    if (a == null || b == null) return false
-    return String(a) === String(b)
-  }
-
-  // Helper: find company by id using safe comparison
-  const getCompanyById = (id: string | number | null | undefined) => {
-    if (id == null) return undefined
-    return companies.find((c) => equalIds(c.id, id))
-  }
-
-  // Helper: derive brand display name from strategy -> company
-  const getBrandNameForStrategy = (strategy: Strategy) => {
-    const company = getCompanyById(strategy.company_id as any)
-    return company?.brand_name || company?.name || 'Unknown Brand'
-  }
-  const [saving, setSaving] = useState(false)
-  const [generatingIdeas, setGeneratingIdeas] = useState(false)
-  const [strategyDetailsModal, setStrategyDetailsModal] = useState<{
-    isOpen: boolean
-    strategy: Strategy | null
-    angles: any[]
-  }>({
-    isOpen: false,
-    strategy: null,
-    angles: []
-  })
-
-  const platforms = [
-    { id: 'twitter', name: 'Twitter', color: 'bg-blue-500' },
-    { id: 'linkedin', name: 'LinkedIn', color: 'bg-blue-600' },
-    { id: 'newsletter', name: 'Newsletter', color: 'bg-gray-600' },
-    { id: 'facebook', name: 'Facebook', color: 'bg-blue-700' },
-    { id: 'instagram', name: 'Instagram', color: 'bg-pink-500' },
-    { id: 'youtube', name: 'YouTube', color: 'bg-red-500' },
-    { id: 'tiktok', name: 'TikTok', color: 'bg-black' },
-    { id: 'blog', name: 'Blog', color: 'bg-green-600' }
-  ]
-
-  // Helper function to format markdown-like text
-  const formatDescription = (text: string) => {
-    if (!text) return 'No description available'
-
-    return text.split('\n').map((line, index) => {
-      // Handle headers (###)
-      if (line.startsWith('### ')) {
-        return (
-          <h4 key={index} className="text-lg font-semibold text-gray-900 mt-4 mb-2 first:mt-0">
-            {line.replace('### ', '')}
-          </h4>
-        )
-      }
-
-      // Handle numbered lists
-      if (/^\d+\.\s/.test(line)) {
-        const content = line.replace(/^\d+\.\s/, '')
-        // Handle bold text within numbered items
-        const formattedContent = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        return (
-          <div key={index} className="mb-2 pl-4">
-            <span className="font-medium text-blue-600 mr-2">{line.match(/^\d+/)?.[0]}.</span>
-            <span dangerouslySetInnerHTML={{ __html: formattedContent }} />
-          </div>
-        )
-      }
-
-      // Handle bullet points with dashes
-      if (line.startsWith('- ')) {
-        const content = line.replace(/^- /, '')
-        const formattedContent = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        return (
-          <div key={index} className="mb-1 pl-6 flex items-start">
-            <span className="text-blue-500 mr-2 mt-1">•</span>
-            <span dangerouslySetInnerHTML={{ __html: formattedContent }} />
-          </div>
-        )
-      }
-
-      // Handle regular paragraphs with bold formatting
-      if (line.trim()) {
-        const formattedContent = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        return (
-          <p key={index} className="mb-2" dangerouslySetInnerHTML={{ __html: formattedContent }} />
-        )
-      }
-
-      // Empty lines for spacing
-      return <br key={index} />
-    })
-  }
 
   useEffect(() => {
     fetchStrategies()
-    fetchCompanies()
   }, [])
-
-  const fetchCompanies = async () => {
-    try {
-      setLoadingCompanies(true)
-      console.log('Fetching companies from Supabase...')
-
-      const { data, error } = await supabase
-        .from('companies')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        console.error('Error fetching companies:', error)
-        throw error
-      }
-
-      console.log('Companies fetched successfully:', data?.length || 0, 'records')
-      setCompanies(data || [])
-    } catch (error) {
-      console.error('Error fetching companies:', error)
-      setCompanies([])
-    } finally {
-      setLoadingCompanies(false)
-    }
-  }
 
   const fetchStrategies = async () => {
     try {
       setLoading(true)
       setError(null)
-
       console.log('Fetching strategies from Supabase...')
-      console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL)
-      console.log('Supabase client:', supabase)
 
-      // First, let's try to get the current user/session
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      console.log('Current user:', user)
-      console.log('Auth error:', authError)
+      // Fetch strategies with company information
+      const { data: strategies, error: strategiesError } = await supabase
+        .from('strategies')
+        .select(`
+          *,
+          company:companies (
+            id,
+            brand_name,
+            created_at
+          )
+        `)
+        .order('created_at', { ascending: false })
 
-      // Try relational select (requires strategies.company_id FK). Fallback to * if it fails
-      let data: any[] | null = null
-      let error: any = null
-      try {
-        const res = await supabase
-          .from('strategies')
-          .select(`
-            *,
-            company:companies (*)
-          `)
-          .order('created_at', { ascending: false })
-        data = res.data as any[] | null
-        error = res.error
-      } catch (e) {
-        console.warn('Relational select failed, falling back to basic select. Error:', e)
-      }
-      if (!data || error) {
-        const res2 = await supabase
-          .from('strategies')
-          .select('*')
-          .order('created_at', { ascending: false })
-        data = res2.data as any[] | null
-        error = res2.error
+      if (strategiesError) {
+        console.error('Supabase error:', strategiesError)
+        throw strategiesError
       }
 
-      console.log('Supabase response:', { data, error })
-      console.log('Data length:', data?.length)
-      console.log('Error details:', error)
+      console.log('Strategies fetched successfully:', strategies?.length || 0, 'records')
 
-      if (error) {
-        console.error('Supabase error:', error)
-        console.error('Error code:', error.code)
-        console.error('Error message:', error.message)
-        console.error('Error details:', error.details)
-        throw error
-      }
+      // Group strategies by company
+      const companiesMap = new Map<number, Company>()
 
-      console.log('Strategies fetched successfully:', data?.length || 0, 'records')
-      console.log('First strategy (if any):', data?.[0])
-      setStrategies(data || [])
+      strategies?.forEach((strategy: any) => {
+        const companyId = strategy.company?.id || strategy.company_id
+        const companyName = strategy.company?.brand_name || 'Unknown Company'
+        const companyCreatedAt = strategy.company?.created_at || strategy.created_at
+
+        if (!companiesMap.has(companyId)) {
+          companiesMap.set(companyId, {
+            id: companyId,
+            brand_name: companyName,
+            created_at: companyCreatedAt,
+            strategies: []
+          })
+        }
+
+        companiesMap.get(companyId)?.strategies.push(strategy)
+      })
+
+      const companiesArray = Array.from(companiesMap.values())
+      console.log('Companies with strategies:', companiesArray)
+      setCompanies(companiesArray)
+
     } catch (error) {
-      console.error('Error fetching strategies:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch strategies'
-      console.error('Final error message:', errorMessage)
-      setError(errorMessage)
+      console.error('Error fetching strategies from Supabase:', error)
+      setError(error instanceof Error ? error.message : 'Failed to fetch strategies')
+      setCompanies([])
     } finally {
       setLoading(false)
     }
   }
 
-  // Helper function to extract all angles from a strategy
-  const extractAnglesFromStrategy = (strategy: Strategy) => {
-    const angles = []
+  const countAngles = (strategy: Strategy): number => {
+    let count = 0
     for (let i = 1; i <= 10; i++) {
-      const header = strategy[`angle${i}_header` as keyof Strategy] as string
-      const description = strategy[`angle${i}_description` as keyof Strategy] as string
-      const objective = strategy[`angle${i}_objective` as keyof Strategy] as string
-      const tonality = strategy[`angle${i}_tonality` as keyof Strategy] as string
-
-      if (header || description || objective || tonality) {
-        angles.push({
-          number: i,
-          header: header || `Angle ${i}`,
-          description: description || 'No description provided',
-          objective: objective || 'No objective specified',
-          tonality: tonality || 'No tonality defined'
-        })
+      const header = strategy[`angle${i}_header` as keyof Strategy] as string | null
+      if (header && header.trim()) {
+        count++
       }
     }
-    return angles
+    return count
   }
 
-  const handleViewAngle = (strategy: Strategy, angle: any) => {
-    setViewAngleModal({
-      isOpen: true,
-      strategy,
-      angle,
-      isEditing: false
-    })
-    // Initialize edit form with current values
-    setEditForm({
-      header: angle.header || '',
-      description: angle.description || '',
-      objective: angle.objective || '',
-      tonality: angle.tonality || ''
-    })
-  }
-
-  const handleCloseViewModal = () => {
-    setViewAngleModal({
-      isOpen: false,
-      strategy: null,
-      angle: null,
-      isEditing: false
-    })
-    setEditForm({
-      header: '',
-      description: '',
-      objective: '',
-      tonality: ''
-    })
-    setSaving(false)
-  }
-
-  const handleEditToggle = () => {
-    setViewAngleModal(prev => ({
-      ...prev,
-      isEditing: !prev.isEditing
-    }))
-
-    // Reset form when canceling edit
-    if (viewAngleModal.isEditing) {
-      setEditForm({
-        header: viewAngleModal.angle?.header || '',
-        description: viewAngleModal.angle?.description || '',
-        objective: viewAngleModal.angle?.objective || '',
-        tonality: viewAngleModal.angle?.tonality || ''
-      })
-    }
-  }
-
-  const handleSaveChanges = async () => {
-    if (!viewAngleModal.strategy || !viewAngleModal.angle) return
-
-    setSaving(true)
-
+  const getPlatformBadges = (platforms: string | null) => {
+    if (!platforms) return []
+    
     try {
-      const angleNumber = viewAngleModal.angle.number
-      const updateData = {
-        [`angle${angleNumber}_header`]: editForm.header,
-        [`angle${angleNumber}_description`]: editForm.description,
-        [`angle${angleNumber}_objective`]: editForm.objective,
-        [`angle${angleNumber}_tonality`]: editForm.tonality
+      // Try to parse as JSON array first
+      const parsed = JSON.parse(platforms)
+      if (Array.isArray(parsed)) {
+        return parsed.filter(p => p && p.trim())
       }
-
-      console.log('=== SAVE OPERATION DEBUG ===')
-      console.log('Strategy ID:', viewAngleModal.strategy.id)
-      console.log('Angle Number:', angleNumber)
-      console.log('Update Data:', updateData)
-      console.log('Original Strategy:', viewAngleModal.strategy)
-
-      const { error } = await supabase
-        .from('strategies')
-        .update(updateData)
-        .eq('id', viewAngleModal.strategy.id)
-
-      console.log('Supabase Update Response Error:', error)
-
-      if (error) {
-        console.error('=== SUPABASE UPDATE ERROR ===')
-        console.error('Error Code:', error.code)
-        console.error('Error Message:', error.message)
-        console.error('Error Details:', error.details)
-        console.error('Error Hint:', error.hint)
-        alert(`Failed to save changes: ${error.message}`)
-        return
-      }
-
-      console.log('Strategy updated successfully')
-
-      // Update local state
-      setStrategies(prev => prev.map(strategy => {
-        if (strategy.id === viewAngleModal.strategy!.id) {
-          return { ...strategy, ...updateData }
-        }
-        return strategy
-      }))
-
-      // Update the modal's angle data
-      const updatedAngle = {
-        ...viewAngleModal.angle,
-        header: editForm.header,
-        description: editForm.description,
-        objective: editForm.objective,
-        tonality: editForm.tonality
-      }
-
-      setViewAngleModal(prev => ({
-        ...prev,
-        angle: updatedAngle,
-        isEditing: false
-      }))
-
-      // Force a refresh of the data from the database to ensure consistency
-      await fetchStrategies()
-
-      alert('Changes saved successfully!')
-
-    } catch (error) {
-      console.error('Error saving changes:', error)
-      alert(`Failed to save changes: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    } finally {
-      setSaving(false)
+    } catch {
+      // If not JSON, split by comma
+      return platforms.split(',').map(p => p.trim()).filter(p => p)
     }
+    
+    return []
   }
 
-  const handleGenerateIdeas = async () => {
-    if (!viewAngleModal.strategy || !viewAngleModal.angle) return
-
-    console.log('=== GENERATE IDEAS BUTTON CLICKED ===')
-    console.log('Current viewAngleModal state:', viewAngleModal)
-    console.log('Strategy object:', viewAngleModal.strategy)
-    console.log('Angle object:', viewAngleModal.angle)
-
-    setGeneratingIdeas(true)
-
-    try {
-      // Find the full company details from the companies array
-      const company = companies.find(c =>
-        viewAngleModal.strategy!.company_id && c.id === viewAngleModal.strategy!.company_id
-      )
-
-      console.log('=== GENERATE IDEAS COMPANY LOOKUP ===')
-      console.log('Looking for company_id:', viewAngleModal.strategy.company_id)
-      console.log('Available companies:', companies.map(c => ({ id: c.id, name: c.brand_name || c.name })))
-      console.log('Found company:', company)
-
-      // Parse platforms from strategy (comma-separated string to array)
-      // Prefer strategy.platforms if needed in the future
-      // const strategyPlatforms = viewAngleModal.strategy.platforms
-      //   ? viewAngleModal.strategy.platforms.split(',').map(p => p.trim())
-      //   : ["twitter", "linkedin", "newsletter"]
-
-      const angleData = {
-        angleNumber: viewAngleModal.angle.number,
-        header: viewAngleModal.angle.header,
-        description: viewAngleModal.angle.description,
-        objective: viewAngleModal.angle.objective,
-        tonality: viewAngleModal.angle.tonality,
-        strategy: {
-          id: viewAngleModal.strategy.id,
-          // brand removed: use company_id instead
-          platforms: ["twitter", "linkedin", "newsletter"],
-          created_at: viewAngleModal.strategy.created_at
-        }
-      }
-
-      console.log('=== ANGLE DATA PREPARED ===')
-      console.log('Angle data object:', angleData)
-
-      const webhookPayload = {
-        identifier: 'generateIdeas',
-        angle: angleData,
-        brandDetails: company ? {
-          // Include ALL company data from Supabase
-          ...company,
-          // Add computed/formatted fields for backward compatibility
-          name: company.brand_name || company.name || 'Unknown Brand',
-          brandTone: company.brand_tone || '',
-          keyOffer: company.key_offer || '',
-          targetAudience: company.target_audience || '',
-          additionalInfo: company.additional_information || '',
-          website: company.website || '',
-          // Platform-specific data
-          selectedPlatforms: ["twitter", "linkedin", "newsletter"],
-          platformCount: 3
-        } : null,
-        context: {
-          requestType: 'generate_ideas_from_angle',
-          timestamp: new Date().toISOString(),
-          brandDetailsIncluded: !!company,
-          platformCount: 3,
-          strategyId: viewAngleModal.strategy.id,
-          angleNumber: viewAngleModal.angle.number
-        }
-      }
-
-      console.log('=== GENERATE IDEAS DEBUG ===')
-      console.log('Sending payload to webhook:', webhookPayload)
-      console.log('Webhook payload as JSON string:', JSON.stringify(webhookPayload, null, 2))
-      console.log('Brand details included:', !!company)
-      console.log('Full brand data:', company)
-      console.log('Webhook URL:', 'https://n8n.srv856940.hstgr.cloud/webhook/content-saas')
-
-      console.log('=== MAKING WEBHOOK REQUEST ===')
-      const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(webhookPayload)
-      })
-
-      console.log('Webhook response status:', response.status)
-      console.log('Webhook response headers:', Object.fromEntries(response.headers.entries()))
-
-      if (!response.ok) {
-        console.error('=== WEBHOOK REQUEST FAILED ===')
-        console.error('Response status:', response.status)
-        console.error('Response status text:', response.statusText)
-        throw new Error(`Webhook request failed with status: ${response.status}`)
-      }
-
-      const result = await response.text()
-      console.log('Webhook response:', result)
-      console.log('Webhook response type:', typeof result)
-      console.log('Webhook response length:', result.length)
-
-      console.log('=== SUCCESS - SHOWING ALERT ===')
-      alert('Ideas generated successfully! Check your Ideas page to see the generated content ideas.')
-
-    } catch (error) {
-      console.error('Error generating ideas:', error)
-      console.error('Error type:', typeof error)
-      console.error('Error constructor:', error.constructor.name)
-      if (error instanceof Error) {
-        console.error('Error message:', error.message)
-        console.error('Error stack:', error.stack)
-      }
-      alert(`Failed to generate ideas: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    } finally {
-      console.log('=== GENERATE IDEAS COMPLETED ===')
-      console.log('Setting generatingIdeas to false')
-      setGeneratingIdeas(false)
-    }
-  }
-
-  const handleViewStrategyDetails = (strategy: Strategy) => {
-    const angles = extractAnglesFromStrategy(strategy)
-    setStrategyDetailsModal({
-      isOpen: true,
-      strategy,
-      angles
-    })
-  }
-
-  const handleCloseStrategyDetailsModal = () => {
-    setStrategyDetailsModal({
-      isOpen: false,
-      strategy: null,
-      angles: []
-    })
-  }
-
-  const togglePlatform = (platformId: string) => {
-    setSelectedPlatforms(prev =>
-      prev.includes(platformId)
-        ? prev.filter(id => id !== platformId)
-        : [...prev, platformId]
-    )
-  }
-
-  const handleGenerateStrategy = async () => {
-    if (!selectedCompany) {
-      alert('Please select a company')
-      return
-    }
-
-    if (selectedPlatforms.length === 0) {
-      alert('Please select at least one platform')
-      return
-    }
-
-    setGenerating(true)
-
-    try {
-      // Debug logs to diagnose the "Selected company not found" error
-      console.log('=== DEBUG: SELECTED COMPANY AND COMPANIES ARRAY ===')
-      console.log('selectedCompany value:', selectedCompany)
-      console.log('selectedCompany type:', typeof selectedCompany)
-      console.log('companies array:', companies)
-      console.log('companies array length:', companies.length)
-      console.log('companies array IDs:', companies.map(c => ({ id: c.id, type: typeof c.id, name: c.brand_name || c.name })))
-
-      // Find the selected company data
-      const company = companies.find(c => c.id == selectedCompany) // Use == for type coercion
-      if (!company) {
-        console.error('=== COMPANY NOT FOUND ERROR ===')
-        console.error('Looking for company with ID:', selectedCompany)
-        console.error('Available company IDs:', companies.map(c => c.id))
-        throw new Error('Selected company not found')
-      }
-
-      // Prepare comprehensive brand data payload with ALL company columns
-      const brandData = {
-        // Include ALL company data from Supabase
-        ...company, // Spread all company properties
-
-        // Add computed/formatted fields for backward compatibility
-        name: company.brand_name || company.name || 'Unknown Brand',
-        brandTone: company.brand_tone || '',
-        keyOffer: company.key_offer || '',
-        targetAudience: company.target_audience || '',
-        additionalInfo: company.additional_information || '',
-
-        // Platform-specific data
-        selectedPlatforms: selectedPlatforms,
-        platformCount: selectedPlatforms.length,
-
-        // Metadata for webhook processing
-        webhook_metadata: {
-          source: 'strategies_page',
-          timestamp: new Date().toISOString(),
-          selected_platforms: selectedPlatforms,
-          platform_count: selectedPlatforms.length
-        }
-      }
-
-      console.log('=== COMPLETE BRAND DATA PAYLOAD ===')
-      console.log('Full company object from database:', company)
-      console.log('Enhanced brand data for webhook:', brandData)
-      console.log('Brand data JSON:', JSON.stringify(brandData, null, 2))
-
-      // Create formatted platforms array with fixed positions
-      const formattedPlatforms = platforms.map(platform => 
-        selectedPlatforms.includes(platform.id) ? platform.id : ""
-      )
-
-      const webhookPayload = {
-        identifier: "generateAngles",
-        brand: brandData,
-        platforms: formattedPlatforms, // This will be the array with fixed positions
-        context: {
-          requestType: 'content_strategy_generation',
-          timestamp: new Date().toISOString(),
-          platformCount: selectedPlatforms.length,
-          brandHasWebsite: !!(company.website),
-          brandHasAdditionalInfo: !!(company.additional_information)
-        }
-      }
-
-      console.log('=== GENERATE STRATEGY WEBHOOK ===')
-      console.log('Sending payload:', webhookPayload)
-      console.log('Formatted platforms array:', formattedPlatforms)
-      console.log('Platform positions:', platforms.map((p, i) => `${i}: ${p.name} = "${formattedPlatforms[i]}"`))
-
-      const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(webhookPayload)
-      })
-
-      console.log('Webhook response status:', response.status)
-
-      if (!response.ok) {
-        throw new Error(`Webhook request failed with status: ${response.status}`)
-      }
-
-      const result = await response.text()
-      console.log('Webhook response:', result)
-
-      alert('Strategy generation started successfully! Check back in a few moments to see the new strategy.')
-
-      // Close modal and reset form
-      setShowGenerateModal(false)
-      setSelectedCompany('')
-      setSelectedPlatforms([])
-
-      // Refresh strategies after a short delay
-      setTimeout(() => {
-        fetchStrategies()
-      }, 2000)
-
-    } catch (error) {
-      console.error('Error generating strategy:', error)
-      alert(`Failed to generate strategy: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    } finally {
-      setGenerating(false)
-    }
-  }
-
-  const handleCloseGenerateModal = () => {
-    setShowGenerateModal(false)
-    setSelectedCompany('')
-    setSelectedPlatforms([])
-    setGenerating(false)
-  }
-
-  const handleFormChange = (field: string, value: string) => {
-    setEditForm(prev => ({
-      ...prev,
-      [field]: value
-    }))
-  }
-
-  // Group strategies by company_id (3NF compliant)
-  const strategiesByBrand = strategies.reduce((acc, strategy) => {
-    const brand = getBrandNameForStrategy(strategy)
-    if (!acc[brand]) acc[brand] = []
-    acc[brand].push(strategy)
-    return acc
-  }, {} as Record<string, Strategy[]>)
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Content Strategies</h1>
-          <p className="mt-2 text-gray-600">
-            Strategies table data from Supabase database.
-          </p>
-        </div>
-        <Button onClick={fetchStrategies} disabled={loading}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
-        <Button onClick={() => setShowGenerateModal(true)} disabled={loadingCompanies}>
-          <Plus className="h-4 w-4 mr-2" />
-          Generate Strategy
-        </Button>
-      </div>
-
-      {/* Generate Strategy Modal */}
-      {showGenerateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-                  <Sparkles className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">Generate Strategy</h2>
-                  <p className="text-sm text-gray-500">Create AI-powered content angles</p>
-                </div>
-              </div>
-
-              <button
-                onClick={handleCloseGenerateModal}
-                className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
-                disabled={generating}
-              >
-                <X className="h-5 w-5 text-gray-400" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="p-6 space-y-6">
-              {/* Company Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Company
-                </label>
-                <Select
-                  options={[
-                    { value: '', label: 'Choose a company...' },
-                    ...companies.map(company => ({
-                      value: company.id,
-                      label: company.brand_name || company.name || 'Unnamed Company'
-                    }))
-                  ]}
-                  value={selectedCompany}
-                  onChange={(e) => setSelectedCompany(e.target.value)}
-                  disabled={generating || loadingCompanies}
-                />
-                {loadingCompanies && (
-                  <p className="text-xs text-gray-500 mt-1">Loading companies...</p>
-                )}
-              </div>
-
-              {/* Platform Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Select Platforms ({selectedPlatforms.length} selected)
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  {platforms.map((platform) => (
-                    <button
-                      key={platform.id}
-                      onClick={() => togglePlatform(platform.id)}
-                      disabled={generating}
-                      className={`p-3 rounded-xl border-2 transition-all duration-200 text-sm font-medium ${selectedPlatforms.includes(platform.id)
-                        ? `${platform.color} text-white border-transparent shadow-md`
-                        : 'bg-gray-50 text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-100'
-                        } ${generating ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                      {platform.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Selected Company Info */}
-              {selectedCompany && (
-                <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-                  <h4 className="font-medium text-blue-900 mb-2">Selected Company:</h4>
-                  {(() => {
-                    const company = companies.find(c => c.id === selectedCompany)
-                    return company ? (
-                      <div className="text-sm text-blue-800">
-                        <p className="font-medium">{company.brand_name || company.name}</p>
-                        {company.website && (
-                          <p className="text-blue-600">{company.website}</p>
-                        )}
-                        {company.brand_tone && (
-                          <p className="mt-1 text-xs">{company.brand_tone.substring(0, 100)}...</p>
-                        )}
-                      </div>
-                    ) : null
-                  })()}
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="flex justify-end space-x-3 p-6 border-t border-gray-200">
-              <Button
-                variant="outline"
-                onClick={handleCloseGenerateModal}
-                disabled={generating}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleGenerateStrategy}
-                loading={generating}
-                disabled={!selectedCompany || selectedPlatforms.length === 0 || generating}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {generating ? (
-                  <>
-                    <Sparkles className="h-4 w-4 mr-2 animate-pulse" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Generate Strategy
-                  </>
-                )}
-              </Button>
-            </div>
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Content Strategies</h1>
+            <p className="mt-2 text-gray-600">
+              AI-generated content strategies organized by company.
+            </p>
           </div>
         </div>
-      )}
-
-      {/* Strategy Details Modal */}
-      {strategyDetailsModal.isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
-                  <Database className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">
-                    Strategy #{strategyDetailsModal.strategy?.id} - {(strategyDetailsModal.strategy as any)?.brand}
-                  </h2>
-                  <p className="text-sm text-gray-500">
-                    {strategyDetailsModal.angles.length} content angles • Created {strategyDetailsModal.strategy?.created_at ? formatDate(strategyDetailsModal.strategy.created_at) : 'Unknown'}
-                  </p>
-                </div>
-              </div>
-
-              <button
-                onClick={handleCloseStrategyDetailsModal}
-                className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
-              >
-                <X className="h-5 w-5 text-gray-400" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 p-6 overflow-y-auto">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {strategyDetailsModal.angles.map((angle) => (
-                  <Card key={angle.number} className="bg-white border border-gray-200 hover:shadow-md hover:border-blue-300 transition-all duration-200 group">
-                    <CardHeader className="pb-1 p-3">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-sm flex-shrink-0">
-                          {angle.number}
-                        </div>
-                        <CardTitle className="text-xs font-semibold text-gray-900 line-clamp-2 leading-tight">
-                          {angle.header}
-                        </CardTitle>
-                      </div>
-                    </CardHeader>
-
-                    <CardContent className="space-y-2 pt-0 pb-3 p-3">
-                      {/* Description */}
-                      <div>
-                        <div className="text-xs text-gray-600 line-clamp-2 leading-relaxed bg-gray-50 p-2 rounded">
-                          {formatDescription(angle.description || 'No description available')}
-                        </div>
-                      </div>
-
-                      {/* Objective & Tonality in one row */}
-                      <div className="flex items-center justify-between text-xs">
-                        <div className="flex items-center space-x-1 min-w-0 flex-1">
-                          <Target className="h-2.5 w-2.5 text-green-500 flex-shrink-0" />
-                          <span className="text-xs text-gray-500 truncate">Goal</span>
-                        </div>
-                        <div className="flex items-center space-x-1 min-w-0">
-                          <Zap className="h-2.5 w-2.5 text-purple-500 flex-shrink-0" />
-                          <Badge variant="secondary" className="text-xs px-1.5 py-0.5 truncate max-w-16">
-                            {angle.tonality.length > 8 ? angle.tonality.substring(0, 8) + '...' : angle.tonality}
-                          </Badge>
-                        </div>
-                      </div>
-
-                      {/* View Button */}
-                      <div className="pt-0.5">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full text-xs py-1 px-2 group-hover:bg-blue-50 group-hover:border-blue-300 group-hover:text-blue-700 transition-colors"
-                          onClick={() => handleViewAngle(strategyDetailsModal.strategy!, angle)}
-                        >
-                          <Eye className="h-2.5 w-2.5 mr-1" />
-                          View
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* View Angle Modal */}
-      {viewAngleModal.isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
-                  <Target className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">
-                    {viewAngleModal.isEditing ? 'Edit Angle' : viewAngleModal.angle?.header}
-                  </h2>
-                  <p className="text-sm text-gray-500">
-                    {(viewAngleModal.strategy as any)?.brand} • Strategy #{viewAngleModal.strategy?.id} • Angle {viewAngleModal.angle?.number}
-                  </p>
-                </div>
-              </div>
-
-              <button
-                onClick={handleCloseViewModal}
-                className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
-                disabled={saving}
-              >
-                <X className="h-5 w-5 text-gray-400" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 p-6 overflow-y-auto space-y-6 min-h-0">
-              {/* Header */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center text-lg">
-                    <FileText className="h-5 w-5 mr-2 text-blue-600" />
-                    Header
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {viewAngleModal.isEditing ? (
-                    <input
-                      type="text"
-                      value={editForm.header}
-                      onChange={(e) => handleFormChange('header', e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Enter angle header..."
-                    />
-                  ) : (
-                    <p className="text-gray-700 leading-relaxed">
-                      {viewAngleModal.angle?.header}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Description */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center text-lg">
-                    <FileText className="h-5 w-5 mr-2 text-blue-600" />
-                    Description
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {viewAngleModal.isEditing ? (
-                    <textarea
-                      value={editForm.description}
-                      onChange={(e) => handleFormChange('description', e.target.value)}
-                      rows={4}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                      placeholder="Enter angle description..."
-                    />
-                  ) : (
-                    <div className="text-gray-700 leading-relaxed">
-                      {formatDescription(viewAngleModal.angle?.description || 'No description available')}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Objective */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center text-lg">
-                    <Target className="h-5 w-5 mr-2 text-green-600" />
-                    Objective
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {viewAngleModal.isEditing ? (
-                    <textarea
-                      value={editForm.objective}
-                      onChange={(e) => handleFormChange('objective', e.target.value)}
-                      rows={3}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                      placeholder="Enter angle objective..."
-                    />
-                  ) : (
-                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                      {viewAngleModal.angle?.objective}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Tonality */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center text-lg">
-                    <Zap className="h-5 w-5 mr-2 text-purple-600" />
-                    Tonality
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {viewAngleModal.isEditing ? (
-                    <input
-                      type="text"
-                      value={editForm.tonality}
-                      onChange={(e) => handleFormChange('tonality', e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Enter angle tonality..."
-                    />
-                  ) : (
-                    <div className="flex items-center space-x-3">
-                      <Badge variant="secondary" className="text-sm px-4 py-2">
-                        {viewAngleModal.angle?.tonality}
-                      </Badge>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Strategy Context */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center text-lg">
-                    <Database className="h-5 w-5 mr-2 text-gray-600" />
-                    Strategy Context
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Brand</p>
-                    <p className="text-gray-700">{(viewAngleModal.strategy as any)?.brand}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Strategy ID</p>
-                    <p className="text-gray-700">#{viewAngleModal.strategy?.id}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Created</p>
-                    <p className="text-gray-700">{viewAngleModal.strategy?.created_at ? formatDate(viewAngleModal.strategy.created_at) : 'Unknown'}</p>
-                  </div>
-                  {viewAngleModal.strategy?.platforms && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 mb-2">Platforms</p>
-                      <div className="flex flex-wrap gap-2">
-                        {viewAngleModal.strategy.platforms.split(',').map((platform, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs capitalize">
-                            {platform.trim()}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Footer */}
-            <div className="flex justify-end p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
-              <div className="flex space-x-3">
-                {viewAngleModal.isEditing ? (
-                  <>
-                    <Button
-                      variant="outline"
-                      onClick={handleEditToggle}
-                      disabled={saving}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={handleSaveChanges}
-                      loading={saving}
-                      disabled={saving}
-                    >
-                      {saving ? 'Saving...' : 'Save Changes'}
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button
-                      variant="outline"
-                      onClick={handleEditToggle}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      onClick={handleGenerateIdeas}
-                      loading={generatingIdeas}
-                      disabled={generatingIdeas}
-                      className="bg-purple-600 hover:bg-purple-700"
-                    >
-                      {generatingIdeas ? 'Generating...' : 'Generate Ideas'}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={handleCloseViewModal}
-                    >
-                      Close
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Loading State */}
-      {loading && (
         <Card>
           <CardContent className="text-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading strategies...</p>
           </CardContent>
         </Card>
-      )}
+      </div>
+    )
+  }
 
-      {/* Error State */}
-      {error && (
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Content Strategies</h1>
+            <p className="mt-2 text-gray-600">
+              AI-generated content strategies organized by company.
+            </p>
+          </div>
+          <Button onClick={fetchStrategies}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Retry
+          </Button>
+        </div>
         <Card>
           <CardContent className="text-center py-12">
-            <Database className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <FileText className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Strategies</h3>
             <p className="text-red-600 mb-4">{error}</p>
             <Button onClick={fetchStrategies} variant="outline">
@@ -1143,113 +218,167 @@ export function Strategies() {
             </Button>
           </CardContent>
         </Card>
-      )}
+      </div>
+    )
+  }
 
-      {/* Strategies Table */}
-      {!loading && !error && strategies.length > 0 && (
-        <div className="space-y-12">
-          {Object.entries(strategiesByBrand).map(([brandName, brandStrategies]) => (
-            <div key={brandName} className="space-y-6">
-              {/* Brand Header */}
-              <div className="bg-gradient-to-r from-blue-50 to-teal-50 rounded-2xl p-6 border border-blue-100">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg">
-                      <Building2 className="h-8 w-8 text-white" />
-                    </div>
-                    <div>
-                      <h2 className="text-3xl font-bold text-gray-900">{brandName}</h2>
-                      <p className="text-blue-600 font-medium">{brandStrategies.length} strateg{brandStrategies.length === 1 ? 'y' : 'ies'} • {brandStrategies.reduce((total, strategy) => total + extractAnglesFromStrategy(strategy).length, 0)} content angles</p>
-                    </div>
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Content Strategies</h1>
+          <p className="mt-2 text-gray-600">
+            AI-generated content strategies organized by company.
+          </p>
+        </div>
+        <div className="flex space-x-3">
+          <Button onClick={fetchStrategies} variant="outline">
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Generate Strategy
+          </Button>
+        </div>
+      </div>
+
+      {/* Companies with Strategies */}
+      {companies.length > 0 ? (
+        <div className="space-y-6">
+          {companies.map((company) => (
+            <div key={company.id} className="w-full max-w-full p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+              {/* Company Header */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center">
+                    <Building2 className="h-6 w-6 text-white" />
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-500">Latest Strategy</p>
-                    <p className="text-lg font-semibold text-gray-900">
-                      {brandStrategies[0]?.created_at ? formatDate(brandStrategies[0].created_at) : 'Unknown'}
+                  <div>
+                    <h5 className="text-xl font-semibold text-gray-900">
+                      {company.brand_name}
+                    </h5>
+                    <p className="text-sm text-gray-500">
+                      {company.strategies.length} content strateg{company.strategies.length === 1 ? 'y' : 'ies'} available
                     </p>
                   </div>
                 </div>
+                <Badge variant="primary" className="text-sm px-3 py-1">
+                  {company.strategies.length} Strategies
+                </Badge>
               </div>
 
-              {/* Brand Strategies */}
-              <div className="space-y-8">
-                {brandStrategies.map((strategy) => {
-                  const angles = extractAnglesFromStrategy(strategy)
-                  const platforms = strategy.platforms ? strategy.platforms.split(',').map(p => p.trim()) : []
+              <p className="text-sm font-normal text-gray-500 mb-4">
+                Choose from available content strategies to generate targeted content ideas and campaigns.
+              </p>
 
+              {/* Strategies List */}
+              <ul className="space-y-3">
+                {company.strategies.map((strategy) => {
+                  const angleCount = countAngles(strategy)
+                  const platformBadges = getPlatformBadges(strategy.platforms)
+                  
                   return (
-                    <Card key={strategy.id} className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
-                      <CardContent className="p-8">
-                        <div className="flex items-center justify-between mb-6">
-                          <div className="flex items-center space-x-4">
-                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center shadow-md">
-                              <Database className="h-6 w-6 text-white" />
-                            </div>
-                            <div>
-                              <h3 className="text-xl font-bold text-gray-900">Strategy #{strategy.id}</h3>
-                              <div className="flex items-center space-x-4 mt-1">
-                                <div className="flex items-center space-x-1">
-                                  <Calendar className="h-4 w-4 text-gray-400" />
-                                  <span className="text-sm text-gray-500">
-                                    {strategy.created_at ? formatDate(strategy.created_at) : 'Unknown date'}
-                                  </span>
-                                </div>
-                                <div className="flex items-center space-x-1">
-                                  <Target className="h-4 w-4 text-gray-400" />
-                                  <span className="text-sm text-gray-500">{angles.length} angles</span>
-                                </div>
-                                {platforms.length > 0 && (
-                                  <div className="flex items-center space-x-2">
-                                    <span>Platforms:</span>
-                                    <div className="flex space-x-1">
-                                      {platforms.slice(0, 3).map((platform, index) => (
-                                        <Badge key={index} variant="secondary" className="text-xs">
-                                          {platform}
-                                        </Badge>
-                                      ))}
-                                      {platforms.length > 3 && (
-                                        <Badge variant="secondary" className="text-xs">
-                                          +{platforms.length - 3}
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
+                    <li key={strategy.id}>
+                      <div className="flex items-center justify-between p-4 text-base font-bold text-gray-900 rounded-lg bg-gray-50 hover:bg-gray-100 group hover:shadow transition-all duration-200">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
+                            <FileText className="h-5 w-5 text-white" />
                           </div>
-                          <div className="text-right">
-                            <Button
-                              onClick={() => handleViewStrategyDetails(strategy)}
-                            >
-                              View Details
-                            </Button>
+                          
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3 mb-2">
+                              <span className="font-semibold text-gray-900">
+                                Strategy #{strategy.id}
+                              </span>
+                              {angleCount > 0 && (
+                                <Badge variant="success" className="text-xs">
+                                  {angleCount} Angles
+                                </Badge>
+                              )}
+                            </div>
+                            
+                            <div className="flex items-center space-x-4 text-sm text-gray-600">
+                              <span className="flex items-center">
+                                <Calendar className="h-3 w-3 mr-1" />
+                                {formatDate(strategy.created_at)}
+                              </span>
+                              
+                              {platformBadges.length > 0 && (
+                                <div className="flex items-center space-x-1">
+                                  <Target className="h-3 w-3" />
+                                  <span>{platformBadges.join(', ')}</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Details
+                        </Button>
+                      </div>
+                    </li>
                   )
                 })}
+              </ul>
+
+              {/* Footer */}
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <button className="inline-flex items-center text-xs font-normal text-gray-500 hover:underline hover:text-gray-700 transition-colors">
+                  <HelpCircle className="w-3 h-3 me-2" />
+                  How do content strategies work?
+                </button>
               </div>
             </div>
           ))}
         </div>
-      )}
-
-      {/* Empty State */}
-      {!loading && !error && strategies.length === 0 && (
+      ) : (
+        /* Empty State */
         <Card>
-          <CardContent className="text-center py-12">
-            <Database className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No strategies found
-            </h3>
-            <p className="text-gray-500 mb-6">
-              The strategies table in your Supabase database is empty.
+          <CardContent className="text-center py-16">
+            <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <FileText className="h-8 w-8 text-white" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-3">No Strategies Found</h3>
+            <p className="text-gray-600 max-w-md mx-auto mb-8">
+              No content strategies have been generated yet. Create your first strategy to get started with AI-powered content planning.
             </p>
-            <Button onClick={fetchStrategies}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto mb-8">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Target className="h-6 w-6 text-blue-600" />
+                </div>
+                <h4 className="font-medium text-gray-900 mb-2">Multi-Platform</h4>
+                <p className="text-sm text-gray-600">Strategies for all your marketing channels</p>
+              </div>
+              
+              <div className="text-center">
+                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Zap className="h-6 w-6 text-purple-600" />
+                </div>
+                <h4 className="font-medium text-gray-900 mb-2">AI-Powered</h4>
+                <p className="text-sm text-gray-600">Generated using advanced AI algorithms</p>
+              </div>
+              
+              <div className="text-center">
+                <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Building2 className="h-6 w-6 text-teal-600" />
+                </div>
+                <h4 className="font-medium text-gray-900 mb-2">Brand-Specific</h4>
+                <p className="text-sm text-gray-600">Tailored to your company's voice and goals</p>
+              </div>
+            </div>
+
+            <Button size="lg">
+              <Plus className="h-4 w-4 mr-2" />
+              Generate Your First Strategy
             </Button>
           </CardContent>
         </Card>
