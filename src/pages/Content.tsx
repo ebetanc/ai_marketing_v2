@@ -6,7 +6,7 @@ import { Badge } from '../components/ui/Badge'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { ViewContentModal } from '../components/content/ViewContentModal'
 import { supabase } from '../lib/supabase'
-import { FileText, Eye, CheckCircle, Clock, Search, MoreVertical, Trash2, RefreshCw } from 'lucide-react'
+import { FileText, Eye, CheckCircle, Clock, Search, MoreVertical, Trash2, RefreshCw, Calendar, HelpCircle } from 'lucide-react'
 import { formatDate, truncateText } from '../lib/utils'
 
 // Helper function to format content body with markdown-like styling
@@ -165,6 +165,8 @@ export function Content() {
   const [generatedContent, setGeneratedContent] = useState<any[]>([])
   const [loadingCompanies, setLoadingCompanies] = useState(true)
   const [loadingContent, setLoadingContent] = useState(true)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [filterStatus, setFilterStatus] = useState<'all' | 'draft' | 'approved'>('all')
   const [filterType, setFilterType] = useState<'all' | string>('all')
   const [searchQuery, setSearchQuery] = useState('')
@@ -216,6 +218,7 @@ export function Content() {
   const fetchContent = async () => {
     try {
       setLoadingContent(true)
+      setLoading(true)
       console.log('Fetching content from Supabase tables...')
 
       // Fetch from all three content tables
@@ -337,8 +340,10 @@ export function Content() {
     } catch (error) {
       console.error('Error fetching content from Supabase:', error)
       setGeneratedContent([])
+      setError(error)
     } finally {
       setLoadingContent(false)
+      setLoading(false)
     }
   }
 
@@ -545,7 +550,7 @@ export function Content() {
             </div>
           </div>
         </CardContent>
-      )}
+      </Card>
 
       {/* Content by Company */}
       {!loading && !error && filteredContent.length > 0 && (
