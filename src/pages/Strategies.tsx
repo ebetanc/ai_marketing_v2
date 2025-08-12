@@ -364,6 +364,7 @@ export function Strategies() {
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => handleViewStrategy(strategy, company)}
                           className="opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <Eye className="h-4 w-4 mr-2" />
