@@ -10,7 +10,8 @@ import {
   // Zap,
   RefreshCw,
   Target,
-  X
+  X,
+  HelpCircle
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Badge } from '../components/ui/Badge';
@@ -823,75 +824,105 @@ export function Ideas() {
       {/* Ideas by Brand */}
       {!loading && !error && ideas.length > 0 && (
         <div className="space-y-8">
-          {(Object.entries(ideasByBrand ?? {}) as [string, any[]][]).map(([brandName, brandIdeas]) => (
-            <div key={brandName} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          {(Object.entries(ideasByBrand ?? {}) as [string, any[]][]).map(([brandName, brandIdeas]) => {
+            const totalTopics = brandIdeas.reduce((sum, idea) => sum + extractTopicsFromIdea(idea).length, 0)
+            
+            return (
+            <div key={brandName} className="w-full max-w-full p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
               {/* Brand Header */}
-              <div className="bg-gradient-to-r from-blue-50 to-teal-50 p-6 border-b border-blue-100">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg">
-                      <Building2 className="h-8 w-8 text-white" />
-                    </div>
-                    <div>
-                      <h2 className="text-3xl font-bold text-gray-900">{brandName}</h2>
-                      <p className="text-blue-600 font-medium">{brandIdeas.length} content idea{brandIdeas.length === 1 ? '' : 's'}</p>
-                    </div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center">
+                    <Building2 className="h-6 w-6 text-white" />
                   </div>
-                  <div className="text-right">
-                    <Badge variant="primary" className="text-lg px-6 py-3 font-semibold">
-                      {brandIdeas.length} Ideas
-                    </Badge>
+                  <div>
+                    <h5 className="text-xl font-semibold text-gray-900">
+                      {brandName}
+                    </h5>
+                    <p className="text-sm text-gray-500">
+                      {brandIdeas.length} idea set{brandIdeas.length === 1 ? '' : 's'} • {totalTopics} total topics
+                    </p>
                   </div>
                 </div>
+                <Badge variant="primary" className="text-sm px-3 py-1">
+                  {brandIdeas.length} Sets
+                </Badge>
               </div>
 
-              {/* Ideas Grid for this Brand */}
-              <div className="p-6 space-y-6 bg-gray-50">
+              <p className="text-sm font-normal text-gray-500 mb-4">
+                AI-generated content ideas ready for execution. Click on any idea set to view individual topics and generate content.
+              </p>
+
+              {/* Ideas List */}
+              <ul className="space-y-3">
                 {brandIdeas.map((idea: any) => {
                   const topics = extractTopicsFromIdea(idea)
 
                   return (
-                    <Card key={idea.id} className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow bg-white">
-                      <CardContent>
-                        <div className="flex items-center justify-between p-6">
-                          <div className="flex items-center space-x-4">
-                            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg">
-                              <Lightbulb className="h-8 w-8 text-white" />
+                    <li key={idea.id}>
+                      <div className="flex items-center justify-between p-4 text-base font-bold text-gray-900 rounded-lg bg-gray-50 hover:bg-gray-100 group hover:shadow transition-all duration-200">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+                            <Lightbulb className="h-5 w-5 text-white" />
+                          </div>
+                          
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3 mb-2">
+                              <span className="font-semibold text-gray-900">
+                                Content Ideas Set #{idea.id}
+                              </span>
+                              {topics.length > 0 && (
+                                <Badge variant="success" className="text-xs">
+                                  {topics.length} Topics
+                                </Badge>
+                              )}
+                              {idea.strategy_id && (
+                                <Badge variant="secondary" className="text-xs">
+                                  Strategy #{idea.strategy_id}
+                                </Badge>
+                              )}
+                              {idea.angle_number && (
+                                <Badge variant="secondary" className="text-xs">
+                                  Angle {idea.angle_number}
+                                </Badge>
+                              )}
                             </div>
-                            <div>
-                              <h3 className="text-2xl font-bold text-gray-900">Content Ideas Set #{idea.id}</h3>
-                              <p className="text-blue-600 font-medium text-lg">{topics.length} content idea{topics.length === 1 ? '' : 's'} ready for execution</p>
-                              <div className="flex items-center space-x-4 text-sm text-gray-600 mt-2">
-                                <span className="flex items-center">
-                                  <Calendar className="h-4 w-4 mr-1" />
-                                  {formatDate(idea.created_at)}
-                                </span>
-                                {idea.strategy_id && (
-                                  <>
-                                    <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">Strategy #{idea.strategy_id}</span>
-                                    {idea.angle_number && <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">Angle {idea.angle_number}</span>}
-                                  </>
-                                )}
-                              </div>
+                            
+                            <div className="flex items-center space-x-4 text-sm text-gray-600">
+                              <span className="flex items-center">
+                                <Calendar className="h-3 w-3 mr-1" />
+                                {formatDate(idea.created_at)}
+                              </span>
+                              <span>{topics.length} content topics ready</span>
                             </div>
                           </div>
-
-                          <Button
-                            onClick={() => handleViewIdeaSet(idea)}
-                            size="lg"
-                            className="bg-blue-600 hover:bg-blue-700"
-                          >
-                            <Eye className="h-5 w-5 mr-2" />
-                            View All Ideas
-                          </Button>
                         </div>
-                      </CardContent>
-                    </Card>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewIdeaSet(idea)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Topics
+                        </Button>
+                      </div>
+                    </li>
                   )
                 })}
+              </ul>
+
+              {/* Footer */}
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <button className="inline-flex items-center text-xs font-normal text-gray-500 hover:underline hover:text-gray-700 transition-colors">
+                  <HelpCircle className="w-3 h-3 me-2" />
+                  How do content ideas work?
+                </button>
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
       )}
       {/* Empty State */}
