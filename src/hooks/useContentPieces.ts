@@ -1,5 +1,21 @@
 import { useState, useEffect } from 'react'
-import type { ContentPiece } from '../lib/supabase'
+
+type ContentPiece = {
+  id: string
+  company_id: string
+  type: 'blog_post' | 'social_post' | 'ad_copy' | 'email' | 'content_strategy'
+  status: 'draft' | 'approved'
+  title: string
+  body: string
+  platform?: string
+  strategy_id?: string
+  metadata: {
+    prompt?: string
+    generated_at?: string
+    word_count?: number
+  }
+  created_at: string
+}
 
 // Mock content data
 const mockContent: ContentPiece[] = [

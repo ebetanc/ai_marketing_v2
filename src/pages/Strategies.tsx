@@ -3,7 +3,7 @@ import { Card, CardContent } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
 import { GenerateStrategyModal } from '../components/content/GenerateStrategyModal'
-import { supabase } from '../lib/supabase'
+import { supabase, type Tables } from '../lib/supabase'
 import {
   FileText,
   Building2,
@@ -23,57 +23,8 @@ import { IconButton } from '../components/ui/IconButton'
 import { Modal } from '../components/ui/Modal'
 import { Skeleton } from '../components/ui/Skeleton'
 
-interface Strategy {
-  id: number
-  created_at: string
-  platforms: string | null
-  company_id: number
-  company?: {
-    id: number
-    brand_name: string
-    created_at: string
-  }
-  // Angle fields
-  angle1_header: string | null
-  angle1_description: string | null
-  angle1_objective: string | null
-  angle1_tonality: string | null
-  angle2_header: string | null
-  angle2_description: string | null
-  angle2_objective: string | null
-  angle2_tonality: string | null
-  angle3_header: string | null
-  angle3_description: string | null
-  angle3_objective: string | null
-  angle3_tonality: string | null
-  angle4_header: string | null
-  angle4_description: string | null
-  angle4_objective: string | null
-  angle4_tonality: string | null
-  angle5_header: string | null
-  angle5_description: string | null
-  angle5_objective: string | null
-  angle5_tonality: string | null
-  angle6_header: string | null
-  angle6_description: string | null
-  angle6_objective: string | null
-  angle6_tonality: string | null
-  angle7_header: string | null
-  angle7_description: string | null
-  angle7_objective: string | null
-  angle7_tonality: string | null
-  angle8_header: string | null
-  angle8_description: string | null
-  angle8_objective: string | null
-  angle8_tonality: string | null
-  angle9_header: string | null
-  angle9_description: string | null
-  angle9_objective: string | null
-  angle9_tonality: string | null
-  angle10_header: string | null
-  angle10_description: string | null
-  angle10_objective: string | null
-  angle10_tonality: string | null
+type Strategy = Tables<'strategies'> & {
+  company?: { id: number; brand_name: string; created_at: string }
 }
 
 interface Company {

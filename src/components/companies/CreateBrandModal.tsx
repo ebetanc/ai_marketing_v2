@@ -4,7 +4,7 @@ import { Input } from '../ui/Input'
 import { Textarea } from '../ui/Textarea'
 import { X, ArrowLeft, ArrowRight, Sparkles, Globe } from 'lucide-react'
 import { cn } from '../../lib/utils'
-import { supabase } from '../../lib/supabase'
+import { supabase, type TablesInsert } from '../../lib/supabase'
 import { Modal } from '../ui/Modal'
 import { useToast } from '../ui/Toast'
 import { IconButton } from '../ui/IconButton'
@@ -134,7 +134,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
     setSubmitLoading(true)
 
     try {
-      const brandData = {
+      const brandData: TablesInsert<'companies'> = {
         brand_name: formData.name,
         website: formData.website,
         additional_information: formData.additionalInfo,

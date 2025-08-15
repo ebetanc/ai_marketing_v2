@@ -19,19 +19,25 @@ import { Button } from '../components/ui/Button';
 import { IconButton } from '../components/ui/IconButton';
 import { Modal } from '../components/ui/Modal';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { supabase } from '../lib/supabase';
+import { supabase, type Tables } from '../lib/supabase';
 import { formatDate, truncateText } from '../lib/utils';
 import { Skeleton } from '../components/ui/Skeleton';
 import { useToast } from '../components/ui/Toast';
 
 export function Ideas() {
-  const [ideas, setIdeas] = useState<any[]>([])
+  type CompanyRow = Tables<'companies'>
+  type StrategyRow = Tables<'strategies'>
+  type IdeaRow = Tables<'ideas'>
+  type IdeaJoined = IdeaRow & { company?: CompanyRow; strategy?: StrategyRow }
+  type Topic = { number: number; topic: string; description: string; image_prompt: string }
+
+  const [ideas, setIdeas] = useState<IdeaJoined[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [viewIdeaModal, setViewIdeaModal] = useState<{
     isOpen: boolean
-    idea: any
-    topic: any
+    idea: IdeaJoined | null
+    topic: Topic | null
     isEditing: boolean
   }>({
     isOpen: false,
@@ -48,8 +54,8 @@ export function Ideas() {
   const [generatingContent, setGeneratingContent] = useState(false)
   const [viewIdeaSetModal, setViewIdeaSetModal] = useState<{
     isOpen: boolean
-    idea: any
-    topics: any[]
+    idea: IdeaJoined | null
+    topics: Topic[]
   }>({
     isOpen: false,
     idea: null,
@@ -66,8 +72,8 @@ export function Ideas() {
       console.log('Fetching ideas from Supabase...')
 
 
-      let data: any[] | null = null
-      let error: any = null
+      let data: IdeaJoined[] | null = null
+      let error: unknown = null
       try {
         const res = await supabase
           .from('ideas')
@@ -77,7 +83,7 @@ export function Ideas() {
             company:companies (*)
           `)
           .order('created_at', { ascending: false })
-        data = res.data as any[] | null
+        data = (res.data as unknown as IdeaJoined[] | null)
         error = res.error
       } catch (e) {
         console.warn('Relational select failed, falling back to basic select. Error:', e)
@@ -87,7 +93,7 @@ export function Ideas() {
           .from('ideas')
           .select('*')
           .order('created_at', { ascending: false })
-        data = res2.data as any[] | null
+        data = (res2.data as unknown as IdeaRow[] | null) as unknown as IdeaJoined[] | null
         error = res2.error
       }
 
@@ -124,25 +130,25 @@ export function Ideas() {
   }, [fetchIdeas])
 
 
-  const extractTopicsFromIdea = (idea: any) => {
-    const topics = []
+  const extractTopicsFromIdea = (idea: IdeaJoined) => {
+    const topics: Topic[] = []
     const columns = Object.keys(idea).sort() // Sort to ensure consistent order
 
     let topicIndex = 1
 
     while (true) {
       const topicKey = `topic${topicIndex}`
-      const descriptionKey = `description${topicIndex}` || `topic${topicIndex}_description`
-      const imagePromptKey = `image_prompt${topicIndex}` || `topic${topicIndex}_image_prompt`
+      const descriptionKey = `idea_description${topicIndex}`
+      const imagePromptKey = `image_prompt${topicIndex}`
 
       const baseIndex = 8 + (topicIndex - 1) * 3 // 9-11 for topic 1, 12-14 for topic 2, etc.
       const columnTopic = columns[baseIndex]
       const columnDescription = columns[baseIndex + 1]
       const columnImagePrompt = columns[baseIndex + 2]
 
-      const topic = idea[topicKey] || idea[columnTopic]
-      const description = idea[descriptionKey] || idea[columnDescription]
-      const imagePrompt = idea[imagePromptKey] || idea[columnImagePrompt]
+      const topic = (idea as any)[topicKey] || (idea as any)[columnTopic]
+      const description = (idea as any)[descriptionKey] || (idea as any)[columnDescription]
+      const imagePrompt = (idea as any)[imagePromptKey] || (idea as any)[columnImagePrompt]
 
       if (topic || description || imagePrompt) {
         topics.push({
@@ -162,7 +168,7 @@ export function Ideas() {
     return topics
   }
 
-  const handleViewTopic = (idea: any, topic: any) => {
+  const handleViewTopic = (idea: IdeaJoined, topic: Topic) => {
     setViewIdeaModal({
       isOpen: true,
       idea,
@@ -297,7 +303,7 @@ export function Ideas() {
     }
   }
 
-  const handleViewIdeaSet = (idea: any) => {
+  const handleViewIdeaSet = (idea: IdeaJoined) => {
     const topics = extractTopicsFromIdea(idea)
     setViewIdeaSetModal({
       isOpen: true,
@@ -330,25 +336,16 @@ export function Ideas() {
 
       console.log('=== FETCHING COMPANY DETAILS ===')
       console.log('Idea company_id:', viewIdeaModal.idea.company_id)
-      console.log('Fallback brand name:', viewIdeaModal.idea.brand)
 
-      let companyData = null as any
-      let companyError = null as any
+      let companyData: CompanyRow | null = null
+      let companyError: unknown = null
       if (viewIdeaModal.idea.company_id) {
         const res = await supabase
           .from('companies')
           .select('*')
           .eq('id', viewIdeaModal.idea.company_id)
           .single()
-        companyData = res.data
-        companyError = res.error
-      } else {
-        const res = await supabase
-          .from('companies')
-          .select('*')
-          .eq('brand_name', viewIdeaModal.idea.brand)
-          .single()
-        companyData = res.data
+        companyData = res.data as CompanyRow | null
         companyError = res.error
       }
 
@@ -364,8 +361,14 @@ export function Ideas() {
       console.log('Strategy ID:', viewIdeaModal.idea.strategy_id)
       console.log('Angle Number:', viewIdeaModal.idea.angle_number)
 
-      let strategyData = null
-      let angleDetails = null
+      let strategyData: StrategyRow | null = null
+      let angleDetails: {
+        number: number
+        header: string
+        description: string
+        objective: string
+        tonality: string
+      } | null = null
 
       if (viewIdeaModal.idea.strategy_id && viewIdeaModal.idea.angle_number) {
         const { data: strategy, error: strategyError } = await supabase
@@ -378,16 +381,16 @@ export function Ideas() {
           console.error('Error fetching strategy details:', strategyError)
           console.log('Continuing without strategy details...')
         } else {
-          strategyData = strategy
+          strategyData = strategy as StrategyRow
 
 
           const angleNumber = viewIdeaModal.idea.angle_number
           angleDetails = {
             number: angleNumber,
-            header: strategy[`angle${angleNumber}_header`] || '',
-            description: strategy[`angle${angleNumber}_description`] || '',
-            objective: strategy[`angle${angleNumber}_objective`] || '',
-            tonality: strategy[`angle${angleNumber}_tonality`] || ''
+            header: (strategy as any)[`angle${angleNumber}_header`] || '',
+            description: (strategy as any)[`angle${angleNumber}_description`] || '',
+            objective: (strategy as any)[`angle${angleNumber}_objective`] || '',
+            tonality: (strategy as any)[`angle${angleNumber}_tonality`] || ''
           }
 
           console.log('Strategy data fetched:', strategyData)
@@ -402,7 +405,7 @@ export function Ideas() {
         image_prompt: viewIdeaModal.topic.image_prompt,
         idea: {
           id: viewIdeaModal.idea.id,
-          brand: viewIdeaModal.idea.brand,
+          brand: companyData?.brand_name || viewIdeaModal.idea.company?.brand_name || 'Unknown Brand',
           strategy_id: viewIdeaModal.idea.strategy_id,
           angle_number: viewIdeaModal.idea.angle_number,
           created_at: viewIdeaModal.idea.created_at
@@ -410,11 +413,11 @@ export function Ideas() {
       }
 
       // Derive normalized-first fields from companyData for consistent payloads
-      const brandName: string = companyData?.brand_name || companyData?.name || viewIdeaModal.idea.brand || 'Unknown Brand'
+      const brandName: string = companyData?.brand_name || viewIdeaModal.idea.company?.brand_name || 'Unknown Brand'
       const website: string = companyData?.website || ''
-      const tone: string = companyData?.brand_voice?.tone || companyData?.brand_tone || ''
-      const style: string = companyData?.brand_voice?.style || companyData?.key_offer || ''
-      const targetAudienceStr: string = companyData?.target_audience_raw || companyData?.target_audience?.demographics || ''
+      const tone: string = companyData?.brand_tone || ''
+      const style: string = companyData?.key_offer || ''
+      const targetAudienceStr: string = companyData?.target_audience || ''
       const additionalInfo: string = companyData?.additional_information || ''
 
       const webhookPayload = {
@@ -423,9 +426,7 @@ export function Ideas() {
         platforms: ["twitter", "linkedin", "newsletter"],
         // FULL BRAND INFORMATION
         companyDetails: companyData ? {
-          // Include ALL company data from Supabase
           ...companyData,
-          // Add computed/formatted fields for backward compatibility
           name: brandName,
           brandTone: tone,
           keyOffer: style,
@@ -438,23 +439,23 @@ export function Ideas() {
         // FULL STRATEGY CONTEXT
         strategyContext: strategyData ? {
           id: strategyData.id,
-          brand: strategyData.brand,
-          name: strategyData.brand || 'Unnamed Strategy', // Strategy Name
-          description: strategyData.description || 'No strategy description available', // Strategy Description
+          brand: brandName,
+          name: brandName,
+          description: 'No strategy description available',
           platforms: strategyData.platforms,
           created_at: strategyData.created_at,
           totalAngles: (() => {
             let count = 0
             for (let i = 1; i <= 10; i++) {
-              if (strategyData[`angle${i}_header`]) count++
+              if ((strategyData as any)[`angle${i}_header`]) count++
             }
             return count
           })()
         } : null,
         // REQUIRED FIELDS FOR AI AGENT CONTEXT
         aiContext: {
-          strategyName: strategyData?.brand || 'Unknown Strategy',
-          strategyDescription: strategyData?.description || 'No strategy description available',
+          strategyName: brandName,
+          strategyDescription: 'No strategy description available',
           tonality: angleDetails?.tonality || 'No tonality specified',
           objective: angleDetails?.objective || 'No objective specified',
           keyOffer: style || 'No key offer specified',
@@ -557,10 +558,10 @@ export function Ideas() {
   // Group ideas by brand name (from joined company)
   const ideasByBrand = ideas.reduce((acc, idea) => {
     const brandName = idea.company?.brand_name || 'Unknown Brand';
-    if (!acc[brandName]) acc[brandName] = [] as any[];
+    if (!acc[brandName]) acc[brandName] = [] as IdeaJoined[];
     acc[brandName].push(idea);
     return acc;
-  }, {} as Record<string, any[]>);
+  }, {} as Record<string, IdeaJoined[]>);
 
   return (
     <div className="space-y-6">
@@ -591,7 +592,7 @@ export function Ideas() {
                   <h2 id="view-idea-title" className="text-xl font-bold text-gray-900">
                     {viewIdeaModal.isEditing ? 'Edit Topic' : (viewIdeaModal.topic?.topic || `Topic ${viewIdeaModal.topic?.number}`)}
                   </h2>
-                  <p className="text-sm text-gray-500">{viewIdeaModal.idea?.brand || 'Unknown Brand'}</p>
+                  <p className="text-sm text-gray-500">{viewIdeaModal.idea?.company?.brand_name || 'Unknown Brand'}</p>
                 </div>
               </div>
 
@@ -750,7 +751,7 @@ export function Ideas() {
                 </div>
                 <div>
                   <h2 id="view-idea-set-title" className="text-xl font-bold text-gray-900">
-                    Content Ideas Set #{viewIdeaSetModal.idea?.id} - {viewIdeaSetModal.idea?.brand}
+                    Content Ideas Set #{viewIdeaSetModal.idea?.id} - {viewIdeaSetModal.idea?.company?.brand_name || 'Unknown Brand'}
                   </h2>
                   <p className="text-sm text-gray-500">
                     {viewIdeaSetModal.topics.length} content ideas • Created {viewIdeaSetModal.idea?.created_at ? formatDate(viewIdeaSetModal.idea.created_at) : 'Unknown'}
@@ -774,7 +775,7 @@ export function Ideas() {
                   <Card
                     key={topic.number}
                     className="bg-white border border-gray-200 hover:shadow-lg hover:border-blue-300 transition-all duration-200 group cursor-pointer"
-                    onClick={() => handleViewTopic(viewIdeaSetModal.idea, topic)}
+                    onClick={() => handleViewTopic(viewIdeaSetModal.idea!, topic)}
                   >
                     <CardHeader className="pb-2">
                       <div className="flex items-center space-x-2">
@@ -860,7 +861,7 @@ export function Ideas() {
       {/* Ideas by Brand */}
       {!loading && !error && ideas.length > 0 && (
         <div className="space-y-8">
-          {(Object.entries(ideasByBrand ?? {}) as [string, any[]][]).map(([brandName, brandIdeas]) => {
+          {(Object.entries(ideasByBrand ?? {}) as [string, IdeaJoined[]][]).map(([brandName, brandIdeas]) => {
             const totalTopics = brandIdeas.reduce((sum, idea) => sum + extractTopicsFromIdea(idea).length, 0)
 
             return (
@@ -891,7 +892,7 @@ export function Ideas() {
 
                 {/* Ideas List */}
                 <ul className="space-y-3">
-                  {brandIdeas.map((idea: any) => {
+                  {brandIdeas.map((idea) => {
                     const topics = extractTopicsFromIdea(idea)
 
                     return (

@@ -64,9 +64,9 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
       const keywords: string[] = selectedCompany.brand_voice?.keywords || []
 
       // Target audience as string (raw) and object (normalized)
-      const targetAudienceStr: string = selectedCompany.target_audience_raw
-        || selectedCompany.target_audience?.demographics
-        || ''
+      const targetAudienceStr: string = typeof selectedCompany.target_audience === 'string'
+        ? selectedCompany.target_audience
+        : (selectedCompany.target_audience?.demographics || '')
       const targetAudienceObj: { demographics: string; interests: string[]; pain_points: string[] } = {
         demographics: selectedCompany.target_audience?.demographics || targetAudienceStr || '',
         interests: selectedCompany.target_audience?.interests || [],

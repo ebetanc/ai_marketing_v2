@@ -7,12 +7,45 @@ import { formatDate } from '../../lib/utils'
 import { Modal } from '../ui/Modal'
 import { IconButton } from '../ui/IconButton'
 import { useToast } from '../ui/Toast'
+import type { Tables } from '../../lib/supabase'
+
+type CompanyRow = Tables<'companies'>
+type StrategyRow = Tables<'strategies'>
+type IdeaRow = Tables<'ideas'>
+type IdeaJoined = IdeaRow & { company?: CompanyRow; strategy?: StrategyRow }
+
+type ContentSource = 'twitter_content' | 'linkedin_content' | 'newsletter_content'
+
+type ModalContent = {
+  id: number
+  created_at: string
+  post: boolean | null
+  // body variants used across the app
+  content_body?: string | null
+  body?: string | null
+  body_text?: string | null
+  // UI/derived fields
+  title?: string | null
+  status?: string | null
+  platform?: string | null
+  type?: string | null
+  brand_name?: string | null
+  metadata?: Record<string, unknown> | null
+  // Relations (when fetched with joins)
+  idea?: IdeaJoined
+  company?: CompanyRow
+  strategy?: StrategyRow
+  // Discriminator for source table
+  source: ContentSource
+  // Optional angles array when already transformed upstream
+  angles?: unknown[]
+}
 
 interface ViewContentModalProps {
   isOpen: boolean
   onClose: () => void
-  content: any
-  strategyId?: string
+  content: ModalContent
+  strategyId?: string | number
 }
 
 import { supabase } from '../../lib/supabase'
@@ -72,7 +105,7 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
   if (!isOpen || !content) return null
 
   // Helper function to parse and extract angles from content
-  const extractAngles = (content: any) => {
+  const extractAngles = (content: ModalContent) => {
     // If content already has angles array (from Supabase transformation)
     if (content?.angles && Array.isArray(content.angles)) {
       return content.angles
@@ -163,17 +196,21 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
     }
   }
 
-  const renderAngleProperty = (key: string, value: any) => {
+  const renderAngleProperty = (key: string, value: unknown) => {
     if (!value) return null
 
     const displayKey = key.replace(/([A-Z])/g, ' $1').trim()
     const capitalizedKey = displayKey.charAt(0).toUpperCase() + displayKey.slice(1)
 
-    let displayValue = value
+    let displayValue: string
     if (typeof value === 'string') {
       displayValue = value.replace(/^["']|["']$/g, '').trim()
+    } else if (typeof value === 'number' || typeof value === 'boolean') {
+      displayValue = String(value)
     } else if (typeof value === 'object') {
       displayValue = JSON.stringify(value, null, 2)
+    } else {
+      displayValue = ''
     }
 
     return (
@@ -190,25 +227,25 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
       </div>
     )
   }
-  const renderAngleContent = (angle: any, index: number) => {
+  const renderAngleContent = (angle: Record<string, unknown>, index: number) => {
     const isExpanded = expandedAngles[index]
 
     // Get angle title/header
-    const angleTitle = angle.header || angle.title || angle.topic || `Content Angle ${index + 1}`
+    const angleTitle = (angle as any).header || (angle as any).title || (angle as any).topic || `Content Angle ${index + 1}`
 
     // Get main content preview
     const getPreviewContent = () => {
       if (angle.description) {
-        const desc = typeof angle.description === 'string'
-          ? angle.description.replace(/^["']|["']$/g, '').trim()
-          : JSON.stringify(angle.description)
+        const desc = typeof (angle as any).description === 'string'
+          ? (angle as any).description.replace(/^["']|["']$/g, '').trim()
+          : JSON.stringify((angle as any).description)
         return desc.length > 150 ? desc.substring(0, 150) + '...' : desc
       }
       if (angle.content) {
-        const content = typeof angle.content === 'string'
-          ? angle.content.replace(/^["']|["']$/g, '').trim()
-          : JSON.stringify(angle.content)
-        return content.length > 150 ? content.substring(0, 150) + '...' : content
+        const c = typeof (angle as any).content === 'string'
+          ? (angle as any).content.replace(/^["']|["']$/g, '').trim()
+          : JSON.stringify((angle as any).content)
+        return c.length > 150 ? c.substring(0, 150) + '...' : c
       }
       return 'Click to view angle details...'
     }
@@ -225,9 +262,9 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
                 <h4 className="font-medium text-gray-900 text-base">
                   {angleTitle}
                 </h4>
-                {angle.platform && (
+                {Boolean((angle as any).platform) && (
                   <Badge variant="secondary" className="text-xs mt-1">
-                    {angle.platform}
+                    {String((angle as any).platform)}
                   </Badge>
                 )}
                 {!isExpanded && (
@@ -260,7 +297,7 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
               {/* Render all angle properties dynamically */}
               {Object.keys(angle)
                 .filter(key => !['header', 'title', 'topic', 'platform'].includes(key))
-                .map(key => renderAngleProperty(key, angle[key]))}
+                .map(key => renderAngleProperty(key, (angle as any)[key]))}
             </div>
           </CardContent>
         )}
@@ -324,10 +361,10 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
                   </p>
                 </div>
 
-                {content.metadata?.word_count && (
+                {typeof (content.metadata as any)?.word_count === 'number' && (
                   <div>
                     <p className="text-sm font-medium text-gray-900">Word Count</p>
-                    <p className="text-gray-700">{content.metadata.word_count} words</p>
+                    <p className="text-gray-700">{String((content.metadata as any).word_count)} words</p>
                   </div>
                 )}
               </div>

@@ -5,7 +5,7 @@ import { Select } from '../components/ui/Select'
 import { Badge } from '../components/ui/Badge'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { ViewContentModal } from '../components/content/ViewContentModal'
-import { supabase } from '../lib/supabase'
+import { supabase, type Tables } from '../lib/supabase'
 import { FileText, Eye, CheckCircle, Clock, Search, Trash2, RefreshCw, Calendar, HelpCircle } from 'lucide-react'
 import { IconButton } from '../components/ui/IconButton'
 import { formatDate, truncateText } from '../lib/utils'
@@ -118,6 +118,24 @@ const extractContentTopic = (content: any) => {
 }
 
 export function Content() {
+  // Typed helpers for joined rows
+  type CompanyRow = Tables<'companies'>
+  type StrategyRow = Tables<'strategies'>
+  type IdeaRow = Tables<'ideas'>
+  type IdeaJoined = IdeaRow & { company?: CompanyRow; strategy?: StrategyRow }
+  type TwitterRow = Tables<'twitter_content'> & { idea?: IdeaJoined; company?: CompanyRow; strategy?: StrategyRow } & {
+    // legacy/derived fields we may encounter
+    brand_name?: string
+    company_id?: number
+    brand_id?: number
+    strategy_id?: number
+    title?: string
+    body?: string
+    status?: string
+    post?: boolean | null
+  }
+  type LinkedInRow = Tables<'linkedin_content'> & { idea?: IdeaJoined; company?: CompanyRow; strategy?: StrategyRow } & TwitterRow
+  type NewsletterRow = Tables<'newsletter_content'> & { idea?: IdeaJoined; company?: CompanyRow; strategy?: StrategyRow } & TwitterRow
   const [companies, setCompanies] = useState<any[]>([])
   const [generatedContent, setGeneratedContent] = useState<any[]>([])
   const [_loadingCompanies, setLoadingCompanies] = useState(true) // reserved for future brand context
@@ -224,7 +242,7 @@ export function Content() {
 
       // Process Twitter content
       if (twitterRes.data && !twitterRes.error) {
-        const twitterContent = twitterRes.data.map((item: any) => ({
+        const twitterContent = (twitterRes.data as TwitterRow[]).map((item) => ({
           ...item,
           source: 'twitter_content',
           platform: 'Twitter',
@@ -235,7 +253,7 @@ export function Content() {
           // Derive company/strategy via idea relation after 3NF
           company_id: item.idea?.company_id ?? item.company_id ?? item.brand_id,
           strategy_id: item.idea?.strategy_id ?? item.strategy_id,
-          brand_name: item.idea?.company?.brand_name || item.company?.brand_name || item.brand_name || item.company?.name || 'Unknown Brand',
+          brand_name: item.idea?.company?.brand_name || item.company?.brand_name || item.brand_name || 'Unknown Brand',
           body: item.content_body || item.body || 'No content available',
           body_text: item.content_body || item.body || 'No content available'
         }))
@@ -247,7 +265,7 @@ export function Content() {
 
       // Process LinkedIn content
       if (linkedinRes.data && !linkedinRes.error) {
-        const linkedinContent = linkedinRes.data.map((item: any) => ({
+        const linkedinContent = (linkedinRes.data as LinkedInRow[]).map((item) => ({
           ...item,
           source: 'linkedin_content',
           platform: 'LinkedIn',
@@ -257,7 +275,7 @@ export function Content() {
           post: item.post || false,
           company_id: item.idea?.company_id ?? item.company_id ?? item.brand_id,
           strategy_id: item.idea?.strategy_id ?? item.strategy_id,
-          brand_name: item.idea?.company?.brand_name || item.company?.brand_name || item.brand_name || item.company?.name || 'Unknown Brand',
+          brand_name: item.idea?.company?.brand_name || item.company?.brand_name || item.brand_name || 'Unknown Brand',
           body: item.content_body || item.body || 'No content available',
           body_text: item.content_body || item.body || 'No content available'
         }))
@@ -270,7 +288,7 @@ export function Content() {
 
       // Process Newsletter content
       if (newsletterRes.data && !newsletterRes.error) {
-        const newsletterContent = newsletterRes.data.map((item: any) => ({
+        const newsletterContent = (newsletterRes.data as NewsletterRow[]).map((item) => ({
           ...item,
           source: 'newsletter_content',
           platform: 'Newsletter',
@@ -280,7 +298,7 @@ export function Content() {
           post: item.post || false,
           company_id: item.idea?.company_id ?? item.company_id ?? item.brand_id,
           strategy_id: item.idea?.strategy_id ?? item.strategy_id,
-          brand_name: item.idea?.company?.brand_name || item.company?.brand_name || item.brand_name || item.company?.name || 'Unknown Brand',
+          brand_name: item.idea?.company?.brand_name || item.company?.brand_name || item.brand_name || 'Unknown Brand',
           body: item.content_body || item.body || 'No content available',
           body_text: item.content_body || item.body || 'No content available'
         }))
@@ -371,7 +389,7 @@ export function Content() {
     ...content,
     company_id: content.company_id ?? content.idea?.company_id ?? content.brand_id,
     strategy_id: content.strategy_id ?? content.idea?.strategy_id,
-    brand_name: content.brand_name || content.idea?.company?.brand_name || content.company?.brand_name || content.company?.name || 'Unknown Brand'
+    brand_name: content.brand_name || content.idea?.company?.brand_name || content.company?.brand_name || 'Unknown Brand'
   }))
 
   const filteredContent = allContent.filter(content => {

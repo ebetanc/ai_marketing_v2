@@ -4,7 +4,6 @@ import { Button } from '../components/ui/Button'
 import { CreateBrandModal } from '../components/companies/CreateBrandModal'
 import { ViewCompanyModal } from '../components/companies/ViewCompanyModal'
 import { useCompanies } from '../hooks/useCompanies'
-import type { Company } from '../lib/supabase'
 import {
   Plus,
   Building2,
@@ -22,7 +21,7 @@ import { Skeleton } from '../components/ui/Skeleton'
 export function Companies() {
   const { companies: hookCompanies, loading, error, refetch } = useCompanies()
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [viewCompanyModal, setViewCompanyModal] = useState<{ isOpen: boolean; company: Company | null }>({
+  const [viewCompanyModal, setViewCompanyModal] = useState<{ isOpen: boolean; company: any | null }>({
     isOpen: false,
     company: null
   })
@@ -42,7 +41,7 @@ export function Companies() {
     await fetchCompaniesFromSupabase()
   }
 
-  const handleViewClick = (company: Company) => {
+  const handleViewClick = (company: any) => {
     setViewCompanyModal({
       isOpen: true,
       company
@@ -200,7 +199,7 @@ export function Companies() {
 
                     {/* Quick Info */}
                     <div className="flex flex-wrap gap-1">
-                      {(company.target_audience || company.target_audience_raw) && (
+                      {company.target_audience && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           <Target className="h-2.5 w-2.5 mr-1" />
                           Target Audience Defined

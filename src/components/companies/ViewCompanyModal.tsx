@@ -9,11 +9,12 @@ import { Modal } from '../ui/Modal'
 import { IconButton } from '../ui/IconButton'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { useToast } from '../ui/Toast'
+import type { CompanyUI } from '../../hooks/useCompanies'
 
 interface ViewCompanyModalProps {
   isOpen: boolean
   onClose: () => void
-  company: any
+  company: CompanyUI | null
   onDelete?: () => void
 }
 
@@ -116,7 +117,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
                 <p className="text-sm font-medium text-gray-900">Created</p>
                 <p className="text-gray-700 flex items-center">
                   <Calendar className="h-4 w-4 mr-1 text-gray-400" />
-                  {formatDate(company.created_at || company.createdAt)}
+                  {formatDate(company.created_at)}
                 </p>
               </div>
             </CardContent>
@@ -137,8 +138,8 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
             </Card>
           )}
 
-          {/* Target Audience (raw string) */}
-          {company.target_audience_raw && (
+          {/* Target Audience (string) */}
+          {company.target_audience && typeof company.target_audience === 'string' && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center text-lg">
@@ -147,7 +148,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-700 leading-relaxed">{company.target_audience_raw}</p>
+                <p className="text-gray-700 leading-relaxed">{company.target_audience}</p>
               </CardContent>
             </Card>
           )}
@@ -196,12 +197,12 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
               <CardContent className="space-y-4">
                 <div>
                   <p className="text-sm font-medium text-gray-900">Brand Tone</p>
-                  <p className="text-gray-700 leading-relaxed">{company.brand_voice?.tone || company.brandTone || 'Not specified'}</p>
+                  <p className="text-gray-700 leading-relaxed">{company.brand_voice?.tone || company.brand_tone || 'Not specified'}</p>
                 </div>
 
                 <div>
                   <p className="text-sm font-medium text-gray-900">Key Offer / Style</p>
-                  <p className="text-gray-700 leading-relaxed">{company.brand_voice?.style || company.keyOffer || 'Not specified'}</p>
+                  <p className="text-gray-700 leading-relaxed">{company.brand_voice?.style || company.key_offer || 'Not specified'}</p>
                 </div>
 
                 {company.brand_voice?.keywords && company.brand_voice.keywords.length > 0 && (
@@ -220,8 +221,8 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
             </Card>
           )}
 
-          {/* Target Audience (normalized object) */}
-          {company.target_audience && typeof company.target_audience === 'object' && (
+          {/* Target Audience (normalized object) - reserved for future structured field */}
+          {false && !!company && company!.target_audience && typeof company!.target_audience === 'object' && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center text-lg">
@@ -233,15 +234,15 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
                 <div>
                   <p className="text-sm font-medium text-gray-900">Demographics</p>
                   <p className="text-gray-700 leading-relaxed">
-                    {company.target_audience?.demographics || company.targetAudience || 'Not specified'}
+                    {(company!.target_audience as any)?.demographics || 'Not specified'}
                   </p>
                 </div>
 
-                {company.target_audience?.interests && company.target_audience.interests.length > 0 && (
+                {(company!.target_audience as any)?.interests && (company!.target_audience as any).interests.length > 0 && (
                   <div>
                     <p className="text-sm font-medium text-gray-900 mb-2">Interests</p>
                     <div className="flex flex-wrap gap-2">
-                      {company.target_audience.interests.map((interest: string, index: number) => (
+                      {(company!.target_audience as any).interests.map((interest: string, index: number) => (
                         <Badge key={index} variant="secondary">
                           {interest}
                         </Badge>
@@ -250,11 +251,11 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
                   </div>
                 )}
 
-                {company.target_audience?.pain_points && company.target_audience.pain_points.length > 0 && (
+                {(company!.target_audience as any)?.pain_points && (company!.target_audience as any).pain_points.length > 0 && (
                   <div>
                     <p className="text-sm font-medium text-gray-900 mb-2">Pain Points</p>
                     <div className="flex flex-wrap gap-2">
-                      {company.target_audience.pain_points.map((point: string, index: number) => (
+                      {(company!.target_audience as any).pain_points.map((point: string, index: number) => (
                         <Badge key={index} variant="warning">
                           {point}
                         </Badge>
@@ -267,7 +268,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
           )}
 
           {/* Legacy Additional Information Support */}
-          {company.additionalInfo && (
+          {false && (company as any).additionalInfo && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center text-lg">
@@ -277,14 +278,14 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
               </CardHeader>
               <CardContent>
                 <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                  {company.additionalInfo}
+                  {(company as any).additionalInfo}
                 </p>
               </CardContent>
             </Card>
           )}
 
           {/* Legacy Image Guidelines Support */}
-          {company.imageGuidelines && (
+          {false && (company as any).imageGuidelines && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center text-lg">
@@ -294,7 +295,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
               </CardHeader>
               <CardContent>
                 <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                  {company.imageGuidelines}
+                  {(company as any).imageGuidelines}
                 </p>
               </CardContent>
             </Card>

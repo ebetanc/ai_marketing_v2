@@ -16,6 +16,7 @@ import {
 import { useCompanies } from '../hooks/useCompanies'
 import { useContentPieces } from '../hooks/useContentPieces'
 import { formatDate, formatTime } from '../lib/utils'
+import type { CompanyUI } from '../hooks/useCompanies'
 
 export function Dashboard() {
   const navigate = useNavigate()
@@ -23,13 +24,13 @@ export function Dashboard() {
   const { contentPieces } = useContentPieces()
   const [viewCompanyModal, setViewCompanyModal] = React.useState<{
     isOpen: boolean
-    company: any
+    company: CompanyUI | null
   }>({
     isOpen: false,
     company: null
   })
 
-  const handleViewCompany = (company: any) => {
+  const handleViewCompany = (company: CompanyUI) => {
     setViewCompanyModal({
       isOpen: true,
       company
@@ -206,15 +207,15 @@ export function Dashboard() {
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center">
                       <span className="text-white font-semibold text-sm">
-                        {company.name.charAt(0)}
+                        {(company.brand_name || company.name || 'U').charAt(0)}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900">{company.name}</p>
+                      <p className="font-medium text-gray-900">{company.brand_name || company.name || 'Unnamed Brand'}</p>
                       <p className="text-sm text-gray-500">
-                        {company.brand_voice.tone.length > 50
-                          ? `${company.brand_voice.tone.substring(0, 50)}...`
-                          : company.brand_voice.tone
+                        {(company.brand_voice?.tone || '').length > 50
+                          ? `${(company.brand_voice?.tone || '').substring(0, 50)}...`
+                          : (company.brand_voice?.tone || 'Not specified')
                         }
                       </p>
                     </div>
@@ -222,7 +223,7 @@ export function Dashboard() {
                   <div className="flex items-center space-x-3">
                     <div className="text-right">
                       <p className="text-sm font-medium text-gray-900">
-                        {contentPieces.filter(c => c.company_id === company.id).length} pieces
+                        {contentPieces.filter(c => c.company_id === String(company.id)).length} pieces
                       </p>
                       <p className="text-xs text-gray-500">
                         Created {formatDate(company.created_at)}

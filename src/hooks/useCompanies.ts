@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react'
-import type { Company } from '../lib/supabase'
-import { supabase } from '../lib/supabase'
+import { supabase, type Tables } from '../lib/supabase'
+
+type CompanyRow = Tables<'companies'>
+export type CompanyUI = CompanyRow & {
+  name?: string
+  brand_voice?: { tone: string; style: string; keywords: string[] }
+  target_audience_parsed?: { demographics: string; interests: string[]; pain_points: string[] }
+}
 
 export function useCompanies() {
-  const [companies, setCompanies] = useState<Company[]>([])
+  const [companies, setCompanies] = useState<CompanyUI[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -19,27 +25,19 @@ export function useCompanies() {
         throw error
       }
 
-      const supabaseCompanies: Company[] = (data || []).map((company: any) => ({
-        id: String(company.id),
+      const supabaseCompanies: CompanyUI[] = (data || []).map((company: CompanyRow) => ({
+        ...company,
         name: company.brand_name || 'Unnamed Brand',
         brand_voice: {
           tone: company.brand_tone || 'Not specified',
           style: company.key_offer || 'Not specified',
           keywords: company.key_offer ? company.key_offer.split(' ').slice(0, 4) : []
         },
-        target_audience: {
+        target_audience_parsed: {
           demographics: company.target_audience || 'Not specified',
           interests: [],
           pain_points: []
-        },
-        // Back-compat fields used by some views
-        brand_name: company.brand_name ?? null,
-        brand_tone: company.brand_tone ?? null,
-        key_offer: company.key_offer ?? null,
-        target_audience_raw: company.target_audience ?? null,
-        website: company.website ?? null,
-        additional_information: company.additional_information ?? null,
-        created_at: company.created_at
+        }
       }))
 
       setCompanies(supabaseCompanies)
@@ -57,18 +55,9 @@ export function useCompanies() {
     fetchCompaniesFromSupabase()
   }, [])
 
-  const createCompany = async (companyData: Omit<Company, 'id' | 'created_at'>) => {
-    const newCompany: Company = {
-      id: Date.now().toString(),
-      created_at: new Date().toISOString(),
-      ...companyData
-    }
+  // Creating companies is handled by CreateBrandModal via Supabase insert
 
-    setCompanies(prev => [...prev, newCompany])
-    return { data: newCompany, error: null }
-  }
-
-  const deleteCompany = async (companyId: string) => {
+  const deleteCompany = async (companyId: number | string) => {
     try {
       const { error } = await supabase
         .from('companies')
@@ -80,7 +69,7 @@ export function useCompanies() {
         return { error: error.message }
       }
 
-      setCompanies(prev => prev.filter(company => company.id !== companyId))
+  setCompanies(prev => prev.filter(company => String(company.id) !== String(companyId)))
       return { error: null }
     } catch (error) {
       console.error('Error deleting company:', error)
@@ -96,7 +85,6 @@ export function useCompanies() {
     companies,
     loading,
   error,
-    createCompany,
     deleteCompany,
     refetch
   }
