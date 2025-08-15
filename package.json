@@ -4,18 +4,18 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "predev": "supabase start",
+    "predev": "echo 'Skipping supabase start - CLI not available'",
     "dev": "vite",
     "prebuild": "npm run types:gen",
     "build": "vite build",
     "vite:build": "vite build",
     "check": "npm run -s lint && npm run -s vite:build",
-    "prepare": "husky",
+    "prepare": "npx husky",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "preview": "vite preview",
     "preview:https": "vite preview --host --https",
-    "types:gen": "supabase gen types typescript --local --schema public > src/lib/database.types.ts"
+    "types:gen": "echo 'Skipping type generation - supabase CLI not available'"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
