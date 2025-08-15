@@ -10,7 +10,7 @@ export function Badge({ className, variant = 'secondary', children, ...props }: 
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
+        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium motion-safe:transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white',
         {
           'bg-blue-100 text-blue-800': variant === 'primary',
           'bg-gray-100 text-gray-800': variant === 'secondary',

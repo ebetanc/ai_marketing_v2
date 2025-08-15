@@ -1,25 +1,27 @@
 import React, { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
+import { Card, CardContent } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
 import { GenerateStrategyModal } from '../components/content/GenerateStrategyModal'
 import { supabase } from '../lib/supabase'
-import { 
-  FileText, 
-  Building2, 
-  Eye, 
-  RefreshCw, 
+import {
+  FileText,
+  Building2,
+  Eye,
+  RefreshCw,
   Calendar,
   Target,
   Zap,
   Plus,
   HelpCircle,
   X,
-  ChevronDown,
-  ChevronUp,
+
   Lightbulb
 } from 'lucide-react'
 import { formatDate } from '../lib/utils'
+import { IconButton } from '../components/ui/IconButton'
+import { Modal } from '../components/ui/Modal'
+import { Skeleton } from '../components/ui/Skeleton'
 
 interface Strategy {
   id: number
@@ -194,7 +196,7 @@ export function Strategies() {
 
   const getPlatformBadges = (platforms: string | null) => {
     if (!platforms) return []
-    
+
     try {
       // Try to parse as JSON array first
       const parsed = JSON.parse(platforms)
@@ -205,7 +207,7 @@ export function Strategies() {
       // If not JSON, split by comma
       return platforms.split(',').map(p => p.trim()).filter(p => p)
     }
-    
+
     return []
   }
 
@@ -228,10 +230,10 @@ export function Strategies() {
 
   const handleGenerateIdeas = async (angle: any) => {
     if (!viewModal.strategy || !viewModal.company) return
-    
+
     try {
       setGeneratingIdeas(angle.number)
-      
+
       const payload = {
         company: {
           id: viewModal.company.id,
@@ -250,7 +252,7 @@ export function Strategies() {
           tonality: angle.tonality
         }
       }
-      
+
       const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
         method: 'POST',
         headers: {
@@ -258,11 +260,11 @@ export function Strategies() {
         },
         body: JSON.stringify(payload)
       })
-      
+
       if (!response.ok) {
         throw new Error('Failed to generate ideas')
       }
-      
+
       console.log('Ideas generation started successfully')
     } catch (error) {
       console.error('Error generating ideas:', error)
@@ -296,7 +298,7 @@ export function Strategies() {
       const description = strategy[`angle${i}_description` as keyof Strategy] as string | null
       const objective = strategy[`angle${i}_objective` as keyof Strategy] as string | null
       const tonality = strategy[`angle${i}_tonality` as keyof Strategy] as string | null
-      
+
       if (header && header.trim()) {
         angles.push({
           number: i,
@@ -322,9 +324,22 @@ export function Strategies() {
           </div>
         </div>
         <Card>
-          <CardContent className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading strategies...</p>
+          <CardContent className="py-12">
+            <div className="flex items-center space-x-3 mb-4">
+              <Skeleton className="w-10 h-10" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-3 w-1/3" />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <Skeleton className="h-16 w-full" />
+              <div className="flex gap-2">
+                <Skeleton className="h-5 w-24" />
+                <Skeleton className="h-5 w-28" />
+                <Skeleton className="h-5 w-20" />
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -341,8 +356,8 @@ export function Strategies() {
               AI-generated content strategies organized by company.
             </p>
           </div>
-          <Button onClick={fetchStrategies}>
-            <RefreshCw className="h-4 w-4 mr-2" />
+          <Button onClick={fetchStrategies} loading={loading} disabled={loading}>
+            <RefreshCw className="h-4 w-4" />
             Retry
           </Button>
         </div>
@@ -351,7 +366,7 @@ export function Strategies() {
             <FileText className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Strategies</h3>
             <p className="text-red-600 mb-4">{error}</p>
-            <Button onClick={fetchStrategies} variant="outline">
+            <Button onClick={fetchStrategies} variant="outline" loading={loading} disabled={loading}>
               Try Again
             </Button>
           </CardContent>
@@ -370,12 +385,12 @@ export function Strategies() {
           </p>
         </div>
         <div className="flex space-x-3">
-          <Button onClick={fetchStrategies} variant="outline">
-            <RefreshCw className="h-4 w-4 mr-2" />
+          <Button onClick={fetchStrategies} variant="outline" loading={loading} disabled={loading}>
+            <RefreshCw className="h-4 w-4" />
             Refresh
           </Button>
           <Button onClick={handleGenerateStrategy}>
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="h-4 w-4" />
             Generate Strategy
           </Button>
         </div>
@@ -391,8 +406,8 @@ export function Strategies() {
 
       {/* Strategy Details Modal */}
       {viewModal.isOpen && viewModal.strategy && viewModal.company && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+        <Modal isOpen={viewModal.isOpen} onClose={handleCloseModal} labelledById="view-strategy-title">
+          <div className="w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div className="flex items-center space-x-3">
@@ -400,19 +415,16 @@ export function Strategies() {
                   <FileText className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">
+                  <h2 id="view-strategy-title" className="text-xl font-bold text-gray-900">
                     Strategy #{viewModal.strategy.id}
                   </h2>
                   <p className="text-sm text-gray-500">{viewModal.company.brand_name}</p>
                 </div>
               </div>
 
-              <button
-                onClick={handleCloseModal}
-                className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
-              >
+              <IconButton onClick={handleCloseModal} aria-label="Close dialog" variant="ghost">
                 <X className="h-5 w-5 text-gray-400" />
-              </button>
+              </IconButton>
             </div>
 
             {/* Content */}
@@ -447,8 +459,8 @@ export function Strategies() {
                 </h3>
                 <div className="space-y-4">
                   {getAnglesFromStrategy(viewModal.strategy).map((angle, index) => (
-                    <div 
-                      key={index} 
+                    <div
+                      key={index}
                       className="group bg-white border-2 border-gray-200 rounded-xl p-6 hover:border-blue-300 hover:shadow-lg transition-all duration-200 cursor-pointer"
                     >
                       {/* Angle Header */}
@@ -473,7 +485,7 @@ export function Strategies() {
                           disabled={generatingIdeas !== null}
                           className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                         >
-                          <Lightbulb className="h-4 w-4 mr-2" />
+                          <Lightbulb className="h-4 w-4" />
                           {generatingIdeas === angle.number ? 'Generating...' : 'Generate Ideas'}
                         </Button>
                       </div>
@@ -489,7 +501,7 @@ export function Strategies() {
                             <p className="text-blue-800 leading-relaxed">{angle.description}</p>
                           </div>
                         )}
-                        
+
                         {angle.objective && (
                           <div className="bg-green-50 rounded-lg p-4 border-l-4 border-green-400">
                             <div className="flex items-center mb-2">
@@ -499,7 +511,7 @@ export function Strategies() {
                             <p className="text-green-800 leading-relaxed">{angle.objective}</p>
                           </div>
                         )}
-                        
+
                         {angle.tonality && (
                           <div className="bg-purple-50 rounded-lg p-4 border-l-4 border-purple-400">
                             <div className="flex items-center mb-2">
@@ -523,7 +535,7 @@ export function Strategies() {
               </Button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* Companies with Strategies */}
@@ -560,7 +572,7 @@ export function Strategies() {
                 {company.strategies.map((strategy) => {
                   const angleCount = countAngles(strategy)
                   const platformBadges = getPlatformBadges(strategy.platforms)
-                  
+
                   return (
                     <li key={strategy.id}>
                       <div className="flex items-center justify-between p-4 text-base font-bold text-gray-900 rounded-lg bg-gray-50 hover:bg-gray-100 group hover:shadow transition-all duration-200">
@@ -568,7 +580,7 @@ export function Strategies() {
                           <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
                             <FileText className="h-5 w-5 text-white" />
                           </div>
-                          
+
                           <div className="flex-1">
                             <div className="flex items-center space-x-3 mb-2">
                               <span className="font-semibold text-gray-900">
@@ -580,13 +592,13 @@ export function Strategies() {
                                 </Badge>
                               )}
                             </div>
-                            
+
                             <div className="flex items-center space-x-4 text-sm text-gray-600">
                               <span className="flex items-center">
                                 <Calendar className="h-3 w-3 mr-1" />
                                 {formatDate(strategy.created_at)}
                               </span>
-                              
+
                               {platformBadges.length > 0 && (
                                 <div className="flex items-center space-x-1">
                                   <Target className="h-3 w-3" />
@@ -603,7 +615,7 @@ export function Strategies() {
                           onClick={() => handleViewStrategy(strategy, company)}
                           className="opacity-0 group-hover:opacity-100 transition-opacity"
                         >
-                          <Eye className="h-4 w-4 mr-2" />
+                          <Eye className="h-4 w-4" />
                           View Details
                         </Button>
                       </div>
@@ -633,7 +645,7 @@ export function Strategies() {
             <p className="text-gray-600 max-w-md mx-auto mb-8">
               No content strategies have been generated yet. Create your first strategy to get started with AI-powered content planning.
             </p>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto mb-8">
               <div className="text-center">
                 <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
@@ -642,7 +654,7 @@ export function Strategies() {
                 <h4 className="font-medium text-gray-900 mb-2">Multi-Platform</h4>
                 <p className="text-sm text-gray-600">Strategies for all your marketing channels</p>
               </div>
-              
+
               <div className="text-center">
                 <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                   <Zap className="h-6 w-6 text-purple-600" />
@@ -650,7 +662,7 @@ export function Strategies() {
                 <h4 className="font-medium text-gray-900 mb-2">AI-Powered</h4>
                 <p className="text-sm text-gray-600">Generated using advanced AI algorithms</p>
               </div>
-              
+
               <div className="text-center">
                 <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                   <Building2 className="h-6 w-6 text-teal-600" />
@@ -661,7 +673,7 @@ export function Strategies() {
             </div>
 
             <Button onClick={handleGenerateStrategy} size="lg">
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-4 w-4" />
               Generate Your First Strategy
             </Button>
           </CardContent>

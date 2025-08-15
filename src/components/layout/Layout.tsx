@@ -2,19 +2,41 @@ import React from 'react'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
 import { Outlet } from 'react-router-dom'
+import { Modal } from '../ui/Modal'
 
 export function Layout() {
+  const [mobileOpen, setMobileOpen] = React.useState(false)
+
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-gray-50">
-      <div className="lg:hidden">
-        <Sidebar />
-      </div>
+      {/* Skip to content */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:px-3 focus:py-2 focus:rounded-md focus:bg-white focus:shadow focus:border focus:border-gray-200"
+      >
+        Skip to content
+      </a>
+      {/* Desktop sidebar */}
       <div className="hidden lg:block">
         <Sidebar />
       </div>
+
+      {/* Off-canvas mobile sidebar (accessible) */}
+      <Modal
+        isOpen={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        labelledById="mobile-nav-title"
+        backdropClassName="fixed inset-0 bg-black/50 z-50 lg:hidden flex items-stretch justify-start"
+        className="relative h-full w-72 max-w-[80%] bg-white border-r border-gray-200 shadow-xl outline-none"
+      >
+        {/* Hidden accessible title for the dialog */}
+        <h2 id="mobile-nav-title" className="sr-only">Mobile navigation</h2>
+        <Sidebar />
+      </Modal>
+
       <div className="flex-1 flex flex-col min-h-0">
-        <TopBar />
-        <main className="flex-1 overflow-auto p-4 sm:p-6">
+        <TopBar onMenuClick={() => setMobileOpen(true)} />
+        <main id="main-content" className="flex-1 overflow-auto p-4 sm:p-6">
           <Outlet />
         </main>
       </div>

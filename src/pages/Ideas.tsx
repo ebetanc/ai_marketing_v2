@@ -13,12 +13,16 @@ import {
   X,
   HelpCircle
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
+import { IconButton } from '../components/ui/IconButton';
+import { Modal } from '../components/ui/Modal';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { supabase } from '../lib/supabase';
 import { formatDate, truncateText } from '../lib/utils';
+import { Skeleton } from '../components/ui/Skeleton';
+import { useToast } from '../components/ui/Toast';
 
 export function Ideas() {
   const [ideas, setIdeas] = useState<any[]>([])
@@ -51,12 +55,11 @@ export function Ideas() {
     idea: null,
     topics: []
   })
+  const { push } = useToast()
 
-  useEffect(() => {
-    fetchIdeas()
-  }, [])
+  // initial load handled in the effect after fetchIdeas definition
 
-  const fetchIdeas = async () => {
+  const fetchIdeas = useCallback(async (showToast = false) => {
     try {
       setLoading(true)
       setError(null)
@@ -103,14 +106,22 @@ export function Ideas() {
       console.log('Ideas fetched successfully:', data?.length || 0, 'records')
       console.log('Setting ideas state with:', data)
       setIdeas(data || [])
+      if (showToast) {
+        push({ title: 'Refreshed', message: 'Ideas updated', variant: 'success' })
+      }
     } catch (error) {
       console.error('Error fetching ideas from Supabase:', error)
       setError(error instanceof Error ? error.message : 'Failed to fetch ideas')
       setIdeas([])
+      push({ title: 'Refresh failed', message: 'Could not update ideas', variant: 'error' })
     } finally {
       setLoading(false)
     }
-  }
+  }, [push])
+
+  useEffect(() => {
+    fetchIdeas()
+  }, [fetchIdeas])
 
 
   const extractTopicsFromIdea = (idea: any) => {
@@ -245,7 +256,7 @@ export function Ideas() {
         console.error('Error Code:', error.code)
         console.error('Error Message:', error.message)
         console.error('Error Details:', error.details)
-        alert(`Failed to save changes: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        push({ title: 'Save failed', message: `${error instanceof Error ? error.message : 'Unknown error'}`, variant: 'error' })
         return
       }
 
@@ -276,11 +287,11 @@ export function Ideas() {
 
       await fetchIdeas()
 
-      alert('Changes saved successfully!')
+      push({ title: 'Saved', message: 'Changes updated', variant: 'success' })
 
     } catch (error) {
       console.error('Error saving changes:', error)
-      alert(`Failed to save changes: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      push({ title: 'Save failed', message: `${error instanceof Error ? error.message : 'Unknown error'}`, variant: 'error' })
     } finally {
       setSaving(false)
     }
@@ -398,6 +409,14 @@ export function Ideas() {
         }
       }
 
+      // Derive normalized-first fields from companyData for consistent payloads
+      const brandName: string = companyData?.brand_name || companyData?.name || viewIdeaModal.idea.brand || 'Unknown Brand'
+      const website: string = companyData?.website || ''
+      const tone: string = companyData?.brand_voice?.tone || companyData?.brand_tone || ''
+      const style: string = companyData?.brand_voice?.style || companyData?.key_offer || ''
+      const targetAudienceStr: string = companyData?.target_audience_raw || companyData?.target_audience?.demographics || ''
+      const additionalInfo: string = companyData?.additional_information || ''
+
       const webhookPayload = {
         identifier: 'generateContent',
         topic: topicData,
@@ -407,12 +426,12 @@ export function Ideas() {
           // Include ALL company data from Supabase
           ...companyData,
           // Add computed/formatted fields for backward compatibility
-          name: companyData.brand_name || companyData.name || 'Unknown Brand',
-          brandTone: companyData.brand_tone || '',
-          keyOffer: companyData.key_offer || '',
-          targetAudience: companyData.target_audience || '',
-          additionalInfo: companyData.additional_information || '',
-          website: companyData.website || ''
+          name: brandName,
+          brandTone: tone,
+          keyOffer: style,
+          targetAudience: targetAudienceStr,
+          additionalInfo,
+          website
         } : null,
         // SPECIFIC ANGLE DETAILS THAT GENERATED THIS IDEA
         angleDetails: angleDetails,
@@ -438,10 +457,9 @@ export function Ideas() {
           strategyDescription: strategyData?.description || 'No strategy description available',
           tonality: angleDetails?.tonality || 'No tonality specified',
           objective: angleDetails?.objective || 'No objective specified',
-          keyOffer: companyData?.key_offer || companyData?.keyOffer || 'No key offer specified',
-
-          brandTone: companyData?.brand_tone || companyData?.brandTone || 'No brand tone specified',
-          targetAudience: companyData?.target_audience || companyData?.targetAudience || 'No target audience specified',
+          keyOffer: style || 'No key offer specified',
+          brandTone: tone || 'No brand tone specified',
+          targetAudience: targetAudienceStr || 'No target audience specified',
           platforms: ["twitter", "linkedin", "newsletter"],
           contentType: 'idea_to_content_generation'
         },
@@ -525,11 +543,11 @@ export function Ideas() {
       }
 
       console.log('Webhook response:', result)
-      alert('Content generated successfully! Check your Content page to see the generated content.')
+      push({ title: 'Generation started', message: 'Check Content page soon', variant: 'success' })
 
     } catch (error) {
       console.error('Error generating content:', error)
-      alert(`Failed to generate content: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      push({ title: 'Generation failed', message: `${error instanceof Error ? error.message : 'Unknown error'}`, variant: 'error' })
     } finally {
       setGeneratingContent(false)
     }
@@ -553,16 +571,16 @@ export function Ideas() {
             AI-generated content ideas organized by brand.
           </p>
         </div>
-        <Button onClick={fetchIdeas} disabled={loading}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+        <Button onClick={() => fetchIdeas(true)} loading={loading} disabled={loading}>
+          <RefreshCw className="h-4 w-4" />
           Refresh
         </Button>
       </div>
 
       {/* View Idea Modal */}
       {viewIdeaModal.isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[60]">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+        <Modal isOpen={viewIdeaModal.isOpen} onClose={handleCloseViewModal} labelledById="view-idea-title">
+          <div className="w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div className="flex items-center space-x-3">
@@ -570,20 +588,21 @@ export function Ideas() {
                   <Lightbulb className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">
+                  <h2 id="view-idea-title" className="text-xl font-bold text-gray-900">
                     {viewIdeaModal.isEditing ? 'Edit Topic' : (viewIdeaModal.topic?.topic || `Topic ${viewIdeaModal.topic?.number}`)}
                   </h2>
                   <p className="text-sm text-gray-500">{viewIdeaModal.idea?.brand || 'Unknown Brand'}</p>
                 </div>
               </div>
 
-              <button
+              <IconButton
                 onClick={handleCloseViewModal}
-                className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+                variant="ghost"
+                aria-label="Close dialog"
                 disabled={saving}
               >
                 <X className="h-5 w-5 text-gray-400" />
-              </button>
+              </IconButton>
             </div>
 
             {/* Content */}
@@ -591,8 +610,8 @@ export function Ideas() {
               {/* Topic */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center text-lg">
-                    <FileText className="h-5 w-5 mr-2 text-blue-600" />
+                  <CardTitle className="text-lg">
+                    <FileText className="h-5 w-5 text-blue-600" />
                     Topic
                   </CardTitle>
                 </CardHeader>
@@ -602,7 +621,8 @@ export function Ideas() {
                       type="text"
                       value={editForm.topic}
                       onChange={(e) => handleFormChange('topic', e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      aria-label="Topic"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus:border-transparent"
                       placeholder="Enter topic..."
                     />
                   ) : (
@@ -616,8 +636,8 @@ export function Ideas() {
               {/* Description */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center text-lg">
-                    <FileText className="h-5 w-5 mr-2 text-green-600" />
+                  <CardTitle className="text-lg">
+                    <FileText className="h-5 w-5 text-green-600" />
                     Description
                   </CardTitle>
                 </CardHeader>
@@ -627,7 +647,8 @@ export function Ideas() {
                       value={editForm.description}
                       onChange={(e) => handleFormChange('description', e.target.value)}
                       rows={4}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      aria-label="Description"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus:border-transparent resize-none"
                       placeholder="Enter description..."
                     />
                   ) : (
@@ -642,8 +663,8 @@ export function Ideas() {
               {viewIdeaModal.topic?.image_prompt && viewIdeaModal.topic.image_prompt !== 'No image prompt provided' && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="flex items-center text-lg">
-                      <Target className="h-5 w-5 mr-2 text-purple-600" />
+                    <CardTitle className="text-lg">
+                      <Target className="h-5 w-5 text-purple-600" />
                       Image Prompt
                     </CardTitle>
                   </CardHeader>
@@ -653,7 +674,8 @@ export function Ideas() {
                         value={editForm.image_prompt}
                         onChange={(e) => handleFormChange('image_prompt', e.target.value)}
                         rows={3}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                        aria-label="Image prompt"
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus:border-transparent resize-none"
                         placeholder="Enter image prompt..."
                       />
                     ) : (
@@ -713,13 +735,13 @@ export function Ideas() {
               </div>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* View Idea Set Modal */}
       {viewIdeaSetModal.isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden">
+        <Modal isOpen={viewIdeaSetModal.isOpen} onClose={handleCloseIdeaSetModal} labelledById="view-idea-set-title">
+          <div className="w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div className="flex items-center space-x-3">
@@ -727,7 +749,7 @@ export function Ideas() {
                   <Lightbulb className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">
+                  <h2 id="view-idea-set-title" className="text-xl font-bold text-gray-900">
                     Content Ideas Set #{viewIdeaSetModal.idea?.id} - {viewIdeaSetModal.idea?.brand}
                   </h2>
                   <p className="text-sm text-gray-500">
@@ -736,12 +758,13 @@ export function Ideas() {
                 </div>
               </div>
 
-              <button
+              <IconButton
                 onClick={handleCloseIdeaSetModal}
-                className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+                variant="ghost"
+                aria-label="Close dialog"
               >
                 <X className="h-5 w-5 text-gray-400" />
-              </button>
+              </IconButton>
             </div>
 
             {/* Content */}
@@ -794,17 +817,30 @@ export function Ideas() {
               </div>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* Loading State */}
       {loading && (
-        <Card>
-          <CardContent className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading ideas...</p>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <Skeleton className="w-12 h-12 rounded-xl" />
+                  <div className="space-y-2 w-full">
+                    <Skeleton className="h-4 w-3/5" />
+                    <Skeleton className="h-3 w-2/5" />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Skeleton className="h-16 w-full rounded-lg" />
+                <Skeleton className="h-4 w-1/2" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
 
       {/* Error State */}
@@ -814,7 +850,7 @@ export function Ideas() {
             <Lightbulb className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Ideas</h3>
             <p className="text-red-600 mb-4">{error}</p>
-            <Button onClick={fetchIdeas} variant="outline">
+            <Button onClick={() => fetchIdeas(true)} variant="outline" loading={loading} disabled={loading}>
               Try Again
             </Button>
           </CardContent>
@@ -826,101 +862,101 @@ export function Ideas() {
         <div className="space-y-8">
           {(Object.entries(ideasByBrand ?? {}) as [string, any[]][]).map(([brandName, brandIdeas]) => {
             const totalTopics = brandIdeas.reduce((sum, idea) => sum + extractTopicsFromIdea(idea).length, 0)
-            
+
             return (
-            <div key={brandName} className="w-full max-w-full p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-              {/* Brand Header */}
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center">
-                    <Building2 className="h-6 w-6 text-white" />
+              <div key={brandName} className="w-full max-w-full p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+                {/* Brand Header */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center">
+                      <Building2 className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h5 className="text-xl font-semibold text-gray-900">
+                        {brandName}
+                      </h5>
+                      <p className="text-sm text-gray-500">
+                        {brandIdeas.length} idea set{brandIdeas.length === 1 ? '' : 's'} • {totalTopics} total topics
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h5 className="text-xl font-semibold text-gray-900">
-                      {brandName}
-                    </h5>
-                    <p className="text-sm text-gray-500">
-                      {brandIdeas.length} idea set{brandIdeas.length === 1 ? '' : 's'} • {totalTopics} total topics
-                    </p>
-                  </div>
+                  <Badge variant="primary" className="text-sm px-3 py-1">
+                    {brandIdeas.length} Sets
+                  </Badge>
                 </div>
-                <Badge variant="primary" className="text-sm px-3 py-1">
-                  {brandIdeas.length} Sets
-                </Badge>
-              </div>
 
-              <p className="text-sm font-normal text-gray-500 mb-4">
-                AI-generated content ideas ready for execution. Click on any idea set to view individual topics and generate content.
-              </p>
+                <p className="text-sm font-normal text-gray-500 mb-4">
+                  AI-generated content ideas ready for execution. Click on any idea set to view individual topics and generate content.
+                </p>
 
-              {/* Ideas List */}
-              <ul className="space-y-3">
-                {brandIdeas.map((idea: any) => {
-                  const topics = extractTopicsFromIdea(idea)
+                {/* Ideas List */}
+                <ul className="space-y-3">
+                  {brandIdeas.map((idea: any) => {
+                    const topics = extractTopicsFromIdea(idea)
 
-                  return (
-                    <li key={idea.id}>
-                      <div className="flex items-center justify-between p-4 text-base font-bold text-gray-900 rounded-lg bg-gray-50 hover:bg-gray-100 group hover:shadow transition-all duration-200">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-                            <Lightbulb className="h-5 w-5 text-white" />
-                          </div>
-                          
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-3 mb-2">
-                              <span className="font-semibold text-gray-900">
-                                Content Ideas Set #{idea.id}
-                              </span>
-                              {topics.length > 0 && (
-                                <Badge variant="success" className="text-xs">
-                                  {topics.length} Topics
-                                </Badge>
-                              )}
-                              {idea.strategy_id && (
-                                <Badge variant="secondary" className="text-xs">
-                                  Strategy #{idea.strategy_id}
-                                </Badge>
-                              )}
-                              {idea.angle_number && (
-                                <Badge variant="secondary" className="text-xs">
-                                  Angle {idea.angle_number}
-                                </Badge>
-                              )}
+                    return (
+                      <li key={idea.id}>
+                        <div className="flex items-center justify-between p-4 text-base font-bold text-gray-900 rounded-lg bg-gray-50 hover:bg-gray-100 group hover:shadow transition-all duration-200">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+                              <Lightbulb className="h-5 w-5 text-white" />
                             </div>
-                            
-                            <div className="flex items-center space-x-4 text-sm text-gray-600">
-                              <span className="flex items-center">
-                                <Calendar className="h-3 w-3 mr-1" />
-                                {formatDate(idea.created_at)}
-                              </span>
-                              <span>{topics.length} content topics ready</span>
+
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-3 mb-2">
+                                <span className="font-semibold text-gray-900">
+                                  Content Ideas Set #{idea.id}
+                                </span>
+                                {topics.length > 0 && (
+                                  <Badge variant="success" className="text-xs">
+                                    {topics.length} Topics
+                                  </Badge>
+                                )}
+                                {idea.strategy_id && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    Strategy #{idea.strategy_id}
+                                  </Badge>
+                                )}
+                                {idea.angle_number && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    Angle {idea.angle_number}
+                                  </Badge>
+                                )}
+                              </div>
+
+                              <div className="flex items-center space-x-4 text-sm text-gray-600">
+                                <span className="flex items-center">
+                                  <Calendar className="h-3 w-3 mr-1" />
+                                  {formatDate(idea.created_at)}
+                                </span>
+                                <span>{topics.length} content topics ready</span>
+                              </div>
                             </div>
                           </div>
+
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewIdeaSet(idea)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Eye className="h-4 w-4" />
+                            View Topics
+                          </Button>
                         </div>
+                      </li>
+                    )
+                  })}
+                </ul>
 
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewIdeaSet(idea)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Topics
-                        </Button>
-                      </div>
-                    </li>
-                  )
-                })}
-              </ul>
-
-              {/* Footer */}
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <button className="inline-flex items-center text-xs font-normal text-gray-500 hover:underline hover:text-gray-700 transition-colors">
-                  <HelpCircle className="w-3 h-3 me-2" />
-                  How do content ideas work?
-                </button>
+                {/* Footer */}
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <button className="inline-flex items-center text-xs font-normal text-gray-500 hover:underline hover:text-gray-700 transition-colors">
+                    <HelpCircle className="w-3 h-3 me-2" />
+                    How do content ideas work?
+                  </button>
+                </div>
               </div>
-            </div>
             )
           })}
         </div>
@@ -934,8 +970,8 @@ export function Ideas() {
             <p className="text-gray-500 mb-6">
               The ideas table in your Supabase database is empty.
             </p>
-            <Button onClick={fetchIdeas}>
-              <RefreshCw className="h-4 w-4 mr-2" />
+            <Button onClick={() => fetchIdeas(true)}>
+              <RefreshCw className="h-4 w-4" />
               Refresh
             </Button>
           </CardContent>

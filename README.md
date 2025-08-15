@@ -90,3 +90,22 @@ What this does:
 - Breaks the infinite recursion
 
 Alternative: If you need admin-level access via `company_users.role = 'admin'`, consider a separate, non-recursive policy or a secure function that checks roles without scanning the same table in USING.
+
+---
+
+## UI conventions and dev tips
+
+- Toasts: use short titles with concise messages. Variants map to severity: success (3s), warning (5s), error (6s), info (3.5s).
+- Modals: use the shared `Modal` with labelled headers (`labelledById`), ESC/overlay close, and scroll lock.
+- Inputs: `Input`, `Select`, and `Textarea` wire labels to controls via `htmlFor` and `id`, and add `aria-invalid`/`aria-describedby` when errors are present.
+- Buttons: prefer `variant="destructive"` for irreversible actions; pair with `ConfirmDialog`.
+- Skeletons: use `rounded-xl` for consistent surface rounding.
+
+Helpful scripts:
+
+```
+npm run lint       # check
+npm run lint:fix   # auto-fix
+npm run preview    # serve production build
+npm run preview:https # HTTPS preview (with vite self-signed cert)
+```

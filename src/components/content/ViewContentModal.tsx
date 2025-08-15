@@ -4,6 +4,9 @@ import { Badge } from '../ui/Badge'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card'
 import { X, FileText, Calendar, User, Target, Zap, ChevronDown, ChevronUp, Eye } from 'lucide-react'
 import { formatDate } from '../../lib/utils'
+import { Modal } from '../ui/Modal'
+import { IconButton } from '../ui/IconButton'
+import { useToast } from '../ui/Toast'
 
 interface ViewContentModalProps {
   isOpen: boolean
@@ -28,7 +31,7 @@ const formatContentBody = (content: string) => {
           </h3>
         )
       }
-      
+
       // Sub headers (## )
       if (line.startsWith('## ')) {
         return (
@@ -37,23 +40,23 @@ const formatContentBody = (content: string) => {
           </h4>
         )
       }
-      
+
       // Horizontal rules (---)
       if (line.trim() === '---') {
         return <hr key={index} className="my-3 border-gray-200" />
       }
-      
+
       // Empty lines
       if (line.trim() === '') {
         return <div key={index} className="h-2" />
       }
-      
+
       // Regular paragraphs with bold text formatting
       const formattedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      
+
       return (
-        <p 
-          key={index} 
+        <p
+          key={index}
           className="text-sm text-gray-700 mb-2 leading-relaxed"
           dangerouslySetInnerHTML={{ __html: formattedLine }}
         />
@@ -64,6 +67,7 @@ const formatContentBody = (content: string) => {
 export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewContentModalProps) {
   const [expandedAngles, setExpandedAngles] = useState<{ [key: number]: boolean }>({})
   const [posting, setPosting] = useState(false)
+  const { push } = useToast()
 
   if (!isOpen || !content) return null
 
@@ -141,19 +145,19 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
 
       if (error) {
         console.error('Error posting content:', error)
-        alert(`Failed to post content: ${error.message}`)
+        push({ message: `Failed to post content: ${error.message}`, variant: 'error' })
         return
       }
 
       console.log('Content posted successfully')
-      alert('Content posted successfully!')
-      
+      push({ message: 'Content posted successfully!', variant: 'success' })
+
       // Close the modal after successful posting
       onClose()
 
     } catch (error) {
       console.error('Error posting content:', error)
-      alert('Failed to post content. Please try again.')
+      push({ message: 'Failed to post content. Please try again.', variant: 'error' })
     } finally {
       setPosting(false)
     }
@@ -264,9 +268,11 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
     )
   }
 
+  const titleId = 'view-content-title'
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+    <Modal isOpen={isOpen} onClose={onClose} labelledById={titleId}>
+      <div className="w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-3">
@@ -274,19 +280,16 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
               <FileText className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">{content.title}</h2>
+              <h2 id={titleId} className="text-xl font-bold text-gray-900">{content.title}</h2>
               <p className="text-sm text-gray-500">
                 {content.brand_name || 'Unknown Brand'} • {content.type?.replace('_', ' ') || 'Content'}
               </p>
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
-          >
+          <IconButton onClick={onClose} aria-label="Close dialog" variant="ghost">
             <X className="h-5 w-5 text-gray-400" />
-          </button>
+          </IconButton>
         </div>
 
         {/* Content */}
@@ -429,6 +432,6 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
           </div>
         </div>
       </div>
-    </div>
+    </Modal>
   )
 }

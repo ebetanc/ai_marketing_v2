@@ -1,75 +1,40 @@
-import React, { useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
-import { Badge } from '../components/ui/Badge'
-import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { CreateBrandModal } from '../components/companies/CreateBrandModal'
 import { ViewCompanyModal } from '../components/companies/ViewCompanyModal'
-import { supabase } from '../lib/supabase'
+import { useCompanies } from '../hooks/useCompanies'
+import type { Company } from '../lib/supabase'
 import {
   Plus,
   Building2,
-  Users,
   Calendar,
   Eye,
-  MoreVertical,
   Target,
-  Zap,
-  Trash2,
   RefreshCw,
   Database,
   FileText
 } from 'lucide-react'
 import { formatDate, truncateText } from '../lib/utils'
+import { useToast } from '../components/ui/Toast'
+import { Skeleton } from '../components/ui/Skeleton'
 
 export function Companies() {
-  const [companies, setCompanies] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { companies: hookCompanies, loading, error, refetch } = useCompanies()
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [viewCompanyModal, setViewCompanyModal] = useState<{ isOpen: boolean; company: any }>({
+  const [viewCompanyModal, setViewCompanyModal] = useState<{ isOpen: boolean; company: Company | null }>({
     isOpen: false,
     company: null
   })
-  const [deleteDialog, setDeleteDialog] = useState<{ isOpen: boolean; company: any; loading: boolean }>({
-    isOpen: false,
-    company: null,
-    loading: false
-  })
+  const { push } = useToast()
+  const companies = hookCompanies
 
-  React.useEffect(() => {
-    fetchCompaniesFromSupabase()
-  }, [])
-
-  const fetchCompaniesFromSupabase = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      console.log('Fetching companies from Supabase companies table...')
-
-      const { data, error } = await supabase
-        .from('companies')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      console.log('Supabase response:', { data, error })
-
-      if (error) {
-        console.error('Supabase error:', error)
-        throw error
-      }
-
-      console.log('Companies fetched successfully:', data?.length || 0, 'records')
-      setCompanies(data || [])
-    } catch (error) {
-      console.error('Error fetching companies:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch companies'
-      setError(errorMessage)
-    } finally {
-      setLoading(false)
+  const fetchCompaniesFromSupabase = useCallback(async (showToast = false) => {
+    refetch()
+    if (showToast) {
+      push({ title: 'Refreshed', message: 'Companies updated', variant: 'success' })
     }
-  }
+  }, [refetch, push])
 
   const handleCreateBrand = async () => {
     setShowCreateModal(false)
@@ -77,7 +42,7 @@ export function Companies() {
     await fetchCompaniesFromSupabase()
   }
 
-  const handleViewClick = (company: any) => {
+  const handleViewClick = (company: Company) => {
     setViewCompanyModal({
       isOpen: true,
       company
@@ -91,53 +56,25 @@ export function Companies() {
     })
   }
 
-  const handleDeleteClick = (company: any) => {
-    setDeleteDialog({
-      isOpen: true,
-      company,
-      loading: false
-    })
-  }
+  // const handleDeleteClick = (company: any) => {
+  //   setDeleteDialog({
+  //     isOpen: true,
+  //     company,
+  //     loading: false
+  //   })
+  // }
 
-  const handleDeleteConfirm = async () => {
-    if (!deleteDialog.company) return
-
-    setDeleteDialog(prev => ({ ...prev, loading: true }))
-
-    try {
-      const { error } = await supabase
-        .from('companies')
-        .delete()
-        .eq('id', deleteDialog.company.id)
-
-      if (error) {
-        alert(error.message)
-      } else {
-        // Close dialog and refresh
-        setDeleteDialog({ isOpen: false, company: null, loading: false })
-        await fetchCompaniesFromSupabase()
-      }
-    } catch (error) {
-      console.error('Error deleting company:', error)
-      alert('Failed to delete company. Please try again.')
-    } finally {
-      setDeleteDialog(prev => ({ ...prev, loading: false }))
-    }
-  }
-
-  const handleDeleteCancel = () => {
-    setDeleteDialog({ isOpen: false, company: null, loading: false })
-  }
+  // Deletion is handled inside ViewCompanyModal with its own ConfirmDialog
 
   // Group companies by brand name for better organization
-  const companiesByBrand = companies.reduce((acc, company) => {
-    const brandName = company.brand_name || 'Unknown Brand'
-    if (!acc[brandName]) {
-      acc[brandName] = []
-    }
-    acc[brandName].push(company)
-    return acc
-  }, {} as Record<string, any[]>)
+  // const companiesByBrand = companies.reduce((acc, company) => {
+  //   const brandName = company.brand_name || 'Unknown Brand'
+  //   if (!acc[brandName]) {
+  //     acc[brandName] = []
+  //   }
+  //   acc[brandName].push(company)
+  //   return acc
+  // }, {} as Record<string, any[]>)
 
   return (
     <div className="space-y-6">
@@ -149,12 +86,12 @@ export function Companies() {
           </p>
         </div>
         <div className="flex space-x-3">
-          <Button onClick={fetchCompaniesFromSupabase} disabled={loading} variant="outline">
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          <Button onClick={() => fetchCompaniesFromSupabase(true)} loading={loading} variant="outline">
+            <RefreshCw className="h-4 w-4" />
             Refresh
           </Button>
           <Button onClick={() => setShowCreateModal(true)}>
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="h-4 w-4" />
             Add Company
           </Button>
         </div>
@@ -165,8 +102,6 @@ export function Companies() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onSubmit={handleCreateBrand}
-        loading={false}
-        createCompany={() => Promise.resolve({ data: null, error: null })}
         refetchCompanies={fetchCompaniesFromSupabase}
       />
 
@@ -178,29 +113,33 @@ export function Companies() {
         onDelete={fetchCompaniesFromSupabase}
       />
 
-      {/* Delete Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={deleteDialog.isOpen}
-        onClose={handleDeleteCancel}
-        onConfirm={handleDeleteConfirm}
-        title="Delete Company"
-        message={`Are you sure you want to delete "${deleteDialog.company?.name}"? This action cannot be undone and will remove all associated content and data.`}
-        confirmText="Delete Company"
-        cancelText="Cancel"
-        variant="danger"
-        loading={deleteDialog.loading}
-      />
-
-
+      {/* Delete Confirmation handled by ViewCompanyModal */}
 
       {/* Loading State */}
       {loading && (
-        <Card>
-          <CardContent className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading companies...</p>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <div className="flex items-start space-x-3">
+                  <Skeleton className="w-10 h-10 rounded-lg" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-3 w-1/3" />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Skeleton className="h-16 w-full rounded-lg" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-5 w-24 rounded-full" />
+                  <Skeleton className="h-5 w-28 rounded-full" />
+                  <Skeleton className="h-5 w-20 rounded-full" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
 
       {/* Error State */}
@@ -210,7 +149,7 @@ export function Companies() {
             <Database className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Companies</h3>
             <p className="text-red-600 mb-4">{error}</p>
-            <Button onClick={fetchCompaniesFromSupabase} variant="outline">
+            <Button onClick={() => fetchCompaniesFromSupabase(true)} variant="outline" loading={loading} disabled={loading}>
               Try Again
             </Button>
           </CardContent>
@@ -230,7 +169,7 @@ export function Companies() {
                         <Building2 className="h-5 w-5 text-blue-600" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <CardTitle className="text-xl font-bold leading-tight">{company.brand_name}</CardTitle>
+                        <CardTitle className="text-xl font-bold leading-tight">{company.brand_name || company.name}</CardTitle>
                         <div className="flex items-center space-x-2 text-xs text-gray-500 mt-1">
                           <span className="flex items-center">
                             <Calendar className="h-3 w-3 mr-1" />
@@ -251,19 +190,23 @@ export function Companies() {
                     {/* Company Summary */}
                     <div className="bg-gray-50 rounded-lg p-3">
                       <p className="text-xs text-gray-700 leading-relaxed">
-                        {company.brand_tone ? truncateText(company.brand_tone, 150) : 'No brand description available'}
+                        {company.brand_tone
+                          ? truncateText(company.brand_tone, 150)
+                          : company.brand_voice?.tone
+                            ? truncateText(company.brand_voice.tone, 150)
+                            : 'No brand description available'}
                       </p>
                     </div>
 
                     {/* Quick Info */}
                     <div className="flex flex-wrap gap-1">
-                      {company.target_audience && (
+                      {(company.target_audience || company.target_audience_raw) && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           <Target className="h-2.5 w-2.5 mr-1" />
                           Target Audience Defined
                         </span>
                       )}
-                      {company.key_offer && (
+                      {(company.key_offer || company.brand_voice?.style) && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           <Building2 className="h-2.5 w-2.5 mr-1" />
                           Key Offer Defined
@@ -306,7 +249,7 @@ export function Companies() {
               The companies table in your Supabase database is empty.
             </p>
             <Button onClick={() => setShowCreateModal(true)}>
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-4 w-4" />
               Add Company
             </Button>
           </CardContent>

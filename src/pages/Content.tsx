@@ -1,71 +1,28 @@
-import React, { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
+import React, { useState, useEffect, useCallback } from 'react'
+import { Card, CardContent, CardHeader } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Select } from '../components/ui/Select'
 import { Badge } from '../components/ui/Badge'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { ViewContentModal } from '../components/content/ViewContentModal'
 import { supabase } from '../lib/supabase'
-import { FileText, Eye, CheckCircle, Clock, Search, MoreVertical, Trash2, RefreshCw, Calendar, HelpCircle } from 'lucide-react'
+import { FileText, Eye, CheckCircle, Clock, Search, Trash2, RefreshCw, Calendar, HelpCircle } from 'lucide-react'
+import { IconButton } from '../components/ui/IconButton'
 import { formatDate, truncateText } from '../lib/utils'
+import { useToast } from '../components/ui/Toast'
+import { Skeleton } from '../components/ui/Skeleton'
 
-// Helper function to format content body with markdown-like styling
-const formatContentBody = (content: string) => {
-  if (!content) return content
+// (reserved) formatting helpers for future rich rendering of content bodies
 
-  return content
-    .split('\n')
-    .map((line, index) => {
-      // Main headers (# )
-      if (line.startsWith('# ')) {
-        return (
-          <h3 key={index} className="text-lg font-bold text-gray-900 mb-2 mt-4 first:mt-0">
-            {line.substring(2)}
-          </h3>
-        )
-      }
-      
-      // Sub headers (## )
-      if (line.startsWith('## ')) {
-        return (
-          <h4 key={index} className="text-base font-semibold text-gray-800 mb-2 mt-3 first:mt-0">
-            {line.substring(3)}
-          </h4>
-        )
-      }
-      
-      // Horizontal rules (---)
-      if (line.trim() === '---') {
-        return <hr key={index} className="my-3 border-gray-200" />
-      }
-      
-      // Empty lines
-      if (line.trim() === '') {
-        return <div key={index} className="h-2" />
-      }
-      
-      // Regular paragraphs with bold text formatting
-      const formattedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      
-      return (
-        <p 
-          key={index} 
-          className="text-sm text-gray-700 mb-2 leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: formattedLine }}
-        />
-      )
-    })
-}
-
-// Helper function to extract and format content from JSON
-const extractContentBody = (content: any) => {
+// Helper function to extract and format content from JSON (reserved)
+const _extractContentBody = (content: any) => {
   // Try to parse the body if it's JSON
   let parsedContent = null
   try {
     if (typeof content.body === 'string' && (content.body.startsWith('[') || content.body.startsWith('{'))) {
       parsedContent = JSON.parse(content.body)
     }
-  } catch (error) {
+  } catch (_e) {
     // If parsing fails, use the raw body
   }
 
@@ -130,7 +87,7 @@ const extractContentTopic = (content: any) => {
     if (typeof content.body === 'string' && (content.body.startsWith('[') || content.body.startsWith('{'))) {
       parsedContent = JSON.parse(content.body)
     }
-  } catch (error) {
+  } catch (_e) {
     // If parsing fails, return null
   }
 
@@ -163,12 +120,13 @@ const extractContentTopic = (content: any) => {
 export function Content() {
   const [companies, setCompanies] = useState<any[]>([])
   const [generatedContent, setGeneratedContent] = useState<any[]>([])
-  const [loadingCompanies, setLoadingCompanies] = useState(true)
+  const [_loadingCompanies, setLoadingCompanies] = useState(true) // reserved for future brand context
   const [loadingContent, setLoadingContent] = useState(true)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState<string | null>(null)
   const [filterStatus, setFilterStatus] = useState<'all' | 'draft' | 'approved'>('all')
   const [filterType, setFilterType] = useState<'all' | string>('all')
+  const [brandFilter, setBrandFilter] = useState<string>('')
   const [searchQuery, setSearchQuery] = useState('')
   const [viewContentModal, setViewContentModal] = useState<{ isOpen: boolean; content: any; strategyId: any }>({
     isOpen: false,
@@ -184,13 +142,9 @@ export function Content() {
     content: null,
     loading: false
   })
+  const { push } = useToast()
 
-  useEffect(() => {
-    fetchCompanies()
-    fetchContent()
-  }, [])
-
-  const fetchCompanies = async () => {
+  const fetchCompanies = useCallback(async () => {
     try {
       setLoadingCompanies(true)
       console.log('Fetching companies from Supabase...')
@@ -207,15 +161,15 @@ export function Content() {
 
       console.log('Companies fetched successfully:', data?.length || 0, 'records')
       setCompanies(data || [])
-    } catch (error) {
-      console.error('Error fetching companies:', error)
+    } catch (_error) {
+      console.error('Error fetching companies:', _error)
       setCompanies([])
     } finally {
       setLoadingCompanies(false)
     }
-  }
+  }, [])
 
-  const fetchContent = async () => {
+  const fetchContent = useCallback(async () => {
     try {
       setLoadingContent(true)
       setLoading(true)
@@ -232,7 +186,7 @@ export function Content() {
               .select(`*, idea:ideas(*, company:companies(*), strategy:strategies(*))`)
               .order('created_at', { ascending: false })
             return res
-          } catch (e) {
+          } catch (_e) {
             // Fallback to basic select
             return await supabase.from('twitter_content').select('*').order('created_at', { ascending: false })
           }
@@ -244,7 +198,7 @@ export function Content() {
               .select(`*, idea:ideas(*, company:companies(*), strategy:strategies(*))`)
               .order('created_at', { ascending: false })
             return res
-          } catch (e) {
+          } catch (_e) {
             return await supabase.from('linkedin_content').select('*').order('created_at', { ascending: false })
           }
         })(),
@@ -255,7 +209,7 @@ export function Content() {
               .select(`*, idea:ideas(*, company:companies(*), strategy:strategies(*))`)
               .order('created_at', { ascending: false })
             return res
-          } catch (e) {
+          } catch (_e) {
             return await supabase.from('newsletter_content').select('*').order('created_at', { ascending: false })
           }
         })()
@@ -270,7 +224,7 @@ export function Content() {
 
       // Process Twitter content
       if (twitterRes.data && !twitterRes.error) {
-        const twitterContent = twitterRes.data.map(item => ({
+        const twitterContent = twitterRes.data.map((item: any) => ({
           ...item,
           source: 'twitter_content',
           platform: 'Twitter',
@@ -293,7 +247,7 @@ export function Content() {
 
       // Process LinkedIn content
       if (linkedinRes.data && !linkedinRes.error) {
-        const linkedinContent = linkedinRes.data.map(item => ({
+        const linkedinContent = linkedinRes.data.map((item: any) => ({
           ...item,
           source: 'linkedin_content',
           platform: 'LinkedIn',
@@ -316,7 +270,7 @@ export function Content() {
 
       // Process Newsletter content
       if (newsletterRes.data && !newsletterRes.error) {
-        const newsletterContent = newsletterRes.data.map(item => ({
+        const newsletterContent = newsletterRes.data.map((item: any) => ({
           ...item,
           source: 'newsletter_content',
           platform: 'Newsletter',
@@ -347,16 +301,21 @@ export function Content() {
     } catch (error) {
       console.error('Error fetching content from Supabase:', error)
       setGeneratedContent([])
-      setError(error)
+      setError(error instanceof Error ? error.message : 'Failed to fetch content')
     } finally {
       setLoadingContent(false)
       setLoading(false)
     }
-  }
+  }, [])
 
-  const refreshContent = async () => {
-    await fetchContent()
-  }
+  useEffect(() => {
+    fetchCompanies()
+    fetchContent()
+  }, [fetchCompanies, fetchContent])
+
+  // const refreshContent = async () => {
+  //   await fetchContent()
+  // }
 
   const handleDeleteClick = (content: any) => {
     setDeleteDialog({
@@ -382,7 +341,7 @@ export function Content() {
 
       if (error) {
         console.error('Supabase delete error:', error)
-        alert(`Failed to delete content: ${error.message}`)
+        push({ title: 'Delete failed', message: `Failed to delete content: ${error.message}`, variant: 'error' })
         return
       }
 
@@ -395,9 +354,10 @@ export function Content() {
       setDeleteDialog({ isOpen: false, content: null, loading: false })
 
       console.log('Content deleted successfully and UI updated')
-    } catch (error) {
+      push({ title: 'Deleted', message: 'Content removed', variant: 'success' })
+    } catch (_error) {
       console.error('Error deleting content:', error)
-      alert('Failed to delete content. Please try again.')
+      push({ title: 'Delete failed', message: 'Please try again', variant: 'error' })
     } finally {
       setDeleteDialog(prev => ({ ...prev, loading: false }))
     }
@@ -417,11 +377,12 @@ export function Content() {
   const filteredContent = allContent.filter(content => {
     const matchesStatus = filterStatus === 'all' || content.status === filterStatus
     const matchesType = filterType === 'all' || content.type === filterType
+    const matchesBrand = !brandFilter || String(content.company_id) === brandFilter
     const matchesSearch = !searchQuery ||
       (content.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (content.body || '').toLowerCase().includes(searchQuery.toLowerCase())
 
-    return matchesStatus && matchesType && matchesSearch
+    return matchesStatus && matchesType && matchesBrand && matchesSearch
   })
 
   const handleViewContent = (content: any) => {
@@ -495,8 +456,8 @@ export function Content() {
             View and manage all your AI-generated content pieces.
           </p>
         </div>
-        <Button onClick={fetchContent} disabled={loadingContent}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${loadingContent ? 'animate-spin' : ''}`} />
+        <Button onClick={fetchContent} loading={loadingContent} disabled={loadingContent}>
+          <RefreshCw className="h-4 w-4" />
           Refresh
         </Button>
       </div>
@@ -526,21 +487,22 @@ export function Content() {
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4 items-center">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search content..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                aria-label="Search content"
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus:border-transparent"
               />
             </div>
 
             <div className="flex gap-3">
               <Select
                 options={brandOptions}
-                value=""
-                onChange={() => {}}
+                value={brandFilter}
+                onChange={(e) => setBrandFilter(e.target.value)}
               />
 
               <Select
@@ -559,132 +521,170 @@ export function Content() {
         </CardContent>
       </Card>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="space-y-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <Skeleton className="w-12 h-12 rounded-xl" />
+                  <div className="space-y-2 w-full">
+                    <Skeleton className="h-4 w-1/3" />
+                    <Skeleton className="h-3 w-1/4" />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {Array.from({ length: 4 }).map((_, j) => (
+                  <div key={j} className="flex items-center justify-between p-4 rounded-lg bg-gray-50">
+                    <div className="flex items-center space-x-4 w-full">
+                      <Skeleton className="w-10 h-10 rounded-lg" />
+                      <div className="space-y-2 w-full">
+                        <Skeleton className="h-4 w-2/3" />
+                        <Skeleton className="h-3 w-1/2" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-8 w-24 rounded-lg" />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
       {/* Content by Company */}
       {!loading && !error && filteredContent.length > 0 && (
         <div className="space-y-6">
-          {Object.entries(
-            filteredContent.reduce((acc, content) => {
+          {(() => {
+            const grouped = filteredContent.reduce((acc, content) => {
               const brandName = content.brand_name || 'Unknown Brand'
-              if (!acc[brandName]) acc[brandName] = []
+              if (!acc[brandName]) acc[brandName] = [] as typeof filteredContent
               acc[brandName].push(content)
               return acc
             }, {} as Record<string, typeof filteredContent>)
-          ).map(([brandName, brandContent]) => {
-            const totalContent = brandContent.length
-            const approvedContent = brandContent.filter(c => c.status === 'approved').length
-            
-            return (
-              <div key={brandName} className="w-full max-w-full p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-                {/* Company Header */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-500 rounded-xl flex items-center justify-center">
-                      <FileText className="h-6 w-6 text-white" />
+
+            const entries = Object.entries(grouped) as [string, typeof filteredContent][]
+
+            return entries.map(([brandName, brandContent]) => {
+              const totalContent = brandContent.length
+              const approvedContent = brandContent.filter((c: any) => c.status === 'approved').length
+
+              return (
+                <div key={brandName} className="w-full max-w-full p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+                  {/* Company Header */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-500 rounded-xl flex items-center justify-center">
+                        <FileText className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h5 className="text-xl font-semibold text-gray-900">
+                          {brandName}
+                        </h5>
+                        <p className="text-sm text-gray-500">
+                          {totalContent} content piece{totalContent === 1 ? '' : 's'} • {approvedContent} approved
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h5 className="text-xl font-semibold text-gray-900">
-                        {brandName}
-                      </h5>
-                      <p className="text-sm text-gray-500">
-                        {totalContent} content piece{totalContent === 1 ? '' : 's'} • {approvedContent} approved
-                      </p>
-                    </div>
+                    <Badge variant="primary" className="text-sm px-3 py-1">
+                      {totalContent} Pieces
+                    </Badge>
                   </div>
-                  <Badge variant="primary" className="text-sm px-3 py-1">
-                    {totalContent} Pieces
-                  </Badge>
-                </div>
 
-                <p className="text-sm font-normal text-gray-500 mb-4">
-                  AI-generated content ready for review and publishing. Click on any content piece to view details and manage approval status.
-                </p>
+                  <p className="text-sm font-normal text-gray-500 mb-4">
+                    AI-generated content ready for review and publishing. Click on any content piece to view details and manage approval status.
+                  </p>
 
-                {/* Content List */}
-                <ul className="space-y-3">
-                  {brandContent.map((content) => {
-                    const contentTopic = extractContentTopic(content)
-                    
-                    return (
-                      <li key={content.id}>
-                        <div className={`flex items-center justify-between p-4 text-base font-bold text-gray-900 rounded-lg bg-gray-50 hover:bg-gray-100 group hover:shadow transition-all duration-200 ${
-                          content.post ? 'opacity-50 pointer-events-none bg-gray-200' : ''
-                        }`}>
-                          <div className="flex items-center space-x-4">
-                            <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-500 rounded-lg flex items-center justify-center">
-                              <span className="text-white text-lg">{getTypeIcon(content.type)}</span>
-                            </div>
-                            
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-3 mb-2">
-                                <span className="font-semibold text-gray-900">
-                                  {content.title}
-                                </span>
-                                {getStatusBadge(content.status)}
-                                {content.post && (
-                                  <Badge variant="success" className="text-xs">
-                                    Posted
-                                  </Badge>
-                                )}
-                                <Badge variant="secondary" className="text-xs">
-                                  {content.platform || content.type?.replace('_', ' ')}
-                                </Badge>
-                                {content.strategy_id && (
+                  {/* Content List */}
+                  <ul className="space-y-3">
+                    {brandContent.map((content: any) => {
+                      const contentTopic = extractContentTopic(content)
+
+                      return (
+                        <li key={content.id}>
+                          <div className={`flex items-center justify-between p-4 text-base font-bold text-gray-900 rounded-lg bg-gray-50 hover:bg-gray-100 group focus-within:bg-gray-100 hover:shadow transition-all duration-200 ${content.post ? 'opacity-50 pointer-events-none bg-gray-200' : ''
+                            }`}>
+                            <div className="flex items-center space-x-4">
+                              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-500 rounded-lg flex items-center justify-center">
+                                <span className="text-white text-lg">{getTypeIcon(content.type)}</span>
+                              </div>
+
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-3 mb-2">
+                                  <span className="font-semibold text-gray-900">
+                                    {content.title}
+                                  </span>
+                                  {getStatusBadge(content.status)}
+                                  {content.post && (
+                                    <Badge variant="success" className="text-xs">
+                                      Posted
+                                    </Badge>
+                                  )}
                                   <Badge variant="secondary" className="text-xs">
-                                    Strategy #{content.strategy_id}
+                                    {content.platform || content.type?.replace('_', ' ')}
                                   </Badge>
-                                )}
-                              </div>
-                              
-                              <div className="flex items-center space-x-4 text-sm text-gray-600">
-                                <span className="flex items-center">
-                                  <Calendar className="h-3 w-3 mr-1" />
-                                  {formatDate(content.created_at)}
-                                </span>
-                                <span>{content.metadata?.word_count || 0} words</span>
-                                {contentTopic && (
-                                  <span className="text-blue-600">Topic: {truncateText(contentTopic, 30)}</span>
-                                )}
+                                  {content.strategy_id && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      Strategy #{content.strategy_id}
+                                    </Badge>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center space-x-4 text-sm text-gray-600">
+                                  <span className="flex items-center">
+                                    <Calendar className="h-3 w-3 mr-1" />
+                                    {formatDate(content.created_at)}
+                                  </span>
+                                  <span>{content.metadata?.word_count || 0} words</span>
+                                  {contentTopic && (
+                                    <span className="text-blue-600">Topic: {truncateText(contentTopic, 30)}</span>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
 
-                          <div className="flex items-center space-x-2">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleDeleteClick(content)
-                              }}
-                              className="p-2 hover:bg-red-50 rounded-lg transition-colors group opacity-0 group-hover:opacity-100"
-                              title="Delete content"
-                            >
-                              <Trash2 className="h-4 w-4 text-gray-400 group-hover:text-red-600" />
-                            </button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewContent(content)}
-                              className="opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <Eye className="h-4 w-4 mr-2" />
-                              View Details
-                            </Button>
+                            <div className="flex items-center space-x-2">
+                              <IconButton
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDeleteClick(content)
+                                }}
+                                variant="danger"
+                                aria-label={`Delete content ${content.id}`}
+                                title="Delete content"
+                                className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </IconButton>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewContent(content)}
+                                className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
+                              >
+                                <Eye className="h-4 w-4" />
+                                View Details
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      </li>
-                    )
-                  })}
-                </ul>
+                        </li>
+                      )
+                    })}
+                  </ul>
 
-                {/* Footer */}
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <button className="inline-flex items-center text-xs font-normal text-gray-500 hover:underline hover:text-gray-700 transition-colors">
-                    <HelpCircle className="w-3 h-3 me-2" />
-                    How does content generation work?
-                  </button>
+                  {/* Footer */}
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <button className="inline-flex items-center text-xs font-normal text-gray-500 hover:underline hover:text-gray-700 transition-colors">
+                      <HelpCircle className="w-3 h-3 me-2" />
+                      How does content generation work?
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })
+          })()}
         </div>
       )}
       {filteredContent.length === 0 && (

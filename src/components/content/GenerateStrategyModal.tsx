@@ -1,13 +1,16 @@
 import React, { useState } from 'react'
 import { Button } from '../ui/Button'
-import { Card, CardContent } from '../ui/Card'
 import { ArrowLeft, X, Sparkles } from 'lucide-react'
 import { cn } from '../../lib/utils'
+import { useToast } from '../ui/Toast'
+import { Modal } from '../ui/Modal'
+import { IconButton } from '../ui/IconButton'
 
 interface GenerateStrategyModalProps {
   isOpen: boolean
   onClose: () => void
   companies: any[]
+  onStrategyGenerated?: () => void
 }
 
 const platforms = [
@@ -21,10 +24,11 @@ const platforms = [
   { id: 'blog', name: 'Blog', color: 'bg-green-600' }
 ]
 
-export function GenerateStrategyModal({ isOpen, onClose, companies }: GenerateStrategyModalProps) {
+export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGenerated }: GenerateStrategyModalProps) {
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([])
   const [selectedCompany, setSelectedCompany] = useState<any>(null)
   const [isGenerating, setIsGenerating] = useState(false)
+  const { push } = useToast()
 
   const togglePlatform = (platformId: string) => {
     setSelectedPlatforms(prev =>
@@ -36,20 +40,44 @@ export function GenerateStrategyModal({ isOpen, onClose, companies }: GenerateSt
 
   const handleGenerateStrategy = async () => {
     if (!selectedCompany) {
-      alert('Please select a company')
+      push({ title: 'Missing company', message: 'Please select a company', variant: 'warning' })
       return
     }
 
     if (selectedPlatforms.length === 0) {
-      alert('Please select at least one platform')
+      push({ title: 'Missing platforms', message: 'Select at least one platform', variant: 'warning' })
       return
     }
 
     setIsGenerating(true)
 
     try {
+      // Derive normalized-first brand fields with safe fallbacks
+      const brandName: string = selectedCompany.brand_name || selectedCompany.name || 'Unknown Brand'
+      const website: string = selectedCompany.website || ''
+      const tone: string = (selectedCompany.brand_voice?.tone)
+        || selectedCompany.brand_tone
+        || ''
+      const style: string = (selectedCompany.brand_voice?.style)
+        || selectedCompany.key_offer
+        || ''
+      const keywords: string[] = selectedCompany.brand_voice?.keywords || []
+
+      // Target audience as string (raw) and object (normalized)
+      const targetAudienceStr: string = selectedCompany.target_audience_raw
+        || selectedCompany.target_audience?.demographics
+        || ''
+      const targetAudienceObj: { demographics: string; interests: string[]; pain_points: string[] } = {
+        demographics: selectedCompany.target_audience?.demographics || targetAudienceStr || '',
+        interests: selectedCompany.target_audience?.interests || [],
+        pain_points: selectedCompany.target_audience?.pain_points || []
+      }
+
+      const additionalInfo: string = selectedCompany.additional_information || (selectedCompany as any).additionalInfo || ''
+      const createdAt: string = selectedCompany.created_at || (selectedCompany as any).createdAt || ''
+      const imageGuidelines: string = (selectedCompany as any).imageGuidelines || ''
       // Create platforms array with all 8 platforms, empty string if not selected
-      const platformsPayload = platforms.map(platform => 
+      const platformsPayload = platforms.map(platform =>
         selectedPlatforms.includes(platform.id) ? platform.id : ""
       )
 
@@ -57,32 +85,28 @@ export function GenerateStrategyModal({ isOpen, onClose, companies }: GenerateSt
       const comprehensiveBrandData = {
         // Basic brand information
         id: selectedCompany.id,
-        name: selectedCompany.brand_name || selectedCompany.name || 'Unknown Brand',
-        website: selectedCompany.website || '',
+        name: brandName,
+        website,
 
         // Brand voice and tone
-        brandTone: selectedCompany.brand_tone || selectedCompany.brandTone || selectedCompany.brand_voice?.tone || '',
-        keyOffer: selectedCompany.key_offer || selectedCompany.keyOffer || selectedCompany.brand_voice?.style || '',
+        brandTone: tone,
+        keyOffer: style,
         brandVoice: {
-          tone: selectedCompany.brand_tone || selectedCompany.brandTone || selectedCompany.brand_voice?.tone || '',
-          style: selectedCompany.key_offer || selectedCompany.keyOffer || selectedCompany.brand_voice?.style || '',
-          keywords: selectedCompany.brand_voice?.keywords || []
+          tone,
+          style,
+          keywords
         },
 
         // Target audience information
-        targetAudience: selectedCompany.target_audience || selectedCompany.targetAudience || selectedCompany.target_audience?.demographics || '',
-        target_audience: {
-          demographics: selectedCompany.target_audience || selectedCompany.targetAudience || selectedCompany.target_audience?.demographics || '',
-          interests: selectedCompany.target_audience?.interests || [],
-          pain_points: selectedCompany.target_audience?.pain_points || []
-        },
+        targetAudience: targetAudienceStr,
+        target_audience: targetAudienceObj,
 
         // Additional information
-        additionalInfo: selectedCompany.additional_information || selectedCompany.additionalInfo || '',
-        imageGuidelines: selectedCompany.imageGuidelines || '',
+        additionalInfo,
+        imageGuidelines,
 
         // Metadata
-        createdAt: selectedCompany.createdAt || selectedCompany.created_at || '',
+        createdAt,
 
         // Platform-specific data
         selectedPlatforms: selectedPlatforms,
@@ -98,9 +122,9 @@ export function GenerateStrategyModal({ isOpen, onClose, companies }: GenerateSt
           requestType: 'content_strategy_generation',
           timestamp: new Date().toISOString(),
           platformCount: selectedPlatforms.length,
-          brandHasWebsite: !!(selectedCompany.website),
-          brandHasAdditionalInfo: !!(selectedCompany.additional_information || selectedCompany.additionalInfo),
-          brandHasImageGuidelines: !!(selectedCompany.imageGuidelines)
+          brandHasWebsite: !!website,
+          brandHasAdditionalInfo: !!additionalInfo,
+          brandHasImageGuidelines: !!imageGuidelines
         }
       }
 
@@ -143,13 +167,14 @@ export function GenerateStrategyModal({ isOpen, onClose, companies }: GenerateSt
       console.log('Content strategy generation result:', result)
 
       console.log('Strategy generation and save completed successfully')
-      alert('Content strategy generated successfully!')
+      push({ title: 'Generated', message: 'Content strategy created', variant: 'success' })
+      onStrategyGenerated?.()
       onClose()
 
     } catch (error) {
       console.error('Error generating content strategy:', error)
       console.error('Full error details:', error)
-      alert('Failed to generate content strategy. Please try again.')
+      push({ title: 'Generation failed', message: 'Please try again', variant: 'error' })
     } finally {
       setIsGenerating(false)
     }
@@ -165,26 +190,20 @@ export function GenerateStrategyModal({ isOpen, onClose, companies }: GenerateSt
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <Modal isOpen={isOpen} onClose={handleClose} labelledById="generate-strategy-title">
+      <div className="w-full max-w-lg max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-4">
-            <button
-              onClick={handleClose}
-              className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
-            >
+            <IconButton onClick={handleClose} aria-label="Back" variant="ghost">
               <ArrowLeft className="h-5 w-5 text-gray-600" />
-            </button>
+            </IconButton>
             <div className="text-sm text-gray-500">Back to Dashboard</div>
           </div>
 
-          <button
-            onClick={handleClose}
-            className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
-          >
+          <IconButton onClick={handleClose} aria-label="Close dialog" variant="ghost">
             <X className="h-5 w-5 text-gray-400" />
-          </button>
+          </IconButton>
         </div>
 
         {/* Brand Info */}
@@ -197,7 +216,7 @@ export function GenerateStrategyModal({ isOpen, onClose, companies }: GenerateSt
                 </span>
               </div>
               <div>
-                <h3 className="font-medium text-gray-900">{selectedCompany.brand_name || selectedCompany.name || 'Brand'}</h3>
+                <h3 id="generate-strategy-title" className="font-medium text-gray-900">{selectedCompany.brand_name || selectedCompany.name || 'Brand'}</h3>
                 <p className="text-sm text-gray-500">{selectedCompany.website || ''}</p>
               </div>
             </div>
@@ -205,7 +224,7 @@ export function GenerateStrategyModal({ isOpen, onClose, companies }: GenerateSt
         )}
 
         {/* Content */}
-        <div className="p-6 text-center">
+        <div className="p-6 text-center overflow-y-auto max-h-[calc(90vh-140px)]">
           <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <Sparkles className="h-8 w-8 text-white" />
           </div>
@@ -288,6 +307,6 @@ export function GenerateStrategyModal({ isOpen, onClose, companies }: GenerateSt
           </Button>
         </div>
       </div>
-    </div>
+    </Modal>
   )
 }

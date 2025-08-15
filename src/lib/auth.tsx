@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { supabase, isSupabaseConfigured } from './supabase'
-import { Navigate, Outlet } from 'react-router-dom'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
 
 type Session = Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session']
 
@@ -51,6 +51,7 @@ export function useAuth() {
 
 export function ProtectedLayout() {
     const { session, loading } = useAuth()
+    const location = useLocation()
 
     if (loading) {
         return (
@@ -63,7 +64,9 @@ export function ProtectedLayout() {
         if (!isSupabaseConfigured) {
             return <Outlet />
         }
-        return <Navigate to="/login" replace />
+        // Preserve intended path for post-login return
+        const redirectTo = encodeURIComponent(location.pathname + location.search)
+        return <Navigate to={`/login?redirectTo=${redirectTo}`} replace state={{ from: location }} />
     }
 
     return <Outlet />

@@ -5,6 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card'
 import { X, Building2, Globe, Target, Zap, Calendar, User, Trash2 } from 'lucide-react'
 import { formatDate } from '../../lib/utils'
 import { supabase } from '../../lib/supabase'
+import { Modal } from '../ui/Modal'
+import { IconButton } from '../ui/IconButton'
+import { ConfirmDialog } from '../ui/ConfirmDialog'
+import { useToast } from '../ui/Toast'
 
 interface ViewCompanyModalProps {
   isOpen: boolean
@@ -15,14 +19,15 @@ interface ViewCompanyModalProps {
 
 export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCompanyModalProps) {
   const [deleting, setDeleting] = React.useState(false)
+  const [confirmOpen, setConfirmOpen] = React.useState(false)
+  const { push } = useToast()
 
   if (!isOpen || !company) return null
 
   const handleDelete = async () => {
     if (!company?.id) return
 
-    const confirmed = window.confirm(`Are you sure you want to delete "${company.brand_name || company.name}"? This action cannot be undone.`)
-    if (!confirmed) return
+    // Defer to parent confirmation dialog if present via onDelete prop; otherwise proceed
 
     setDeleting(true)
 
@@ -34,24 +39,27 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
 
       if (error) {
         console.error('Error deleting company:', error)
-        alert(`Failed to delete company: ${error.message}`)
+        push({ title: 'Delete failed', message: `Failed to delete company: ${error.message}`, variant: 'error' })
         return
       }
 
-      alert('Company deleted successfully!')
+      // Success feedback to be handled by parent toast system if available
       onDelete?.() // Call the callback to refresh the companies list
+      push({ title: 'Deleted', message: 'Company removed', variant: 'success' })
       onClose() // Close the modal
     } catch (error) {
       console.error('Error deleting company:', error)
-      alert('Failed to delete company. Please try again.')
+      push({ title: 'Delete failed', message: 'Please try again', variant: 'error' })
     } finally {
       setDeleting(false)
     }
   }
 
+  const titleId = 'view-company-title'
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+    <Modal isOpen={isOpen} onClose={onClose} labelledById={titleId}>
+      <div className="w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-3">
@@ -59,17 +67,18 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
               <Building2 className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">{company.name}</h2>
+              <h2 id={titleId} className="text-xl font-bold text-gray-900">{company.name}</h2>
               <p className="text-sm text-gray-500">Company Details</p>
             </div>
           </div>
 
-          <button
+          <IconButton
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+            aria-label="Close dialog"
+            variant="ghost"
           >
             <X className="h-5 w-5 text-gray-400" />
-          </button>
+          </IconButton>
         </div>
 
         {/* Content */}
@@ -128,8 +137,8 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
             </Card>
           )}
 
-          {/* Target Audience */}
-          {company.target_audience && (
+          {/* Target Audience (raw string) */}
+          {company.target_audience_raw && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center text-lg">
@@ -138,7 +147,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-700 leading-relaxed">{company.target_audience}</p>
+                <p className="text-gray-700 leading-relaxed">{company.target_audience_raw}</p>
               </CardContent>
             </Card>
           )}
@@ -211,7 +220,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
             </Card>
           )}
 
-          {/* Legacy Target Audience Support */}
+          {/* Target Audience (normalized object) */}
           {company.target_audience && typeof company.target_audience === 'object' && (
             <Card>
               <CardHeader>
@@ -296,11 +305,11 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
         <div className="flex justify-end p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
           <div className="flex space-x-3">
             <Button
-              variant="outline"
-              onClick={handleDelete}
+              variant="destructive"
+              onClick={() => setConfirmOpen(true)}
               loading={deleting}
               disabled={deleting}
-              className="bg-red-50 border-red-200 text-red-700 hover:bg-red-100 hover:border-red-300"
+              className=""
             >
               <Trash2 className="h-4 w-4 mr-2" />
               {deleting ? 'Deleting...' : 'Delete Company'}
@@ -310,7 +319,21 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
             </Button>
           </div>
         </div>
+        <ConfirmDialog
+          isOpen={confirmOpen}
+          onClose={() => setConfirmOpen(false)}
+          onConfirm={() => {
+            setConfirmOpen(false)
+            handleDelete()
+          }}
+          title="Delete Company"
+          message={`Are you sure you want to delete "${company.brand_name || company.name}"? This action cannot be undone.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          variant="danger"
+          loading={deleting}
+        />
       </div>
-    </div>
+    </Modal>
   )
 }

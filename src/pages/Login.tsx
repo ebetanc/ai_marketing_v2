@@ -1,12 +1,17 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { Input } from '../components/ui/Input'
 import { Button } from '../components/ui/Button'
 import { useAuth } from '../lib/auth'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 
 export default function Login() {
     const { session } = useAuth()
+    const location = useLocation()
+    const redirectTo = useMemo(() => {
+        const params = new URLSearchParams(location.search)
+        return params.get('redirectTo') || (location.state as any)?.from?.pathname || '/dashboard'
+    }, [location])
     const [email, setEmail] = useState('')
     const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState<string | null>(null)
@@ -23,7 +28,8 @@ export default function Login() {
             const { error } = await supabase.auth.signInWithOtp({
                 email,
                 options: {
-                    emailRedirectTo: `${siteUrl}/`,
+                    // Send the original target so the post-verification landing can route appropriately
+                    emailRedirectTo: `${siteUrl}/?redirectTo=${encodeURIComponent(redirectTo)}`,
                 },
             })
             if (error) throw error
@@ -36,7 +42,8 @@ export default function Login() {
     }
 
     if (session) {
-        return <Navigate to="/dashboard" replace />
+        // If already authenticated, honor the target
+        return <Navigate to={redirectTo || '/dashboard'} replace />
     }
 
     const handleGoogle = async () => {
@@ -45,10 +52,11 @@ export default function Login() {
         setMessage(null)
         try {
             const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin
-            const { data, error } = await supabase.auth.signInWithOAuth({
+            const { data: _data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: `${siteUrl}/`,
+                    // Preserve intended destination through OAuth
+                    redirectTo: `${siteUrl}/?redirectTo=${encodeURIComponent(redirectTo)}`,
                 },
             })
             if (error) throw error

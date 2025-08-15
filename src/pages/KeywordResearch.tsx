@@ -1,7 +1,7 @@
 import React from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
+import { Card, CardContent } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
-import { Search, Target, FileText, Lightbulb, BarChart3 } from 'lucide-react'
+import { Search, Target, Lightbulb } from 'lucide-react'
 
 export function KeywordResearch() {
   return (
@@ -14,7 +14,7 @@ export function KeywordResearch() {
           </p>
         </div>
         <Button>
-          <Search className="h-4 w-4 mr-2" />
+          <Search className="h-4 w-4" />
           Start Research
         </Button>
       </div>
@@ -27,10 +27,10 @@ export function KeywordResearch() {
           </div>
           <h3 className="text-xl font-semibold text-gray-900 mb-3">AI-Powered Keyword Research Agent</h3>
           <p className="text-gray-600 max-w-md mx-auto mb-8">
-            Transform a single keyword into a comprehensive content strategy with 5 unique, 
+            Transform a single keyword into a comprehensive content strategy with 5 unique,
             semantically distinct blog post ideas that are fully researched and ready to execute.
           </p>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
             <div className="text-center">
               <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
@@ -39,7 +39,7 @@ export function KeywordResearch() {
               <h4 className="font-medium text-gray-900 mb-2">Keyword Analysis</h4>
               <p className="text-sm text-gray-600">Deep research into search intent and competition</p>
             </div>
-            
+
             <div className="text-center">
               <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                 <Target className="h-6 w-6 text-blue-600" />
@@ -47,7 +47,7 @@ export function KeywordResearch() {
               <h4 className="font-medium text-gray-900 mb-2">Semantic Mapping</h4>
               <p className="text-sm text-gray-600">Find related topics and semantic variations</p>
             </div>
-            
+
             <div className="text-center">
               <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                 <Lightbulb className="h-6 w-6 text-purple-600" />

@@ -6,24 +6,29 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   error?: string
 }
 
-export function Input({ className, label, error, ...props }: InputProps) {
+export function Input({ className, label, error, id, ...props }: InputProps) {
+  const autoId = React.useId()
+  const inputId = id ?? autoId
   return (
     <div className="space-y-1">
       {label && (
-        <label className="block text-sm font-medium text-gray-700">
+        <label htmlFor={inputId} className="block text-sm font-medium text-gray-700">
           {label}
         </label>
       )}
       <input
         className={cn(
-          'block w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-gray-900 placeholder-gray-500 transition-colors focus:border-blue-500 focus:outline-none focus:ring-0',
+          'block w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-gray-900 placeholder-gray-500 motion-safe:transition-colors focus:border-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-200',
           error && 'border-red-300 focus:border-red-500',
           className
         )}
+        id={inputId}
+        aria-invalid={Boolean(error) || undefined}
+        aria-describedby={error ? `${inputId}-error` : undefined}
         {...props}
       />
       {error && (
-        <p className="text-sm text-red-600">{error}</p>
+        <p id={`${inputId}-error`} className="text-sm text-red-600">{error}</p>
       )}
     </div>
   )

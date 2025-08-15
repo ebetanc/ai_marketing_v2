@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { Company } from '../lib/supabase'
 import { supabase } from '../lib/supabase'
 
 export function useCompanies() {
   const [companies, setCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const fetchCompaniesFromSupabase = async () => {
     try {
@@ -13,12 +14,12 @@ export function useCompanies() {
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (error) {
+  if (error) {
         console.error('Error fetching companies:', error)
         throw error
       }
 
-      const supabaseCompanies: Company[] = (data || []).map(company => ({
+      const supabaseCompanies: Company[] = (data || []).map((company: any) => ({
         id: String(company.id),
         name: company.brand_name || 'Unnamed Brand',
         brand_voice: {
@@ -31,13 +32,22 @@ export function useCompanies() {
           interests: [],
           pain_points: []
         },
+        // Back-compat fields used by some views
+        brand_name: company.brand_name ?? null,
+        brand_tone: company.brand_tone ?? null,
+        key_offer: company.key_offer ?? null,
+        target_audience_raw: company.target_audience ?? null,
+        website: company.website ?? null,
+        additional_information: company.additional_information ?? null,
         created_at: company.created_at
       }))
 
       setCompanies(supabaseCompanies)
+      setError(null)
     } catch (error) {
       console.error('Error fetching companies from Supabase:', error)
       setCompanies([])
+      setError(error instanceof Error ? error.message : 'Failed to load companies')
     } finally {
       setLoading(false)
     }
@@ -53,7 +63,7 @@ export function useCompanies() {
       created_at: new Date().toISOString(),
       ...companyData
     }
-    
+
     setCompanies(prev => [...prev, newCompany])
     return { data: newCompany, error: null }
   }
@@ -85,6 +95,7 @@ export function useCompanies() {
   return {
     companies,
     loading,
+  error,
     createCompany,
     deleteCompany,
     refetch

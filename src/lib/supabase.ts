@@ -60,7 +60,6 @@ const supabaseStub: any = {
 }
 
 if (!isSupabaseConfigured) {
-  // eslint-disable-next-line no-console
   console.warn('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file. Running with a read-only stub (no auth, empty data).')
 }
 
@@ -135,6 +134,13 @@ export type Company = {
     interests: string[]
     pain_points: string[]
   }
+  // Optional raw columns to maintain compatibility with views expecting Supabase shapes
+  brand_name?: string | null
+  brand_tone?: string | null
+  key_offer?: string | null
+  target_audience_raw?: string | null
+  website?: string | null
+  additional_information?: string | null
   created_at: string
 }
 

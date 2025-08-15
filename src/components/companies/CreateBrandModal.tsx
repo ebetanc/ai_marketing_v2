@@ -2,17 +2,17 @@ import React, { useState } from 'react'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { Textarea } from '../ui/Textarea'
-import { Card, CardContent } from '../ui/Card'
-import { X, ArrowLeft, ArrowRight, Sparkles, Globe, Database } from 'lucide-react'
+import { X, ArrowLeft, ArrowRight, Sparkles, Globe } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { supabase } from '../../lib/supabase'
+import { Modal } from '../ui/Modal'
+import { useToast } from '../ui/Toast'
+import { IconButton } from '../ui/IconButton'
 
 interface CreateBrandModalProps {
   isOpen: boolean
   onClose: () => void
   onSubmit: () => void
-  loading: boolean
-  createCompany: (companyData: any) => Promise<any>
   refetchCompanies: () => void
 }
 
@@ -26,7 +26,7 @@ interface BrandFormData {
   imageGuidelines: string
 }
 
-export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCompany, refetchCompanies }: CreateBrandModalProps) {
+export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }: CreateBrandModalProps) {
   const [currentStep, setCurrentStep] = useState(1)
   const [autofillLoading, setAutofillLoading] = useState(false)
   const [submitLoading, setSubmitLoading] = useState(false)
@@ -39,10 +39,11 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
     keyOffer: '',
     imageGuidelines: ''
   })
+  const { push } = useToast()
 
   const handleAutofill = async () => {
     if (!formData.website) {
-      alert('Please enter a website URL first')
+      push({ title: 'Missing URL', message: 'Please enter a website URL', variant: 'warning' })
       return
     }
 
@@ -50,7 +51,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
     try {
       console.log('=== AUTOFILL WEBHOOK REQUEST ===')
       console.log('Sending autofill request for website:', formData.website)
-      
+
       const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
         method: 'POST',
         headers: {
@@ -101,11 +102,11 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
       }))
 
       console.log('Form data updated successfully')
-      alert('Website analysis completed! Form fields have been updated.')
-      
+      push({ title: 'Analyzed', message: 'Fields updated from website', variant: 'success' })
+
     } catch (error) {
       console.error('Autofill error:', error)
-      alert(`Failed to analyze website: ${error instanceof Error ? error.message : 'Unknown error'}. Please fill out the fields manually.`)
+      push({ title: 'Analysis failed', message: `${error instanceof Error ? error.message : 'Unknown error'}. Fill fields manually.`, variant: 'error' })
     } finally {
       setAutofillLoading(false)
     }
@@ -113,7 +114,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
 
   const handleNext = () => {
     if (currentStep === 1 && !formData.name) {
-      alert('Please enter a brand name')
+      push({ title: 'Missing name', message: 'Please enter a brand name', variant: 'warning' })
       return
     }
     setCurrentStep(2)
@@ -126,7 +127,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.name || !formData.targetAudience || !formData.brandTone || !formData.keyOffer) {
-      alert('Please fill out all required fields')
+      push({ title: 'Missing fields', message: 'Please complete all required fields', variant: 'warning' })
       return
     }
 
@@ -151,12 +152,12 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
 
       if (error) {
         console.error('Supabase error:', error)
-        alert(`Failed to create company: ${error.message}`)
+        push({ title: 'Create failed', message: `${error.message}`, variant: 'error' })
         return
       }
 
       console.log('Company created successfully:', data)
-      alert('Company created successfully!')
+      push({ title: 'Created', message: 'Company added', variant: 'success' })
 
       // Reset form and close modal
       resetForm()
@@ -165,7 +166,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
 
     } catch (error) {
       console.error('Error creating company:', error)
-      alert('Failed to create company. Please try again.')
+      push({ title: 'Create failed', message: 'Please try again', variant: 'error' })
     } finally {
       setSubmitLoading(false)
     }
@@ -191,18 +192,17 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
 
   if (!isOpen) return null
 
+  const titleId = 'create-brand-title'
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+    <Modal isOpen={isOpen} onClose={handleClose} labelledById={titleId}>
+      <div className="w-full max-w-2xl max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-4">
-            <button
-              onClick={handleClose}
-              className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
-            >
+            <IconButton onClick={handleClose} aria-label="Back to dashboard" variant="ghost">
               <ArrowLeft className="h-5 w-5 text-gray-600" />
-            </button>
+            </IconButton>
             <div className="text-sm text-gray-500">Back to Dashboard</div>
 
             {/* Step Indicators */}
@@ -224,16 +224,13 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
               )}>
                 2
               </div>
-              <div className="ml-3 text-gray-600 font-medium">Create Brand</div>
+              <div id={titleId} className="ml-3 text-gray-600 font-medium">Create Brand</div>
             </div>
           </div>
 
-          <button
-            onClick={handleClose}
-            className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
-          >
+          <IconButton onClick={handleClose} aria-label="Close dialog" variant="ghost">
             <X className="h-5 w-5 text-gray-400" />
-          </button>
+          </IconButton>
         </div>
 
         {/* Content */}
@@ -295,7 +292,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
                   disabled={!formData.website}
                   className="flex items-center"
                 >
-                  <Sparkles className="h-4 w-4 mr-2" />
+                  <Sparkles className="h-4 w-4" />
                   Autofill
                 </Button>
               </div>
@@ -343,7 +340,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
                     onClick={handlePrevious}
                     className="flex items-center"
                   >
-                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    <ArrowLeft className="h-4 w-4" />
                     Previous
                   </Button>
 
@@ -361,6 +358,6 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, loading, createCom
           )}
         </div>
       </div>
-    </div>
+    </Modal>
   )
 }

@@ -4,15 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
 import { ViewCompanyModal } from '../components/companies/ViewCompanyModal'
-import { 
-  TrendingUp, 
-  FileText, 
-  Users, 
+import {
+  TrendingUp,
+  FileText,
+  Users,
   Target,
   Clock,
   CheckCircle,
-  AlertCircle,
-  Calendar,
   Eye
 } from 'lucide-react'
 import { useCompanies } from '../hooks/useCompanies'
@@ -179,7 +177,7 @@ export function Dashboard() {
                     <div className="flex items-center mt-1 space-x-2">
                       <Clock className="h-3 w-3 text-gray-400" />
                       <span className="text-xs text-gray-500">{formatTime(activity.time)}</span>
-                      <Badge 
+                      <Badge
                         variant={activity.status === 'approved' ? 'success' : activity.status === 'draft' ? 'warning' : 'secondary'}
                         className="text-xs"
                       >
@@ -214,8 +212,8 @@ export function Dashboard() {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-gray-900">{company.name}</p>
                       <p className="text-sm text-gray-500">
-                        {company.brand_voice.tone.length > 50 
-                          ? `${company.brand_voice.tone.substring(0, 50)}...` 
+                        {company.brand_voice.tone.length > 50
+                          ? `${company.brand_voice.tone.substring(0, 50)}...`
                           : company.brand_voice.tone
                         }
                       </p>
@@ -234,7 +232,7 @@ export function Dashboard() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleViewCompany(company)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
                     >
                       <Eye className="h-3 w-3 mr-1" />
                       View
@@ -254,7 +252,7 @@ export function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            <button 
+            <button
               onClick={() => navigate('/content')}
               className="p-4 border-2 border-dashed border-gray-200 rounded-xl hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 group"
             >
@@ -262,8 +260,8 @@ export function Dashboard() {
               <h3 className="font-medium text-gray-900 group-hover:text-blue-900">Generate Content</h3>
               <p className="text-sm text-gray-500 mt-1 hidden sm:block">Create new blog posts, social content, and more</p>
             </button>
-            
-            <button 
+
+            <button
               onClick={() => navigate('/campaigns')}
               className="p-4 border-2 border-dashed border-gray-200 rounded-xl hover:border-teal-300 hover:bg-teal-50 transition-all duration-200 group"
             >
@@ -271,8 +269,8 @@ export function Dashboard() {
               <h3 className="font-medium text-gray-900 group-hover:text-teal-900">New Campaign</h3>
               <p className="text-sm text-gray-500 mt-1 hidden sm:block">Build multi-channel marketing campaigns</p>
             </button>
-            
-            <button 
+
+            <button
               onClick={() => navigate('/companies')}
               className="p-4 border-2 border-dashed border-gray-200 rounded-xl hover:border-orange-300 hover:bg-orange-50 transition-all duration-200 group"
             >

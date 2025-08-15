@@ -1,5 +1,5 @@
 import React from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
+import { Card, CardContent } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
 import { Megaphone, Plus, Calendar, Target, Users } from 'lucide-react'
@@ -15,7 +15,7 @@ export function Campaigns() {
           </p>
         </div>
         <Button>
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="h-4 w-4" />
           New Campaign
         </Button>
       </div>
@@ -28,10 +28,10 @@ export function Campaigns() {
           </div>
           <h3 className="text-xl font-semibold text-gray-900 mb-3">Campaign Builder Coming Soon</h3>
           <p className="text-gray-600 max-w-md mx-auto mb-8">
-            The comprehensive campaign creation wizard is in development. Soon you'll be able to build 
+            The comprehensive campaign creation wizard is in development. Soon you'll be able to build
             multi-channel campaigns with automated scheduling and performance tracking.
           </p>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
             <div className="text-center">
               <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
@@ -40,7 +40,7 @@ export function Campaigns() {
               <h4 className="font-medium text-gray-900 mb-2">Smart Scheduling</h4>
               <p className="text-sm text-gray-600">Optimize posting times across all platforms</p>
             </div>
-            
+
             <div className="text-center">
               <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                 <Target className="h-6 w-6 text-teal-600" />
@@ -48,7 +48,7 @@ export function Campaigns() {
               <h4 className="font-medium text-gray-900 mb-2">Multi-Channel</h4>
               <p className="text-sm text-gray-600">Coordinate campaigns across social, email, and ads</p>
             </div>
-            
+
             <div className="text-center">
               <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                 <Users className="h-6 w-6 text-orange-600" />

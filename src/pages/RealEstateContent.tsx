@@ -1,13 +1,18 @@
 import React from 'react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
+import { IconButton } from '../components/ui/IconButton'
 import { Input } from '../components/ui/Input'
 import { Badge } from '../components/ui/Badge'
-import { Building2, Home, MapPin, TrendingUp, Users, FileText, X, Link, Sparkles, RefreshCw, ExternalLink, Calendar } from 'lucide-react'
+import { Building2, Home, MapPin as _MapPin, TrendingUp, Users as _Users, FileText, X, Link, Sparkles, RefreshCw, ExternalLink, Calendar } from 'lucide-react'
 import { Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { formatDate } from '../lib/utils'
+import { useToast } from '../components/ui/Toast'
+import { Skeleton } from '../components/ui/Skeleton'
+import { Modal } from '../components/ui/Modal'
+import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 
 interface RealEstateContent {
   id: number
@@ -32,13 +37,10 @@ export function RealEstateContent() {
     content: null,
     loading: false
   })
+  const { push } = useToast()
 
   const handleDeleteClick = (content: RealEstateContent) => {
-    setDeleteDialog({
-      isOpen: true,
-      content,
-      loading: false
-    })
+    setDeleteDialog({ isOpen: true, content, loading: false })
   }
 
   const handleDeleteConfirm = async () => {
@@ -56,33 +58,21 @@ export function RealEstateContent() {
 
       // Remove from local state
       setRealEstateData(prev => prev.filter(item => item.id !== deleteDialog.content!.id))
-      
+
       // Close dialog
-      setDeleteDialog({
-        isOpen: false,
-        content: null,
-        loading: false
-      })
+      setDeleteDialog({ isOpen: false, content: null, loading: false })
     } catch (error) {
       console.error('Error deleting real estate content:', error)
-      alert('Failed to delete content. Please try again.')
+      push({ title: 'Delete failed', message: 'Please try again', variant: 'error' })
       setDeleteDialog(prev => ({ ...prev, loading: false }))
     }
   }
 
   const handleDeleteCancel = () => {
-    setDeleteDialog({
-      isOpen: false,
-      content: null,
-      loading: false
-    })
+    setDeleteDialog({ isOpen: false, content: null, loading: false })
   }
 
-  useEffect(() => {
-    fetchRealEstateContent()
-  }, [])
-
-  const fetchRealEstateContent = async () => {
+  const fetchRealEstateContent = useCallback(async (showToast = false) => {
     try {
       setLoading(true)
       setError(null)
@@ -100,18 +90,28 @@ export function RealEstateContent() {
 
       console.log('Real estate content fetched successfully:', data?.length || 0, 'records')
       setRealEstateData(data || [])
+      if (showToast) {
+        push({ title: 'Refreshed', message: 'Real estate content updated', variant: 'success' })
+      }
     } catch (error) {
       console.error('Error fetching real estate content from Supabase:', error)
       setError(error instanceof Error ? error.message : 'Failed to fetch real estate content')
       setRealEstateData([])
+      if (showToast) {
+        push({ title: 'Refresh failed', message: 'Could not update content', variant: 'error' })
+      }
     } finally {
       setLoading(false)
     }
-  }
+  }, [push])
+
+  useEffect(() => {
+    fetchRealEstateContent()
+  }, [fetchRealEstateContent])
 
   const handleGenerateContent = async () => {
     if (!url.trim()) {
-      alert('Please enter a URL')
+      push({ title: 'Missing URL', message: 'Please enter a URL', variant: 'warning' })
       return
     }
 
@@ -124,12 +124,8 @@ export function RealEstateContent() {
 
       const response = await fetch(webhookUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          url: url.trim()
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: url.trim() })
       })
 
       console.log('Webhook response status:', response.status)
@@ -141,20 +137,18 @@ export function RealEstateContent() {
       const result = await response.text()
       console.log('Webhook response:', result)
 
-      alert('The content will be generated and will take some minutes. Please come back later to see the result.')
+      push({ title: 'Generation started', message: 'Check back in a few minutes', variant: 'success' })
       setShowUrlModal(false)
       setUrl('')
-      
+
       // Refresh the data after successful generation
-      setTimeout(() => {
-        fetchRealEstateContent()
-      }, 2000)
+      setTimeout(() => { fetchRealEstateContent() }, 2000)
     } catch (error) {
       console.error('Error generating content:', error)
       if (error instanceof Error) {
-        alert(`Failed to generate content: ${error.message || 'Please try again.'}`)
+        push({ title: 'Generation failed', message: `${error.message || 'Please try again.'}`, variant: 'error' })
       } else {
-        alert('Failed to generate content: Please try again.')
+        push({ title: 'Generation failed', message: 'Please try again', variant: 'error' })
       }
     } finally {
       setIsGenerating(false)
@@ -177,91 +171,95 @@ export function RealEstateContent() {
           </p>
         </div>
         <div className="flex space-x-3">
-          <Button onClick={fetchRealEstateContent} disabled={loading} variant="outline">
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          <Button onClick={() => fetchRealEstateContent(true)} loading={loading} disabled={loading} variant="outline">
+            <RefreshCw className="h-4 w-4" />
             Refresh
           </Button>
           <Button onClick={() => setShowUrlModal(true)}>
-            <Building2 className="h-4 w-4 mr-2" />
+            <Building2 className="h-4 w-4" />
             Generate Real Estate Content
           </Button>
         </div>
       </div>
 
-      {/* URL Input Modal */}
-      {showUrlModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center">
-                  <Link className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-gray-900">Enter Property URL</h2>
-                  <p className="text-sm text-gray-500">Provide a URL to analyze and generate content</p>
-                </div>
-              </div>
-
-              <button
-                onClick={handleCloseModal}
-                className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
-                disabled={isGenerating}
-              >
-                <X className="h-5 w-5 text-gray-400" />
-              </button>
+      {/* URL Input Modal (shared) */}
+      <Modal isOpen={showUrlModal} onClose={handleCloseModal} labelledById="realestate-url-title" className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center">
+              <Link className="h-5 w-5 text-white" />
             </div>
-
-            {/* Content */}
-            <div className="p-6 space-y-4">
-              <Input
-                label="Property or Real Estate URL"
-                placeholder="https://example.com/property-listing"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                disabled={isGenerating}
-              />
-
-              <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                <p className="text-sm text-blue-800">
-                  <strong>Tip:</strong> You can enter URLs for property listings, real estate websites,
-                  or any real estate-related page to generate targeted content.
-                </p>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="flex justify-end space-x-3 p-6 border-t border-gray-200">
-              <Button
-                variant="outline"
-                onClick={handleCloseModal}
-                disabled={isGenerating}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleGenerateContent}
-                loading={isGenerating}
-                disabled={!url.trim() || isGenerating}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                <Sparkles className="h-4 w-4 mr-2" />
-                {isGenerating ? 'Generating...' : 'Generate Content'}
-              </Button>
+            <div>
+              <h2 id="realestate-url-title" className="text-lg font-bold text-gray-900">Enter Property URL</h2>
+              <p className="text-sm text-gray-500">Provide a URL to analyze and generate content</p>
             </div>
           </div>
+
+          <IconButton onClick={handleCloseModal} aria-label="Close dialog" disabled={isGenerating} variant="ghost">
+            <X className="h-5 w-5 text-gray-400" />
+          </IconButton>
         </div>
-      )}
+
+        {/* Content */}
+        <div className="p-6 space-y-4">
+          <Input
+            label="Property or Real Estate URL"
+            placeholder="https://example.com/property-listing"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            disabled={isGenerating}
+          />
+
+          <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+            <p className="text-sm text-blue-800">
+              <strong>Tip:</strong> You can enter URLs for property listings, real estate websites,
+              or any real estate-related page to generate targeted content.
+            </p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex justify-end space-x-3 p-6 border-t border-gray-200">
+          <Button
+            variant="outline"
+            onClick={handleCloseModal}
+            disabled={isGenerating}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleGenerateContent}
+            loading={isGenerating}
+            disabled={!url.trim() || isGenerating}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            <Sparkles className="h-4 w-4" />
+            {isGenerating ? 'Generating...' : 'Generate Content'}
+          </Button>
+        </div>
+      </Modal>
 
       {/* Loading State */}
       {loading && (
-        <Card>
-          <CardContent className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading real estate content...</p>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <Skeleton className="w-12 h-12 rounded-xl" />
+                  <div className="space-y-2 w-full">
+                    <Skeleton className="h-4 w-2/5" />
+                    <Skeleton className="h-3 w-1/3" />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-16 w-full rounded-lg" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
 
       {/* Error State */}
@@ -271,7 +269,7 @@ export function RealEstateContent() {
             <Building2 className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Real Estate Content</h3>
             <p className="text-red-600 mb-4">{error}</p>
-            <Button onClick={fetchRealEstateContent} variant="outline">
+            <Button onClick={() => fetchRealEstateContent(true)} variant="outline" loading={loading} disabled={loading}>
               Try Again
             </Button>
           </CardContent>
@@ -299,13 +297,14 @@ export function RealEstateContent() {
                       </div>
                     </div>
                   </div>
-                  <button
+                  <IconButton
                     onClick={() => handleDeleteClick(content)}
-                    className="p-2 hover:bg-red-50 rounded-lg transition-colors group"
+                    variant="danger"
                     title="Delete content"
+                    aria-label={`Delete content ${content.id}`}
                   >
-                    <Trash2 className="h-4 w-4 text-gray-400 group-hover:text-red-600" />
-                  </button>
+                    <Trash2 className="h-4 w-4" />
+                  </IconButton>
                 </div>
               </CardHeader>
 
@@ -354,7 +353,7 @@ export function RealEstateContent() {
 
                 {/* Status Badge */}
                 <div className="flex justify-between items-center pt-2">
-                  <Badge 
+                  <Badge
                     variant={content.link_final ? 'success' : 'warning'}
                     className="text-xs"
                   >
@@ -376,10 +375,10 @@ export function RealEstateContent() {
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-3">No Real Estate Content Yet</h3>
             <p className="text-gray-600 max-w-md mx-auto mb-8">
-              Generate your first real estate content by providing a property URL. 
+              Generate your first real estate content by providing a property URL.
               The AI will analyze the content and create specialized real estate materials.
             </p>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto mb-8">
               <div className="text-center">
                 <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
@@ -388,7 +387,7 @@ export function RealEstateContent() {
                 <h4 className="font-medium text-gray-900 mb-2">Property Analysis</h4>
                 <p className="text-sm text-gray-600">AI analyzes property URLs and extracts key information</p>
               </div>
-              
+
               <div className="text-center">
                 <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                   <FileText className="h-6 w-6 text-green-600" />
@@ -396,7 +395,7 @@ export function RealEstateContent() {
                 <h4 className="font-medium text-gray-900 mb-2">Content Generation</h4>
                 <p className="text-sm text-gray-600">Creates specialized real estate marketing content</p>
               </div>
-              
+
               <div className="text-center">
                 <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                   <TrendingUp className="h-6 w-6 text-purple-600" />
@@ -407,54 +406,25 @@ export function RealEstateContent() {
             </div>
 
             <Button onClick={() => setShowUrlModal(true)} size="lg">
-              <Building2 className="h-4 w-4 mr-2" />
+              <Building2 className="h-4 w-4" />
               Generate Your First Content
             </Button>
           </CardContent>
         </Card>
       )}
 
-      {/* Delete Confirmation Dialog */}
-      {deleteDialog.isOpen && deleteDialog.content && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="p-6">
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
-                  <Trash2 className="h-5 w-5 text-red-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900">Delete Content</h3>
-                  <p className="text-sm text-gray-500">This action cannot be undone</p>
-                </div>
-              </div>
-              
-              <p className="text-gray-600 mb-6">
-                Are you sure you want to delete Real Estate Content #{deleteDialog.content.id}?
-              </p>
-              
-              <div className="flex justify-end space-x-3">
-                <Button
-                  variant="outline"
-                  onClick={handleDeleteCancel}
-                  disabled={deleteDialog.loading}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleDeleteConfirm}
-                  loading={deleteDialog.loading}
-                  className="bg-red-600 hover:bg-red-700"
-                  disabled={deleteDialog.loading}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  {deleteDialog.loading ? 'Deleting...' : 'Delete'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Delete Confirmation Dialog (shared) */}
+      <ConfirmDialog
+        isOpen={deleteDialog.isOpen && !!deleteDialog.content}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Content"
+        message={`Are you sure you want to delete Real Estate Content #${deleteDialog.content?.id}? This action cannot be undone.`}
+        confirmText={deleteDialog.loading ? 'Deleting...' : 'Delete'}
+        cancelText="Cancel"
+        variant="danger"
+        loading={deleteDialog.loading}
+      />
     </div>
   )
 }
