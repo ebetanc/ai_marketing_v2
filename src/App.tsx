@@ -1,6 +1,8 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { Layout } from './components/layout/Layout'
+import { AuthProvider, ProtectedLayout } from './lib/auth'
+import Login from './pages/Login'
 import { Dashboard } from './pages/Dashboard'
 import { Companies } from './pages/Companies'
 import { Strategies } from './pages/Strategies'
@@ -16,22 +18,27 @@ import { RealEstateContent } from './pages/RealEstateContent'
 function App() {
   return (
     <Router>
-      <Layout>
+      <AuthProvider>
         <Routes>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/companies" element={<Companies />} />
-          <Route path="/strategies" element={<Strategies />} />
-          <Route path="/ideas" element={<Ideas />} />
-          <Route path="/content" element={<Content />} />
-          <Route path="/campaigns" element={<Campaigns />} />
-          <Route path="/youtube-seo" element={<YouTubeSEO />} />
-          <Route path="/trend-blog" element={<TrendBlog />} />
-          <Route path="/semantic-seo" element={<SemanticSEO />} />
-          <Route path="/keyword-research" element={<KeywordResearch />} />
-          <Route path="/real-estate-content" element={<RealEstateContent />} />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/login" element={<Login />} />
+          <Route element={<ProtectedLayout />}>
+            <Route element={<Layout />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/companies" element={<Companies />} />
+              <Route path="/strategies" element={<Strategies />} />
+              <Route path="/ideas" element={<Ideas />} />
+              <Route path="/content" element={<Content />} />
+              <Route path="/campaigns" element={<Campaigns />} />
+              <Route path="/youtube-seo" element={<YouTubeSEO />} />
+              <Route path="/trend-blog" element={<TrendBlog />} />
+              <Route path="/semantic-seo" element={<SemanticSEO />} />
+              <Route path="/keyword-research" element={<KeywordResearch />} />
+              <Route path="/real-estate-content" element={<RealEstateContent />} />
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            </Route>
+          </Route>
         </Routes>
-      </Layout>
+      </AuthProvider>
     </Router>
   )
 }

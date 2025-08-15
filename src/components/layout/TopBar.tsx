@@ -2,10 +2,17 @@ import React, { useState } from 'react'
 import { Button } from '../ui/Button'
 import { Bell, Plus, Search } from 'lucide-react'
 import { useCompanies } from '../../hooks/useCompanies'
+import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../lib/auth'
 
 export function TopBar() {
   const [searchQuery, setSearchQuery] = useState('')
   const { companies } = useCompanies()
+  const { session } = useAuth()
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+  }
 
   return (
     <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
@@ -30,6 +37,11 @@ export function TopBar() {
               3
             </span>
           </button>
+          {session && (
+            <Button variant="outline" size="sm" onClick={handleSignOut}>
+              Sign out
+            </Button>
+          )}
         </div>
       </div>
     </header>

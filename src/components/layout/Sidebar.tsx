@@ -1,27 +1,31 @@
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { cn } from '../../lib/utils'
-import { 
-  LayoutDashboard, 
-  Building2, 
-  FileText, 
+import {
+  LayoutDashboard,
+  Building2,
+  FileText,
   Lightbulb,
-  Megaphone, 
-  BarChart3, 
-  Settings,
+  Megaphone,
   Zap,
   Youtube,
   TrendingUp,
   Network,
   Search
 } from 'lucide-react'
-
-const navigation = [
+// Navigation sections to visually group related items
+const primaryNav = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+]
+
+const contentWorkflowNav = [
   { name: 'Companies', href: '/companies', icon: Building2 },
   { name: 'Strategies', href: '/strategies', icon: FileText },
   { name: 'Ideas', href: '/ideas', icon: Lightbulb },
   { name: 'Content', href: '/content', icon: FileText },
+]
+
+const toolsNav = [
   { name: 'Campaigns', href: '/campaigns', icon: Megaphone },
   { name: 'YouTube Transcript → SEO Blog', href: '/youtube-seo', icon: Youtube },
   { name: 'Trend Based Blog Generation', href: '/trend-blog', icon: TrendingUp },
@@ -47,30 +51,93 @@ export function Sidebar() {
         </div>
       </div>
 
-      <nav className="flex-1 px-2 sm:px-4 py-4 sm:py-6 space-y-1">
-        {navigation.map((item) => {
-          const isActive = location.pathname === item.href
-          return (
-            <Link
-              key={item.name}
-              to={item.href}
-              className={cn(
-                'group flex items-center px-2 sm:px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200',
-                isActive
-                  ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              )}
-            >
-              <item.icon
+      <nav className="flex-1 px-2 sm:px-4 py-4 sm:py-6 space-y-4">
+        {/* Primary */}
+        <div className="space-y-1">
+          {primaryNav.map((item) => {
+            const isActive = location.pathname === item.href
+            return (
+              <Link
+                key={item.name}
+                to={item.href}
                 className={cn(
-                  'mr-2 sm:mr-3 h-5 w-5 transition-colors',
-                  isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'
+                  'group flex items-center px-2 sm:px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200',
+                  isActive
+                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 )}
-              />
-              <span className="hidden sm:inline">{item.name}</span>
-            </Link>
-          )
-        })}
+              >
+                <item.icon
+                  className={cn(
+                    'mr-2 sm:mr-3 h-5 w-5 transition-colors',
+                    isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'
+                  )}
+                />
+                <span className="hidden sm:inline">{item.name}</span>
+              </Link>
+            )
+          })}
+        </div>
+
+        {/* Content workflow group */}
+        <div>
+          <p className="px-2 sm:px-3 mb-2 text-[10px] sm:text-xs font-semibold tracking-wider text-gray-500 uppercase">Content workflow</p>
+          <div className="space-y-1">
+            {contentWorkflowNav.map((item) => {
+              const isActive = location.pathname === item.href
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={cn(
+                    'group flex items-center px-2 sm:px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200',
+                    isActive
+                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  )}
+                >
+                  <item.icon
+                    className={cn(
+                      'mr-2 sm:mr-3 h-5 w-5 transition-colors',
+                      isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'
+                    )}
+                  />
+                  <span className="hidden sm:inline">{item.name}</span>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Tools & Agents */}
+        <div>
+          <p className="px-2 sm:px-3 mb-2 text-[10px] sm:text-xs font-semibold tracking-wider text-gray-500 uppercase">Agents & generators</p>
+          <div className="space-y-1">
+            {toolsNav.map((item) => {
+              const isActive = location.pathname === item.href
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={cn(
+                    'group flex items-center px-2 sm:px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200',
+                    isActive
+                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  )}
+                >
+                  <item.icon
+                    className={cn(
+                      'mr-2 sm:mr-3 h-5 w-5 transition-colors',
+                      isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'
+                    )}
+                  />
+                  <span className="hidden sm:inline">{item.name}</span>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
       </nav>
 
       <div className="border-t border-gray-200 p-2 sm:p-4">
