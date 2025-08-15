@@ -21,8 +21,8 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-  // Temporary workaround: disable due to crash with ESLint v9 proxying core no-unused-expressions
-  "@typescript-eslint/no-unused-expressions": "off",
+      // Temporary workaround: disable due to crash with ESLint v9 proxying core no-unused-expressions
+      "@typescript-eslint/no-unused-expressions": "off",
       "react-refresh/only-export-components": [
         "warn",
         {
