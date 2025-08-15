@@ -26,7 +26,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             })()
 
         const { data: sub } = supabase.auth.onAuthStateChange((
-            _event: string,
+            _event:
+                | 'INITIAL_SESSION'
+                | 'SIGNED_IN'
+                | 'SIGNED_OUT'
+                | 'PASSWORD_RECOVERY'
+                | 'TOKEN_REFRESHED'
+                | 'USER_UPDATED'
+                | 'LINKED_IDENTITY'
+                | 'UNLINKED_IDENTITY',
             newSession: Session
         ) => {
             setSession(newSession)
