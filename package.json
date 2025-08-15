@@ -4,7 +4,6 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "predev": "echo 'Skipping supabase start - CLI not available'",
     "dev": "vite",
     "prebuild": "npm run types:gen",
     "build": "vite build",
@@ -14,8 +13,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "preview": "vite preview",
-    "preview:https": "vite preview --host --https",
-    "types:gen": "echo 'Skipping type generation - supabase CLI not available'"
+    "preview:https": "vite preview --host --https"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
