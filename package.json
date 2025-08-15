@@ -4,7 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "db:local:reset": "npx supabase db reset --local",
+    "dev:db": "npx supabase start",
     "dev": "vite",
+    "dev:full": "npx supabase start & vite",
     "prebuild": "npm run types:gen",
     "build": "vite build",
     "vite:build": "vite build",
