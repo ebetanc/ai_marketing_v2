@@ -205,7 +205,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
     <Modal isOpen={isOpen} onClose={handleClose} labelledById={titleId}>
       <div className="w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center space-x-4">
             <IconButton onClick={handleClose} aria-label="Back to dashboard" variant="ghost">
               <ArrowLeft className="h-5 w-5 text-gray-600" />

@@ -34,7 +34,7 @@ export function ConfirmDialog({
   return (
     <Modal isOpen={isOpen} onClose={onClose} labelledById={titleId} describedById={descId} role="alertdialog">
       {/* Header */}
-      <div className="flex items-center justify-between p-6 border-b border-gray-200">
+      <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center space-x-3">
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${variant === 'danger' ? 'bg-red-100' : 'bg-yellow-100'
             }`}>
@@ -50,12 +50,12 @@ export function ConfirmDialog({
       </div>
 
       {/* Content */}
-      <div className="p-6">
+      <div className="p-6 flex-1 min-h-0 overflow-y-auto">
         <p id={descId} className="text-gray-600 leading-relaxed">{message}</p>
       </div>
 
       {/* Footer */}
-      <div className="flex justify-end space-x-3 p-6 border-t border-gray-200">
+      <div className="flex justify-end space-x-3 p-6 border-t border-gray-200 flex-shrink-0">
         <Button
           variant="outline"
           onClick={onClose}

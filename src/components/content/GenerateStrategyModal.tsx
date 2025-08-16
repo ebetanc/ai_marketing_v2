@@ -76,13 +76,11 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
       const additionalInfo: string = selectedCompany.additional_information || (selectedCompany as any).additionalInfo || ''
       const createdAt: string = selectedCompany.created_at || (selectedCompany as any).createdAt || ''
       const imageGuidelines: string = (selectedCompany as any).imageGuidelines || ''
-      // Create platforms array with all 8 platforms, empty string if not selected
-      const platformsPayload = platforms.map(platform =>
-        selectedPlatforms.includes(platform.id) ? platform.id : ""
-      )
+      // Create platforms array containing only the selected platform ids
+      const platformsPayload = selectedPlatforms
 
       // Prepare comprehensive brand data payload
-      const comprehensiveBrandData = {
+  const comprehensiveBrandData = {
         // Basic brand information
         id: selectedCompany.id,
         name: brandName,
@@ -106,14 +104,10 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
         imageGuidelines,
 
         // Metadata
-        createdAt,
-
-        // Platform-specific data
-        selectedPlatforms: selectedPlatforms,
-        platformCount: selectedPlatforms.length
+  createdAt
       }
 
-      const webhookPayload = {
+    const webhookPayload = {
         identifier: "generateAngles",
         brand: comprehensiveBrandData,
         platforms: platformsPayload,
@@ -121,7 +115,7 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
         context: {
           requestType: 'content_strategy_generation',
           timestamp: new Date().toISOString(),
-          platformCount: selectedPlatforms.length,
+      platformCount: selectedPlatforms.length,
           brandHasWebsite: !!website,
           brandHasAdditionalInfo: !!additionalInfo,
           brandHasImageGuidelines: !!imageGuidelines
@@ -193,7 +187,7 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
     <Modal isOpen={isOpen} onClose={handleClose} labelledById="generate-strategy-title">
       <div className="w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center space-x-4">
             <IconButton onClick={handleClose} aria-label="Back" variant="ghost">
               <ArrowLeft className="h-5 w-5 text-gray-600" />

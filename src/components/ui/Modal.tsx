@@ -101,8 +101,9 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
         }
     }
 
-    const baseClasses = 'overflow-hidden flex flex-col'
-    const defaultClasses = 'bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh]'
+    // Base layout is always a vertical flex with constrained height so inner content can fill and scroll
+    const baseClasses = 'overflow-hidden flex flex-col w-full max-h-[90vh]'
+    const defaultClasses = 'bg-white rounded-2xl shadow-2xl max-w-2xl'
     const appliedClasses = className ? `${className} ${baseClasses}` : `${defaultClasses} ${baseClasses}`
 
     return (

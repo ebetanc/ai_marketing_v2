@@ -362,7 +362,7 @@ export function Strategies() {
         <Modal isOpen={viewModal.isOpen} onClose={handleCloseModal} labelledById="view-strategy-title">
           <div className="w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
                   <FileText className="h-6 w-6 text-white" />

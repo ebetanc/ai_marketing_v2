@@ -62,7 +62,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
     <Modal isOpen={isOpen} onClose={onClose} labelledById={titleId}>
       <div className="w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center space-x-3">
             <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center">
               <Building2 className="h-6 w-6 text-white" />

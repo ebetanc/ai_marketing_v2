@@ -585,7 +585,7 @@ export function Ideas() {
         <Modal isOpen={viewIdeaModal.isOpen} onClose={handleCloseViewModal} labelledById="view-idea-title">
           <div className="w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
                   <Lightbulb className="h-6 w-6 text-white" />
@@ -746,7 +746,7 @@ export function Ideas() {
         <Modal isOpen={viewIdeaSetModal.isOpen} onClose={handleCloseIdeaSetModal} labelledById="view-idea-set-title">
           <div className="w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
                   <Lightbulb className="h-6 w-6 text-white" />
@@ -771,7 +771,7 @@ export function Ideas() {
             </div>
 
             {/* Content */}
-            <div className="flex-1 p-6 overflow-y-auto">
+            <div className="flex-1 p-6 overflow-y-auto min-h-0">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {viewIdeaSetModal.topics.map((topic) => (
                   <Card
