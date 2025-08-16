@@ -22,6 +22,7 @@ import { formatDate } from '../lib/utils'
 import { IconButton } from '../components/ui/IconButton'
 import { Modal } from '../components/ui/Modal'
 import { Skeleton } from '../components/ui/Skeleton'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 type Strategy = Tables<'strategies'> & {
   company?: { id: number; brand_name: string; created_at: string }
@@ -35,6 +36,7 @@ interface Company {
 }
 
 export function Strategies() {
+  useDocumentTitle('Strategies — AI Marketing')
   const [companiesWithStrategies, setCompaniesWithStrategies] = useState<Company[]>([])
   const [companiesForModal, setCompaniesForModal] = useState<{ id: number; brand_name: string; created_at: string }[]>([])
   const [loading, setLoading] = useState(true)

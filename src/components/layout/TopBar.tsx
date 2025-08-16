@@ -4,7 +4,7 @@ import { Bell, Menu, Search } from 'lucide-react'
 import { IconButton } from '../ui/IconButton'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 type TopBarProps = {
   onMenuClick?: () => void
@@ -15,7 +15,9 @@ export function TopBar({ onMenuClick }: TopBarProps) {
   // const { companies } = useCompanies() // reserved for future search scoping
   const { session } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const searchRef = useRef<HTMLInputElement | null>(null)
+  const notificationsCount = 0 // Hide when zero; wire real data when available
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -38,6 +40,16 @@ export function TopBar({ onMenuClick }: TopBarProps) {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
+  // Keep the TopBar search in sync with the Content page's ?q param
+  useEffect(() => {
+    if (location.pathname.startsWith('/content')) {
+      const q = new URLSearchParams(location.search).get('q') || ''
+      setSearchQuery(q)
+    } else {
+      setSearchQuery('')
+    }
+  }, [location.pathname, location.search])
+
   return (
     <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
       <div className="flex items-center justify-between gap-4">
@@ -56,6 +68,12 @@ export function TopBar({ onMenuClick }: TopBarProps) {
               placeholder="Search... (press / to focus)"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const q = searchQuery.trim()
+                  navigate(q ? `/content?q=${encodeURIComponent(q)}` : '/content')
+                }
+              }}
               aria-label="Search"
               ref={searchRef}
               className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus:border-transparent"
@@ -66,9 +84,11 @@ export function TopBar({ onMenuClick }: TopBarProps) {
         <div className="flex items-center space-x-2 sm:space-x-3">
           <IconButton className="relative" aria-label="Notifications">
             <Bell className="h-5 w-5" />
-            <span className="absolute -top-1 -right-1 h-3 w-3 sm:h-4 sm:w-4 bg-red-500 text-white text-[10px] sm:text-xs rounded-full flex items-center justify-center leading-none">
-              3
-            </span>
+            {notificationsCount > 0 && (
+              <span className="absolute -top-1 -right-1 h-3 w-3 sm:h-4 sm:w-4 bg-red-500 text-white text-[10px] sm:text-xs rounded-full flex items-center justify-center leading-none">
+                {notificationsCount}
+              </span>
+            )}
           </IconButton>
           {session && (
             <Button variant="outline" size="sm" onClick={handleSignOut}>

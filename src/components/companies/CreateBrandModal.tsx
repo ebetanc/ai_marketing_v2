@@ -8,6 +8,7 @@ import { supabase, type TablesInsert } from '../../lib/supabase'
 import { Modal } from '../ui/Modal'
 import { useToast } from '../ui/Toast'
 import { IconButton } from '../ui/IconButton'
+import { ConfirmDialog } from '../ui/ConfirmDialog'
 
 interface CreateBrandModalProps {
   isOpen: boolean
@@ -30,6 +31,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
   const [currentStep, setCurrentStep] = useState(1)
   const [autofillLoading, setAutofillLoading] = useState(false)
   const [submitLoading, setSubmitLoading] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
   const [formData, setFormData] = useState<BrandFormData>({
     name: '',
     website: '',
@@ -186,6 +188,11 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
   }
 
   const handleClose = () => {
+    const isDirty = Object.values(formData).some(v => String(v || '').trim().length > 0)
+    if (isDirty) {
+      setConfirmOpen(true)
+      return
+    }
     resetForm()
     onClose()
   }
@@ -196,7 +203,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} labelledById={titleId}>
-      <div className="w-full max-w-2xl max-h-[90vh] overflow-hidden">
+      <div className="w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-4">
@@ -224,7 +231,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
               )}>
                 2
               </div>
-              <div id={titleId} className="ml-3 text-gray-600 font-medium">Create Brand</div>
+              <div id={titleId} className="ml-3 text-gray-600 font-medium">Create Company</div>
             </div>
           </div>
 
@@ -234,7 +241,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
         </div>
 
         {/* Content */}
-        <div className="p-8 overflow-y-auto max-h-[calc(90vh-140px)]">
+        <div className="flex-1 min-h-0 p-8 overflow-y-auto">
           {currentStep === 1 ? (
             <div className="space-y-6">
               <div>
@@ -243,7 +250,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
 
               <div className="space-y-6">
                 <Input
-                  label="Brand Name"
+                  label="Company Name"
                   placeholder="Enter brand name"
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
@@ -350,7 +357,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
                     size="lg"
                     className="bg-gray-900 hover:bg-gray-800"
                   >
-                    Create Brand
+                    Create Company
                   </Button>
                 </div>
               </form>
@@ -358,6 +365,20 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
           )}
         </div>
       </div>
+      <ConfirmDialog
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          setConfirmOpen(false)
+          resetForm()
+          onClose()
+        }}
+        title="Discard changes?"
+        message="You have unsaved changes. Do you want to discard them?"
+        confirmText="Discard"
+        cancelText="Keep editing"
+        variant="danger"
+      />
     </Modal>
   )
 }

@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { Layout } from './components/layout/Layout'
 import { AuthProvider, ProtectedLayout } from './lib/auth'
 import Login from './pages/Login'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 import { Dashboard } from './pages/Dashboard'
 import { Companies } from './pages/Companies'
 import { Strategies } from './pages/Strategies'
@@ -23,6 +25,8 @@ function App() {
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route element={<ProtectedLayout />}>
               <Route element={<Layout />}>
                 <Route path="/dashboard" element={<Dashboard />} />

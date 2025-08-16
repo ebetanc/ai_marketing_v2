@@ -1,33 +1,72 @@
 # AI Marketing v2
 
-## Supabase Auth (minimal)
+## Supabase Auth — Local and Prod
 
-Set environment variables in a `.env` file:
+This app supports local Supabase (via Docker) and production/hosted projects.
+
+### 1) Local setup (recommended for development)
+
+Prereqs: Docker Desktop, Supabase CLI installed.
+
+1. Copy env file and set values
 
 ```
-VITE_SUPABASE_URL=your-project-url
-VITE_SUPABASE_ANON_KEY=your-anon-key
-VITE_SITE_URL=https://your-domain.com # used for magic link redirect
+cp .env.example .env.local
+# On Windows PowerShell:
+Copy-Item .env.example .env.local
 ```
 
-In your Supabase project settings:
+Edit `.env.local`:
 
-- Set Site URL and additional redirect: your local dev URL (e.g., http://localhost:5173)
-- Enable Email magic link (if disabled)
+```
+VITE_SUPABASE_URL=http://127.0.0.1:54321
+VITE_SUPABASE_ANON_KEY=<find in Studio http://127.0.0.1:54323 > Project Settings > API>
+VITE_SITE_URL=http://127.0.0.1:5173
+VITE_GOOGLE_OAUTH_ENABLED=false
+```
 
-Run locally:
+2. Start local Supabase and seed DB
+
+```
+npm run dev:db     # starts local stack (first run downloads images)
+npm run db:local:reset  # runs migrations + seed
+```
+
+3. Run the app
 
 ```
 npm install
 npm run dev
 ```
 
-Login at `/login` with your email. Check your inbox for the magic link. After signing in, you’ll be redirected to the dashboard.
+4. Sign-in flow (local and production)
+
+- Go to `/login`, enter your email and password.
+- Click “Sign up” to create a new account, then you’ll be signed in immediately.
+- Later, use “Sign in” with the same credentials.
+
+If you enable Google OAuth locally, add your local URLs to `supabase/config.toml` under `[auth]` `site_url` and `additional_redirect_urls` (already pre-filled for 127.0.0.1 and localhost) and configure the provider in Studio.
+
+### 2) Production/Hosted Supabase
+
+Set environment variables in `.env` or your hosting provider:
+
+```
+VITE_SUPABASE_URL=https://YOUR-PROJECT.ref.supabase.co
+VITE_SUPABASE_ANON_KEY=YOUR_PUBLIC_ANON_KEY
+VITE_SITE_URL=https://your-domain.com
+VITE_GOOGLE_OAUTH_ENABLED=true   # if you enable Google in Supabase
+```
+
+In your Supabase Dashboard (hosted project):
+
+- Authentication → URL Configuration: set Site URL and Additional Redirect URLs to include your domain(s) and any preview URLs.
+- Authentication → Providers → Google: enable and set client ID/secret. Add redirect URIs that match your Site URL.
 
 Notes:
 
-- For production, review and tighten RLS policies; current policies in baseline are permissive for dev.
-- The app protects all routes except `/login`; use the Sign out button in the top bar to end your session.
+- For production, review and tighten RLS policies. The migration `20250815190000_lockdown_auth.sql` applies authenticated-only policies.
+- The app protects all routes except `/login`; use the sign out control in the UI to end your session.
 
 ### Database: migrations and seed
 
@@ -49,18 +88,9 @@ supabase db reset
 
 This loads migrations under `supabase/migrations` and then executes `supabase/seed.sql` specified in `supabase/config.toml`.
 
-### Google sign-in
+### Providers
 
-1. Supabase Dashboard → Authentication → Providers → Google
-   - Enable Google
-   - Set Client ID and Client Secret from Google Cloud Console
-   - Add authorized redirect URIs that match your Site URL(s), e.g.:
-     - https://your-domain.com/
-     - http://localhost:5173/
-2. Authentication → URL Configuration
-   - Ensure Site URL and Additional Redirect URLs include your domain(s) and local dev URLs.
-3. App config
-   - Optional: set `VITE_SITE_URL` to your production domain so OAuth redirects return there.
+This app uses email + password only. OAuth/magic-link are not used.
 
 ---
 

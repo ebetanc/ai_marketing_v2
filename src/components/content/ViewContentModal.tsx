@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card'
-import { X, FileText, Calendar, User, Target, Zap, ChevronDown, ChevronUp, Eye } from 'lucide-react'
+import { X, FileText, Calendar, User, Target, Zap, ChevronDown, ChevronUp, Eye, Clipboard, Share2 } from 'lucide-react'
 import { formatDate } from '../../lib/utils'
 import { Modal } from '../ui/Modal'
 import { IconButton } from '../ui/IconButton'
@@ -46,6 +46,9 @@ interface ViewContentModalProps {
   onClose: () => void
   content: ModalContent
   strategyId?: string | number
+  onPosted?: (updated: ModalContent) => void
+  deepLink?: string
+  onApproved?: (updated: ModalContent) => void
 }
 
 import { supabase } from '../../lib/supabase'
@@ -97,9 +100,10 @@ const formatContentBody = (content: string) => {
     })
 }
 
-export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewContentModalProps) {
+export function ViewContentModal({ isOpen, onClose, content, strategyId, onPosted, deepLink, onApproved }: ViewContentModalProps) {
   const [expandedAngles, setExpandedAngles] = useState<{ [key: number]: boolean }>({})
   const [posting, setPosting] = useState(false)
+  const [approving, setApproving] = useState(false)
   const { push } = useToast()
 
   if (!isOpen || !content) return null
@@ -184,7 +188,8 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
 
       console.log('Content posted successfully')
       push({ message: 'Content posted successfully!', variant: 'success' })
-
+      // Notify parent to update local state
+      onPosted?.({ ...content, post: true })
       // Close the modal after successful posting
       onClose()
 
@@ -193,6 +198,28 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
       push({ message: 'Failed to post content. Please try again.', variant: 'error' })
     } finally {
       setPosting(false)
+    }
+  }
+
+  const handleApprove = async () => {
+    if (!content?.id || !content?.source) return
+    setApproving(true)
+    try {
+      const { error } = await supabase
+        .from(content.source)
+        .update({ status: 'approved' })
+        .eq('id', content.id)
+
+      if (error) {
+        push({ message: `Failed to approve: ${error.message}`, variant: 'error' })
+        return
+      }
+      push({ message: 'Content approved', variant: 'success' })
+      onApproved?.({ ...content, status: 'approved' })
+    } catch (_e) {
+      push({ message: 'Failed to approve. Please try again.', variant: 'error' })
+    } finally {
+      setApproving(false)
     }
   }
 
@@ -306,6 +333,49 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
   }
 
   const titleId = 'view-content-title'
+
+  const copyToClipboard = async (text: string, successMsg: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      push({ message: successMsg, variant: 'success' })
+    } catch (_e) {
+      push({ message: 'Copy failed. Please try again.', variant: 'error' })
+    }
+  }
+
+  const handleCopyTitle = () => {
+    copyToClipboard(content.title || 'Untitled', 'Title copied')
+  }
+
+  const handleCopyBody = () => {
+    const text = String(content.body_text || content.body || '')
+    if (!text) {
+      push({ message: 'No body to copy', variant: 'warning' })
+      return
+    }
+    copyToClipboard(text, 'Content copied')
+  }
+
+  const handleShare = async () => {
+    const shareData = {
+      title: content.title || 'Content',
+      text: content.title || undefined,
+      url: deepLink || undefined
+    } as any
+    try {
+      if ((navigator as any).share) {
+        await (navigator as any).share(shareData)
+      } else {
+        if (deepLink) {
+          await copyToClipboard(deepLink, 'Link copied')
+        } else {
+          handleCopyTitle()
+        }
+      }
+    } catch (_e) {
+      // Ignore cancel
+    }
+  }
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} labelledById={titleId}>
@@ -453,8 +523,36 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId }: ViewC
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+        <div className="flex justify-between p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+          <div className="flex space-x-2">
+            <Button variant="outline" size="sm" onClick={handleCopyTitle}>
+              <Clipboard className="h-4 w-4 mr-2" />
+              Copy title
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleCopyBody}>
+              <Clipboard className="h-4 w-4 mr-2" />
+              Copy body
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => deepLink ? copyToClipboard(deepLink, 'Link copied') : push({ message: 'No link available', variant: 'warning' })}>
+              <Share2 className="h-4 w-4 mr-2" />
+              Copy link
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleShare}>
+              <Share2 className="h-4 w-4 mr-2" />
+              Share
+            </Button>
+          </div>
           <div className="flex space-x-3">
+            {content.status !== 'approved' && (
+              <Button
+                variant="outline"
+                onClick={handleApprove}
+                loading={approving}
+                disabled={approving}
+              >
+                {approving ? 'Approving...' : 'Approve'}
+              </Button>
+            )}
             <Button
               onClick={handlePost}
               loading={posting}

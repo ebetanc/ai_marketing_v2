@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Card, CardContent, CardHeader } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Select } from '../components/ui/Select'
@@ -6,14 +6,14 @@ import { Badge } from '../components/ui/Badge'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { ViewContentModal } from '../components/content/ViewContentModal'
 import { supabase, type Tables } from '../lib/supabase'
-import { FileText, Eye, CheckCircle, Clock, Search, Trash2, RefreshCw, Calendar, HelpCircle } from 'lucide-react'
+import { FileText, Eye, CheckCircle, Clock, Search, Trash2, RefreshCw, Calendar, HelpCircle, Share2 } from 'lucide-react'
 import { IconButton } from '../components/ui/IconButton'
 import { formatDate, truncateText } from '../lib/utils'
 import { useToast } from '../components/ui/Toast'
 import { Skeleton } from '../components/ui/Skeleton'
-
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { useLocation, useNavigate } from 'react-router-dom'
 // (reserved) formatting helpers for future rich rendering of content bodies
-
 // Helper function to extract and format content from JSON (reserved)
 const _extractContentBody = (content: any) => {
   // Try to parse the body if it's JSON
@@ -63,21 +63,17 @@ const _extractContentBody = (content: any) => {
   const fallbackContent = content.body || 'AI-generated content ready for review and publishing.'
 
   // If it's still JSON-like, try to clean it up
-  if (typeof fallbackContent === 'string' && fallbackContent.includes('"')) {
-    // Try to extract readable content from JSON strings
-    const cleanContent = fallbackContent
-      .replace(/^\[|\]$/g, '') // Remove array brackets
-      .replace(/^\{|\}$/g, '') // Remove object brackets
-      .replace(/"[^"]*":\s*/g, '') // Remove JSON keys
-      .replace(/[{}[\]"]/g, '') // Remove remaining JSON characters
-      .replace(/,\s*/g, '. ') // Replace commas with periods
-      .replace(/\.\s*\./g, '.') // Remove double periods
-      .trim()
+  // Try to extract readable content from JSON strings
+  const cleanContent = fallbackContent
+    .replace(/^\[|\]$/g, '') // Remove array brackets
+    .replace(/^\{|\}$/g, '') // Remove object brackets
+    .replace(/"[^"]*":\s*/g, '') // Remove JSON keys
+    .replace(/[{}[\]"]/g, '') // Remove remaining JSON characters
+    .replace(/,\s*/g, '. ') // Replace commas with periods
+    .replace(/\.\s*\./g, '.') // Remove double periods
+    .trim()
 
-    return cleanContent || 'AI-generated content ready for review and publishing.'
-  }
-
-  return fallbackContent
+  return cleanContent || 'AI-generated content ready for review and publishing.'
 }
 
 // Helper function to extract content type/topic
@@ -118,6 +114,10 @@ const extractContentTopic = (content: any) => {
 }
 
 export function Content() {
+  useDocumentTitle('Generated Content — AI Marketing')
+  const location = useLocation()
+  const navigate = useNavigate()
+  const initialQ = new URLSearchParams(location.search).get('q') || ''
   // Typed helpers for joined rows
   type CompanyRow = Tables<'companies'>
   type StrategyRow = Tables<'strategies'>
@@ -142,10 +142,11 @@ export function Content() {
   const [loadingContent, setLoadingContent] = useState(true)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [filterStatus, setFilterStatus] = useState<'all' | 'draft' | 'approved'>('all')
-  const [filterType, setFilterType] = useState<'all' | string>('all')
-  const [brandFilter, setBrandFilter] = useState<string>('')
-  const [searchQuery, setSearchQuery] = useState('')
+  const paramsAtInit = new URLSearchParams(location.search)
+  const [filterStatus, setFilterStatus] = useState<'all' | 'draft' | 'approved'>((paramsAtInit.get('status') as any) || 'all')
+  const [filterType, setFilterType] = useState<'all' | string>(paramsAtInit.get('type') || 'all')
+  const [brandFilter, setBrandFilter] = useState<string>(paramsAtInit.get('brand') || '')
+  const [searchQuery, setSearchQuery] = useState(initialQ)
   const [viewContentModal, setViewContentModal] = useState<{ isOpen: boolean; content: any; strategyId: any }>({
     isOpen: false,
     content: null,
@@ -161,6 +162,16 @@ export function Content() {
     loading: false
   })
   const { push } = useToast()
+  const searchInputRef = useRef<HTMLInputElement | null>(null)
+  const lastFocusRef = useRef<HTMLElement | null>(null)
+
+  // While viewing a specific content item, reflect it in the document title
+  useEffect(() => {
+    if (!viewContentModal.isOpen || !viewContentModal.content?.title) return
+    const prev = document.title
+    document.title = `${viewContentModal.content.title} — Content — AI Marketing`
+    return () => { document.title = prev }
+  }, [viewContentModal.isOpen, viewContentModal.content?.title])
 
   const fetchCompanies = useCallback(async () => {
     try {
@@ -331,6 +342,88 @@ export function Content() {
     fetchContent()
   }, [fetchCompanies, fetchContent])
 
+  // Keep local search/filters in sync with the URL when navigating via history or external actions
+  useEffect(() => {
+    const url = new URLSearchParams(location.search)
+    const q = url.get('q') || ''
+    const status = (url.get('status') as 'all' | 'draft' | 'approved' | null) || 'all'
+    const type = url.get('type') || 'all'
+    const brand = url.get('brand') || ''
+
+    setSearchQuery(prev => (prev === q ? prev : q))
+    setFilterStatus(prev => (prev === status ? prev : status))
+    setFilterType(prev => (prev === type ? prev : type))
+    setBrandFilter(prev => (prev === brand ? prev : brand))
+  }, [location.search])
+
+  // If the modal is open and the underlying list item updates (e.g., approved/posted),
+  // keep the modal's content object in sync so UI reflects the latest status.
+  useEffect(() => {
+    if (!viewContentModal.isOpen || !viewContentModal.content) return
+    const currentId = viewContentModal.content.id
+    const latest = generatedContent.find((c: any) => c.id === currentId)
+    if (latest) {
+      setViewContentModal(prev => ({ ...prev, content: { ...prev.content, ...latest } }))
+    }
+  }, [generatedContent, viewContentModal.isOpen])
+
+  // Keyboard shortcut: '/' focuses the page search input when not typing in another field
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement
+      const isTyping = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.getAttribute('contenteditable') === 'true')
+      if (isTyping) return
+      if (e.key === '/') {
+        e.preventDefault()
+        searchInputRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
+
+  // Auto-open deep-linked content modal when `?open=source:id` is present
+  const lastOpenRef = useRef<string | null>(null)
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(location.search)
+      const open = params.get('open')
+      if (!open) {
+        lastOpenRef.current = null
+        return
+      }
+      if (viewContentModal.isOpen) return
+      if (lastOpenRef.current === open) return
+
+      const [source, idStr] = open.split(':')
+      if (!source || !idStr) return
+      // Find the content item once data is loaded
+      const match = generatedContent.find((c: any) => String(c.id) === idStr && (c.source === source))
+      if (match) {
+        lastOpenRef.current = open
+        // Inline open logic to avoid ordering/deps issues
+        const newParams = new URLSearchParams(location.search)
+        const resolvedSource = match.source || (match.platform?.toLowerCase().includes('twitter') ? 'twitter_content' : match.platform?.toLowerCase().includes('linkedin') ? 'linkedin_content' : 'newsletter_content')
+        newParams.set('open', `${resolvedSource}:${match.id}`)
+        // Normalize the URL if needed but avoid adding to history from auto-open
+        navigate({ search: newParams.toString() }, { replace: true })
+        setViewContentModal({
+          isOpen: true,
+          content: match,
+          strategyId: match.strategy_id || match.idea?.strategy_id || match.metadata?.parent_strategy_id
+        })
+      } else if (!loading && !loadingContent) {
+        // If we've loaded data and still didn't find the item, clean up the URL and notify
+        const cleanupParams = new URLSearchParams(location.search)
+        cleanupParams.delete('open')
+        navigate({ search: cleanupParams.toString() }, { replace: true })
+        push({ title: 'Link not found', message: 'The linked content is unavailable.', variant: 'warning' })
+      }
+    } catch (_e) {
+      // noop – if parsing fails, just ignore
+    }
+  }, [generatedContent, location.search, viewContentModal.isOpen, navigate, loading, loadingContent, push])
+
   // const refreshContent = async () => {
   //   await fetchContent()
   // }
@@ -403,18 +496,35 @@ export function Content() {
     return matchesStatus && matchesType && matchesBrand && matchesSearch
   })
 
-  const handleViewContent = (content: any) => {
+  const handleViewContent = useCallback((content: any) => {
     console.log('Opening content modal for:', content)
     console.log('Content has strategy_id (from idea or legacy column):', content.strategy_id)
+    // Remember the current focused element to restore after closing
+    lastFocusRef.current = (document.activeElement as HTMLElement) || null
+    // Update URL with deep link
+    const params = new URLSearchParams(location.search)
+    const source = content.source || (content.platform?.toLowerCase().includes('twitter') ? 'twitter_content' : content.platform?.toLowerCase().includes('linkedin') ? 'linkedin_content' : 'newsletter_content')
+    params.set('open', `${source}:${content.id}`)
+    // Push a history entry so Back closes the modal and returns to prior state
+    navigate({ search: params.toString() }, { replace: false })
     setViewContentModal({
       isOpen: true,
       content,
       strategyId: content.strategy_id || content.idea?.strategy_id || content.metadata?.parent_strategy_id // Prefer idea.strategy_id post-3NF
     })
-  }
+  }, [navigate, location.search])
 
   const handleCloseViewModal = () => {
+    // Remove deep link from URL
+    const params = new URLSearchParams(location.search)
+    params.delete('open')
+    navigate({ search: params.toString() }, { replace: true })
     setViewContentModal({ isOpen: false, content: null, strategyId: undefined })
+    // Restore focus to the previously focused item
+    setTimeout(() => {
+      lastFocusRef.current?.focus()
+      lastFocusRef.current = null
+    }, 0)
   }
 
   const statusOptions = [
@@ -465,6 +575,42 @@ export function Content() {
     }
   }
 
+  const handleCopyLink = async (content: any) => {
+    const params = new URLSearchParams(location.search)
+    const source = content.source || (content.platform?.toLowerCase().includes('twitter') ? 'twitter_content' : content.platform?.toLowerCase().includes('linkedin') ? 'linkedin_content' : 'newsletter_content')
+    params.set('open', `${source}:${content.id}`)
+    const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin
+    const url = `${siteUrl}/content?${params.toString()}`
+    try {
+      await navigator.clipboard.writeText(url)
+      push({ message: 'Link copied', variant: 'success' })
+    } catch (_e) {
+      push({ message: 'Copy failed. Please try again.', variant: 'error' })
+    }
+  }
+
+  const isFiltersActive = (
+    (searchQuery && searchQuery.length > 0) ||
+    (filterStatus && filterStatus !== 'all') ||
+    (filterType && filterType !== 'all') ||
+    (brandFilter && brandFilter !== '')
+  )
+
+  const clearFilters = () => {
+    setSearchQuery('')
+    setFilterStatus('all')
+    setFilterType('all')
+    setBrandFilter('')
+    const params = new URLSearchParams(location.search)
+    params.delete('q')
+    params.delete('status')
+    params.delete('type')
+    params.delete('brand')
+    navigate({ search: params.toString() }, { replace: true })
+    // Refocus the search box for quick typing
+    setTimeout(() => searchInputRef.current?.focus(), 0)
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -485,6 +631,23 @@ export function Content() {
         onClose={handleCloseViewModal}
         content={viewContentModal.content}
         strategyId={viewContentModal.strategyId}
+        onPosted={(updated) => {
+          setGeneratedContent(prev => prev.map(c => c.id === updated.id ? { ...c, post: true } : c))
+        }}
+        onApproved={(updated) => {
+          setGeneratedContent(prev => prev.map(c => c.id === updated.id ? { ...c, status: 'approved' } : c))
+          // Also reflect inside the open modal immediately
+          setViewContentModal(prev => prev.isOpen && prev.content?.id === updated.id
+            ? { ...prev, content: { ...prev.content, status: 'approved' } }
+            : prev
+          )
+        }}
+        deepLink={(() => {
+          const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin
+          const params = new URLSearchParams(location.search)
+          const open = params.get('open')
+          return open ? `${siteUrl}/content?${params.toString()}` : undefined
+        })()}
       />
 
       {/* Delete Confirmation Dialog */}
@@ -510,30 +673,61 @@ export function Content() {
                 type="text"
                 placeholder="Search content..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                ref={searchInputRef}
+                onChange={(e) => {
+                  const v = e.target.value
+                  setSearchQuery(v)
+                  const params = new URLSearchParams(location.search)
+                  if (v) params.set('q', v); else params.delete('q')
+                  navigate({ search: params.toString() }, { replace: true })
+                }}
                 aria-label="Search content"
                 className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus:border-transparent"
               />
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 items-center">
               <Select
                 options={brandOptions}
                 value={brandFilter}
-                onChange={(e) => setBrandFilter(e.target.value)}
+                onChange={(e) => {
+                  const v = e.target.value
+                  setBrandFilter(v)
+                  const params = new URLSearchParams(location.search)
+                  if (v) params.set('brand', v); else params.delete('brand')
+                  navigate({ search: params.toString() }, { replace: true })
+                }}
               />
 
               <Select
                 options={typeOptions}
                 value={filterType}
-                onChange={(e) => setFilterType(e.target.value as typeof filterType)}
+                onChange={(e) => {
+                  const v = e.target.value as typeof filterType
+                  setFilterType(v)
+                  const params = new URLSearchParams(location.search)
+                  if (v && v !== 'all') params.set('type', v); else params.delete('type')
+                  navigate({ search: params.toString() }, { replace: true })
+                }}
               />
 
               <Select
                 options={statusOptions}
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
+                onChange={(e) => {
+                  const v = e.target.value as typeof filterStatus
+                  setFilterStatus(v)
+                  const params = new URLSearchParams(location.search)
+                  if (v && v !== 'all') params.set('status', v); else params.delete('status')
+                  navigate({ search: params.toString() }, { replace: true })
+                }}
               />
+
+              {isFiltersActive && (
+                <Button variant="outline" size="sm" onClick={clearFilters}>
+                  Clear filters
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
@@ -622,8 +816,20 @@ export function Content() {
 
                       return (
                         <li key={content.id}>
-                          <div className={`flex items-center justify-between p-4 text-base font-bold text-gray-900 rounded-lg bg-gray-50 hover:bg-gray-100 group focus-within:bg-gray-100 hover:shadow transition-all duration-200 ${content.post ? 'opacity-50 pointer-events-none bg-gray-200' : ''
-                            }`}>
+                          <div
+                            className={`flex items-center justify-between p-4 text-base font-bold text-gray-900 rounded-lg bg-gray-50 hover:bg-gray-100 group focus-within:bg-gray-100 hover:shadow transition-all duration-200 ${content.post ? 'opacity-50 pointer-events-none bg-gray-200' : ''}`}
+                            role={!content.post ? 'button' : undefined}
+                            tabIndex={!content.post ? 0 : -1}
+                            onClick={() => !content.post && handleViewContent(content)}
+                            onKeyDown={(e) => {
+                              if (content.post) return
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault()
+                                handleViewContent(content)
+                              }
+                            }}
+                            aria-label={!content.post ? `View details for ${content.title}` : undefined}
+                          >
                             <div className="flex items-center space-x-4">
                               <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-500 rounded-lg flex items-center justify-center">
                                 <span className="text-white text-lg">{getTypeIcon(content.type)}</span>
@@ -635,6 +841,28 @@ export function Content() {
                                     {content.title}
                                   </span>
                                   {getStatusBadge(content.status)}
+                                  {content.status !== 'approved' && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        // Optimistically update local state
+                                        setGeneratedContent(prev => prev.map(c => c.id === content.id ? { ...c, status: 'approved' } : c))
+                                        // Persist to backing table
+                                        const table = content.source || (content.platform?.toLowerCase().includes('twitter') ? 'twitter_content' : content.platform?.toLowerCase().includes('linkedin') ? 'linkedin_content' : 'newsletter_content')
+                                        supabase.from(table).update({ status: 'approved' }).eq('id', content.id).then(({ error }: { error: any }) => {
+                                          if (error) {
+                                            // Revert if failed
+                                            setGeneratedContent(prev => prev.map(c => c.id === content.id ? { ...c, status: 'draft' } : c))
+                                          }
+                                        })
+                                      }}
+                                      className="!ml-2 !py-0 !px-2 text-xs"
+                                    >
+                                      Approve
+                                    </Button>
+                                  )}
                                   {content.post && (
                                     <Badge variant="success" className="text-xs">
                                       Posted
@@ -664,6 +892,17 @@ export function Content() {
                             </div>
 
                             <div className="flex items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => { e.stopPropagation(); handleCopyLink(content) }}
+                                aria-label={`Copy link for content ${content.id}`}
+                                title="Copy link"
+                                className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
+                              >
+                                <Share2 className="h-4 w-4" />
+                                Copy link
+                              </Button>
                               <IconButton
                                 onClick={(e) => {
                                   e.stopPropagation()
@@ -718,6 +957,9 @@ export function Content() {
                 : 'Try adjusting your filters to see more content.'
               }
             </p>
+            {allContent.length > 0 && isFiltersActive && (
+              <Button variant="outline" onClick={clearFilters}>Clear filters</Button>
+            )}
             {allContent.length === 0 && (
               <div className="text-center">
                 <p className="text-sm text-gray-500">

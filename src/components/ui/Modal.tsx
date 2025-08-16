@@ -87,6 +87,10 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
         }
     }
 
+    const baseClasses = 'overflow-hidden flex flex-col'
+    const defaultClasses = 'bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh]'
+    const appliedClasses = className ? `${className} ${baseClasses}` : `${defaultClasses} ${baseClasses}`
+
     return (
         <div
             ref={overlayRef}
@@ -100,7 +104,7 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
                 aria-modal="true"
                 aria-labelledby={labelledById}
                 aria-describedby={describedById}
-                className={className || 'bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden'}
+                className={appliedClasses}
             >
                 {children}
             </div>

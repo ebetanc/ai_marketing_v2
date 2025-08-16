@@ -3,8 +3,10 @@ import { Card, CardContent } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
 import { Megaphone, Plus, Calendar, Target, Users } from 'lucide-react'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 export function Campaigns() {
+  useDocumentTitle('Campaigns — AI Marketing')
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -60,7 +62,7 @@ export function Campaigns() {
 
           <div className="mt-8">
             <Badge variant="primary" className="text-sm px-4 py-2">
-              Phase 2 Feature - Coming in Next Release
+              Phase 2 (Demo)
             </Badge>
           </div>
         </CardContent>

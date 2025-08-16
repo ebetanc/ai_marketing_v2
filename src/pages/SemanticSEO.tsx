@@ -2,8 +2,10 @@ import React from 'react'
 import { Card, CardContent } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Network, Search, FileText } from 'lucide-react'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 export function SemanticSEO() {
+  useDocumentTitle('Semantic SEO — AI Marketing')
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

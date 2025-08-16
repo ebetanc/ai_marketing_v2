@@ -17,8 +17,10 @@ import { useCompanies } from '../hooks/useCompanies'
 import { useContentPieces } from '../hooks/useContentPieces'
 import { formatDate, formatTime } from '../lib/utils'
 import type { CompanyUI } from '../hooks/useCompanies'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 export function Dashboard() {
+  useDocumentTitle('Dashboard — AI Marketing')
   const navigate = useNavigate()
   const { companies } = useCompanies()
   const { contentPieces } = useContentPieces()
@@ -148,7 +150,10 @@ export function Dashboard() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Recent Activity</CardTitle>
-              <Badge variant="secondary">{recentActivity.length} items</Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">{recentActivity.length} items</Badge>
+                <Badge variant="secondary">Demo</Badge>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -201,47 +206,58 @@ export function Dashboard() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {companies.map((company) => (
-                <div key={company.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors group">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center">
-                      <span className="text-white font-semibold text-sm">
-                        {(company.brand_name || company.name || 'U').charAt(0)}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900">{company.brand_name || company.name || 'Unnamed Brand'}</p>
-                      <p className="text-sm text-gray-500">
-                        {(company.brand_voice?.tone || '').length > 50
-                          ? `${(company.brand_voice?.tone || '').substring(0, 50)}...`
-                          : (company.brand_voice?.tone || 'Not specified')
-                        }
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-gray-900">
-                        {contentPieces.filter(c => c.company_id === String(company.id)).length} pieces
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Created {formatDate(company.created_at)}
-                      </p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleViewCompany(company)}
-                      className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
-                    >
-                      <Eye className="h-3 w-3 mr-1" />
-                      View
-                    </Button>
-                  </div>
+            {companies.length === 0 ? (
+              <div className="text-center py-10">
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Users className="h-6 w-6 text-blue-600" />
                 </div>
-              ))}
-            </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No companies yet</h3>
+                <p className="text-gray-500 mb-6">Create your first company to get started.</p>
+                <Button onClick={() => navigate('/companies')}>Add Company</Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {companies.map((company) => (
+                  <div key={company.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors group">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center">
+                        <span className="text-white font-semibold text-sm">
+                          {(company.brand_name || company.name || 'U').charAt(0)}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900">{company.brand_name || company.name || 'Unnamed Brand'}</p>
+                        <p className="text-sm text-gray-500">
+                          {(company.brand_voice?.tone || '').length > 50
+                            ? `${(company.brand_voice?.tone || '').substring(0, 50)}...`
+                            : (company.brand_voice?.tone || 'Not specified')
+                          }
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <div className="text-right">
+                        <p className="text-sm font-medium text-gray-900">
+                          {contentPieces.filter(c => c.company_id === String(company.id)).length} pieces
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Created {formatDate(company.created_at)}
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewCompany(company)}
+                        className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        View
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

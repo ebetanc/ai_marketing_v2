@@ -23,8 +23,10 @@ import { supabase, type Tables } from '../lib/supabase';
 import { formatDate, truncateText } from '../lib/utils';
 import { Skeleton } from '../components/ui/Skeleton';
 import { useToast } from '../components/ui/Toast';
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 export function Ideas() {
+  useDocumentTitle('Ideas — AI Marketing')
   type CompanyRow = Tables<'companies'>
   type StrategyRow = Tables<'strategies'>
   type IdeaRow = Tables<'ideas'>

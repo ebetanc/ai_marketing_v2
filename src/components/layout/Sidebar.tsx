@@ -55,7 +55,7 @@ export function Sidebar() {
         {/* Primary */}
         <div className="space-y-1">
           {primaryNav.map((item) => {
-            const isActive = location.pathname === item.href
+            const isActive = location.pathname.startsWith(item.href)
             return (
               <Link
                 key={item.name}
@@ -84,7 +84,7 @@ export function Sidebar() {
           <p className="px-2 sm:px-3 mb-2 text-[10px] sm:text-xs font-semibold tracking-wider text-gray-500 uppercase">Content workflow</p>
           <div className="space-y-1">
             {contentWorkflowNav.map((item) => {
-              const isActive = location.pathname === item.href
+              const isActive = location.pathname.startsWith(item.href)
               return (
                 <Link
                   key={item.name}
@@ -114,7 +114,7 @@ export function Sidebar() {
           <p className="px-2 sm:px-3 mb-2 text-[10px] sm:text-xs font-semibold tracking-wider text-gray-500 uppercase">Agents & generators</p>
           <div className="space-y-1">
             {toolsNav.map((item) => {
-              const isActive = location.pathname === item.href
+              const isActive = location.pathname.startsWith(item.href)
               return (
                 <Link
                   key={item.name}

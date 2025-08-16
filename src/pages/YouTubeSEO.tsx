@@ -2,8 +2,10 @@ import React from 'react'
 import { Card, CardContent } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Youtube, ArrowRight, FileText } from 'lucide-react'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 export function YouTubeSEO() {
+  useDocumentTitle('YouTube → SEO Blog — AI Marketing')
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

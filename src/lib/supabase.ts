@@ -26,7 +26,22 @@ const supabaseStub: any = {
     async signInWithOtp() {
       return { data: null, error: { message: 'Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.' } }
     },
+    async signInWithPassword() {
+      return { data: null, error: { message: 'Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.' } }
+    },
+    async signUp() {
+      return { data: null, error: { message: 'Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.' } }
+    },
     async signInWithOAuth() {
+      return { data: null, error: { message: 'Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.' } }
+    },
+    async resetPasswordForEmail() {
+      return { data: null, error: { message: 'Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.' } }
+    },
+    async updateUser() {
+      return { data: null, error: { message: 'Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.' } }
+    },
+    async resend() {
       return { data: null, error: { message: 'Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.' } }
     },
     async signOut() {

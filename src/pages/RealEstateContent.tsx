@@ -13,6 +13,7 @@ import { useToast } from '../components/ui/Toast'
 import { Skeleton } from '../components/ui/Skeleton'
 import { Modal } from '../components/ui/Modal'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 interface RealEstateContent {
   id: number
@@ -22,6 +23,7 @@ interface RealEstateContent {
 }
 
 export function RealEstateContent() {
+  useDocumentTitle('Real Estate Agent — AI Marketing')
   const [showUrlModal, setShowUrlModal] = useState(false)
   const [url, setUrl] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
@@ -185,7 +187,7 @@ export function RealEstateContent() {
       {/* URL Input Modal (shared) */}
       <Modal isOpen={showUrlModal} onClose={handleCloseModal} labelledById="realestate-url-title" className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center">
               <Link className="h-5 w-5 text-white" />
@@ -202,7 +204,7 @@ export function RealEstateContent() {
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-4">
+        <div className="flex-1 min-h-0 p-6 space-y-4 overflow-y-auto">
           <Input
             label="Property or Real Estate URL"
             placeholder="https://example.com/property-listing"
@@ -220,7 +222,7 @@ export function RealEstateContent() {
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end space-x-3 p-6 border-t border-gray-200">
+        <div className="flex justify-end space-x-3 p-6 border-t border-gray-200 flex-shrink-0">
           <Button
             variant="outline"
             onClick={handleCloseModal}

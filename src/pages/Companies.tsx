@@ -17,8 +17,10 @@ import {
 import { formatDate, truncateText } from '../lib/utils'
 import { useToast } from '../components/ui/Toast'
 import { Skeleton } from '../components/ui/Skeleton'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 export function Companies() {
+  useDocumentTitle('Companies — AI Marketing')
   const { companies: hookCompanies, loading, error, refetch } = useCompanies()
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [viewCompanyModal, setViewCompanyModal] = useState<{ isOpen: boolean; company: any | null }>({

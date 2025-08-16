@@ -191,7 +191,7 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} labelledById="generate-strategy-title">
-      <div className="w-full max-w-lg max-h-[90vh] overflow-hidden">
+      <div className="w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-4">
@@ -224,7 +224,7 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
         )}
 
         {/* Content */}
-        <div className="p-6 text-center overflow-y-auto max-h-[calc(90vh-140px)]">
+        <div className="flex-1 min-h-0 p-6 text-center overflow-y-auto">
           <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <Sparkles className="h-8 w-8 text-white" />
           </div>

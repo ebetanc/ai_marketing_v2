@@ -138,6 +138,8 @@ refresh_token_reuse_interval = 10
 # Allow/disallow new user signups to your project.
 enable_signup = true
 # Allow/disallow anonymous sign-ins to your project.
+# Enable anonymous sign-ins for local development so developers can bypass email magic links.
+# NOTE: This only affects the local Supabase stack. Do not enable anonymously in production unless intended.
 enable_anonymous_sign_ins = false
 # Allow/disallow testing manual linking of accounts
 enable_manual_linking = false
