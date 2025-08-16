@@ -80,7 +80,7 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
       const platformsPayload = selectedPlatforms
 
       // Prepare comprehensive brand data payload
-  const comprehensiveBrandData = {
+      const comprehensiveBrandData = {
         // Basic brand information
         id: selectedCompany.id,
         name: brandName,
@@ -104,10 +104,10 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
         imageGuidelines,
 
         // Metadata
-  createdAt
+        createdAt
       }
 
-    const webhookPayload = {
+      const webhookPayload = {
         identifier: "generateAngles",
         brand: comprehensiveBrandData,
         platforms: platformsPayload,
@@ -115,7 +115,7 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
         context: {
           requestType: 'content_strategy_generation',
           timestamp: new Date().toISOString(),
-      platformCount: selectedPlatforms.length,
+          platformCount: selectedPlatforms.length,
           brandHasWebsite: !!website,
           brandHasAdditionalInfo: !!additionalInfo,
           brandHasImageGuidelines: !!imageGuidelines
