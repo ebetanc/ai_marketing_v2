@@ -24,16 +24,40 @@ export function TopBar({ onMenuClick }: TopBarProps) {
     navigate('/login', { replace: true })
   }
 
-  // Keyboard shortcut to focus search
+  // Keyboard shortcut to focus search (Ctrl/Cmd + K)
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      // Don't steal focus from open modals
-      const hasOpenModal = !!document.querySelector('[role="dialog"][aria-modal="true"]')
+      // Never interfere if another handler already handled it
+      if (e.defaultPrevented) return
+      // Don't steal focus from any open modal (dialog or alertdialog)
+      const hasOpenModal = !!document.querySelector('[aria-modal="true"]')
       if (hasOpenModal) return
-      if (e.key === '/' && !e.metaKey && !e.ctrlKey) {
+      const isSearchShortcut = (e.key === 'k' || e.key === 'K') && (e.ctrlKey || e.metaKey)
+      if (isSearchShortcut) {
         const target = e.target as HTMLElement
-        const isTyping = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA'
-        if (!isTyping) {
+        const tag = target?.tagName
+        const active = document.activeElement as HTMLElement | null
+        const isEditable = (node: HTMLElement | null) => !!node && (
+          node.tagName === 'INPUT' ||
+          node.tagName === 'TEXTAREA' ||
+          (node as HTMLElement).isContentEditable ||
+          !!node.closest('[contenteditable="true"]')
+        )
+        const isInteractive = (node: HTMLElement | null) => !!node && (
+          node.tagName === 'BUTTON' ||
+          node.tagName === 'A' ||
+          node.tagName === 'SELECT' ||
+          node.tagName === 'INPUT' ||
+          node.tagName === 'TEXTAREA' ||
+          !!node.getAttribute('role')?.includes('button') ||
+          !!node.closest('button, a, select, input, textarea, [role="button"], [tabindex]:not([tabindex="-1"])')
+        )
+
+        const typingInTarget = tag === 'INPUT' || tag === 'TEXTAREA' || isEditable(target)
+        const typingInActive = isEditable(active)
+        const inInteractive = isInteractive(target) || isInteractive(active)
+
+        if (!typingInTarget && !typingInActive && !inInteractive) {
           e.preventDefault()
           searchRef.current?.focus()
         }
@@ -68,7 +92,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search... (press / to focus)"
+              placeholder="Search... (Ctrl/Cmd + K)"
               value={searchQuery}
               onChange={(e) => {
                 const v = e.target.value

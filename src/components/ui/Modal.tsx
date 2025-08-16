@@ -16,6 +16,11 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
     const overlayRef = useRef<HTMLDivElement | null>(null)
     const dialogRef = useRef<HTMLDivElement | null>(null)
     const previouslyFocused = useRef<Element | null>(null)
+    // Keep latest onClose without retriggering effects
+    const onCloseRef = useRef(onClose)
+    useEffect(() => {
+        onCloseRef.current = onClose
+    }, [onClose])
 
     useEffect(() => {
         if (!isOpen) return
@@ -25,22 +30,31 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
         const originalOverflow = document.body.style.overflow
         document.body.style.overflow = 'hidden'
 
-        // Focus the first focusable element inside the dialog
+        // Focus management: prefer form fields and don't steal focus if user already focused inside
         const focusFirst = () => {
             const dialog = dialogRef.current
             if (!dialog) return
-            const focusable = dialog.querySelectorAll<HTMLElement>(
-                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-            )
-                ; (focusable[0] || dialog).focus()
+
+            // If the user has already focused something inside the dialog (e.g. clicked an input), don't override
+            const active = document.activeElement as HTMLElement | null
+            if (active && dialog.contains(active)) return
+
+            // Prefer explicit autofocus markers or form controls
+            const preferred = dialog.querySelector<HTMLElement>('[autofocus], [data-autofocus], input, textarea, select')
+            const focusable = Array.from(
+                dialog.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+            ).filter(el => !el.hasAttribute('disabled'))
+
+            const target = preferred || focusable[0] || dialog
+            target.focus({ preventScroll: true } as any)
         }
-        // Slight delay to ensure rendered
+        // Slight delay to ensure rendered; guarded to avoid overriding user focus
         const id = window.setTimeout(focusFirst, 0)
 
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
                 e.stopPropagation()
-                onClose()
+                onCloseRef.current?.()
             } else if (e.key === 'Tab') {
                 // Trap focus
                 const dialog = dialogRef.current
@@ -77,7 +91,7 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
             const prev = previouslyFocused.current as HTMLElement | null
             prev?.focus?.()
         }
-    }, [isOpen, onClose])
+    }, [isOpen])
 
     if (!isOpen) return null
 

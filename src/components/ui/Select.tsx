@@ -8,7 +8,7 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   options: { value: string; label: string }[]
 }
 
-export function Select({ className, label, error, options, id, ...props }: SelectProps) {
+export function Select({ className, label, error, options, id, onKeyDown, onKeyUp, ...props }: SelectProps) {
   const autoId = React.useId()
   const selectId = id ?? autoId
   return (
@@ -29,6 +29,12 @@ export function Select({ className, label, error, options, id, ...props }: Selec
           aria-invalid={Boolean(error) || undefined}
           aria-describedby={error ? `${selectId}-error` : undefined}
           {...props}
+          onKeyDown={(e) => {
+            onKeyDown?.(e)
+          }}
+          onKeyUp={(e) => {
+            onKeyUp?.(e)
+          }}
         >
           {options.map((option) => (
             <option key={option.value} value={option.value}>

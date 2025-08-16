@@ -6,7 +6,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   error?: string
 }
 
-export function Input({ className, label, error, id, ...props }: InputProps) {
+export function Input({ className, label, error, id, onKeyDown, onKeyUp, ...props }: InputProps) {
   const autoId = React.useId()
   const inputId = id ?? autoId
   return (
@@ -26,6 +26,12 @@ export function Input({ className, label, error, id, ...props }: InputProps) {
         aria-invalid={Boolean(error) || undefined}
         aria-describedby={error ? `${inputId}-error` : undefined}
         {...props}
+        onKeyDown={(e) => {
+          onKeyDown?.(e)
+        }}
+        onKeyUp={(e) => {
+          onKeyUp?.(e)
+        }}
       />
       {error && (
         <p id={`${inputId}-error`} className="text-sm text-red-600">{error}</p>

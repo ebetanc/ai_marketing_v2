@@ -6,7 +6,7 @@ interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement
   error?: string
 }
 
-export function Textarea({ className, label, error, id, ...props }: TextareaProps) {
+export function Textarea({ className, label, error, id, onKeyDown, onKeyUp, ...props }: TextareaProps) {
   const autoId = React.useId()
   const textareaId = id ?? autoId
   return (
@@ -26,6 +26,12 @@ export function Textarea({ className, label, error, id, ...props }: TextareaProp
         aria-invalid={Boolean(error) || undefined}
         aria-describedby={error ? `${textareaId}-error` : undefined}
         {...props}
+        onKeyDown={(e) => {
+          onKeyDown?.(e)
+        }}
+        onKeyUp={(e) => {
+          onKeyUp?.(e)
+        }}
       />
       {error && (
         <p id={`${textareaId}-error`} className="text-sm text-red-600">{error}</p>
