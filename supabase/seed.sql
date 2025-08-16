@@ -15,8 +15,33 @@ public.ideas,
 public.strategies,
 public.companies,
 public.real_estate_content restart identity cascade;
--- Companies
+insert into auth.users (
+        id,
+        instance_id,
+        email,
+        encrypted_password,
+        email_confirmed_at,
+        raw_app_meta_data,
+        raw_user_meta_data,
+        aud,
+        role,
+        is_super_admin
+    )
+values (
+        '11111111-1111-1111-1111-111111111111',
+        '00000000-0000-0000-0000-000000000000',
+        'seed@example.com',
+        null,
+        now(),
+        '{"provider":"email","providers":["email"]}',
+        '{}',
+        'authenticated',
+        'authenticated',
+        false
+    ) on conflict (id) do nothing;
+-- Companies (assign owner_id to the seeded user for all rows)
 insert into public.companies (
+        owner_id,
         brand_name,
         website,
         additional_information,
@@ -25,6 +50,7 @@ insert into public.companies (
         key_offer
     )
 values (
+        '11111111-1111-1111-1111-111111111111',
         'Acme Analytics',
         'https://acme-analytics.example',
         'B2B analytics platform focusing on SMBs. Integrates with 50+ data sources.',
@@ -33,6 +59,7 @@ values (
         'Self-serve dashboards with AI insights'
     ),
     (
+        '11111111-1111-1111-1111-111111111111',
         'Café Montréal ☕',
         null,
         'Artisanal coffee roaster and café chain in Québec. Offre aussi des ateliers barista.',
@@ -41,6 +68,7 @@ values (
         'Subscriptions & seasonal roasts'
     ),
     (
+        '11111111-1111-1111-1111-111111111111',
         'NeoFit+',
         'https://neofit.plus',
         'Consumer fitness app with adaptive workouts and Apple Health integration.',
@@ -49,6 +77,7 @@ values (
         'AI-personalized training plans'
     ),
     (
+        '11111111-1111-1111-1111-111111111111',
         'Globex Realty',
         'https://globexrealty.example',
         'Boutique real estate firm specializing in urban condos and staging.',
@@ -57,6 +86,7 @@ values (
         'End-to-end buying assistance'
     ),
     (
+        '11111111-1111-1111-1111-111111111111',
         'Zeta DevTools',
         'https://zeta.dev',
         'Developer tooling for CI/CD. Includes a free tier and on-prem options.',
@@ -65,6 +95,7 @@ values (
         'Blazing-fast pipelines with insights'
     ),
     (
+        '11111111-1111-1111-1111-111111111111',
         'München Bikes 🚲',
         'https://muenchen-bikes.de',
         'Bike shop and rental service in München. E-Bikes and guided tours available.',

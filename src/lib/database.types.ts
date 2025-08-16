@@ -17,6 +17,7 @@ export type Database = {
           created_at: string
           id: number
           key_offer: string | null
+          owner_id: string
           target_audience: string | null
           website: string | null
         }
@@ -27,6 +28,7 @@ export type Database = {
           created_at?: string
           id?: number
           key_offer?: string | null
+          owner_id?: string
           target_audience?: string | null
           website?: string | null
         }
@@ -37,6 +39,7 @@ export type Database = {
           created_at?: string
           id?: number
           key_offer?: string | null
+          owner_id?: string
           target_audience?: string | null
           website?: string | null
         }
@@ -185,21 +188,21 @@ export type Database = {
       }
       linkedin_content: {
         Row: {
-          content_body: string | null
+          content_body: string
           created_at: string
           id: number
           idea_id: number
           post: boolean | null
         }
         Insert: {
-          content_body?: string | null
+          content_body: string
           created_at?: string
           id?: number
           idea_id: number
           post?: boolean | null
         }
         Update: {
-          content_body?: string | null
+          content_body?: string
           created_at?: string
           id?: number
           idea_id?: number
@@ -217,21 +220,21 @@ export type Database = {
       }
       newsletter_content: {
         Row: {
-          content_body: string | null
+          content_body: string
           created_at: string
           id: number
           idea_id: number
           post: boolean | null
         }
         Insert: {
-          content_body?: string | null
+          content_body: string
           created_at?: string
           id?: number
           idea_id: number
           post?: boolean | null
         }
         Update: {
-          content_body?: string | null
+          content_body?: string
           created_at?: string
           id?: number
           idea_id?: number
@@ -249,20 +252,20 @@ export type Database = {
       }
       real_estate_content: {
         Row: {
-          created_at: string | null
-          id: number | null
+          created_at: string
+          id: number
           link_final: string | null
           link_origin: string | null
         }
         Insert: {
-          created_at?: string | null
-          id?: number | null
+          created_at?: string
+          id?: number
           link_final?: string | null
           link_origin?: string | null
         }
         Update: {
-          created_at?: string | null
-          id?: number | null
+          created_at?: string
+          id?: number
           link_final?: string | null
           link_origin?: string | null
         }
@@ -419,21 +422,21 @@ export type Database = {
       }
       twitter_content: {
         Row: {
-          content_body: string | null
+          content_body: string
           created_at: string
           id: number
           idea_id: number
           post: boolean | null
         }
         Insert: {
-          content_body?: string | null
+          content_body: string
           created_at?: string
           id?: number
           idea_id: number
           post?: boolean | null
         }
         Update: {
-          content_body?: string | null
+          content_body?: string
           created_at?: string
           id?: number
           idea_id?: number
@@ -587,3 +590,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+
