@@ -367,20 +367,7 @@ export function Content() {
     }
   }, [generatedContent, viewContentModal.isOpen])
 
-  // Keyboard shortcut: '/' focuses the page search input when not typing in another field
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement
-      const isTyping = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.getAttribute('contenteditable') === 'true')
-      if (isTyping) return
-      if (e.key === '/') {
-        e.preventDefault()
-        searchInputRef.current?.focus()
-      }
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [])
+  // Global '/' shortcut is handled in TopBar; avoid duplicating here to prevent focus conflicts
 
   // Auto-open deep-linked content modal when `?open=source:id` is present
   const lastOpenRef = useRef<string | null>(null)

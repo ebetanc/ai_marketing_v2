@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Button } from '../ui/Button'
-import { Bell, Menu, Search } from 'lucide-react'
+import { Bell, Menu, Search, X } from 'lucide-react'
 import { IconButton } from '../ui/IconButton'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth'
@@ -27,6 +27,9 @@ export function TopBar({ onMenuClick }: TopBarProps) {
   // Keyboard shortcut to focus search
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      // Don't steal focus from open modals
+      const hasOpenModal = !!document.querySelector('[role="dialog"][aria-modal="true"]')
+      if (hasOpenModal) return
       if (e.key === '/' && !e.metaKey && !e.ctrlKey) {
         const target = e.target as HTMLElement
         const isTyping = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA'
@@ -67,7 +70,16 @@ export function TopBar({ onMenuClick }: TopBarProps) {
               type="text"
               placeholder="Search... (press / to focus)"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value
+                setSearchQuery(v)
+                // Live-sync the Content page search via the URL when on /content
+                if (location.pathname.startsWith('/content')) {
+                  const params = new URLSearchParams(location.search)
+                  if (v) params.set('q', v); else params.delete('q')
+                  navigate({ search: params.toString() }, { replace: true })
+                }
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   const q = searchQuery.trim()
@@ -76,8 +88,26 @@ export function TopBar({ onMenuClick }: TopBarProps) {
               }}
               aria-label="Search"
               ref={searchRef}
-              className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-10 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus:border-transparent"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                aria-label="Clear search"
+                title="Clear search"
+                onClick={() => {
+                  setSearchQuery('')
+                  if (location.pathname.startsWith('/content')) {
+                    const params = new URLSearchParams(location.search)
+                    params.delete('q')
+                    navigate({ search: params.toString() }, { replace: true })
+                  }
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
 
