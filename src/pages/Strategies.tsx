@@ -23,6 +23,7 @@ import { IconButton } from '../components/ui/IconButton'
 import { Modal } from '../components/ui/Modal'
 import { Skeleton } from '../components/ui/Skeleton'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { postToN8n } from '../lib/n8n'
 
 type Strategy = Tables<'strategies'> & {
   company?: { id: number; brand_name: string; created_at: string }
@@ -265,13 +266,7 @@ export function Strategies() {
         },
       }
 
-      const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      })
+      const response = await postToN8n('generateIdeas', payload)
 
       if (!response.ok) {
         throw new Error('Failed to generate ideas')

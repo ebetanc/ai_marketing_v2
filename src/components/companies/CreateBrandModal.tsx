@@ -9,6 +9,7 @@ import { Modal } from '../ui/Modal'
 import { useToast } from '../ui/Toast'
 import { IconButton } from '../ui/IconButton'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
+import { postToN8n } from '../../lib/n8n'
 
 interface CreateBrandModalProps {
   isOpen: boolean
@@ -54,23 +55,16 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
       console.log('=== AUTOFILL WEBHOOK REQUEST ===')
       console.log('Sending autofill request for website:', formData.website)
 
-      const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await postToN8n('autofill', {
+        operation: 'company_autofill',
+        website: formData.website,
+        brandName: formData.name,
+        additionalInfo: formData.additionalInfo,
+        meta: {
+          user_id: (await supabase.auth.getSession()).data.session?.user.id || null,
+          source: 'app',
+          ts: new Date().toISOString(),
         },
-        body: JSON.stringify({
-          identifier: 'autofill',
-          operation: 'company_autofill',
-          website: formData.website,
-          brandName: formData.name,
-          additionalInfo: formData.additionalInfo,
-          meta: {
-            user_id: (await supabase.auth.getSession()).data.session?.user.id || null,
-            source: 'app',
-            ts: new Date().toISOString(),
-          },
-        })
       })
 
       console.log('Autofill webhook response status:', response.status)

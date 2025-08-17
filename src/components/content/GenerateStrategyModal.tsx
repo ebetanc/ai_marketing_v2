@@ -6,6 +6,7 @@ import { useToast } from '../ui/Toast'
 import { Modal } from '../ui/Modal'
 import { IconButton } from '../ui/IconButton'
 import { supabase } from '../../lib/supabase'
+import { postToN8n } from '../../lib/n8n'
 
 interface GenerateStrategyModalProps {
   isOpen: boolean
@@ -136,13 +137,7 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
         },
       }
 
-      const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(webhookPayload)
-      })
+      const response = await postToN8n('generateAngles', webhookPayload)
 
       if (!response.ok) {
         throw new Error('Failed to generate content strategy')

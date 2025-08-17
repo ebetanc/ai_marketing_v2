@@ -1,3 +1,5 @@
+import React, { useState, useEffect } from 'react'
+import { postToN8n } from '../lib/n8n'
 import {
   Building2,
   Calendar,
@@ -12,7 +14,7 @@ import {
   X,
   HelpCircle
 } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { IconButton } from '../components/ui/IconButton';
@@ -529,13 +531,7 @@ export function Ideas() {
       console.log(JSON.stringify(webhookPayload, null, 2))
 
       console.log('=== MAKING WEBHOOK REQUEST ===')
-      const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(webhookPayload)
-      })
+      const response = await postToN8n('generateContent', webhookPayload)
 
       console.log('Webhook response status:', response.status)
       console.log('Webhook response headers:', Object.fromEntries(response.headers.entries()))

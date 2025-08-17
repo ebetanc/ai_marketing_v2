@@ -9,6 +9,7 @@ import { Building2, Home, MapPin as _MapPin, TrendingUp, Users as _Users, FileTe
 import { Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { formatDate } from '../lib/utils'
+import { postToN8n } from '../lib/n8n'
 import { useToast } from '../components/ui/Toast'
 import { Skeleton } from '../components/ui/Skeleton'
 import { Modal } from '../components/ui/Modal'
@@ -124,25 +125,18 @@ export function RealEstateContent() {
     setIsGenerating(true)
 
     try {
-      console.log('Sending URL to webhook:', url)
-
-      const webhookUrl = 'https://n8n.srv856940.hstgr.cloud/webhook/1776dcc3-2b3e-4cfa-abfd-0ad9cabaf6ea'
+      console.log('Sending URL to n8n webhook:', url)
 
       // Include user id so the webhook can associate the created records to this user
       const { data: sessionData } = await supabase.auth.getSession()
       const userId = sessionData.session?.user.id
 
-      const response = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          identifier: 'content_saas',
-          operation: 'real_estate_ingest',
-          url: url.trim(),
-          user_id: userId,
-          meta: { user_id: userId, source: 'app', ts: new Date().toISOString() },
-        })
-      })
+      const response = await postToN8n('content_saas', {
+        operation: 'real_estate_ingest',
+        url: url.trim(),
+        user_id: userId,
+        meta: { user_id: userId, source: 'app', ts: new Date().toISOString() },
+      }, { path: '1776dcc3-2b3e-4cfa-abfd-0ad9cabaf6ea' })
 
       console.log('Webhook response status:', response.status)
 
