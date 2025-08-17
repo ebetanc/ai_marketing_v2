@@ -386,7 +386,7 @@ export function Ideas() {
         try {
           const parsed = JSON.parse(platforms)
           if (Array.isArray(parsed)) return parsed
-        } catch {/* not JSON */}
+        } catch {/* not JSON */ }
         return String(platforms).split(',')
           .map(s => s.trim())
           .filter(Boolean)
@@ -395,7 +395,7 @@ export function Ideas() {
       const normalizedPlatforms = normalizePlatforms(strategyData?.platforms || null)
         .map(p => p.toLowerCase())
       // Fixed platform order to reserve indexes consistently
-      const PLATFORM_ORDER = ['twitter','linkedin','newsletter','facebook','instagram','youtube','tiktok','blog']
+      const PLATFORM_ORDER = ['twitter', 'linkedin', 'newsletter', 'facebook', 'instagram', 'youtube', 'tiktok', 'blog']
       const platformsSlotted: string[] = PLATFORM_ORDER.map(() => '')
       normalizedPlatforms.forEach(p => {
         const idx = PLATFORM_ORDER.indexOf(p)

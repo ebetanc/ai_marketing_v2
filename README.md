@@ -146,12 +146,12 @@ npm run preview:https # HTTPS preview (with vite self-signed cert)
 
 - Common fields for all webhook posts: `identifier`, `operation`, `user_id` (top-level), `meta.user_id` (must match), and relevant CRUD IDs (e.g., `company_id`, `strategy_id`, `idea_id`, etc.).
 - Platforms field for idea/content generation uses a fixed 8-slot string array with reserved indices:
-   - Index map: [0]=twitter, [1]=linkedin, [2]=newsletter, [3]=facebook, [4]=instagram, [5]=youtube, [6]=tiktok, [7]=blog
-   - Rules: each position is either an empty string or exactly the platform for that slot. Example: `['twitter', '', '', 'facebook', '', '', '', 'blog']`.
+  - Index map: [0]=twitter, [1]=linkedin, [2]=newsletter, [3]=facebook, [4]=instagram, [5]=youtube, [6]=tiktok, [7]=blog
+  - Rules: each position is either an empty string or exactly the platform for that slot. Example: `['twitter', '', '', 'facebook', '', '', '', 'blog']`.
 - Identifiers:
-   - Generate Strategy Angles: `identifier: 'generateAngles'`
-   - Generate Ideas: `identifier: 'generateIdeas'`
-   - Generate Content: `identifier: 'generateContent'`
-   - Real Estate ingest: `identifier: 'content_saas'`, `operation: 'real_estate_ingest'`
+  - Generate Strategy Angles: `identifier: 'generateAngles'`
+  - Generate Ideas: `identifier: 'generateIdeas'`
+  - Generate Content: `identifier: 'generateContent'`
+  - Real Estate ingest: `identifier: 'content_saas'`, `operation: 'real_estate_ingest'`
 
 The E2E suite enforces these constraints, including platform index mapping.

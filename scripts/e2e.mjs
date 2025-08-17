@@ -405,7 +405,7 @@ async function runFEChecks() {
     "index.html missing root div"
   );
 
-  const jsMatch = html.match(/assets\/index-[A-Za-z0-9]+\.js/);
+  const jsMatch = html.match(/assets\/index-[A-Za-z0-9_-]+\.js/);
   assert(jsMatch, "No main JS asset reference found in index.html");
   const jsPath = join(distDir, jsMatch[0]);
   const jsStat = await fs.stat(jsPath);
@@ -528,7 +528,7 @@ async function runWebhookChecks() {
             imageGuidelines: "",
             createdAt: new Date().toISOString(),
           },
-          platforms: ["twitter", "linkedin"],
+          platforms: ["twitter", "linkedin", "", "", "", "", "", ""],
           context: {
             requestType: "content_strategy_generation",
             timestamp: new Date().toISOString(),
@@ -641,7 +641,7 @@ async function runWebhookChecks() {
             timestamp: new Date().toISOString(),
           },
         },
-  expect: {
+        expect: {
           identifier: "generateContent",
           operation: "generate_content_from_idea",
           keys: [
@@ -713,12 +713,17 @@ async function runWebhookChecks() {
         "tiktok",
         "blog",
       ];
-      if (b.identifier === "generateIdeas" || b.identifier === "generateContent") {
+      if (
+        b.identifier === "generateIdeas" ||
+        b.identifier === "generateContent" ||
+        b.identifier === "generateAngles"
+      ) {
         shapeOk =
           Array.isArray(b.platforms) &&
           b.platforms.length === 8 &&
           b.platforms.every(
-            (it, idx) => typeof it === "string" && (it === "" || it === ORDER[idx])
+            (it, idx) =>
+              typeof it === "string" && (it === "" || it === ORDER[idx])
           );
       }
       steps.push({

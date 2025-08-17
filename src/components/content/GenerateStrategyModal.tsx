@@ -80,8 +80,9 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
       const additionalInfo: string = selectedCompany.additional_information || (selectedCompany as any).additionalInfo || ''
       const createdAt: string = selectedCompany.created_at || (selectedCompany as any).createdAt || ''
       const imageGuidelines: string = (selectedCompany as any).imageGuidelines || ''
-      // Create platforms array containing only the selected platform ids
-      const platformsPayload = selectedPlatforms
+      // Create platforms array using fixed 8-slot index mapping
+      const ORDER = ['twitter', 'linkedin', 'newsletter', 'facebook', 'instagram', 'youtube', 'tiktok', 'blog'] as const
+      const platformsPayload = ORDER.map(p => selectedPlatforms.includes(p) ? p : '')
 
       // Prepare comprehensive brand data payload
       const comprehensiveBrandData = {

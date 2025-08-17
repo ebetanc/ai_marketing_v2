@@ -200,7 +200,7 @@ export function Strategies() {
         .map((p: string) => String(p).trim().toLowerCase())
         .filter(Boolean)
       // Fixed index map so each platform always occupies the same slot
-      const PLATFORM_ORDER = ['twitter','linkedin','newsletter','facebook','instagram','youtube','tiktok','blog']
+      const PLATFORM_ORDER = ['twitter', 'linkedin', 'newsletter', 'facebook', 'instagram', 'youtube', 'tiktok', 'blog']
       const platformsSlotted: string[] = PLATFORM_ORDER.map(() => '')
       normalizedPlatforms.forEach((p) => {
         const idx = PLATFORM_ORDER.indexOf(p)
