@@ -417,7 +417,8 @@ async function runFEChecks() {
   });
   assert(jsStat.size > 0, "Main JS bundle is empty");
 
-  const cssMatch = html.match(/assets\/index-[A-Za-z0-9]+\.css/);
+  // CSS bundle naming can vary (index-*.css or other). Match any CSS under assets.
+  const cssMatch = html.match(/assets\/[A-Za-z0-9_-]+\.css/);
   assert(cssMatch, "No CSS asset reference found in index.html");
   const cssPath = join(distDir, cssMatch[0]);
   const cssStat = await fs.stat(cssPath);
@@ -547,10 +548,7 @@ async function runWebhookChecks() {
           company_id: 201,
           strategy_id: 301,
           angle_number: 1,
-          platforms: [
-            { index: 0, platform: "twitter" },
-            { index: 1, platform: "linkedin" },
-          ],
+          platforms: ["twitter", "linkedin", "", "", "", "", "", ""],
           meta: {
             user_id: userId,
             source: "app",
@@ -611,7 +609,7 @@ async function runWebhookChecks() {
               created_at: new Date().toISOString(),
             },
           },
-          platforms: ["twitter", "linkedin", "newsletter"],
+          platforms: ["twitter", "linkedin", "newsletter", "", "", "", "", ""],
           companyDetails: {
             id: 201,
             name: "Brand B",
@@ -643,7 +641,7 @@ async function runWebhookChecks() {
             timestamp: new Date().toISOString(),
           },
         },
-        expect: {
+  expect: {
           identifier: "generateContent",
           operation: "generate_content_from_idea",
           keys: [
@@ -703,16 +701,24 @@ async function runWebhookChecks() {
       const idOk = b.identifier === p.expect.identifier;
       const opOk = b.operation === p.expect.operation;
       const keysOk = p.expect.keys.every((k) => b[k] !== undefined);
-      // Additional shape checks for generateIdeas platforms array
+      // Additional shape checks for fixed index platform slots
       let shapeOk = true;
-      if (b.identifier === "generateIdeas") {
+      const ORDER = [
+        "twitter",
+        "linkedin",
+        "newsletter",
+        "facebook",
+        "instagram",
+        "youtube",
+        "tiktok",
+        "blog",
+      ];
+      if (b.identifier === "generateIdeas" || b.identifier === "generateContent") {
         shapeOk =
           Array.isArray(b.platforms) &&
+          b.platforms.length === 8 &&
           b.platforms.every(
-            (it) =>
-              typeof it?.index === "number" &&
-              typeof it?.platform === "string" &&
-              it.platform.length > 0
+            (it, idx) => typeof it === "string" && (it === "" || it === ORDER[idx])
           );
       }
       steps.push({

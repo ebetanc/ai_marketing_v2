@@ -12,7 +12,7 @@ import {
   X,
   HelpCircle
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { IconButton } from '../components/ui/IconButton';
@@ -379,6 +379,29 @@ export function Ideas() {
       const { data: genSession } = await supabase.auth.getSession()
       const userId = genSession.session?.user.id || null
 
+      // Normalize platforms from strategy or use a sensible default. n8n Switch expects
+      // string items at fixed indices (platforms[0]..platforms[7]).
+      const normalizePlatforms = (platforms: string | null | undefined): string[] => {
+        if (!platforms) return []
+        try {
+          const parsed = JSON.parse(platforms)
+          if (Array.isArray(parsed)) return parsed
+        } catch {/* not JSON */}
+        return String(platforms).split(',')
+          .map(s => s.trim())
+          .filter(Boolean)
+      }
+
+      const normalizedPlatforms = normalizePlatforms(strategyData?.platforms || null)
+        .map(p => p.toLowerCase())
+      // Fixed platform order to reserve indexes consistently
+      const PLATFORM_ORDER = ['twitter','linkedin','newsletter','facebook','instagram','youtube','tiktok','blog']
+      const platformsSlotted: string[] = PLATFORM_ORDER.map(() => '')
+      normalizedPlatforms.forEach(p => {
+        const idx = PLATFORM_ORDER.indexOf(p)
+        if (idx !== -1) platformsSlotted[idx] = p
+      })
+
       const webhookPayload = {
         identifier: 'generateContent',
         operation: 'generate_content_from_idea',
@@ -393,7 +416,8 @@ export function Ideas() {
         strategy_id: viewIdeaModal.idea.strategy_id,
         idea_id: viewIdeaModal.idea.id,
         topic: topicData,
-        platforms: ["twitter", "linkedin", "newsletter"],
+        // Fixed-length string array for n8n Switch node compatibility
+        platforms: platformsSlotted,
         // FULL BRAND INFORMATION
         companyDetails: companyData ? {
           ...companyData,
