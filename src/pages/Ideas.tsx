@@ -475,7 +475,7 @@ export function Ideas() {
           keyOffer: style || 'No key offer specified',
           brandTone: tone || 'No brand tone specified',
           targetAudience: targetAudienceStr || 'No target audience specified',
-          platforms: ["twitter", "linkedin", "newsletter"],
+          platforms: platformsSlotted,
           contentType: 'idea_to_content_generation'
         },
         context: {
