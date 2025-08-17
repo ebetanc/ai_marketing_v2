@@ -647,23 +647,32 @@ where c.brand_name = 'Acme Analytics'
 order by i.id desc
 limit 1;
 -- Real estate content (simple, independent)
-insert into public.real_estate_content (id, created_at, link_origin, link_final)
+insert into public.real_estate_content (
+        id,
+        created_at,
+        link_origin,
+        link_final,
+        owner_id
+    )
 values (
         1,
         now(),
         'https://example.com/listing/123',
-        'https://globexrealty.example/properties/123'
+        'https://globexrealty.example/properties/123',
+        '11111111-1111-1111-1111-111111111111'
     ),
     (
         2,
         now(),
         'https://blog.mortgage.example/fees',
-        'https://globexrealty.example/guides/closing-costs'
+        'https://globexrealty.example/guides/closing-costs',
+        '11111111-1111-1111-1111-111111111111'
     ),
     (
         3,
         now(),
         'https://city-data.example/market-report',
-        'https://globexrealty.example/reports/q3'
+        'https://globexrealty.example/reports/q3',
+        '11111111-1111-1111-1111-111111111111'
     );
 commit;

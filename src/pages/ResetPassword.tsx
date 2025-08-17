@@ -14,10 +14,23 @@ export default function ResetPassword() {
     const minPasswordLength = 6
     const navigate = useNavigate()
 
-    // Optional: observe PASSWORD_RECOVERY, but we tolerate direct access and let updateUser handle errors.
+    // Require a recovery session to show the form per Supabase v2 docs
+    const [hasRecoverySession, setHasRecoverySession] = useState<boolean>(false)
     useEffect(() => {
-        const { data: sub } = supabase.auth.onAuthStateChange((_event: any) => { })
+        let mounted = true
+        const { data: sub } = supabase.auth.onAuthStateChange((event: 'INITIAL_SESSION' | 'SIGNED_IN' | 'SIGNED_OUT' | 'PASSWORD_RECOVERY' | 'TOKEN_REFRESHED' | 'USER_UPDATED' | 'LINKED_IDENTITY' | 'UNLINKED_IDENTITY') => {
+            if (!mounted) return
+            if (event === 'PASSWORD_RECOVERY' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+                setHasRecoverySession(true)
+            }
+        })
+            ; (async () => {
+                const { data } = await supabase.auth.getSession()
+                if (!mounted) return
+                setHasRecoverySession(!!data.session)
+            })()
         return () => {
+            mounted = false
             sub.subscription.unsubscribe()
         }
     }, [])
@@ -49,7 +62,12 @@ export default function ResetPassword() {
                     <h1 className="text-2xl font-semibold text-gray-900">Reset password</h1>
                     <p className="text-gray-500 text-sm mt-1">Enter your new password.</p>
                 </div>
-                <form onSubmit={onSubmit} className="space-y-4">
+                {!hasRecoverySession && (
+                    <div className="text-sm text-red-600" role="alert">
+                        Invalid or expired reset link. Request a new reset email.
+                    </div>
+                )}
+                <form onSubmit={onSubmit} className="space-y-4" aria-disabled={!hasRecoverySession}>
                     <Input
                         type="password"
                         label="New password"
@@ -57,9 +75,10 @@ export default function ResetPassword() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
+                        disabled={!hasRecoverySession}
                     />
                     {/* Confirm password removed per request */}
-                    <Button type="submit" loading={loading} className="w-full">Update password</Button>
+                    <Button type="submit" loading={loading} className="w-full" disabled={!hasRecoverySession}>Update password</Button>
                 </form>
                 {message && <div className="text-sm text-green-600">{message}</div>}
                 {error && <div className="text-sm text-red-600">{error}</div>}

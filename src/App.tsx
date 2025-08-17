@@ -17,6 +17,7 @@ import { SemanticSEO } from './pages/SemanticSEO'
 import { KeywordResearch } from './pages/KeywordResearch'
 import { RealEstateContent } from './pages/RealEstateContent'
 import { ToastProvider } from './components/ui/Toast'
+import { Account } from './pages/Account'
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
                 <Route path="/semantic-seo" element={<SemanticSEO />} />
                 <Route path="/keyword-research" element={<KeywordResearch />} />
                 <Route path="/real-estate-content" element={<RealEstateContent />} />
+                <Route path="/account" element={<Account />} />
                 <Route path="/" element={<RootRedirector />} />
               </Route>
             </Route>

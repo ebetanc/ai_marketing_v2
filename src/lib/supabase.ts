@@ -20,6 +20,9 @@ const supabaseStub: any = {
     async getSession() {
       return { data: { session: null }, error: null }
     },
+    async getUser() {
+      return { data: { user: null }, error: null }
+    },
     onAuthStateChange(_cb: any) {
       return { data: { subscription: { unsubscribe() { /* noop */ } } } }
     },

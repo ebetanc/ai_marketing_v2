@@ -193,6 +193,7 @@ export type Database = {
           id: number
           idea_id: number
           post: boolean | null
+          status: string
         }
         Insert: {
           content_body: string
@@ -200,6 +201,7 @@ export type Database = {
           id?: number
           idea_id: number
           post?: boolean | null
+          status?: string
         }
         Update: {
           content_body?: string
@@ -207,6 +209,7 @@ export type Database = {
           id?: number
           idea_id?: number
           post?: boolean | null
+          status?: string
         }
         Relationships: [
           {
@@ -225,6 +228,7 @@ export type Database = {
           id: number
           idea_id: number
           post: boolean | null
+          status: string
         }
         Insert: {
           content_body: string
@@ -232,6 +236,7 @@ export type Database = {
           id?: number
           idea_id: number
           post?: boolean | null
+          status?: string
         }
         Update: {
           content_body?: string
@@ -239,6 +244,7 @@ export type Database = {
           id?: number
           idea_id?: number
           post?: boolean | null
+          status?: string
         }
         Relationships: [
           {
@@ -254,18 +260,21 @@ export type Database = {
         Row: {
           created_at: string
           id: number
+          owner_id: string
           link_final: string | null
           link_origin: string | null
         }
         Insert: {
           created_at?: string
           id?: number
+          owner_id?: string
           link_final?: string | null
           link_origin?: string | null
         }
         Update: {
           created_at?: string
           id?: number
+          owner_id?: string
           link_final?: string | null
           link_origin?: string | null
         }
@@ -427,6 +436,7 @@ export type Database = {
           id: number
           idea_id: number
           post: boolean | null
+          status: string
         }
         Insert: {
           content_body: string
@@ -434,6 +444,7 @@ export type Database = {
           id?: number
           idea_id: number
           post?: boolean | null
+          status?: string
         }
         Update: {
           content_body?: string
@@ -441,6 +452,7 @@ export type Database = {
           id?: number
           idea_id?: number
           post?: boolean | null
+          status?: string
         }
         Relationships: [
           {
@@ -590,4 +602,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-

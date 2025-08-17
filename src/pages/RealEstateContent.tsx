@@ -124,10 +124,14 @@ export function RealEstateContent() {
 
       const webhookUrl = 'https://n8n.srv856940.hstgr.cloud/webhook/1776dcc3-2b3e-4cfa-abfd-0ad9cabaf6ea'
 
+      // Include user id so the webhook can associate the created records to this user
+      const { data: sessionData } = await supabase.auth.getSession()
+      const userId = sessionData.session?.user.id
+
       const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: url.trim() })
+        body: JSON.stringify({ url: url.trim(), user_id: userId })
       })
 
       console.log('Webhook response status:', response.status)

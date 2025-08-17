@@ -20,8 +20,13 @@ export function TopBar({ onMenuClick }: TopBarProps) {
   const notificationsCount = 0 // Hide when zero; wire real data when available
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    navigate('/login', { replace: true })
+    try {
+      await supabase.auth.signOut()
+    } catch (e) {
+      // no-op: navigate away regardless
+    } finally {
+      navigate('/login', { replace: true })
+    }
   }
 
   // Keyboard shortcut to focus search (Ctrl/Cmd + K)

@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { cn } from '../../lib/utils'
+import { supabase } from '../../lib/supabase'
 import {
   LayoutDashboard,
   Building2,
@@ -11,7 +12,8 @@ import {
   Youtube,
   TrendingUp,
   Network,
-  Search
+  Search,
+
 } from 'lucide-react'
 // Navigation sections to visually group related items
 const primaryNav = [
@@ -36,6 +38,22 @@ const toolsNav = [
 
 export function Sidebar() {
   const location = useLocation()
+  const [displayName, setDisplayName] = React.useState<string>('')
+
+  React.useEffect(() => {
+    // Fetch current auth user to replace demo label
+    let mounted = true
+    supabase.auth.getUser().then((result: { data?: { user?: any } }) => {
+      if (!mounted) return
+      const user = result?.data?.user
+      const name = (user?.user_metadata as any)?.name || user?.email || 'User'
+      setDisplayName(name)
+    }).catch(() => {
+      if (!mounted) return
+      setDisplayName('User')
+    })
+    return () => { mounted = false }
+  }, [])
 
   return (
     <div className="flex h-full w-full lg:w-64 flex-col bg-white border-r border-gray-200">
@@ -141,19 +159,22 @@ export function Sidebar() {
       </nav>
 
       <div className="border-t border-gray-200 p-2 sm:p-4">
-        <div className="flex items-center mb-3">
+        <Link
+          to="/account"
+          aria-label="Open account settings"
+          className="flex items-center rounded-xl px-2 py-2 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        >
           <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
             <span className="text-sm font-medium text-gray-600">
-              D
+              {displayName ? displayName.charAt(0).toUpperCase() : 'U'}
             </span>
           </div>
           <div className="ml-3 min-w-0 flex-1 hidden sm:block">
             <p className="text-sm font-medium text-gray-900 truncate">
-              Demo User
+              {displayName || 'User'}
             </p>
-            <p className="text-xs text-gray-500">Administrator</p>
           </div>
-        </div>
+        </Link>
       </div>
     </div>
   )

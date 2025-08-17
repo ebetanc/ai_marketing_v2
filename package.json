@@ -4,22 +4,22 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "db:local:reset": "npx supabase db reset --local",
-    "dev:db": "npx supabase start",
     "dev": "vite",
+    "dev:db": "npx supabase start",
     "dev:full": "npx supabase start & vite",
     "prebuild": "npm run types:gen",
     "build": "vite build",
     "vite:build": "vite build",
-    "check": "npm run -s lint && npm run -s vite:build",
-    "prepare": "npx husky",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "check": "npm run -s lint && npm run -s vite:build",
     "preview": "vite preview",
     "preview:https": "vite preview --host --https",
     "types:gen": "node -e \"console.log('Skipping types generation by default. Use `npm run types:gen:local` or `npm run types:gen:remote`.')\"",
     "types:gen:local": "supabase gen types typescript --local --schema public > src/lib/database.types.ts",
-    "types:gen:remote": "supabase gen types typescript --project-id $env:SUPABASE_PROJECT_ID --schema public > src/lib/database.types.ts"
+    "types:gen:remote": "supabase gen types typescript --project-id $env:SUPABASE_PROJECT_ID --schema public > src/lib/database.types.ts",
+    "db:reset:local": "npx supabase db reset --local",
+    "prepare": "npx husky"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",

@@ -46,63 +46,79 @@ export function Dashboard() {
     })
   }
 
+  // Compute simple deltas: last 7 days vs previous 7 days
+  const now = Date.now()
+  const sevenDays = 7 * 24 * 60 * 60 * 1000
+  const currentWindowStart = now - sevenDays
+  const prevWindowStart = now - 2 * sevenDays
+
+  const companiesCurrent = companies.filter(c => new Date(c.created_at).getTime() >= currentWindowStart)
+  const companiesPrev = companies.filter(c => {
+    const t = new Date(c.created_at).getTime()
+    return t >= prevWindowStart && t < currentWindowStart
+  })
+
+  const contentCurrent = contentPieces.filter(c => new Date(c.created_at).getTime() >= currentWindowStart)
+  const contentPrev = contentPieces.filter(c => {
+    const t = new Date(c.created_at).getTime()
+    return t >= prevWindowStart && t < currentWindowStart
+  })
+
+  const approvedCurrent = contentCurrent.filter(c => c.status === 'approved')
+  const approvedPrev = contentPrev.filter(c => c.status === 'approved')
+  const draftCurrent = contentCurrent.filter(c => c.status === 'draft')
+  const draftPrev = contentPrev.filter(c => c.status === 'draft')
+
+  const pct = (curr: number, prev: number) => {
+    if (prev <= 0) return '+0%'
+    const delta = ((curr - prev) / prev) * 100
+    const sign = delta > 0 ? '+' : ''
+    return `${sign}${Math.round(delta)}%`
+  }
+
   const stats = [
     {
       title: 'Active Companies',
       value: companies.length,
-      change: '+12%',
+      change: pct(companiesCurrent.length, companiesPrev.length),
       changeType: 'positive' as const,
       icon: Users
     },
     {
       title: 'Content Pieces',
       value: contentPieces.length,
-      change: '+23%',
+      change: pct(contentCurrent.length, contentPrev.length),
       changeType: 'positive' as const,
       icon: FileText
     },
     {
       title: 'Approved Content',
       value: contentPieces.filter(c => c.status === 'approved').length,
-      change: '+8%',
+      change: pct(approvedCurrent.length, approvedPrev.length),
       changeType: 'positive' as const,
       icon: CheckCircle
     },
     {
-      title: 'Campaign Reach',
-      value: '45.2K',
-      change: '+15%',
+      title: 'Draft Content',
+      value: contentPieces.filter(c => c.status === 'draft').length,
+      change: pct(draftCurrent.length, draftPrev.length),
       changeType: 'positive' as const,
       icon: Target
     }
   ]
 
-  const recentActivity = [
-    {
-      id: '1',
-      type: 'content_generated',
-      title: 'New blog post generated',
-      description: 'Digital transformation article for TechCorp Solutions',
-      time: new Date().toISOString(),
-      status: 'draft'
-    },
-    {
-      id: '2',
-      type: 'content_approved',
-      title: 'Social post approved',
-      description: 'Innovation post approved for publishing',
-      time: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-      status: 'approved'
-    },
-    {
-      id: '3',
-      type: 'company_added',
-      title: 'New company added',
-      description: 'Green Wellness Co. profile created',
-      time: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-      status: 'completed'
-    }
-  ]
+  const recentActivity = React.useMemo(() => {
+    // Derive recent activity from latest content pieces
+    const items = contentPieces.slice(0, 6).map((c) => ({
+      id: c.id,
+      type: c.status === 'approved' ? 'content_approved' : 'content_generated',
+      title: `${c.platform ?? 'Content'}: ${c.title || 'Untitled'}`,
+      description: (c.body || '').slice(0, 100),
+      time: c.created_at,
+      status: c.status,
+    }))
+    return items
+  }, [contentPieces])
 
   return (
     <div className="space-y-6">
@@ -152,7 +168,6 @@ export function Dashboard() {
               <CardTitle>Recent Activity</CardTitle>
               <div className="flex items-center gap-2">
                 <Badge variant="secondary">{recentActivity.length} items</Badge>
-                <Badge variant="secondary">Demo</Badge>
               </div>
             </div>
           </CardHeader>
