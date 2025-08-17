@@ -22,7 +22,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
   const handleSignOut = async () => {
     try {
       await supabase.auth.signOut()
-  } catch (_e) {
+    } catch (_e) {
       // no-op: navigate away regardless
     } finally {
       navigate('/login', { replace: true })
