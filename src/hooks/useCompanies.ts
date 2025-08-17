@@ -15,10 +15,20 @@ export function useCompanies() {
 
   const fetchCompaniesFromSupabase = async () => {
     try {
-      const { data, error } = await supabase
+      // Scope query to the current user to align with RLS and reduce payloads
+      const { data: userRes } = await supabase.auth.getUser()
+      const userId = userRes.user?.id
+
+      let query = supabase
         .from('companies')
         .select('*')
         .order('created_at', { ascending: false })
+
+      if (userId) {
+        query = query.eq('owner_id', userId)
+      }
+
+      const { data, error } = await query
 
   if (error) {
         console.error('Error fetching companies:', error)

@@ -44,7 +44,7 @@ export default function ResetPassword() {
             if (password.length < minPasswordLength) {
                 throw new Error(`Password must be at least ${minPasswordLength} characters.`)
             }
-            const { data, error } = await supabase.auth.updateUser({ password })
+            const { error } = await supabase.auth.updateUser({ password })
             if (error) throw error
             setMessage('Password updated. Redirecting to login...')
             setTimeout(() => navigate('/login', { replace: true }), 1200)

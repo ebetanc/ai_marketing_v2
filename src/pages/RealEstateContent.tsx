@@ -80,10 +80,14 @@ export function RealEstateContent() {
       setError(null)
       console.log('Fetching real estate content from Supabase...')
 
-      const { data, error } = await supabase
+      const { data: userRes } = await supabase.auth.getUser()
+      const userId = userRes.user?.id
+      let q = supabase
         .from('real_estate_content')
         .select('*')
         .order('created_at', { ascending: false })
+      if (userId) q = q.eq('owner_id', userId)
+      const { data, error } = await q
 
       if (error) {
         console.error('Supabase error:', error)

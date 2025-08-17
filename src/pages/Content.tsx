@@ -178,10 +178,14 @@ export function Content() {
       setLoadingCompanies(true)
       console.log('Fetching companies from Supabase...')
 
-      const { data, error } = await supabase
+      const { data: userRes } = await supabase.auth.getUser()
+      const userId = userRes.user?.id
+      let q = supabase
         .from('companies')
         .select('*')
         .order('created_at', { ascending: false })
+      if (userId) q = q.eq('owner_id', userId)
+      const { data, error } = await q
 
       if (error) {
         console.error('Error fetching companies:', error)
@@ -365,7 +369,7 @@ export function Content() {
     if (latest) {
       setViewContentModal(prev => ({ ...prev, content: { ...prev.content, ...latest } }))
     }
-  }, [generatedContent, viewContentModal.isOpen])
+  }, [generatedContent, viewContentModal.isOpen, viewContentModal.content])
 
   // Global '/' shortcut is handled in TopBar; avoid duplicating here to prevent focus conflicts
 

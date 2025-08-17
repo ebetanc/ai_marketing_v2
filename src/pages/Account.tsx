@@ -32,7 +32,7 @@ export function Account() {
         const meta = (user?.user_metadata || {}) as any
         setName(meta?.name ?? '')
         setEmail(user?.email ?? '')
-    }, [user?.id])
+    }, [user?.id, user?.email, user?.user_metadata])
 
     const userId = user?.id ?? '—'
     const emailVerified = Boolean(user?.email_confirmed_at)

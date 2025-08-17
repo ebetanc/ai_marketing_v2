@@ -54,19 +54,31 @@ export function useContentPieces(companyId?: string) {
       setLoading(true)
       setError(null)
 
+      // Use inner join embedding when filtering by company to ensure the parent rows are filtered by the child join (per PostgREST)
+      const twitterQ = supabase
+        .from('twitter_content')
+        .select(companyId ? '*, idea:ideas!inner(company_id,strategy_id)' : '*, idea:ideas(company_id,strategy_id)')
+        .order('created_at', { ascending: false })
+
+      const linkedinQ = supabase
+        .from('linkedin_content')
+        .select(companyId ? '*, idea:ideas!inner(company_id,strategy_id)' : '*, idea:ideas(company_id,strategy_id)')
+        .order('created_at', { ascending: false })
+
+      const newsletterQ = supabase
+        .from('newsletter_content')
+        .select(companyId ? '*, idea:ideas!inner(company_id,strategy_id)' : '*, idea:ideas(company_id,strategy_id)')
+        .order('created_at', { ascending: false })
+
+      // If a companyId filter is provided, apply it server-side using the joined idea.company_id
+      const twitterFiltered = companyId ? twitterQ.eq('idea.company_id', companyId) : twitterQ
+      const linkedinFiltered = companyId ? linkedinQ.eq('idea.company_id', companyId) : linkedinQ
+      const newsletterFiltered = companyId ? newsletterQ.eq('idea.company_id', companyId) : newsletterQ
+
       const [twitterRes, linkedinRes, newsletterRes] = await Promise.all([
-        supabase
-          .from('twitter_content')
-          .select('*, idea:ideas(company_id,strategy_id)')
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('linkedin_content')
-          .select('*, idea:ideas(company_id,strategy_id)')
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('newsletter_content')
-          .select('*, idea:ideas(company_id,strategy_id)')
-          .order('created_at', { ascending: false })
+        twitterFiltered,
+        linkedinFiltered,
+        newsletterFiltered,
       ])
 
       if (twitterRes.error || linkedinRes.error || newsletterRes.error) {
@@ -78,16 +90,12 @@ export function useContentPieces(companyId?: string) {
       const linkedin = (linkedinRes.data as LinkedInRow[] | null) || []
       const newsletter = (newsletterRes.data as NewsletterRow[] | null) || []
 
-      let all = [
+  const all = [
         ...twitter.map((r) => mapRow(r, 'twitter')),
         ...linkedin.map((r) => mapRow(r, 'linkedin')),
         ...newsletter.map((r) => mapRow(r, 'newsletter')),
       ]
 
-      // Optional company filter
-      if (companyId) {
-        all = all.filter((c) => c.company_id === String(companyId))
-      }
 
       // Sort newest first
       all.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
