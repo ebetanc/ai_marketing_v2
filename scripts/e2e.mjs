@@ -547,6 +547,10 @@ async function runWebhookChecks() {
           company_id: 201,
           strategy_id: 301,
           angle_number: 1,
+          platforms: [
+            { index: 0, platform: "twitter" },
+            { index: 1, platform: "linkedin" },
+          ],
           meta: {
             user_id: userId,
             source: "app",
@@ -574,6 +578,7 @@ async function runWebhookChecks() {
             "company_id",
             "strategy_id",
             "angle_number",
+            "platforms",
             "meta",
             "user_id",
           ],
@@ -698,13 +703,25 @@ async function runWebhookChecks() {
       const idOk = b.identifier === p.expect.identifier;
       const opOk = b.operation === p.expect.operation;
       const keysOk = p.expect.keys.every((k) => b[k] !== undefined);
+      // Additional shape checks for generateIdeas platforms array
+      let shapeOk = true;
+      if (b.identifier === "generateIdeas") {
+        shapeOk =
+          Array.isArray(b.platforms) &&
+          b.platforms.every(
+            (it) =>
+              typeof it?.index === "number" &&
+              typeof it?.platform === "string" &&
+              it.platform.length > 0
+          );
+      }
       steps.push({
         step: `WH_validate_${i + 1}`,
-        ok: idOk && opOk && keysOk,
+        ok: idOk && opOk && keysOk && shapeOk,
         path: rec.url,
       });
       assert(
-        idOk && opOk && keysOk,
+        idOk && opOk && keysOk && shapeOk,
         `Webhook payload ${i + 1} failed validation`
       );
       // user consistency

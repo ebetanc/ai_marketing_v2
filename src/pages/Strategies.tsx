@@ -195,6 +195,12 @@ export function Strategies() {
       const { data: sessionData } = await supabase.auth.getSession()
       const userId = sessionData.session?.user.id || null
 
+      // Normalize platforms into an array of lowercase ids and provide detailed entries with index
+      const platformsArray = getPlatformBadges(viewModal.strategy.platforms)
+        .map((p: string) => String(p).trim().toLowerCase())
+        .filter(Boolean)
+      const platformsDetailed = platformsArray.map((platform: string, index: number) => ({ index, platform }))
+
       const payload = {
         identifier: 'generateIdeas',
         operation: 'create_ideas_from_angle',
@@ -202,6 +208,8 @@ export function Strategies() {
         company_id: viewModal.company.id,
         strategy_id: viewModal.strategy.id,
         angle_number: angle.number,
+        // Top-level platforms array as list of { index, platform }
+        platforms: platformsDetailed,
         meta: {
           user_id: userId,
           source: 'app',
