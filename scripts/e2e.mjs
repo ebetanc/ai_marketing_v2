@@ -152,54 +152,76 @@ async function runBEChecks() {
   });
   assert(!ideaAUpdate.error, "A idea update failed");
 
-  // A: content tables with status defaults
+  // A: unified content table with platform discriminator; status defaults
   const twA = await clientA
-    .from("twitter_content")
-    .insert({ idea_id: ideaAId, content_body: "tw", post: false })
-    .select("id, status, post")
+    .from("content")
+    .insert({
+      idea_id: ideaAId,
+      platform: "twitter",
+      content_body: "tw",
+      post: false,
+    })
+    .select("id, status, post, platform")
     .single();
   steps.push({
     step: "A_twitter_insert",
-    ok: !twA.error && twA.data.status === "draft",
+    ok:
+      !twA.error &&
+      twA.data.status === "draft" &&
+      twA.data.platform === "twitter",
   });
   assert(!twA.error, "A twitter insert failed");
 
   const liA = await clientA
-    .from("linkedin_content")
-    .insert({ idea_id: ideaAId, content_body: "li", post: true })
-    .select("id, status, post")
+    .from("content")
+    .insert({
+      idea_id: ideaAId,
+      platform: "linkedin",
+      content_body: "li",
+      post: true,
+    })
+    .select("id, status, post, platform")
     .single();
   steps.push({
     step: "A_linkedin_insert",
-    ok: !liA.error && liA.data.status === "draft",
+    ok:
+      !liA.error &&
+      liA.data.status === "draft" &&
+      liA.data.platform === "linkedin",
   });
   assert(!liA.error, "A linkedin insert failed");
 
   const nlA = await clientA
-    .from("newsletter_content")
-    .insert({ idea_id: ideaAId, content_body: "nl", post: null })
-    .select("id, status, post")
+    .from("content")
+    .insert({
+      idea_id: ideaAId,
+      platform: "newsletter",
+      content_body: "nl",
+      post: null,
+    })
+    .select("id, status, post, platform")
     .single();
   steps.push({
     step: "A_newsletter_insert",
-    ok: !nlA.error && nlA.data.status === "draft",
+    ok:
+      !nlA.error &&
+      nlA.data.status === "draft" &&
+      nlA.data.platform === "newsletter",
   });
   assert(!nlA.error, "A newsletter insert failed");
 
   // A: content fetch and delete one
   const twAFetch = await clientA
-    .from("twitter_content")
-    .select("id, idea_id")
-    .eq("idea_id", ideaAId);
+    .from("content")
+    .select("id, idea_id, platform")
+    .eq("idea_id", ideaAId)
+    .eq("platform", "twitter");
   steps.push({
     step: "A_twitter_fetch",
     ok: !twAFetch.error && (twAFetch.data || []).length >= 1,
   });
   assert(!twAFetch.error, "A twitter fetch failed");
-  const delTwA = await clientA
-    .from("twitter_content")
-    .delete()
-    .eq("id", twA.data.id);
+  const delTwA = await clientA.from("content").delete().eq("id", twA.data.id);
   steps.push({ step: "A_twitter_delete", ok: !delTwA.error });
   assert(!delTwA.error, "A twitter delete failed");
 
@@ -344,13 +366,21 @@ async function runBEChecks() {
   assert(!ideaB.error, "B idea insert failed");
 
   const liB = await clientB
-    .from("linkedin_content")
-    .insert({ idea_id: ideaB.data.id, content_body: "liB", post: false })
-    .select("id, status")
+    .from("content")
+    .insert({
+      idea_id: ideaB.data.id,
+      platform: "linkedin",
+      content_body: "liB",
+      post: false,
+    })
+    .select("id, status, platform")
     .single();
   steps.push({
     step: "B_linkedin_insert",
-    ok: !liB.error && liB.data.status === "draft",
+    ok:
+      !liB.error &&
+      liB.data.status === "draft" &&
+      liB.data.platform === "linkedin",
   });
   assert(!liB.error, "B linkedin insert failed");
 
