@@ -11,10 +11,18 @@ exception
 when duplicate_object then null;
 end $$;
 create index if not exists real_estate_owner_idx on public.real_estate_content(owner_id);
--- Backfill existing NULL owner rows to the seeded dev user if present (safe for local/dev)
-update public.real_estate_content
-set owner_id = '11111111-1111-1111-1111-111111111111'
-where owner_id is null;
+-- Backfill existing NULL owner rows: if any auth.users exist, set to one of them; otherwise leave NULL
+do $$
+begin
+    if exists (select 1 from auth.users) then
+        update public.real_estate_content
+        set owner_id = (
+    select id from auth.users limit 1
+        )
+        where owner_id is null;
+    end if;
+end
+$$;
 -- Optionally enforce NOT NULL only if no NULLs remain
 do $$ begin if not exists (
     select 1
