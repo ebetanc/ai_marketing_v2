@@ -14,7 +14,7 @@ type StrategyRow = Tables<'strategies'>
 type IdeaRow = Tables<'ideas'>
 type IdeaJoined = IdeaRow & { company?: CompanyRow; strategy?: StrategyRow }
 
-type ContentSource = 'twitter_content' | 'linkedin_content' | 'newsletter_content'
+type ContentSource = 'content'
 
 type ModalContent = {
   id: number

@@ -418,7 +418,27 @@ export function Ideas() {
         topic: topicData,
         // Fixed-length string array for n8n Switch node compatibility
         platforms: platformsSlotted,
-        // FULL BRAND INFORMATION
+        // Fields expected by various n8n nodes (brand, data.brandData, etc.)
+        brand: {
+          id: companyData?.id ?? viewIdeaModal.idea.company_id,
+          name: brandName,
+          additionalInfo,
+          targetAudience: targetAudienceStr,
+          brandTone: tone,
+          keyOffer: style,
+          website,
+        },
+        brandDetails: {
+          id: companyData?.id ?? viewIdeaModal.idea.company_id,
+          name: brandName,
+        },
+        data: {
+          brandData: {
+            id: companyData?.id ?? viewIdeaModal.idea.company_id,
+            name: brandName,
+            keyOffer: style,
+          },
+        },
         companyDetails: companyData ? {
           ...companyData,
           name: brandName,
@@ -426,7 +446,7 @@ export function Ideas() {
           keyOffer: style,
           targetAudience: targetAudienceStr,
           additionalInfo,
-          website
+          website,
         } : null,
         // SPECIFIC ANGLE DETAILS THAT GENERATED THIS IDEA
         angleDetails: angleDetails,

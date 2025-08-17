@@ -207,12 +207,16 @@ export function Strategies() {
         if (idx !== -1) platformsSlotted[idx] = p
       })
 
+      // Build payload to match n8n content-saas workflow expectations
       const payload = {
         identifier: 'generateIdeas',
         operation: 'create_ideas_from_angle',
         // Core identifiers for downstream CRUD
         company_id: viewModal.company.id,
         strategy_id: viewModal.strategy.id,
+        // Some n8n nodes expect `strategyIndex` for the selected angle number
+        strategyIndex: angle.number,
+        // Also keep a plain angle_number for backward compatibility
         angle_number: angle.number,
         // Top-level platforms array as fixed-length string slots for n8n Switch
         platforms: platformsSlotted,
@@ -222,6 +226,21 @@ export function Strategies() {
           ts: new Date().toISOString(),
         },
         user_id: userId,
+        // n8n "ideas" generators often reference `body.brand.*` and/or `body.data.brandData.*`
+        brand: {
+          id: viewModal.company.id,
+          name: viewModal.company.brand_name,
+        },
+        brandDetails: {
+          id: viewModal.company.id,
+          name: viewModal.company.brand_name,
+        },
+        data: {
+          brandData: {
+            id: viewModal.company.id,
+            name: viewModal.company.brand_name,
+          }
+        },
         company: {
           id: viewModal.company.id,
           brand_name: viewModal.company.brand_name,
@@ -231,12 +250,18 @@ export function Strategies() {
           platforms: viewModal.strategy.platforms,
           created_at: viewModal.strategy.created_at,
         },
+        // Angle object with nested strategy as expected by n8n Create Ideas node
         angle: {
+          angleNumber: angle.number,
           number: angle.number,
           header: angle.header,
           description: angle.description,
           objective: angle.objective,
           tonality: angle.tonality,
+          strategy: {
+            id: viewModal.strategy.id,
+            platforms: viewModal.strategy.platforms,
+          },
         },
       }
 

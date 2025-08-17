@@ -3,14 +3,12 @@
 -- - Multiple companies (ascii, unicode, emoji, long text, nulls)
 -- - Strategies per company (some dense with many angles, some sparse)
 -- - Ideas linked to strategies/companies (varying filled topic counts, nulls)
--- - Content tables (twitter/linkedin/newsletter) with post true/false/null
+-- - Content rows in unified public.content with post true/false/null
 -- - Real estate content simple rows
 -- - Idempotent via TRUNCATE ... RESTART IDENTITY CASCADE
 begin;
--- Clean existing data for a deterministic seed
-truncate table public.twitter_content,
-public.linkedin_content,
-public.newsletter_content,
+-- Clean existing data for a deterministic seed (unified content table)
+truncate table public.content,
 public.ideas,
 public.strategies,
 public.companies,
@@ -579,68 +577,82 @@ from public.strategies s
     join public.companies c on c.id = s.company_id
 where c.brand_name = 'München Bikes 🚲'
 limit 1;
--- Content: map to a few idea ids across brands; vary post flags
+-- Content: map to a few idea ids across brands; vary post flags in unified table
 -- Twitter content
-insert into public.twitter_content (idea_id, content_body, post)
+insert into public.content (idea_id, content_body, post, status, platform)
 select i.id,
     '5 ways to reduce freshness lag in your data warehouse. #analytics',
-    true
+    true,
+    'approved',
+    'twitter'
 from public.ideas i
     join public.companies c on c.id = i.company_id
 where c.brand_name = 'Acme Analytics'
 order by i.id asc
 limit 1;
-insert into public.twitter_content (idea_id, content_body, post)
+insert into public.content (idea_id, content_body, post, status, platform)
 select i.id,
     'Day 1: 10-min core burner. No equipment needed. #NeoFitChallenge',
-    false
+    false,
+    'draft',
+    'twitter'
 from public.ideas i
     join public.companies c on c.id = i.company_id
 where c.brand_name = 'NeoFit+'
 order by i.id asc
 limit 1;
-insert into public.twitter_content (idea_id, content_body, post)
+insert into public.content (idea_id, content_body, post, status, platform)
 select i.id,
     'Latency showdown: cold vs hot cache. Results will surprise you. #devtools',
-    null
+    null,
+    'draft',
+    'twitter'
 from public.ideas i
     join public.companies c on c.id = i.company_id
 where c.brand_name = 'Zeta DevTools'
 order by i.id asc
 limit 1;
 -- LinkedIn content
-insert into public.linkedin_content (idea_id, content_body, post)
+insert into public.content (idea_id, content_body, post, status, platform)
 select i.id,
     'Closing costs explained: a simple guide for first-time buyers.',
-    true
+    true,
+    'approved',
+    'linkedin'
 from public.ideas i
     join public.companies c on c.id = i.company_id
 where c.brand_name = 'Globex Realty'
 order by i.id asc
 limit 1;
-insert into public.linkedin_content (idea_id, content_body, post)
+insert into public.content (idea_id, content_body, post, status, platform)
 select i.id,
     'On-Prem in regulated industries: what teams get wrong first.',
-    false
+    false,
+    'draft',
+    'linkedin'
 from public.ideas i
     join public.companies c on c.id = i.company_id
 where c.brand_name = 'Zeta DevTools'
 order by i.id desc
 limit 1;
 -- Newsletter content
-insert into public.newsletter_content (idea_id, content_body, post)
+insert into public.content (idea_id, content_body, post, status, platform)
 select i.id,
     'Menu d''automne: nouvelles torréfactions et ateliers à venir 🍁',
-    true
+    true,
+    'approved',
+    'newsletter'
 from public.ideas i
     join public.companies c on c.id = i.company_id
 where c.brand_name = 'Café Montréal ☕'
 order by i.id asc
 limit 1;
-insert into public.newsletter_content (idea_id, content_body, post)
+insert into public.content (idea_id, content_body, post, status, platform)
 select i.id,
     'Monthly recap: your top dashboards and insights from September.',
-    null
+    null,
+    'draft',
+    'newsletter'
 from public.ideas i
     join public.companies c on c.id = i.company_id
 where c.brand_name = 'Acme Analytics'

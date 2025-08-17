@@ -20,7 +20,8 @@
     "types:gen:local": "supabase gen types typescript --local --schema public > src/lib/database.types.ts",
     "types:gen:remote": "supabase gen types typescript --project-id $env:SUPABASE_PROJECT_ID --schema public > src/lib/database.types.ts",
     "db:reset:local": "npx supabase db reset --local",
-    "prepare": "npx husky"
+    "prepare": "npx husky",
+    "db:push:prod": "npx supabase db push"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",

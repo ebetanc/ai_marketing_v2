@@ -123,8 +123,8 @@ export function Content() {
   type StrategyRow = Tables<'strategies'>
   type IdeaRow = Tables<'ideas'>
   type IdeaJoined = IdeaRow & { company?: CompanyRow; strategy?: StrategyRow }
-  type TwitterRow = Tables<'twitter_content'> & { idea?: IdeaJoined; company?: CompanyRow; strategy?: StrategyRow } & {
-    // legacy/derived fields we may encounter
+  type ContentRow = Tables<'content'> & { idea?: IdeaJoined; company?: CompanyRow; strategy?: StrategyRow } & {
+    // derived fields compatibility
     brand_name?: string
     company_id?: number
     brand_id?: number
@@ -134,8 +134,7 @@ export function Content() {
     status?: string
     post?: boolean | null
   }
-  type LinkedInRow = Tables<'linkedin_content'> & { idea?: IdeaJoined; company?: CompanyRow; strategy?: StrategyRow } & TwitterRow
-  type NewsletterRow = Tables<'newsletter_content'> & { idea?: IdeaJoined; company?: CompanyRow; strategy?: StrategyRow } & TwitterRow
+  // Legacy types removed; unified content only
   const [companies, setCompanies] = useState<any[]>([])
   const [generatedContent, setGeneratedContent] = useState<any[]>([])
   const [_loadingCompanies, setLoadingCompanies] = useState(true) // reserved for future brand context
@@ -208,128 +207,45 @@ export function Content() {
       setLoading(true)
       console.log('Fetching content from Supabase tables...')
 
-      // Fetch from all three content tables
-      // Prefer relational select to join company for brand name; fallback to * if relation not available
-      const [twitterRes, linkedinRes, newsletterRes] = await Promise.all([
-        (async () => {
-          // Prefer relational select via idea -> company/strategy (post-3NF)
-          try {
-            const res = await supabase
-              .from('twitter_content')
-              .select(`*, idea:ideas(*, company:companies(*), strategy:strategies(*))`)
-              .order('created_at', { ascending: false })
-            return res
-          } catch (_e) {
-            // Fallback to basic select
-            return await supabase.from('twitter_content').select('*').order('created_at', { ascending: false })
-          }
-        })(),
-        (async () => {
-          try {
-            const res = await supabase
-              .from('linkedin_content')
-              .select(`*, idea:ideas(*, company:companies(*), strategy:strategies(*))`)
-              .order('created_at', { ascending: false })
-            return res
-          } catch (_e) {
-            return await supabase.from('linkedin_content').select('*').order('created_at', { ascending: false })
-          }
-        })(),
-        (async () => {
-          try {
-            const res = await supabase
-              .from('newsletter_content')
-              .select(`*, idea:ideas(*, company:companies(*), strategy:strategies(*))`)
-              .order('created_at', { ascending: false })
-            return res
-          } catch (_e) {
-            return await supabase.from('newsletter_content').select('*').order('created_at', { ascending: false })
-          }
-        })()
-      ])
+      // Unified table only
+      const unifiedRes = await supabase
+        .from('content')
+        .select(`*, idea:ideas(*, company:companies(*), strategy:strategies(*))`)
+        .order('created_at', { ascending: false })
 
-      console.log('=== SUPABASE CONTENT FETCH DEBUG ===')
-      console.log('Twitter content response:', twitterRes)
-      console.log('LinkedIn content response:', linkedinRes)
-      console.log('Newsletter content response:', newsletterRes)
+      const platformLabel = (p: string) =>
+        p === 'twitter' ? 'Twitter' :
+          p === 'linkedin' ? 'LinkedIn' :
+            p === 'newsletter' ? 'Newsletter' :
+              p === 'facebook' ? 'Facebook' :
+                p === 'instagram' ? 'Instagram' :
+                  p === 'youtube' ? 'YouTube' :
+                    p === 'tiktok' ? 'TikTok' :
+                      p === 'blog' ? 'Blog' : p
 
-      const allContent = []
-
-      // Process Twitter content
-      if (twitterRes.data && !twitterRes.error) {
-        const twitterContent = (twitterRes.data as TwitterRow[]).map((item) => ({
+      if (unifiedRes.data && !unifiedRes.error) {
+        const rows = unifiedRes.data as ContentRow[]
+        const mapped = rows.map((item) => ({
           ...item,
-          source: 'twitter_content',
-          platform: 'Twitter',
-          type: 'social_post',
-          title: item.title || 'Twitter Content',
-          status: item.status || 'draft',
-          post: item.post || false,
-          // Derive company/strategy via idea relation after 3NF
-          company_id: item.idea?.company_id ?? item.company_id ?? item.brand_id,
-          strategy_id: item.idea?.strategy_id ?? item.strategy_id,
-          brand_name: item.idea?.company?.brand_name || item.company?.brand_name || item.brand_name || 'Unknown Brand',
-          body: item.content_body || item.body || 'No content available',
-          body_text: item.content_body || item.body || 'No content available'
-        }))
-        allContent.push(...twitterContent)
-        console.log('Twitter content processed:', twitterContent.length, 'items')
-      } else if (twitterRes.error) {
-        console.error('Error fetching Twitter content:', twitterRes.error)
-      }
-
-      // Process LinkedIn content
-      if (linkedinRes.data && !linkedinRes.error) {
-        const linkedinContent = (linkedinRes.data as LinkedInRow[]).map((item) => ({
-          ...item,
-          source: 'linkedin_content',
-          platform: 'LinkedIn',
-          type: 'social_post',
-          title: item.title || item.content_body?.substring(0, 50) + '...' || 'LinkedIn Content',
+          source: 'content' as const,
+          platform: platformLabel((item as any).platform),
+          type: (item as any).platform === 'newsletter' ? 'email' : 'social_post',
+          title: (item as any).title || truncateText(item.content_body, 60),
           status: item.status || 'draft',
           post: item.post || false,
           company_id: item.idea?.company_id ?? item.company_id ?? item.brand_id,
           strategy_id: item.idea?.strategy_id ?? item.strategy_id,
           brand_name: item.idea?.company?.brand_name || item.company?.brand_name || item.brand_name || 'Unknown Brand',
-          body: item.content_body || item.body || 'No content available',
-          body_text: item.content_body || item.body || 'No content available'
+          body: item.content_body || (item as any).body || 'No content available',
+          body_text: item.content_body || (item as any).body || 'No content available'
         }))
-        allContent.push(...linkedinContent)
-        console.log('LinkedIn content processed:', linkedinContent.length, 'items')
-        console.log('LinkedIn content sample:', linkedinContent[0])
-      } else if (linkedinRes.error) {
-        console.error('Error fetching LinkedIn content:', linkedinRes.error)
+
+        mapped.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        setGeneratedContent(mapped)
+        console.log('Unified content processed:', mapped.length, 'items')
+      } else {
+        throw new Error(unifiedRes.error?.message || 'Failed to fetch content')
       }
-
-      // Process Newsletter content
-      if (newsletterRes.data && !newsletterRes.error) {
-        const newsletterContent = (newsletterRes.data as NewsletterRow[]).map((item) => ({
-          ...item,
-          source: 'newsletter_content',
-          platform: 'Newsletter',
-          type: 'email',
-          title: item.title || item.content_body?.substring(0, 50) + '...' || 'Newsletter Content',
-          status: item.status || 'draft',
-          post: item.post || false,
-          company_id: item.idea?.company_id ?? item.company_id ?? item.brand_id,
-          strategy_id: item.idea?.strategy_id ?? item.strategy_id,
-          brand_name: item.idea?.company?.brand_name || item.company?.brand_name || item.brand_name || 'Unknown Brand',
-          body: item.content_body || item.body || 'No content available',
-          body_text: item.content_body || item.body || 'No content available'
-        }))
-        allContent.push(...newsletterContent)
-        console.log('Newsletter content processed:', newsletterContent.length, 'items')
-        console.log('Newsletter content sample:', newsletterContent[0])
-      } else if (newsletterRes.error) {
-        console.error('Error fetching Newsletter content:', newsletterRes.error)
-      }
-
-      // Sort all content by created_at (most recent first)
-      allContent.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-
-      console.log('Total content items fetched:', allContent.length)
-      console.log('All content:', allContent)
-      setGeneratedContent(allContent)
 
     } catch (error) {
       console.error('Error fetching content from Supabase:', error)
@@ -394,7 +310,7 @@ export function Content() {
         lastOpenRef.current = open
         // Inline open logic to avoid ordering/deps issues
         const newParams = new URLSearchParams(location.search)
-        const resolvedSource = match.source || (match.platform?.toLowerCase().includes('twitter') ? 'twitter_content' : match.platform?.toLowerCase().includes('linkedin') ? 'linkedin_content' : 'newsletter_content')
+        const resolvedSource = 'content'
         newParams.set('open', `${resolvedSource}:${match.id}`)
         // Normalize the URL if needed but avoid adding to history from auto-open
         navigate({ search: newParams.toString() }, { replace: true })
@@ -494,7 +410,7 @@ export function Content() {
     lastFocusRef.current = (document.activeElement as HTMLElement) || null
     // Update URL with deep link
     const params = new URLSearchParams(location.search)
-    const source = content.source || (content.platform?.toLowerCase().includes('twitter') ? 'twitter_content' : content.platform?.toLowerCase().includes('linkedin') ? 'linkedin_content' : 'newsletter_content')
+    const source = 'content'
     params.set('open', `${source}:${content.id}`)
     // Push a history entry so Back closes the modal and returns to prior state
     navigate({ search: params.toString() }, { replace: false })
@@ -568,7 +484,7 @@ export function Content() {
 
   const handleCopyLink = async (content: any) => {
     const params = new URLSearchParams(location.search)
-    const source = content.source || (content.platform?.toLowerCase().includes('twitter') ? 'twitter_content' : content.platform?.toLowerCase().includes('linkedin') ? 'linkedin_content' : 'newsletter_content')
+    const source = 'content'
     params.set('open', `${source}:${content.id}`)
     const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin
     const url = `${siteUrl}/content?${params.toString()}`
@@ -841,8 +757,7 @@ export function Content() {
                                         // Optimistically update local state
                                         setGeneratedContent(prev => prev.map(c => c.id === content.id ? { ...c, status: 'approved' } : c))
                                         // Persist to backing table
-                                        const table = content.source || (content.platform?.toLowerCase().includes('twitter') ? 'twitter_content' : content.platform?.toLowerCase().includes('linkedin') ? 'linkedin_content' : 'newsletter_content')
-                                        supabase.from(table).update({ status: 'approved' }).eq('id', content.id).then(({ error }: { error: any }) => {
+                                        supabase.from('content').update({ status: 'approved' }).eq('id', content.id).then(({ error }: { error: any }) => {
                                           if (error) {
                                             // Revert if failed
                                             setGeneratedContent(prev => prev.map(c => c.id === content.id ? { ...c, status: 'draft' } : c))

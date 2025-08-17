@@ -20,81 +20,64 @@ export type ContentPiece = {
 }
 
 type IdeaRow = Tables<'ideas'>
-type TwitterRow = Tables<'twitter_content'> & { idea?: Pick<IdeaRow, 'company_id' | 'strategy_id'> }
-type LinkedInRow = Tables<'linkedin_content'> & { idea?: Pick<IdeaRow, 'company_id' | 'strategy_id'> }
-type NewsletterRow = Tables<'newsletter_content'> & { idea?: Pick<IdeaRow, 'company_id' | 'strategy_id'> }
+type ContentRow = Tables<'content'> & { idea?: Pick<IdeaRow, 'company_id' | 'strategy_id'> }
 
 export function useContentPieces(companyId?: string) {
   const [contentPieces, setContentPieces] = useState<ContentPiece[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const mapRow = (row: any, kind: 'twitter' | 'linkedin' | 'newsletter'): ContentPiece => {
-    const cid = row.idea?.company_id ?? row.company_id
-    const sid = row.idea?.strategy_id ?? row.strategy_id
+  const mapContentRow = (row: ContentRow): ContentPiece => {
+    const cid = row.idea?.company_id
+    const sid = row.idea?.strategy_id
     const titleFallback =
       typeof row.content_body === 'string' && row.content_body
         ? (row.content_body as string).slice(0, 60) + (row.content_body.length > 60 ? '…' : '')
-        : `${kind.charAt(0).toUpperCase() + kind.slice(1)} Content`
+        : 'Content'
+    const platformLabel =
+      row.platform === 'twitter' ? 'Twitter' :
+        row.platform === 'linkedin' ? 'LinkedIn' :
+          row.platform === 'newsletter' ? 'Newsletter' :
+            row.platform === 'facebook' ? 'Facebook' :
+              row.platform === 'instagram' ? 'Instagram' :
+                row.platform === 'youtube' ? 'YouTube' :
+                  row.platform === 'tiktok' ? 'TikTok' :
+                    row.platform === 'blog' ? 'Blog' : row.platform
     return {
       id: String(row.id),
       company_id: String(cid ?? ''),
-      type: kind === 'newsletter' ? 'email' : 'social_post',
+      type: row.platform === 'newsletter' ? 'email' : 'social_post',
       status: row.status === 'approved' || row.post === true ? 'approved' : 'draft',
-      title: row.title || titleFallback,
-      body: row.content_body || row.body || '',
-      platform: kind === 'twitter' ? 'Twitter' : kind === 'linkedin' ? 'LinkedIn' : 'Newsletter',
+      title: (row as any).title || titleFallback,
+      body: row.content_body || (row as any).body || '',
+      platform: platformLabel,
       strategy_id: sid != null ? String(sid) : undefined,
       created_at: row.created_at,
     }
   }
+
+  // No legacy mapping; unified content only
 
   const fetchContent = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
 
-      // Use inner join embedding when filtering by company to ensure the parent rows are filtered by the child join (per PostgREST)
-      const twitterQ = supabase
-        .from('twitter_content')
+      // Unified content only
+      const contentQ = supabase
+        .from('content')
         .select(companyId ? '*, idea:ideas!inner(company_id,strategy_id)' : '*, idea:ideas(company_id,strategy_id)')
         .order('created_at', { ascending: false })
 
-      const linkedinQ = supabase
-        .from('linkedin_content')
-        .select(companyId ? '*, idea:ideas!inner(company_id,strategy_id)' : '*, idea:ideas(company_id,strategy_id)')
-        .order('created_at', { ascending: false })
+      const contentFiltered = companyId ? contentQ.eq('idea.company_id', companyId) : contentQ
+      const contentRes = await contentFiltered
 
-      const newsletterQ = supabase
-        .from('newsletter_content')
-        .select(companyId ? '*, idea:ideas!inner(company_id,strategy_id)' : '*, idea:ideas(company_id,strategy_id)')
-        .order('created_at', { ascending: false })
-
-      // If a companyId filter is provided, apply it server-side using the joined idea.company_id
-      const twitterFiltered = companyId ? twitterQ.eq('idea.company_id', companyId) : twitterQ
-      const linkedinFiltered = companyId ? linkedinQ.eq('idea.company_id', companyId) : linkedinQ
-      const newsletterFiltered = companyId ? newsletterQ.eq('idea.company_id', companyId) : newsletterQ
-
-      const [twitterRes, linkedinRes, newsletterRes] = await Promise.all([
-        twitterFiltered,
-        linkedinFiltered,
-        newsletterFiltered,
-      ])
-
-      if (twitterRes.error || linkedinRes.error || newsletterRes.error) {
-        const e = twitterRes.error || linkedinRes.error || newsletterRes.error
-        throw new Error(e?.message || 'Failed to load content')
+      if (contentRes.error) {
+        throw new Error(contentRes.error.message || 'Failed to load content')
       }
 
-      const twitter = (twitterRes.data as TwitterRow[] | null) || []
-      const linkedin = (linkedinRes.data as LinkedInRow[] | null) || []
-      const newsletter = (newsletterRes.data as NewsletterRow[] | null) || []
-
-  const all = [
-        ...twitter.map((r) => mapRow(r, 'twitter')),
-        ...linkedin.map((r) => mapRow(r, 'linkedin')),
-        ...newsletter.map((r) => mapRow(r, 'newsletter')),
-      ]
+      const rows = (contentRes.data as ContentRow[] | null) || []
+      const all: ContentPiece[] = rows.map(mapContentRow)
 
 
       // Sort newest first
