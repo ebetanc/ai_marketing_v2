@@ -5,6 +5,7 @@ import { cn } from '../../lib/utils'
 import { useToast } from '../ui/Toast'
 import { Modal } from '../ui/Modal'
 import { IconButton } from '../ui/IconButton'
+import { supabase } from '../../lib/supabase'
 
 interface GenerateStrategyModalProps {
   isOpen: boolean
@@ -52,6 +53,9 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
     setIsGenerating(true)
 
     try {
+      // Identify current user to pass ownership for backend CRUD
+      const { data: sessionData } = await supabase.auth.getSession()
+      const userId = sessionData.session?.user.id || null
       // Derive normalized-first brand fields with safe fallbacks
       const brandName: string = selectedCompany.brand_name || selectedCompany.name || 'Unknown Brand'
       const website: string = selectedCompany.website || ''
@@ -108,7 +112,16 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
       }
 
       const webhookPayload = {
-        identifier: "generateAngles",
+        identifier: 'generateAngles',
+        operation: 'create_strategy_angles',
+        // Core identifiers used for CRUD
+        company_id: selectedCompany.id,
+        meta: {
+          user_id: userId,
+          source: 'app',
+          ts: new Date().toISOString(),
+        },
+        user_id: userId,
         brand: comprehensiveBrandData,
         platforms: platformsPayload,
         // Additional context for the AI
@@ -118,8 +131,8 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
           platformCount: selectedPlatforms.length,
           brandHasWebsite: !!website,
           brandHasAdditionalInfo: !!additionalInfo,
-          brandHasImageGuidelines: !!imageGuidelines
-        }
+          brandHasImageGuidelines: !!imageGuidelines,
+        },
       }
 
       const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {

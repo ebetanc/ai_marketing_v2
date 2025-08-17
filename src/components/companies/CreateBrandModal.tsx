@@ -61,9 +61,15 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
         },
         body: JSON.stringify({
           identifier: 'autofill',
+          operation: 'company_autofill',
           website: formData.website,
           brandName: formData.name,
-          additionalInfo: formData.additionalInfo
+          additionalInfo: formData.additionalInfo,
+          meta: {
+            user_id: (await supabase.auth.getSession()).data.session?.user.id || null,
+            source: 'app',
+            ts: new Date().toISOString(),
+          },
         })
       })
 

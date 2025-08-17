@@ -191,23 +191,39 @@ export function Strategies() {
     try {
       setGeneratingIdeas(angle.number)
 
+      // Attach user identity for RLS-locked inserts
+      const { data: sessionData } = await supabase.auth.getSession()
+      const userId = sessionData.session?.user.id || null
+
       const payload = {
+        identifier: 'generateIdeas',
+        operation: 'create_ideas_from_angle',
+        // Core identifiers for downstream CRUD
+        company_id: viewModal.company.id,
+        strategy_id: viewModal.strategy.id,
+        angle_number: angle.number,
+        meta: {
+          user_id: userId,
+          source: 'app',
+          ts: new Date().toISOString(),
+        },
+        user_id: userId,
         company: {
           id: viewModal.company.id,
-          brand_name: viewModal.company.brand_name
+          brand_name: viewModal.company.brand_name,
         },
         strategy: {
           id: viewModal.strategy.id,
           platforms: viewModal.strategy.platforms,
-          created_at: viewModal.strategy.created_at
+          created_at: viewModal.strategy.created_at,
         },
         angle: {
           number: angle.number,
           header: angle.header,
           description: angle.description,
           objective: angle.objective,
-          tonality: angle.tonality
-        }
+          tonality: angle.tonality,
+        },
       }
 
       const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {

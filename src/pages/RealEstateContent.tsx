@@ -135,7 +135,13 @@ export function RealEstateContent() {
       const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: url.trim(), user_id: userId })
+        body: JSON.stringify({
+          identifier: 'content_saas',
+          operation: 'real_estate_ingest',
+          url: url.trim(),
+          user_id: userId,
+          meta: { user_id: userId, source: 'app', ts: new Date().toISOString() },
+        })
       })
 
       console.log('Webhook response status:', response.status)

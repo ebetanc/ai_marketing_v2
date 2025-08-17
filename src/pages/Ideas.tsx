@@ -1,4 +1,3 @@
-
 import {
   Building2,
   Calendar,
@@ -24,6 +23,20 @@ import { formatDate, truncateText } from '../lib/utils';
 import { Skeleton } from '../components/ui/Skeleton';
 import { useToast } from '../components/ui/Toast';
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+
+// Helper: Extract topics from an idea row
+const extractTopicsFromIdea = (idea: any): { number: number; topic: string; description: string; image_prompt: string }[] => {
+  const topics: { number: number; topic: string; description: string; image_prompt: string }[] = []
+  for (let i = 1; i <= 10; i++) {
+    const topic = idea?.[`topic${i}`]
+    const description = idea?.[`idea_description${i}`] ?? idea?.[`description${i}`]
+    const image_prompt = idea?.[`image_prompt${i}`]
+    if (topic && String(topic).trim()) {
+      topics.push({ number: i, topic: String(topic), description: String(description || ''), image_prompt: String(image_prompt || '') })
+    }
+  }
+  return topics
+}
 
 export function Ideas() {
   useDocumentTitle('Ideas — AI Marketing')
@@ -107,98 +120,31 @@ export function Ideas() {
       console.log('Available columns in first idea:', data?.[0] ? Object.keys(data[0]) : 'No data')
 
       if (error) {
-        console.error('Supabase error:', error)
-        throw error
+        console.error('Error fetching ideas from Supabase:', error)
+        setError(error instanceof Error ? error.message : 'Failed to fetch ideas')
+        setIdeas([])
+        if (showToast) {
+          push({ title: 'Refresh failed', message: 'Could not update ideas', variant: 'error' })
+        }
+      } else {
+        console.log('Ideas fetched successfully:', data?.length || 0, 'records')
+        console.log('Setting ideas state with:', data)
+        setIdeas(data || [])
+        if (showToast) {
+          push({ title: 'Refreshed', message: 'Ideas updated', variant: 'success' })
+        }
       }
-
-      console.log('Ideas fetched successfully:', data?.length || 0, 'records')
-      console.log('Setting ideas state with:', data)
-      setIdeas(data || [])
-      if (showToast) {
-        push({ title: 'Refreshed', message: 'Ideas updated', variant: 'success' })
-      }
-    } catch (error) {
-      console.error('Error fetching ideas from Supabase:', error)
-      setError(error instanceof Error ? error.message : 'Failed to fetch ideas')
+    } catch (err) {
+      console.error('Error fetching ideas from Supabase:', err)
+      setError(err instanceof Error ? err.message : 'Failed to fetch ideas')
       setIdeas([])
-      push({ title: 'Refresh failed', message: 'Could not update ideas', variant: 'error' })
+      if (showToast) {
+        push({ title: 'Refresh failed', message: 'Could not update ideas', variant: 'error' })
+      }
     } finally {
       setLoading(false)
     }
   }, [push])
-
-  useEffect(() => {
-    fetchIdeas()
-  }, [fetchIdeas])
-
-
-  const extractTopicsFromIdea = (idea: IdeaJoined) => {
-    const topics: Topic[] = []
-    const columns = Object.keys(idea).sort() // Sort to ensure consistent order
-
-    let topicIndex = 1
-
-    while (true) {
-      const topicKey = `topic${topicIndex}`
-      const descriptionKey = `idea_description${topicIndex}`
-      const imagePromptKey = `image_prompt${topicIndex}`
-
-      const baseIndex = 8 + (topicIndex - 1) * 3 // 9-11 for topic 1, 12-14 for topic 2, etc.
-      const columnTopic = columns[baseIndex]
-      const columnDescription = columns[baseIndex + 1]
-      const columnImagePrompt = columns[baseIndex + 2]
-
-      const topic = (idea as any)[topicKey] || (idea as any)[columnTopic]
-      const description = (idea as any)[descriptionKey] || (idea as any)[columnDescription]
-      const imagePrompt = (idea as any)[imagePromptKey] || (idea as any)[columnImagePrompt]
-
-      if (topic || description || imagePrompt) {
-        topics.push({
-          number: topicIndex,
-          topic: String(topic || `Topic ${topicIndex}`),
-          description: String(description || 'No description provided'),
-          image_prompt: String(imagePrompt || 'No image prompt provided'),
-        })
-        topicIndex++
-      } else {
-        break
-      }
-
-      if (topicIndex > 20) break
-    }
-
-    return topics
-  }
-
-  const handleViewTopic = (idea: IdeaJoined, topic: Topic) => {
-    setViewIdeaModal({
-      isOpen: true,
-      idea,
-      topic,
-      isEditing: false
-    })
-    // Initialize edit form with current values
-    setEditForm({
-      topic: topic.topic || '',
-      description: topic.description || '',
-      image_prompt: topic.image_prompt || ''
-    })
-  }
-
-  const handleCloseViewModal = () => {
-    setViewIdeaModal({
-      isOpen: false,
-      idea: null,
-      topic: null,
-      isEditing: false
-    })
-    setEditForm({
-      topic: '',
-      description: '',
-      image_prompt: ''
-    })
-    setSaving(false)
-  }
 
   const handleEditToggle = () => {
     setViewIdeaModal(prev => ({
@@ -329,6 +275,14 @@ export function Ideas() {
     }))
   }
 
+  const handleCloseViewModal = () => {
+    setViewIdeaModal(prev => ({ ...prev, isOpen: false }))
+  }
+
+  const handleViewTopic = (idea: IdeaJoined, topic: Topic) => {
+    setViewIdeaModal({ isOpen: true, idea, topic, isEditing: false })
+  }
+
   const handleGenerateContent = async () => {
     if (!viewIdeaModal.idea || !viewIdeaModal.topic) return
 
@@ -422,8 +376,22 @@ export function Ideas() {
       const targetAudienceStr: string = companyData?.target_audience || ''
       const additionalInfo: string = companyData?.additional_information || ''
 
+      const { data: genSession } = await supabase.auth.getSession()
+      const userId = genSession.session?.user.id || null
+
       const webhookPayload = {
         identifier: 'generateContent',
+        operation: 'generate_content_from_idea',
+        meta: {
+          user_id: userId,
+          source: 'app',
+          ts: new Date().toISOString(),
+        },
+        user_id: userId,
+        // Core identifiers for downstream CRUD
+        company_id: viewIdeaModal.idea.company_id,
+        strategy_id: viewIdeaModal.idea.strategy_id,
+        idea_id: viewIdeaModal.idea.id,
         topic: topicData,
         platforms: ["twitter", "linkedin", "newsletter"],
         // FULL BRAND INFORMATION
