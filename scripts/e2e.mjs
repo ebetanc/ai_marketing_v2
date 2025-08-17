@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { promises as fs } from "fs";
 import { join } from "path";
 import { spawnSync } from "child_process";
+import { createServer } from "http";
 
 function getEnv(name, fallback) {
   return process.env[name] || fallback;
@@ -431,13 +432,308 @@ async function runFEChecks() {
   return { ok: true, steps };
 }
 
+// Start a tiny local HTTP server that records webhook POST bodies and paths
+function startMockWebhookServer() {
+  const received = [];
+  const server = createServer(async (req, res) => {
+    try {
+      const chunks = [];
+      for await (const chunk of req) chunks.push(chunk);
+      const raw = Buffer.concat(chunks).toString("utf8");
+      let body = null;
+      try {
+        body = raw ? JSON.parse(raw) : null;
+      } catch {
+        body = { _raw: raw };
+      }
+      received.push({ method: req.method, url: req.url, body });
+      res.statusCode = 200;
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify({ ok: true }));
+    } catch (e) {
+      res.statusCode = 500;
+      res.end(JSON.stringify({ ok: false, error: String(e?.message || e) }));
+    }
+  });
+  return new Promise((resolve) => {
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      const port = typeof address === "object" && address ? address.port : 0;
+      resolve({ server, port, received });
+    });
+  });
+}
+
+async function runWebhookChecks() {
+  const steps = [];
+  // Start mock server
+  const { server, port, received } = await startMockWebhookServer();
+  const base = `http://127.0.0.1:${port}`;
+
+  try {
+    // Make a temp user to produce a realistic user_id
+    const SUPABASE_URL = getEnv("VITE_SUPABASE_URL", "http://127.0.0.1:54321");
+    const SUPABASE_ANON_KEY = getEnv(
+      "VITE_SUPABASE_ANON_KEY",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
+    );
+    const tmp = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const email = `e2e_webhook_${Date.now()}@test.local`;
+    const pwd = "Test1234!";
+    const sign = await tmp.auth.signUp({ email, password: pwd });
+    steps.push({
+      step: "WH_signup",
+      ok: !sign.error,
+      error: sign.error?.message,
+    });
+    assert(!sign.error, `Webhook test signup failed: ${sign.error?.message}`);
+    const user = (await tmp.auth.getUser()).data.user;
+    const userId = user?.id || null;
+    steps.push({ step: "WH_user_id", ok: !!userId });
+    assert(!!userId, "Webhook test missing user id");
+
+    // Build UI-like payloads
+    const payloads = [
+      {
+        path: "/webhook/content-saas",
+        body: {
+          identifier: "generateAngles",
+          operation: "create_strategy_angles",
+          company_id: 101,
+          meta: {
+            user_id: userId,
+            source: "app",
+            ts: new Date().toISOString(),
+          },
+          user_id: userId,
+          brand: {
+            id: 101,
+            name: "Brand A",
+            website: "https://example.com",
+            brandTone: "friendly",
+            keyOffer: "value",
+            brandVoice: {
+              tone: "friendly",
+              style: "casual",
+              keywords: ["ai", "marketing"],
+            },
+            targetAudience: "marketers",
+            target_audience: {
+              demographics: "25-40",
+              interests: ["growth"],
+              pain_points: [],
+            },
+            additionalInfo: "",
+            imageGuidelines: "",
+            createdAt: new Date().toISOString(),
+          },
+          platforms: ["twitter", "linkedin"],
+          context: {
+            requestType: "content_strategy_generation",
+            timestamp: new Date().toISOString(),
+          },
+        },
+        expect: {
+          identifier: "generateAngles",
+          operation: "create_strategy_angles",
+          keys: ["company_id", "meta", "user_id", "brand", "platforms"],
+        },
+      },
+      {
+        path: "/webhook/content-saas",
+        body: {
+          identifier: "generateIdeas",
+          operation: "create_ideas_from_angle",
+          company_id: 201,
+          strategy_id: 301,
+          angle_number: 1,
+          meta: {
+            user_id: userId,
+            source: "app",
+            ts: new Date().toISOString(),
+          },
+          user_id: userId,
+          company: { id: 201, brand_name: "Brand B" },
+          strategy: {
+            id: 301,
+            platforms: "Twitter, LinkedIn",
+            created_at: new Date().toISOString(),
+          },
+          angle: {
+            number: 1,
+            header: "Angle",
+            description: "desc",
+            objective: "obj",
+            tonality: "pro",
+          },
+        },
+        expect: {
+          identifier: "generateIdeas",
+          operation: "create_ideas_from_angle",
+          keys: [
+            "company_id",
+            "strategy_id",
+            "angle_number",
+            "meta",
+            "user_id",
+          ],
+        },
+      },
+      {
+        path: "/webhook/content-saas",
+        body: {
+          identifier: "generateContent",
+          operation: "generate_content_from_idea",
+          meta: {
+            user_id: userId,
+            source: "app",
+            ts: new Date().toISOString(),
+          },
+          user_id: userId,
+          company_id: 201,
+          strategy_id: 301,
+          idea_id: 401,
+          topic: {
+            topicNumber: 1,
+            topic: "Post",
+            description: "",
+            image_prompt: "",
+            idea: {
+              id: 401,
+              brand: "Brand B",
+              strategy_id: 301,
+              angle_number: 1,
+              created_at: new Date().toISOString(),
+            },
+          },
+          platforms: ["twitter", "linkedin", "newsletter"],
+          companyDetails: {
+            id: 201,
+            name: "Brand B",
+            website: "",
+            brandTone: "",
+            keyOffer: "",
+            targetAudience: "",
+            additionalInfo: "",
+          },
+          angleDetails: {
+            number: 1,
+            header: "Angle",
+            description: "",
+            objective: "",
+            tonality: "",
+          },
+          strategyContext: {
+            id: 301,
+            brand: "Brand B",
+            name: "Brand B",
+            description: "",
+            platforms: "Twitter",
+            created_at: new Date().toISOString(),
+            totalAngles: 1,
+          },
+          aiContext: { contentType: "idea_to_content_generation" },
+          context: {
+            requestType: "generate_content_from_idea",
+            timestamp: new Date().toISOString(),
+          },
+        },
+        expect: {
+          identifier: "generateContent",
+          operation: "generate_content_from_idea",
+          keys: [
+            "company_id",
+            "strategy_id",
+            "idea_id",
+            "meta",
+            "user_id",
+            "topic",
+          ],
+        },
+      },
+      {
+        path: "/webhook/real-estate",
+        body: {
+          identifier: "content_saas",
+          operation: "real_estate_ingest",
+          url: "https://listing.example/property",
+          user_id: userId,
+          meta: {
+            user_id: userId,
+            source: "app",
+            ts: new Date().toISOString(),
+          },
+        },
+        expect: {
+          identifier: "content_saas",
+          operation: "real_estate_ingest",
+          keys: ["url", "user_id", "meta"],
+        },
+      },
+    ];
+
+    for (const [idx, p] of payloads.entries()) {
+      const res = await fetch(base + p.path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(p.body),
+      });
+      const ok = res.ok;
+      steps.push({
+        step: `WH_post_${idx + 1}_${p.body.identifier}`,
+        ok,
+        status: res.status,
+      });
+      assert(ok, `Webhook mock POST failed: ${p.body.identifier}`);
+    }
+
+    // Validate receipts
+    assert(
+      received.length === payloads.length,
+      `Expected ${payloads.length} webhook hits, got ${received.length}`
+    );
+    payloads.forEach((p, i) => {
+      const rec = received[i];
+      const b = rec.body || {};
+      const idOk = b.identifier === p.expect.identifier;
+      const opOk = b.operation === p.expect.operation;
+      const keysOk = p.expect.keys.every((k) => b[k] !== undefined);
+      steps.push({
+        step: `WH_validate_${i + 1}`,
+        ok: idOk && opOk && keysOk,
+        path: rec.url,
+      });
+      assert(
+        idOk && opOk && keysOk,
+        `Webhook payload ${i + 1} failed validation`
+      );
+      // user consistency
+      if (b.meta?.user_id !== undefined && b.user_id !== undefined) {
+        assert(
+          b.meta.user_id === b.user_id,
+          `meta.user_id and user_id mismatch for ${b.identifier}`
+        );
+      }
+    });
+
+    return { ok: true, steps };
+  } finally {
+    server.close();
+  }
+}
+
 (async () => {
-  const out = { be: null, fe: null };
+  const out = { be: null, fe: null, webhooks: null };
   try {
     out.be = await runBEChecks();
     out.fe = await runFEChecks();
+    out.webhooks = await runWebhookChecks();
     console.log(
-      JSON.stringify({ ok: out.be.ok && out.fe.ok, ...out }, null, 2)
+      JSON.stringify(
+        { ok: out.be.ok && out.fe.ok && out.webhooks.ok, ...out },
+        null,
+        2
+      )
     );
     process.exit(0);
   } catch (err) {
