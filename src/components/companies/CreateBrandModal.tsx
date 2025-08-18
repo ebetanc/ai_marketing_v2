@@ -136,9 +136,14 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
     setSubmitLoading(true)
 
     try {
+      // Ensure website conforms to DB URL check (must start with http/https)
+      const normalizedWebsite = formData.website && formData.website.trim().length > 0
+        ? (/^https?:\/\//i.test(formData.website.trim()) ? formData.website.trim() : `https://${formData.website.trim()}`)
+        : ''
+
       const brandData: TablesInsert<'companies'> = {
         brand_name: formData.name,
-        website: formData.website,
+        website: normalizedWebsite || null,
         additional_information: formData.additionalInfo,
         target_audience: formData.targetAudience,
         brand_tone: formData.brandTone,

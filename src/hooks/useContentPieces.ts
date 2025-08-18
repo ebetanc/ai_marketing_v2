@@ -69,7 +69,12 @@ export function useContentPieces(companyId?: string) {
         .select(companyId ? '*, idea:ideas!inner(company_id,strategy_id)' : '*, idea:ideas(company_id,strategy_id)')
         .order('created_at', { ascending: false })
 
-      const contentFiltered = companyId ? contentQ.eq('idea.company_id', companyId) : contentQ
+      // When filtering by company, compare against the numeric company_id on the joined ideas table.
+      // PostgREST expects filters to use the relationship name (ideas), not the select alias.
+      const companyIdNum = companyId != null && companyId !== '' && !Number.isNaN(Number(companyId))
+        ? Number(companyId)
+        : undefined
+      const contentFiltered = companyIdNum != null ? contentQ.eq('ideas.company_id', companyIdNum) : contentQ
       const contentRes = await contentFiltered
 
       if (contentRes.error) {
