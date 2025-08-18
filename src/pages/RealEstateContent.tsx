@@ -24,7 +24,7 @@ interface RealEstateContent {
 }
 
 export function RealEstateContent() {
-  useDocumentTitle('Real Estate Agent — AI Marketing')
+  useDocumentTitle('Real estate — AI Marketing')
   const [showUrlModal, setShowUrlModal] = useState(false)
   const [url, setUrl] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
@@ -66,7 +66,7 @@ export function RealEstateContent() {
       setDeleteDialog({ isOpen: false, content: null, loading: false })
     } catch (error) {
       console.error('Error deleting real estate content:', error)
-      push({ title: 'Delete failed', message: 'Please try again', variant: 'error' })
+  push({ title: 'Delete failed', message: 'Try again.', variant: 'error' })
       setDeleteDialog(prev => ({ ...prev, loading: false }))
     }
   }
@@ -175,10 +175,8 @@ export function RealEstateContent() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Real Estate Content Agent</h1>
-          <p className="mt-2 text-gray-600">
-            Generate specialized content for real estate professionals, agents, and property businesses.
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900">Real estate content</h1>
+          <p className="mt-2 text-gray-600">Generate content for real estate pros.</p>
         </div>
         <div className="flex space-x-3">
           <Button onClick={() => fetchRealEstateContent(true)} loading={loading} disabled={loading} variant="outline">
@@ -187,7 +185,7 @@ export function RealEstateContent() {
           </Button>
           <Button onClick={() => setShowUrlModal(true)}>
             <Building2 className="h-4 w-4" />
-            Generate Real Estate Content
+            Generate content
           </Button>
         </div>
       </div>
@@ -201,8 +199,8 @@ export function RealEstateContent() {
               <Link className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h2 id="realestate-url-title" className="text-lg font-bold text-gray-900">Enter Property URL</h2>
-              <p className="text-sm text-gray-500">Provide a URL to analyze and generate content</p>
+              <h2 id="realestate-url-title" className="text-lg font-bold text-gray-900">Enter property URL</h2>
+              <p className="text-sm text-gray-500">We’ll analyze it and generate content.</p>
             </div>
           </div>
 
@@ -214,7 +212,7 @@ export function RealEstateContent() {
         {/* Content */}
         <div className="flex-1 min-h-0 p-6 space-y-4 overflow-y-auto">
           <Input
-            label="Property or Real Estate URL"
+            label="Property URL"
             placeholder="https://example.com/property-listing"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
@@ -223,8 +221,7 @@ export function RealEstateContent() {
 
           <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
             <p className="text-sm text-blue-800">
-              <strong>Tip:</strong> You can enter URLs for property listings, real estate websites,
-              or any real estate-related page to generate targeted content.
+              <strong>Tip:</strong> Use a listing or real estate page URL.
             </p>
           </div>
         </div>
@@ -245,7 +242,7 @@ export function RealEstateContent() {
             className="bg-blue-600 hover:bg-blue-700"
           >
             <Sparkles className="h-4 w-4" />
-            {isGenerating ? 'Generating...' : 'Generate Content'}
+            {isGenerating ? 'Generating…' : 'Generate content'}
           </Button>
         </div>
       </Modal>
@@ -277,10 +274,10 @@ export function RealEstateContent() {
         <Card>
           <CardContent className="text-center py-12">
             <Building2 className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Real Estate Content</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading content</h3>
             <p className="text-red-600 mb-4">{error}</p>
             <Button onClick={() => fetchRealEstateContent(true)} variant="outline" loading={loading} disabled={loading}>
-              Try Again
+              Try again
             </Button>
           </CardContent>
         </Card>
@@ -383,41 +380,38 @@ export function RealEstateContent() {
             <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-green-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
               <Building2 className="h-8 w-8 text-white" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-3">No Real Estate Content Yet</h3>
-            <p className="text-gray-600 max-w-md mx-auto mb-8">
-              Generate your first real estate content by providing a property URL.
-              The AI will analyze the content and create specialized real estate materials.
-            </p>
+            <h3 className="text-xl font-semibold text-gray-900 mb-3">No content</h3>
+            <p className="text-gray-600 max-w-md mx-auto mb-8">Generate your first piece with a property URL.</p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto mb-8">
               <div className="text-center">
                 <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                   <Home className="h-6 w-6 text-blue-600" />
                 </div>
-                <h4 className="font-medium text-gray-900 mb-2">Property Analysis</h4>
-                <p className="text-sm text-gray-600">AI analyzes property URLs and extracts key information</p>
+                <h4 className="font-medium text-gray-900 mb-2">Property analysis</h4>
+                <p className="text-sm text-gray-600">We extract key info from property URLs</p>
               </div>
 
               <div className="text-center">
                 <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                   <FileText className="h-6 w-6 text-green-600" />
                 </div>
-                <h4 className="font-medium text-gray-900 mb-2">Content Generation</h4>
-                <p className="text-sm text-gray-600">Creates specialized real estate marketing content</p>
+                <h4 className="font-medium text-gray-900 mb-2">Content generation</h4>
+                <p className="text-sm text-gray-600">We create targeted real estate content</p>
               </div>
 
               <div className="text-center">
                 <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                   <TrendingUp className="h-6 w-6 text-purple-600" />
                 </div>
-                <h4 className="font-medium text-gray-900 mb-2">Ready to Use</h4>
-                <p className="text-sm text-gray-600">Get professional content ready for your campaigns</p>
+                <h4 className="font-medium text-gray-900 mb-2">Ready to use</h4>
+                <p className="text-sm text-gray-600">Use it in your campaigns</p>
               </div>
             </div>
 
             <Button onClick={() => setShowUrlModal(true)} size="lg">
               <Building2 className="h-4 w-4" />
-              Generate Your First Content
+              Generate your first content
             </Button>
           </CardContent>
         </Card>
@@ -428,9 +422,9 @@ export function RealEstateContent() {
         isOpen={deleteDialog.isOpen && !!deleteDialog.content}
         onClose={handleDeleteCancel}
         onConfirm={handleDeleteConfirm}
-        title="Delete Content"
-        message={`Are you sure you want to delete Real Estate Content #${deleteDialog.content?.id}? This action cannot be undone.`}
-        confirmText={deleteDialog.loading ? 'Deleting...' : 'Delete'}
+  title="Delete content"
+  message={`Delete Real estate content #${deleteDialog.content?.id}? This can’t be undone.`}
+  confirmText={deleteDialog.loading ? 'Deleting…' : 'Delete'}
         cancelText="Cancel"
         variant="danger"
         loading={deleteDialog.loading}

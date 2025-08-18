@@ -177,7 +177,7 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
     } catch (error) {
       console.error('Error generating content strategy:', error)
       console.error('Full error details:', error)
-      push({ title: 'Generation failed', message: 'Please try again', variant: 'error' })
+      push({ title: 'Generation failed', message: 'Try again.', variant: 'error' })
     } finally {
       setIsGenerating(false)
     }

@@ -50,7 +50,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
       onClose() // Close the modal
     } catch (error) {
       console.error('Error deleting company:', error)
-      push({ title: 'Delete failed', message: 'Please try again', variant: 'error' })
+      push({ title: 'Delete failed', message: 'Try again.', variant: 'error' })
     } finally {
       setDeleting(false)
     }

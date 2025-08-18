@@ -359,7 +359,7 @@ export function Content() {
 
       if (error) {
         console.error('Supabase delete error:', error)
-        push({ title: 'Delete failed', message: `Failed to delete content: ${error.message}`, variant: 'error' })
+        push({ title: 'Delete failed', message: `Failed to delete: ${error.message}`, variant: 'error' })
         return
       }
 
@@ -375,7 +375,7 @@ export function Content() {
       push({ title: 'Deleted', message: 'Content removed', variant: 'success' })
     } catch (_error) {
       console.error('Error deleting content:', error)
-      push({ title: 'Delete failed', message: 'Please try again', variant: 'error' })
+      push({ title: 'Delete failed', message: 'Try again.', variant: 'error' })
     } finally {
       setDeleteDialog(prev => ({ ...prev, loading: false }))
     }
@@ -490,9 +490,9 @@ export function Content() {
     const url = `${siteUrl}/content?${params.toString()}`
     try {
       await navigator.clipboard.writeText(url)
-      push({ message: 'Link copied', variant: 'success' })
+  push({ message: 'Link copied', variant: 'success' })
     } catch (_e) {
-      push({ message: 'Copy failed. Please try again.', variant: 'error' })
+  push({ message: 'Copy failed. Try again.', variant: 'error' })
     }
   }
 
@@ -560,9 +560,9 @@ export function Content() {
         isOpen={deleteDialog.isOpen}
         onClose={handleDeleteCancel}
         onConfirm={handleDeleteConfirm}
-  title="Delete content"
-        message={`Are you sure you want to delete "${deleteDialog.content?.title}"? This action cannot be undone.`}
-  confirmText="Delete"
+        title="Delete content"
+        message={`Delete "${deleteDialog.content?.title}"? This can’t be undone.`}
+        confirmText="Delete"
         cancelText="Cancel"
         variant="danger"
         loading={deleteDialog.loading}

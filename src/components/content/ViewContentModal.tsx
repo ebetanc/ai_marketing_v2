@@ -182,7 +182,7 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
 
       if (error) {
         console.error('Error posting content:', error)
-        push({ message: `Failed to post content: ${error.message}`, variant: 'error' })
+        push({ message: `Failed to post: ${error.message}`, variant: 'error' })
         return
       }
 
@@ -195,7 +195,7 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
 
     } catch (error) {
       console.error('Error posting content:', error)
-      push({ message: 'Failed to post content. Please try again.', variant: 'error' })
+      push({ message: 'Failed to post. Try again.', variant: 'error' })
     } finally {
       setPosting(false)
     }
@@ -217,7 +217,7 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
       push({ message: 'Content approved', variant: 'success' })
       onApproved?.({ ...content, status: 'approved' })
     } catch (_e) {
-      push({ message: 'Failed to approve. Please try again.', variant: 'error' })
+      push({ message: 'Failed to approve. Try again.', variant: 'error' })
     } finally {
       setApproving(false)
     }
@@ -339,7 +339,7 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
       await navigator.clipboard.writeText(text)
       push({ message: successMsg, variant: 'success' })
     } catch (_e) {
-      push({ message: 'Copy failed. Please try again.', variant: 'error' })
+      push({ message: 'Copy failed. Try again.', variant: 'error' })
     }
   }
 
