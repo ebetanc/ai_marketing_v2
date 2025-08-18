@@ -20,6 +20,7 @@ export default function Login() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [message, setMessage] = useState<string | null>(null)
+    const [role, setRole] = useState<'call_center'>('call_center')
     const [formError, setFormError] = useState<string | null>(null)
     const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({})
     const minPasswordLength = 6
@@ -35,6 +36,7 @@ export default function Login() {
             password,
             options: {
                 emailRedirectTo: `${(import.meta.env.VITE_SITE_URL as string) || window.location.origin}/?redirectTo=${encodeURIComponent(redirectTo)}`,
+                data: { role },
             },
         })
         if (error) throw error
@@ -88,6 +90,23 @@ export default function Login() {
                         autoComplete="current-password"
                         required
                     />
+                    {/* Pick role at sign up (immutable later) */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                        <div className="flex items-center gap-4">
+                            <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                                <input
+                                    type="radio"
+                                    name="role"
+                                    value="call_center"
+                                    checked={role === 'call_center'}
+                                    onChange={() => setRole('call_center')}
+                                />
+                                Call Center
+                            </label>
+                        </div>
+                        <p className="mt-1 text-xs text-gray-500">This selection is stored at sign-up and can’t be changed later.</p>
+                    </div>
                     {/* No confirm password to keep sign up quick */}
                     <div className="grid grid-cols-2 gap-2">
                         <Button
