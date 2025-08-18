@@ -75,7 +75,7 @@ export function TopBar({ onMenuClick, menuButtonProps, ...divProps }: TopBarProp
   }, [location.pathname, location.search])
 
   return (
-    <header className="bg-white px-4 sm:px-6 h-[var(--app-header-h)] flex items-center" {...divProps}>
+    <header className="bg-white px-4 sm:px-6 h-[var(--app-header-h)] flex items-center border-b border-gray-200" {...divProps}>
       <div className="flex items-center justify-between gap-4 w-full">
         <div className="flex items-center space-x-2 sm:space-x-4 flex-1">
           <IconButton

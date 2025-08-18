@@ -57,7 +57,7 @@ export function Sidebar() {
 
   return (
     <div className="flex w-full lg:w-64 flex-col bg-white border-r border-gray-200 lg:sticky lg:top-0 lg:h-screen">
-      <div className="flex items-center px-4 sm:px-6 h-[var(--app-header-h)]">
+      <div className="flex items-center px-4 sm:px-6 h-[var(--app-header-h)] border-b border-gray-200">
         <div className="flex items-center">
           <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center">
             <Zap className="h-5 w-5 text-white" />

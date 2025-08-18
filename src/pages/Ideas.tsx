@@ -828,13 +828,8 @@ export function Ideas() {
 
                       {/* View indicator */}
                       <div className="pt-1">
-<<<<<<< HEAD
                         <div className="text-xs text-brand-600 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
                           Click to view →
-=======
-                        <div className="text-xs text-blue-600 font-medium transition-opacity">
-                          Click to view details →
->>>>>>> a7279eb (feat: simplify opacity classes for button transitions across multiple components)
                         </div>
                       </div>
                     </CardContent>

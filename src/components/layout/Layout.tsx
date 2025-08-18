@@ -17,11 +17,6 @@ export function Layout() {
       >
         Skip to content
       </a>
-      {/* Full-width divider aligning Sidebar header and TopBar bottom edge */}
-      <div
-        aria-hidden
-        className="hidden lg:block pointer-events-none absolute left-0 right-0 top-[var(--app-header-h)] h-px bg-gray-200 z-10"
-      />
       {/* Desktop sidebar */}
       <div className="hidden lg:block">
         <Sidebar />
