@@ -16,7 +16,7 @@ export function Select({ className, label, error, options, id, onKeyDown, onKeyU
       {label && (
         <label
           htmlFor={selectId}
-          className={cn('block text-sm font-medium', props.disabled ? 'text-gray-500' : 'text-gray-700')}
+          className={cn('block text-sm font-medium', (props.disabled || (props as any).readOnly) ? 'text-gray-500' : 'text-gray-700')}
         >
           {label}
         </label>
@@ -24,7 +24,8 @@ export function Select({ className, label, error, options, id, onKeyDown, onKeyU
       <div className="relative">
         <select
           className={cn(
-            'block w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-gray-900 motion-safe:transition-colors focus:border-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 appearance-none bg-white',
+            'block w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-gray-900 motion-safe:transition-colors focus:border-brand-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-200 appearance-none bg-white',
+            (props.disabled || (props as any).readOnly) && 'bg-gray-50 text-gray-500 cursor-not-allowed',
             error && 'border-red-300 focus:border-red-500',
             className
           )}

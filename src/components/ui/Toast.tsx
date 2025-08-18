@@ -66,7 +66,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                             {t.variant === 'success' && <CheckCircle aria-hidden className="h-5 w-5 text-green-600" />}
                             {t.variant === 'error' && <XCircle aria-hidden className="h-5 w-5 text-red-600" />}
                             {t.variant === 'warning' && <AlertTriangle aria-hidden className="h-5 w-5 text-yellow-600" />}
-                            {(!t.variant || t.variant === 'info') && <Info aria-hidden className="h-5 w-5 text-blue-600" />}
+                            {(!t.variant || t.variant === 'info') && <Info aria-hidden className="h-5 w-5 text-brand-600" />}
                         </div>
                         <div className="flex-1 min-w-0">
                             {t.title && <p className="text-sm font-medium text-gray-900">{t.title}</p>}

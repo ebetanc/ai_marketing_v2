@@ -112,7 +112,7 @@ export default function Login() {
                         <Button type="button" variant="outline" onClick={handleSignUp} loading={loading} disabled={!email || !password}>Sign up</Button>
                     </div>
                     <div className="text-right">
-                        <a href="/forgot-password" className="text-xs text-blue-600 hover:underline">Forgot password?</a>
+                        <a href="/forgot-password" className="text-xs text-brand-600 hover:underline">Forgot password?</a>
                     </div>
                 </div>
 

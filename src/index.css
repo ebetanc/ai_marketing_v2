@@ -12,12 +12,6 @@
   }
 }
 
-/* Improve focus visibility globally when authors forget ring classes */
-:focus-visible {
-  outline: 2px solid theme("colors.blue.500");
-  outline-offset: 2px;
-}
-
 /* Increase contrast support */
 @media (prefers-contrast: more) {
   .shadow,
@@ -29,13 +23,4 @@
   }
 }
 
-/* Reduced transparency */
-@media (prefers-reduced-transparency: reduce) {
-  .backdrop-blur-sm,
-  .bg-white\/50,
-  .bg-black\/40,
-  .bg-black\/50 {
-    backdrop-filter: none !important;
-    background-color: rgba(0, 0, 0, 0.5) !important;
-  }
-}
+/* (Removed non-standard prefers-reduced-transparency media query) */

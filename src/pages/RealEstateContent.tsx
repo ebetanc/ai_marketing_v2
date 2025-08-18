@@ -219,8 +219,8 @@ export function RealEstateContent() {
             disabled={isGenerating}
           />
 
-          <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-            <p className="text-sm text-blue-800">
+          <div className="bg-brand-50 rounded-lg p-3 border border-brand-200">
+            <p className="text-sm text-brand-800">
               <strong>Tip:</strong> Use a listing or real estate page URL.
             </p>
           </div>
@@ -239,7 +239,7 @@ export function RealEstateContent() {
             onClick={handleGenerateContent}
             loading={isGenerating}
             disabled={!url.trim() || isGenerating}
-            className="bg-blue-600 hover:bg-blue-700"
+            variant="primary"
           >
             <Sparkles className="h-4 w-4" />
             {isGenerating ? 'Generating…' : 'Generate content'}
@@ -320,15 +320,15 @@ export function RealEstateContent() {
                 {content.link_origin && (
                   <div>
                     <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
-                      <Link aria-hidden className="h-4 w-4 mr-1 text-blue-600" />
+                      <Link aria-hidden className="h-4 w-4 mr-1 text-brand-600" />
                       Origin Link
                     </h4>
-                    <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
+                    <div className="bg-brand-50 rounded-lg p-3 border border-brand-100">
                       <a
                         href={content.link_origin}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-700 hover:text-blue-900 text-sm break-all flex items-center"
+                        className="text-brand-700 hover:text-brand-900 text-sm break-all flex items-center"
                       >
                         <ExternalLink aria-hidden className="h-3 w-3 mr-1 flex-shrink-0" />
                         {content.link_origin}
@@ -385,8 +385,8 @@ export function RealEstateContent() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto mb-8">
               <div className="text-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <Home className="h-6 w-6 text-blue-600" />
+                <div className="w-12 h-12 bg-brand-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Home className="h-6 w-6 text-brand-600" />
                 </div>
                 <h4 className="font-medium text-gray-900 mb-2">Property analysis</h4>
                 <p className="text-sm text-gray-600">We extract key info from property URLs</p>

@@ -18,7 +18,7 @@ export function Input({ className, label, error, id, onKeyDown, onKeyUp, ...prop
       )}
       <input
         className={cn(
-          'block w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-gray-900 placeholder-gray-500 motion-safe:transition-colors focus:border-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-200',
+          'block w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-gray-900 placeholder-gray-500 motion-safe:transition-colors focus:border-brand-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-200',
           (props.disabled || props.readOnly) && 'bg-gray-50 text-gray-500 cursor-not-allowed placeholder-gray-400',
           error && 'border-red-300 focus:border-red-500',
           className

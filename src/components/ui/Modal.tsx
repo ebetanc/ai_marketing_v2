@@ -10,10 +10,11 @@ type ModalProps = {
     className?: string
     backdropClassName?: string
     id?: string
+    dismissible?: boolean // when false, disable overlay and ESC close
 }
 
 // Accessible modal with focus trap, ESC/overlay close, and body scroll lock
-export function Modal({ isOpen, onClose, children, labelledById, describedById, role = 'dialog', className, backdropClassName, id }: ModalProps) {
+export function Modal({ isOpen, onClose, children, labelledById, describedById, role = 'dialog', className, backdropClassName, id, dismissible = true }: ModalProps) {
     const overlayRef = useRef<HTMLDivElement | null>(null)
     const dialogRef = useRef<HTMLDivElement | null>(null)
     const previouslyFocused = useRef<Element | null>(null)
@@ -55,7 +56,7 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
                 e.stopPropagation()
-                onCloseRef.current?.()
+                if (dismissible) onCloseRef.current?.()
             } else if (e.key === 'Tab') {
                 // Trap focus
                 const dialog = dialogRef.current
@@ -92,11 +93,12 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
             const prev = previouslyFocused.current as HTMLElement | null
             prev?.focus?.()
         }
-    }, [isOpen])
+    }, [isOpen, dismissible])
 
     if (!isOpen) return null
 
     const onOverlayClick = (e: React.MouseEvent) => {
+        if (!dismissible) return
         if (e.target === overlayRef.current) {
             onClose()
         }
@@ -104,7 +106,7 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
 
     // Base layout is always a vertical flex with constrained height so inner content can fill and scroll
     const baseClasses = 'overflow-hidden flex flex-col w-full max-h-[90vh]'
-    const defaultClasses = 'bg-white rounded-2xl shadow-2xl max-w-2xl'
+    const defaultClasses = 'bg-white rounded-card shadow-2xl max-w-2xl'
     const appliedClasses = className ? `${className} ${baseClasses}` : `${defaultClasses} ${baseClasses}`
 
     return (

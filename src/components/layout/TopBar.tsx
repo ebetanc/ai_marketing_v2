@@ -110,7 +110,8 @@ export function TopBar({ onMenuClick, menuButtonProps, ...divProps }: TopBarProp
               }}
               aria-label="Search"
               ref={searchRef}
-              className="w-full pl-10 pr-10 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-10 py-3 text-sm border-2 border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus:border-brand-500"
+              style={{ minHeight: 44 }}
             />
             {searchQuery && (
               <button
@@ -125,7 +126,7 @@ export function TopBar({ onMenuClick, menuButtonProps, ...divProps }: TopBarProp
                     navigate({ search: params.toString() }, { replace: true })
                   }
                 }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                 style={{ width: 44, height: 44 }}
               >
                 <X className="h-4 w-4" />

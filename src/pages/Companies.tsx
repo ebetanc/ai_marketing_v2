@@ -160,12 +160,12 @@ export function Companies() {
         <div className="space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
             {companies.map((company) => (
-              <Card key={company.id} className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
+              <Card key={company.id} className="border-l-4 border-l-brand-500 shadow-sm hover:shadow-md transition-shadow">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex items-start space-x-3 flex-1">
-                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Building2 className="h-5 w-5 text-blue-600" />
+                      <div className="w-10 h-10 bg-brand-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Building2 className="h-5 w-5 text-brand-600" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <CardTitle className="text-xl font-bold leading-tight">{company.brand_name || company.name}</CardTitle>
@@ -175,7 +175,7 @@ export function Companies() {
                             {formatDate(company.created_at)}
                           </span>
                           {company.website && (
-                            <span className="text-blue-600 truncate">
+                            <span className="text-brand-600 truncate">
                               {company.website.replace(/^https?:\/\//, '')}
                             </span>
                           )}
@@ -200,7 +200,7 @@ export function Companies() {
                     {/* Quick Info */}
                     <div className="flex flex-wrap gap-1">
                       {company.target_audience && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-brand-100 text-brand-800">
                           <Target className="h-2.5 w-2.5 mr-1" />
                           Target Audience Defined
                         </span>

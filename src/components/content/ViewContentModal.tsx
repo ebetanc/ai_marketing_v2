@@ -243,7 +243,7 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
     return (
       <div key={key}>
         <h5 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
-          <FileText className="h-4 w-4 mr-1 text-blue-600" />
+          <FileText className="h-4 w-4 mr-1 text-brand-600" />
           {capitalizedKey}
         </h5>
         <div className="bg-gray-50 rounded-lg p-3">
@@ -282,8 +282,8 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                <span className="text-blue-600 font-semibold text-sm">{index + 1}</span>
+              <div className="w-8 h-8 bg-brand-100 rounded-lg flex items-center justify-center">
+                <span className="text-brand-600 font-semibold text-sm">{index + 1}</span>
               </div>
               <div>
                 <h4 className="font-medium text-gray-900 text-base">
@@ -383,7 +383,7 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-br from-brand-500 to-purple-500 rounded-xl flex items-center justify-center">
               <FileText className="h-6 w-6 text-white" />
             </div>
             <div>
@@ -405,7 +405,7 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center text-lg">
-                <FileText className="h-5 w-5 mr-2 text-blue-600" />
+                <FileText className="h-5 w-5 mr-2 text-brand-600" />
                 Content info
               </CardTitle>
             </CardHeader>
@@ -557,7 +557,7 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
               onClick={handlePost}
               loading={posting}
               disabled={posting}
-              className="bg-blue-600 hover:bg-blue-700"
+              variant="primary"
             >
               {posting ? 'Posting…' : 'Post'}
             </Button>

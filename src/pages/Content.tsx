@@ -587,7 +587,8 @@ export function Content() {
                   navigate({ search: params.toString() }, { replace: true })
                 }}
                 aria-label="Search content"
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus:border-brand-500"
+                style={{ minHeight: 44 }}
               />
             </div>
 
@@ -745,7 +746,7 @@ export function Content() {
                                   {content.status !== 'approved' && (
                                     <Button
                                       variant="outline"
-                                      size="sm"
+                                      size="xs"
                                       onClick={(e) => {
                                         e.stopPropagation()
                                         // Optimistically update local state
@@ -758,7 +759,7 @@ export function Content() {
                                           }
                                         })
                                       }}
-                                      className="!ml-2 !py-0 !px-2 text-xs"
+                                      className="ml-2"
                                     >
                                       Approve
                                     </Button>
@@ -785,7 +786,7 @@ export function Content() {
                                   </span>
                                   <span>{content.metadata?.word_count || 0} words</span>
                                   {contentTopic && (
-                                    <span className="text-blue-600">Topic: {truncateText(contentTopic, 30)}</span>
+                                    <span className="text-brand-600">Topic: {truncateText(contentTopic, 30)}</span>
                                   )}
                                 </div>
                               </div>

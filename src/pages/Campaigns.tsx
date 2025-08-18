@@ -33,8 +33,8 @@ export function Campaigns() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
             <div className="text-center">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <Calendar className="h-6 w-6 text-blue-600" />
+              <div className="w-12 h-12 bg-brand-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <Calendar className="h-6 w-6 text-brand-600" />
               </div>
               <h4 className="font-medium text-gray-900 mb-2">Smart scheduling</h4>
               <p className="text-sm text-gray-600">Optimize posting times across all platforms</p>

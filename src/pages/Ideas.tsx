@@ -620,7 +620,7 @@ export function Ideas() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">
-                    <FileText className="h-5 w-5 text-blue-600" />
+                    <FileText className="h-5 w-5 text-brand-600" />
                     Topic
                   </CardTitle>
                 </CardHeader>
@@ -631,7 +631,7 @@ export function Ideas() {
                       value={editForm.topic}
                       onChange={(e) => handleFormChange('topic', e.target.value)}
                       aria-label="Topic"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus:border-transparent"
                       placeholder="Enter topic..."
                     />
                   ) : (
@@ -657,7 +657,7 @@ export function Ideas() {
                       onChange={(e) => handleFormChange('description', e.target.value)}
                       rows={4}
                       aria-label="Description"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus:border-transparent resize-none"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus:border-transparent resize-none"
                       placeholder="Enter description..."
                     />
                   ) : (
@@ -684,7 +684,7 @@ export function Ideas() {
                         onChange={(e) => handleFormChange('image_prompt', e.target.value)}
                         rows={3}
                         aria-label="Image prompt"
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus:border-transparent resize-none"
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus:border-transparent resize-none"
                         placeholder="Enter image prompt..."
                       />
                     ) : (
@@ -782,7 +782,7 @@ export function Ideas() {
                 {viewIdeaSetModal.topics.map((topic) => (
                   <Card
                     key={topic.number}
-                    className="bg-white border border-gray-200 hover:shadow-lg hover:border-blue-300 transition-all duration-200 group cursor-pointer"
+                    className="bg-white border border-gray-200 hover:shadow-lg hover:border-brand-300 transition-all duration-200 group cursor-pointer"
                     onClick={() => handleViewTopic(viewIdeaSetModal.idea!, topic)}
                   >
                     <CardHeader className="pb-2">
@@ -816,7 +816,7 @@ export function Ideas() {
 
                       {/* View indicator */}
                       <div className="pt-1">
-                        <div className="text-xs text-blue-600 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="text-xs text-brand-600 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
                           Click to view →
                         </div>
                       </div>

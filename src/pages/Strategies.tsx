@@ -431,7 +431,7 @@ export function Strategies() {
             {/* Content */}
             <div className="flex-1 p-6 overflow-y-auto space-y-6 min-h-0">
               {/* Strategy Info Header */}
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 border border-blue-100">
+              <div className="bg-gradient-to-r from-brand-50 to-purple-50 rounded-xl p-4 border border-brand-100">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                   <div>
                     <p className="text-xs text-gray-500 uppercase tracking-wide">Created</p>
@@ -462,7 +462,7 @@ export function Strategies() {
                   {getAnglesFromStrategy(viewModal.strategy).map((angle, index) => (
                     <div
                       key={index}
-                      className="group bg-white border-2 border-gray-200 rounded-xl p-6 hover:border-blue-300 hover:shadow-lg transition-all duration-200 cursor-pointer"
+                      className="group bg-white border-2 border-gray-200 rounded-xl p-6 hover:border-brand-300 hover:shadow-lg transition-all duration-200 cursor-pointer"
                     >
                       {/* Angle Header */}
                       <div className="flex items-center justify-between mb-4">
@@ -471,7 +471,7 @@ export function Strategies() {
                             <span className="text-white font-bold text-lg">{angle.number}</span>
                           </div>
                           <div>
-                            <h4 className="text-xl font-bold text-gray-900 group-hover:text-blue-700 transition-colors">
+                            <h4 className="text-xl font-bold text-gray-900 group-hover:text-brand-700 transition-colors">
                               {angle.header}
                             </h4>
                             <p className="text-sm text-gray-500">Click to expand</p>
@@ -484,7 +484,8 @@ export function Strategies() {
                           }}
                           loading={generatingIdeas === angle.number}
                           disabled={generatingIdeas !== null}
-                          className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                          variant="primary"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                         >
                           <Lightbulb className="h-4 w-4" />
                           {generatingIdeas === angle.number ? 'Generating…' : 'Generate ideas'}
@@ -494,12 +495,12 @@ export function Strategies() {
                       {/* Angle Details */}
                       <div className="space-y-4">
                         {angle.description && (
-                          <div className="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-400">
+                          <div className="bg-brand-50 rounded-lg p-4 border-l-4 border-brand-400">
                             <div className="flex items-center mb-2">
-                              <FileText className="h-4 w-4 text-blue-600 mr-2" />
-                              <h5 className="font-semibold text-blue-900">Description</h5>
+                              <FileText className="h-4 w-4 text-brand-600 mr-2" />
+                              <h5 className="font-semibold text-brand-900">Description</h5>
                             </div>
-                            <p className="text-blue-800 leading-relaxed">{angle.description}</p>
+                            <p className="text-brand-800 leading-relaxed">{angle.description}</p>
                           </div>
                         )}
 
@@ -647,8 +648,8 @@ export function Strategies() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto mb-8">
               <div className="text-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <Target className="h-6 w-6 text-blue-600" />
+                <div className="w-12 h-12 bg-brand-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Target className="h-6 w-6 text-brand-600" />
                 </div>
                 <h4 className="font-medium text-gray-900 mb-2">Multi‑platform</h4>
                 <p className="text-sm text-gray-600">Strategies for all your marketing channels</p>

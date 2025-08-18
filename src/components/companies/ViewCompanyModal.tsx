@@ -88,7 +88,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center text-lg">
-                <Building2 className="h-5 w-5 mr-2 text-blue-600" />
+                <Building2 className="h-5 w-5 mr-2 text-brand-600" />
                 Basics
               </CardTitle>
             </CardHeader>
@@ -105,7 +105,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
                     href={company.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 flex items-center"
+                    className="text-brand-600 hover:text-brand-800 flex items-center"
                   >
                     <Globe className="h-4 w-4 mr-1" />
                     {company.website}

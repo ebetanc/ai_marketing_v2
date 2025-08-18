@@ -41,8 +41,8 @@ export function KeywordResearch() {
             </div>
 
             <div className="text-center">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <Target className="h-6 w-6 text-blue-600" />
+              <div className="w-12 h-12 bg-brand-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <Target className="h-6 w-6 text-brand-600" />
               </div>
               <h4 className="font-medium text-gray-900 mb-2">Semantic Mapping</h4>
               <p className="text-sm text-gray-600">Find related topics and semantic variations</p>
@@ -65,7 +65,7 @@ export function KeywordResearch() {
                 <span>5 semantically distinct blog post angles</span>
               </div>
               <div className="flex items-center">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
+                <div className="w-2 h-2 bg-brand-500 rounded-full mr-3"></div>
                 <span>Search volume and competition analysis</span>
               </div>
               <div className="flex items-center">

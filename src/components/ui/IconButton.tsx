@@ -26,7 +26,7 @@ export function IconButton({
                 // sizes
                 size === 'sm' ? 'p-1.5' : size === 'lg' ? 'p-3' : 'p-2',
                 // variants
-                variant === 'default' && 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus-visible:ring-blue-500',
+                variant === 'default' && 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus-visible:ring-brand-500',
                 variant === 'ghost' && 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 focus-visible:ring-gray-500',
                 variant === 'danger' && 'text-gray-600 hover:text-red-700 hover:bg-red-50 focus-visible:ring-red-500',
                 className

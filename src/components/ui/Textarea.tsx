@@ -12,13 +12,20 @@ export function Textarea({ className, label, error, id, onKeyDown, onKeyUp, ...p
   return (
     <div className="space-y-1">
       {label && (
-        <label htmlFor={textareaId} className="block text-sm font-medium text-gray-700">
+        <label
+          htmlFor={textareaId}
+          className={cn(
+            'block text-sm font-medium',
+            (props.disabled || (props as any).readOnly) ? 'text-gray-500' : 'text-gray-700'
+          )}
+        >
           {label}
         </label>
       )}
       <textarea
         className={cn(
-          'block w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-gray-900 placeholder-gray-500 motion-safe:transition-colors focus:border-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 resize-none',
+          'block w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-gray-900 placeholder-gray-500 motion-safe:transition-colors focus:border-brand-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-200 resize-none',
+          (props.disabled || (props as any).readOnly) && 'bg-gray-50 text-gray-500 cursor-not-allowed placeholder-gray-400',
           error && 'border-red-300 focus:border-red-500',
           className
         )}

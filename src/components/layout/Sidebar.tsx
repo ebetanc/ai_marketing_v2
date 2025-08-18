@@ -59,7 +59,7 @@ export function Sidebar() {
     <div className="flex h-full w-full lg:w-64 flex-col bg-white border-r border-gray-200">
       <div className="flex items-center px-4 sm:px-6 py-4 border-b border-gray-200">
         <div className="flex items-center">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center">
             <Zap className="h-5 w-5 text-white" />
           </div>
           <div className="ml-3 hidden sm:block">
@@ -79,9 +79,9 @@ export function Sidebar() {
                 key={item.name}
                 to={item.href}
                 className={cn(
-                  'group flex items-center px-2 sm:px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+                  'group flex items-center px-2 sm:px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500',
                   isActive
-                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                    ? 'bg-brand-50 text-brand-700 border border-brand-200'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 )}
                 aria-current={isActive ? 'page' : undefined}
@@ -89,7 +89,7 @@ export function Sidebar() {
                 <item.icon
                   className={cn(
                     'mr-2 sm:mr-3 h-5 w-5 transition-colors',
-                    isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'
+                    isActive ? 'text-brand-600' : 'text-gray-400 group-hover:text-gray-600'
                   )}
                   aria-hidden
                 />
@@ -110,9 +110,9 @@ export function Sidebar() {
                   key={item.name}
                   to={item.href}
                   className={cn(
-                    'group flex items-center px-2 sm:px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+                    'group flex items-center px-2 sm:px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500',
                     isActive
-                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                      ? 'bg-brand-50 text-brand-700 border border-brand-200'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                   )}
                   aria-current={isActive ? 'page' : undefined}
@@ -120,7 +120,7 @@ export function Sidebar() {
                   <item.icon
                     className={cn(
                       'mr-2 sm:mr-3 h-5 w-5 transition-colors',
-                      isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'
+                      isActive ? 'text-brand-600' : 'text-gray-400 group-hover:text-gray-600'
                     )}
                     aria-hidden
                   />
@@ -142,9 +142,9 @@ export function Sidebar() {
                   key={item.name}
                   to={item.href}
                   className={cn(
-                    'group flex items-center px-2 sm:px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+                    'group flex items-center px-2 sm:px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500',
                     isActive
-                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                      ? 'bg-brand-50 text-brand-700 border border-brand-200'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                   )}
                   aria-current={isActive ? 'page' : undefined}
@@ -152,7 +152,7 @@ export function Sidebar() {
                   <item.icon
                     className={cn(
                       'mr-2 sm:mr-3 h-5 w-5 transition-colors',
-                      isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'
+                      isActive ? 'text-brand-600' : 'text-gray-400 group-hover:text-gray-600'
                     )}
                     aria-hidden
                   />
@@ -168,7 +168,7 @@ export function Sidebar() {
         <Link
           to="/account"
           aria-label="Open account settings"
-          className="flex items-center rounded-xl px-2 py-2 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          className="flex items-center rounded-xl px-2 py-2 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
         >
           <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
             <span className="text-sm font-medium text-gray-600">

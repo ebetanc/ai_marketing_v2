@@ -149,8 +149,8 @@ export function Dashboard() {
                     <span className="text-sm text-gray-500 ml-1 hidden sm:inline">vs last month</span>
                   </div>
                 </div>
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-                  <stat.icon className="h-6 w-6 text-blue-600" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-brand-50 rounded-xl flex items-center justify-center">
+                  <stat.icon className="h-6 w-6 text-brand-600" />
                 </div>
               </div>
             </CardContent>
@@ -175,8 +175,8 @@ export function Dashboard() {
                 <div key={activity.id} className="flex items-start space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
                   <div className="flex-shrink-0">
                     {activity.type === 'content_generated' && (
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <FileText className="h-4 w-4 text-blue-600" />
+                      <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center">
+                        <FileText className="h-4 w-4 text-brand-600" />
                       </div>
                     )}
                     {activity.type === 'content_approved' && (
@@ -221,8 +221,8 @@ export function Dashboard() {
           <CardContent>
             {companies.length === 0 ? (
               <div className="text-center py-10">
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <Users className="h-6 w-6 text-blue-600" />
+                <div className="w-12 h-12 bg-brand-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Users className="h-6 w-6 text-brand-600" />
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No companies</h3>
                 <p className="text-gray-500 mb-6">Add a company to get started.</p>
@@ -284,10 +284,10 @@ export function Dashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <button
               onClick={() => navigate('/content')}
-              className="p-4 border-2 border-dashed border-gray-200 rounded-xl hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 group"
+              className="p-4 border-2 border-dashed border-gray-200 rounded-xl hover:border-brand-300 hover:bg-brand-50 transition-all duration-200 group"
             >
-              <FileText className="h-8 w-8 text-gray-400 group-hover:text-blue-600 mx-auto mb-3" />
-              <h3 className="font-medium text-gray-900 group-hover:text-blue-900">Generate content</h3>
+              <FileText className="h-8 w-8 text-gray-400 group-hover:text-brand-600 mx-auto mb-3" />
+              <h3 className="font-medium text-gray-900 group-hover:text-brand-900">Generate content</h3>
               <p className="text-sm text-gray-500 mt-1 hidden sm:block">Create posts, blogs, and more.</p>
             </button>
 

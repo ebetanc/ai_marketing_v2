@@ -213,8 +213,8 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
         {selectedCompany && (
           <div className="px-6 py-4 border-b border-gray-100">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                <span className="text-blue-600 font-semibold text-sm">
+              <div className="w-10 h-10 bg-brand-100 rounded-xl flex items-center justify-center">
+                <span className="text-brand-600 font-semibold text-sm">
                   {(selectedCompany.brand_name || selectedCompany.name || 'B').charAt(0)}
                 </span>
               </div>
@@ -228,7 +228,7 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
 
         {/* Content */}
         <div className="flex-1 min-h-0 p-6 text-center overflow-y-auto">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+          <div className="w-16 h-16 bg-gradient-to-br from-brand-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <Sparkles className="h-8 w-8 text-white" />
           </div>
 
@@ -245,13 +245,13 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
                   className={cn(
                     'w-full p-3 rounded-xl border-2 transition-all duration-200 text-left',
                     selectedCompany?.id === company.id
-                      ? 'border-blue-500 bg-blue-50'
+                      ? 'border-brand-500 bg-brand-50'
                       : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                   )}
                 >
                   <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <span className="text-blue-600 font-semibold text-xs">
+                    <div className="w-8 h-8 bg-brand-100 rounded-lg flex items-center justify-center">
+                      <span className="text-brand-600 font-semibold text-xs">
                         {(company.brand_name || company.name || 'B').charAt(0)}
                       </span>
                     </div>
@@ -292,7 +292,8 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
             loading={isGenerating}
             disabled={!selectedCompany || selectedPlatforms.length === 0}
             size="lg"
-            className="w-full bg-blue-600 hover:bg-blue-700"
+            className="w-full"
+            variant="primary"
           >
             {isGenerating ? (
               <>

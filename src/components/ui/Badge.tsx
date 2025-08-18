@@ -12,7 +12,7 @@ export function Badge({ className, variant = 'secondary', children, ...props }: 
       className={cn(
         'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium motion-safe:transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white',
         {
-          'bg-blue-100 text-blue-800': variant === 'primary',
+          'bg-brand-100 text-brand-800': variant === 'primary',
           'bg-gray-100 text-gray-800': variant === 'secondary',
           'bg-green-100 text-green-800': variant === 'success',
           'bg-yellow-100 text-yellow-800': variant === 'warning',

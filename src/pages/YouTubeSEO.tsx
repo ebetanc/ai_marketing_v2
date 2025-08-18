@@ -41,8 +41,8 @@ export function YouTubeSEO() {
             </div>
 
             <div className="text-center">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <ArrowRight className="h-6 w-6 text-blue-600" />
+              <div className="w-12 h-12 bg-brand-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <ArrowRight className="h-6 w-6 text-brand-600" />
               </div>
               <h4 className="font-medium text-gray-900 mb-2">AI Processing</h4>
               <p className="text-sm text-gray-600">Transform content with SEO optimization</p>
