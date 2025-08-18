@@ -24,31 +24,37 @@ function App() {
     <Router>
       <ToastProvider allowActions={false} maxVisible={3} dedupeWindowMs={3000}>
         <AuthProvider>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route element={<ProtectedLayout />}>
-              <Route element={<Layout />}>
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/companies" element={<Companies />} />
-                <Route path="/strategies" element={<Strategies />} />
-                <Route path="/ideas" element={<Ideas />} />
-                <Route path="/content" element={<Content />} />
-                <Route path="/campaigns" element={<Campaigns />} />
-                <Route path="/youtube-seo" element={<YouTubeSEO />} />
-                <Route path="/trend-blog" element={<TrendBlog />} />
-                <Route path="/semantic-seo" element={<SemanticSEO />} />
-                <Route path="/keyword-research" element={<KeywordResearch />} />
-                <Route path="/real-estate-content" element={<RealEstateContent />} />
-                <Route path="/account" element={<Account />} />
-                <Route path="/" element={<RootRedirector />} />
-              </Route>
-            </Route>
-          </Routes>
+          <AppRoutes />
         </AuthProvider>
       </ToastProvider>
     </Router>
+  )
+}
+
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route element={<ProtectedLayout />}>
+        <Route element={<Layout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/companies" element={<Companies />} />
+          <Route path="/strategies" element={<Strategies />} />
+          <Route path="/ideas" element={<Ideas />} />
+          <Route path="/content" element={<Content />} />
+          <Route path="/campaigns" element={<Campaigns />} />
+          <Route path="/youtube-seo" element={<YouTubeSEO />} />
+          <Route path="/trend-blog" element={<TrendBlog />} />
+          <Route path="/semantic-seo" element={<SemanticSEO />} />
+          <Route path="/keyword-research" element={<KeywordResearch />} />
+          <Route path="/real-estate-content" element={<RealEstateContent />} />
+          <Route path="/account" element={<Account />} />
+          <Route path="/" element={<RootRedirector />} />
+        </Route>
+      </Route>
+    </Routes>
   )
 }
 
