@@ -20,7 +20,6 @@ export default function Login() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [message, setMessage] = useState<string | null>(null)
-    const [role, setRole] = useState<'call_center'>('call_center')
     const [formError, setFormError] = useState<string | null>(null)
     const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({})
     const minPasswordLength = 6
@@ -28,23 +27,6 @@ export default function Login() {
     const LoginSchema = z.object({
         email: z.string().trim().email('Enter a valid email address'),
         password: z.string().min(minPasswordLength, `Use at least ${minPasswordLength} characters.`)
-    })
-
-    const { call: signUp, loading: signingUp, error: signUpError, reset: resetSignUp } = useAsyncCallback(async () => {
-        const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                emailRedirectTo: `${(import.meta.env.VITE_SITE_URL as string) || window.location.origin}/?redirectTo=${encodeURIComponent(redirectTo)}`,
-                data: { role },
-            },
-        })
-        if (error) throw error
-        if (data?.session) {
-            window.location.assign(redirectTo || '/dashboard')
-        } else if (data?.user) {
-            setMessage('Account created. Check your email to confirm. You’ll be signed in after confirming.')
-        }
     })
 
     const { call: signIn, loading: signingIn, error: signInError, reset: resetSignIn } = useAsyncCallback(async () => {
@@ -90,30 +72,11 @@ export default function Login() {
                         autoComplete="current-password"
                         required
                     />
-                    {/* Pick role at sign up (immutable later) */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                        <div className="flex items-center gap-4">
-                            <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-                                <input
-                                    type="radio"
-                                    name="role"
-                                    value="call_center"
-                                    checked={role === 'call_center'}
-                                    onChange={() => setRole('call_center')}
-                                />
-                                Call Center
-                            </label>
-                        </div>
-                        <p className="mt-1 text-xs text-gray-500">This selection is stored at sign-up and can’t be changed later.</p>
-                    </div>
-                    {/* No confirm password to keep sign up quick */}
-                    <div className="grid grid-cols-2 gap-2">
                         <Button
                             type="button"
                             onClick={async () => {
                                 setMessage(null); setFormError(null); setFieldErrors({}); resetSignIn();
-                                // Validate form
                                 const parsed = LoginSchema.safeParse({ email, password })
                                 if (!parsed.success) {
                                     const fe = parsed.error.flatten().fieldErrors
@@ -134,40 +97,29 @@ export default function Login() {
                             }}
                             loading={signingIn}
                             disabled={!email || !password}
+                            className="w-full"
                         >
                             Sign in
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={async () => {
-                                setMessage(null); setFormError(null); setFieldErrors({}); resetSignUp();
-                                const parsed = LoginSchema.safeParse({ email, password })
-                                if (!parsed.success) {
-                                    const fe = parsed.error.flatten().fieldErrors
-                                    setFieldErrors({ email: fe.email?.[0], password: fe.password?.[0] })
-                                    return
-                                }
-                                const res = await signUp()
-                                if (res && 'error' in res && res.error) {
-                                    setFormError(res.error.message || 'Sign up failed.')
-                                }
-                            }}
-                            loading={signingUp}
-                            disabled={!email || !password}
-                        >
-                            Sign up
                         </Button>
                     </div>
                     <div className="text-right">
                         <a href="/forgot-password" className="text-xs text-brand-600 hover:underline">Forgot password?</a>
                     </div>
+                    <div className="text-sm text-gray-600">
+                        Don’t have an account?{' '}
+                        <a
+                            className="text-brand-600 hover:underline"
+                            href={`/signup?redirectTo=${encodeURIComponent(redirectTo)}`}
+                        >
+                            Sign up
+                        </a>
+                    </div>
                 </div>
 
                 {message && <div className="text-sm text-green-600">{message}</div>}
-                {(formError || signInError || signUpError) && (
+                {(formError || signInError) && (
                     <div className="space-y-2">
-                        <div className="text-sm text-red-600">{formError || signInError?.message || signUpError?.message}</div>
+                        <div className="text-sm text-red-600">{formError || signInError?.message}</div>
                         {(/not\s*confirmed/i.test(formError || signInError?.message || '') || /resend/i.test(formError || '')) && (
                             <div>
                                 <ResendConfirmation email={email} redirectTo={redirectTo} onDone={(ok) => setMessage(ok ? 'Confirmation email sent.' : null)} />
