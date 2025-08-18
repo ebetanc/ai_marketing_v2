@@ -9,7 +9,7 @@ export function Layout() {
   const mobileDialogId = 'mobile-sidebar-dialog'
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-gray-50">
+    <div className="relative min-h-screen flex flex-col lg:flex-row bg-gray-50">
       {/* Skip to content */}
       <a
         href="#main-content"
@@ -17,6 +17,11 @@ export function Layout() {
       >
         Skip to content
       </a>
+      {/* Full-width divider aligning Sidebar header and TopBar bottom edge */}
+      <div
+        aria-hidden
+        className="hidden lg:block pointer-events-none absolute left-0 right-0 top-[var(--app-header-h)] h-px bg-gray-200 z-10"
+      />
       {/* Desktop sidebar */}
       <div className="hidden lg:block">
         <Sidebar />
@@ -36,7 +41,7 @@ export function Layout() {
         <Sidebar />
       </Modal>
 
-      <div className="flex-1 flex flex-col min-h-0">
+  <div className="flex-1 flex flex-col min-h-0">
         <TopBar
           onMenuClick={() => setMobileOpen(true)}
           menuButtonProps={{

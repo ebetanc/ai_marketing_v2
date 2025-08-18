@@ -75,8 +75,8 @@ export function TopBar({ onMenuClick, menuButtonProps, ...divProps }: TopBarProp
   }, [location.pathname, location.search])
 
   return (
-    <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4" {...divProps}>
-      <div className="flex items-center justify-between gap-4">
+  <header className="bg-white px-4 sm:px-6 h-[var(--app-header-h)] flex items-center" {...divProps}>
+      <div className="flex items-center justify-between gap-4 w-full">
         <div className="flex items-center space-x-2 sm:space-x-4 flex-1">
           <IconButton
             className={cn('lg:hidden', menuButtonProps?.className)}

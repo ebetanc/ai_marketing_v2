@@ -13,8 +13,8 @@ import {
   TrendingUp,
   Network,
   Search,
-
 } from 'lucide-react'
+
 // Navigation sections to visually group related items
 const primaryNav = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -56,20 +56,20 @@ export function Sidebar() {
   }, [])
 
   return (
-    <div className="flex h-full w-full lg:w-64 flex-col bg-white border-r border-gray-200">
-      <div className="flex items-center px-4 sm:px-6 py-4 border-b border-gray-200">
+  <div className="flex w-full lg:w-64 flex-col bg-white border-r border-gray-200 lg:sticky lg:top-0 lg:h-screen">
+  <div className="flex items-center px-4 sm:px-6 h-[var(--app-header-h)]">
         <div className="flex items-center">
           <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center">
             <Zap className="h-5 w-5 text-white" />
           </div>
           <div className="ml-3 hidden sm:block">
             <h1 className="text-base lg:text-lg font-semibold text-gray-900">AI Marketing</h1>
-            <p className="text-xs text-gray-500">Companion</p>
+            <p className="text-xs text-gray-500 lg:hidden">Companion</p>
           </div>
         </div>
       </div>
 
-      <nav className="flex-1 px-2 sm:px-4 py-4 sm:py-6 space-y-4" aria-label="Primary">
+      <nav className="flex-1 min-h-0 overflow-y-auto px-2 sm:px-4 py-4 sm:py-6 space-y-4" aria-label="Primary">
         {/* Primary */}
         <div className="space-y-1">
           {primaryNav.map((item) => {

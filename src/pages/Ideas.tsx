@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { postToN8n } from '../lib/n8n'
 import {
   Building2,
@@ -147,6 +147,15 @@ export function Ideas() {
       setLoading(false)
     }
   }, [push])
+
+  // Ensure we only auto-fetch once per mount (guards against StrictMode double-effect and callback identity changes)
+  const didFetchRef = useRef(false)
+  useEffect(() => {
+    if (didFetchRef.current) return
+    didFetchRef.current = true
+    // Fire and forget; internal loading state handles UI
+    void fetchIdeas(false)
+  }, [fetchIdeas])
 
   const handleEditToggle = () => {
     setViewIdeaModal(prev => ({
@@ -566,12 +575,14 @@ export function Ideas() {
 
 
   // Group ideas by brand name (from joined company)
-  const ideasByBrand = ideas.reduce((acc, idea) => {
-    const brandName = idea.company?.brand_name || 'Unknown Brand';
-    if (!acc[brandName]) acc[brandName] = [] as IdeaJoined[];
-    acc[brandName].push(idea);
-    return acc;
-  }, {} as Record<string, IdeaJoined[]>);
+  const ideasByBrand = useMemo(() => {
+    return ideas.reduce((acc, idea) => {
+      const brandName = idea.company?.brand_name || 'Unknown Brand'
+      if (!acc[brandName]) acc[brandName] = [] as IdeaJoined[]
+      acc[brandName].push(idea)
+      return acc
+    }, {} as Record<string, IdeaJoined[]>)
+  }, [ideas])
 
   return (
     <div className="space-y-6">
