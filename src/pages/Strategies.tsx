@@ -447,8 +447,12 @@ export function Strategies() {
                           }}
                           loading={generatingIdeas === angle.number}
                           disabled={generatingIdeas !== null}
+<<<<<<< HEAD
                           variant="primary"
                           className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+=======
+                          className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 duration-200"
+>>>>>>> a7279eb (feat: simplify opacity classes for button transitions across multiple components)
                         >
                           <Lightbulb className="h-4 w-4" />
                           {generatingIdeas === angle.number ? 'Generating…' : 'Generate ideas'}
@@ -576,7 +580,7 @@ export function Strategies() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleViewStrategy(strategy, company)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="transition-opacity"
                         >
                           <Eye className="h-4 w-4" />
                           View details

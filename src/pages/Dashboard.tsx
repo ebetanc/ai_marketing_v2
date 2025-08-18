@@ -261,7 +261,7 @@ export function Dashboard() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleViewCompany(company)}
-                        className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
+                        className="transition-opacity"
                       >
                         <Eye className="h-3 w-3 mr-1" />
                         View

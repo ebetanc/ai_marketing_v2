@@ -795,7 +795,7 @@ export function Content() {
                                 onClick={(e) => { e.stopPropagation(); void copyLinkCall(content) }}
                                 aria-label={`Copy link for content ${content.id}`}
                                 title="Copy link"
-                                className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
+                                className="transition-opacity"
                               >
                                 <Share2 className="h-4 w-4" />
                                 Copy link
@@ -808,7 +808,7 @@ export function Content() {
                                 variant="danger"
                                 aria-label={`Delete content ${content.id}`}
                                 title="Delete content"
-                                className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+                                className=""
                               >
                                 <Trash2 className="h-4 w-4" />
                               </IconButton>
@@ -816,7 +816,7 @@ export function Content() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleViewContent(content)}
-                                className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
+                                className="transition-opacity"
                               >
                                 <Eye className="h-4 w-4" />
                                 View Details
