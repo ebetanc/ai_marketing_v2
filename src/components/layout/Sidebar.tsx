@@ -84,6 +84,7 @@ export function Sidebar() {
                     ? 'bg-blue-50 text-blue-700 border border-blue-200'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 )}
+                aria-current={isActive ? 'page' : undefined}
               >
                 <item.icon
                   className={cn(
@@ -113,6 +114,7 @@ export function Sidebar() {
                       ? 'bg-blue-50 text-blue-700 border border-blue-200'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                   )}
+                  aria-current={isActive ? 'page' : undefined}
                 >
                   <item.icon
                     className={cn(
@@ -143,6 +145,7 @@ export function Sidebar() {
                       ? 'bg-blue-50 text-blue-700 border border-blue-200'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                   )}
+                  aria-current={isActive ? 'page' : undefined}
                 >
                   <item.icon
                     className={cn(

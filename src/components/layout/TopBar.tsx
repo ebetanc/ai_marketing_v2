@@ -3,11 +3,11 @@ import { Bell, Menu, Search, X } from 'lucide-react'
 import { IconButton } from '../ui/IconButton'
 import { useLocation, useNavigate } from 'react-router-dom'
 
-type TopBarProps = {
+type TopBarProps = React.HTMLAttributes<HTMLDivElement> & {
   onMenuClick?: () => void
 }
 
-export function TopBar({ onMenuClick }: TopBarProps) {
+export function TopBar({ onMenuClick, ...divProps }: TopBarProps) {
   const [searchQuery, setSearchQuery] = useState('')
   // const { companies } = useCompanies() // reserved for future search scoping
   const navigate = useNavigate()
@@ -69,7 +69,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
   }, [location.pathname, location.search])
 
   return (
-    <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
+    <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4" {...divProps}>
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center space-x-2 sm:space-x-4 flex-1">
           <IconButton

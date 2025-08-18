@@ -9,10 +9,11 @@ type ModalProps = {
     role?: 'dialog' | 'alertdialog'
     className?: string
     backdropClassName?: string
+    id?: string
 }
 
 // Accessible modal with focus trap, ESC/overlay close, and body scroll lock
-export function Modal({ isOpen, onClose, children, labelledById, describedById, role = 'dialog', className, backdropClassName }: ModalProps) {
+export function Modal({ isOpen, onClose, children, labelledById, describedById, role = 'dialog', className, backdropClassName, id }: ModalProps) {
     const overlayRef = useRef<HTMLDivElement | null>(null)
     const dialogRef = useRef<HTMLDivElement | null>(null)
     const previouslyFocused = useRef<Element | null>(null)
@@ -119,6 +120,7 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
                 aria-modal="true"
                 aria-labelledby={labelledById}
                 aria-describedby={describedById}
+                id={id}
                 className={appliedClasses}
             >
                 {children}

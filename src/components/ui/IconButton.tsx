@@ -22,13 +22,13 @@ export function IconButton({
         <button
             type={type}
             className={cn(
-                'inline-flex items-center justify-center rounded-xl focus:outline-none motion-safe:transition-colors',
+                'inline-flex items-center justify-center rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white motion-safe:transition-colors',
                 // sizes
                 size === 'sm' ? 'p-1.5' : size === 'lg' ? 'p-3' : 'p-2',
                 // variants
-                variant === 'default' && 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white',
-                variant === 'ghost' && 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white',
-                variant === 'danger' && 'text-gray-600 hover:text-red-700 hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white',
+                variant === 'default' && 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus-visible:ring-blue-500',
+                variant === 'ghost' && 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 focus-visible:ring-gray-500',
+                variant === 'danger' && 'text-gray-600 hover:text-red-700 hover:bg-red-50 focus-visible:ring-red-500',
                 className
             )}
             {...props}

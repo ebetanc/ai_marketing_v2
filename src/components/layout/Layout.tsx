@@ -6,6 +6,7 @@ import { Modal } from '../ui/Modal'
 
 export function Layout() {
   const [mobileOpen, setMobileOpen] = React.useState(false)
+  const mobileDialogId = 'mobile-sidebar-dialog'
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-gray-50">
@@ -26,6 +27,7 @@ export function Layout() {
         isOpen={mobileOpen}
         onClose={() => setMobileOpen(false)}
         labelledById="mobile-nav-title"
+        id={mobileDialogId}
         backdropClassName="fixed inset-0 bg-black/50 z-50 lg:hidden flex items-stretch justify-start"
         className="relative h-full w-72 max-w-[80%] bg-white border-r border-gray-200 shadow-xl outline-none"
       >
@@ -35,7 +37,7 @@ export function Layout() {
       </Modal>
 
       <div className="flex-1 flex flex-col min-h-0">
-        <TopBar onMenuClick={() => setMobileOpen(true)} />
+        <TopBar onMenuClick={() => setMobileOpen(true)} aria-controls={mobileDialogId} aria-expanded={mobileOpen} />
         <main id="main-content" className="flex-1 overflow-auto p-4 sm:p-6">
           <Outlet />
         </main>
