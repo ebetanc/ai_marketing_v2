@@ -4,20 +4,7 @@ import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
 import { GenerateStrategyModal } from '../components/content/GenerateStrategyModal'
 import { supabase, type Tables } from '../lib/supabase'
-import {
-  FileText,
-  Building2,
-  Eye,
-  RefreshCw,
-  Calendar,
-  Target,
-  Zap,
-  Plus,
-  HelpCircle,
-  X,
-
-  Lightbulb
-} from 'lucide-react'
+import { FileText, Building2, Eye, RefreshCw, Calendar, Target, Zap, Plus, HelpCircle, X, Lightbulb } from 'lucide-react'
 import { formatDate } from '../lib/utils'
 import { IconButton } from '../components/ui/IconButton'
 import { Modal } from '../components/ui/Modal'
@@ -25,6 +12,9 @@ import { Skeleton } from '../components/ui/Skeleton'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { postToN8n } from '../lib/n8n'
 import { useAsyncCallback } from '../hooks/useAsync'
+import { PageHeader } from '../components/layout/PageHeader'
+import { ErrorState } from '../components/ui/ErrorState'
+import { EmptyState } from '../components/ui/EmptyState'
 
 type Strategy = Tables<'strategies'> & {
   company?: { id: number; brand_name: string; created_at: string }
@@ -285,12 +275,7 @@ export function Strategies() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Strategies</h1>
-            <p className="mt-2 text-gray-600">AI strategies by company.</p>
-          </div>
-        </div>
+        <PageHeader title="Strategies" description="AI strategies by company." icon={<FileText className="h-5 w-5" />} />
         <Card>
           <CardContent className="py-12">
             <div className="flex items-center space-x-3 mb-4">
@@ -317,48 +302,46 @@ export function Strategies() {
   if (error) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Strategies</h1>
-            <p className="mt-2 text-gray-600">AI strategies by company.</p>
-          </div>
-          <Button onClick={fetchStrategies} loading={loading} disabled={loading}>
-            <RefreshCw className="h-4 w-4" />
-            Retry
-          </Button>
-        </div>
-        <Card>
-          <CardContent className="text-center py-12">
-            <FileText className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Strategies</h3>
-            <p className="text-red-600 mb-4">{error}</p>
-            <Button onClick={fetchStrategies} variant="outline" loading={loading} disabled={loading}>
-              Try Again
+        <PageHeader
+          title="Strategies"
+          description="AI strategies by company."
+          icon={<FileText className="h-5 w-5" />}
+          actions={(
+            <Button onClick={fetchStrategies} loading={loading} disabled={loading}>
+              <RefreshCw className="h-4 w-4" />
+              Retry
             </Button>
-          </CardContent>
-        </Card>
+          )}
+        />
+        <ErrorState
+          icon={<FileText className="h-12 w-12 text-red-500" />}
+          title="Error Loading Strategies"
+          error={error}
+          retry={<Button onClick={fetchStrategies} variant="outline" loading={loading} disabled={loading}>Try Again</Button>}
+        />
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Strategies</h1>
-          <p className="mt-2 text-gray-600">AI strategies by company.</p>
-        </div>
-        <div className="flex space-x-3">
-          <Button onClick={fetchStrategies} variant="outline" loading={loading} disabled={loading}>
-            <RefreshCw className="h-4 w-4" />
-            Refresh
-          </Button>
-          <Button onClick={handleGenerateStrategy}>
-            <Plus className="h-4 w-4" />
-            Generate strategy
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Strategies"
+        description="AI strategies by company."
+        icon={<FileText className="h-5 w-5" />}
+        actions={(
+          <>
+            <Button onClick={fetchStrategies} variant="outline" loading={loading} disabled={loading}>
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </Button>
+            <Button onClick={handleGenerateStrategy}>
+              <Plus className="h-4 w-4" />
+              Generate strategy
+            </Button>
+          </>
+        )}
+      />
 
       {/* Generate Strategy Modal */}
       <GenerateStrategyModal
@@ -448,7 +431,7 @@ export function Strategies() {
                           loading={generatingIdeas === angle.number}
                           disabled={generatingIdeas !== null}
                           variant="primary"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                          className="transition-opacity duration-200"
                         >
                           <Lightbulb className="h-4 w-4" />
                           {generatingIdeas === angle.number ? 'Generating…' : 'Generate ideas'}
@@ -599,48 +582,40 @@ export function Strategies() {
         </div>
       ) : (
         /* Empty State */
-        <Card>
-          <CardContent className="text-center py-16">
-            <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <FileText className="h-8 w-8 text-white" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-3">No strategies</h3>
-            <p className="text-gray-600 max-w-md mx-auto mb-8">
-              No strategies yet. Create one to start planning.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto mb-8">
-              <div className="text-center">
-                <div className="w-12 h-12 bg-brand-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <Target className="h-6 w-6 text-brand-600" />
+        <EmptyState
+          icon={<FileText className="h-8 w-8 text-white" />}
+          title="No strategies"
+          message={(
+            <>
+              <p>No strategies yet. Create one to start planning.</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto my-8">
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-brand-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <Target className="h-6 w-6 text-brand-600" />
+                  </div>
+                  <h4 className="font-medium text-gray-900 mb-2">Multi‑platform</h4>
+                  <p className="text-sm text-gray-600">Strategies for all your channels</p>
                 </div>
-                <h4 className="font-medium text-gray-900 mb-2">Multi‑platform</h4>
-                <p className="text-sm text-gray-600">Strategies for all your marketing channels</p>
-              </div>
-
-              <div className="text-center">
-                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <Zap className="h-6 w-6 text-purple-600" />
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <Zap className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <h4 className="font-medium text-gray-900 mb-2">AI‑powered</h4>
+                  <p className="text-sm text-gray-600">Generated using AI</p>
                 </div>
-                <h4 className="font-medium text-gray-900 mb-2">AI‑powered</h4>
-                <p className="text-sm text-gray-600">Generated using advanced AI algorithms</p>
-              </div>
-
-              <div className="text-center">
-                <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <Building2 className="h-6 w-6 text-teal-600" />
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <Building2 className="h-6 w-6 text-teal-600" />
+                  </div>
+                  <h4 className="font-medium text-gray-900 mb-2">Brand‑specific</h4>
+                  <p className="text-sm text-gray-600">Tailored to your brand</p>
                 </div>
-                <h4 className="font-medium text-gray-900 mb-2">Brand‑specific</h4>
-                <p className="text-sm text-gray-600">Tailored to your company's voice and goals</p>
               </div>
-            </div>
-
-            <Button onClick={handleGenerateStrategy} size="lg">
-              <Plus className="h-4 w-4" />
-              Generate your first strategy
-            </Button>
-          </CardContent>
-        </Card>
+            </>
+          )}
+          variant="purple"
+          actions={<Button onClick={handleGenerateStrategy} size="lg"><Plus className="h-4 w-4" />Generate your first strategy</Button>}
+        />
       )}
     </div>
   )

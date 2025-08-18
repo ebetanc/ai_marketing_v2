@@ -9,6 +9,8 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useNavigate } from 'react-router-dom'
 import { useAsyncCallback } from '../hooks/useAsync'
 import { z } from 'zod'
+import { PageHeader } from '../components/layout/PageHeader'
+import { ShieldCheck, LogOut, Mail, User as UserIcon, KeyRound } from 'lucide-react'
 
 export function Account() {
     useDocumentTitle('Account — AI Marketing')
@@ -128,10 +130,19 @@ export function Account() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold text-gray-900">Account</h1>
-                <p className="mt-2 text-gray-600">Manage your profile, email, and password.</p>
-            </div>
+            <PageHeader
+                title="Account"
+                description="Manage your profile, email, and password."
+                icon={<ShieldCheck className="h-5 w-5" />}
+                actions={
+                    session ? (
+                        <Button variant="outline" onClick={() => { signOutCall() }}>
+                            <LogOut className="h-4 w-4 mr-2" />
+                            Sign out
+                        </Button>
+                    ) : null
+                }
+            />
 
             {!isSupabaseConfigured && (
                 <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
@@ -143,7 +154,10 @@ export function Account() {
                 {/* Profile metadata */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Profile</CardTitle>
+                        <div className="flex items-center gap-2">
+                            <UserIcon className="h-4 w-4 text-gray-500" />
+                            <CardTitle>Profile</CardTitle>
+                        </div>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
@@ -164,7 +178,10 @@ export function Account() {
                 {/* Email */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Email</CardTitle>
+                        <div className="flex items-center gap-2">
+                            <Mail className="h-4 w-4 text-gray-500" />
+                            <CardTitle>Email</CardTitle>
+                        </div>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
@@ -179,7 +196,10 @@ export function Account() {
                 {/* Password */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Password</CardTitle>
+                        <div className="flex items-center gap-2">
+                            <KeyRound className="h-4 w-4 text-gray-500" />
+                            <CardTitle>Password</CardTitle>
+                        </div>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
@@ -198,7 +218,10 @@ export function Account() {
                 {/* Sign out */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Sign out</CardTitle>
+                        <div className="flex items-center gap-2">
+                            <LogOut className="h-4 w-4 text-gray-500" />
+                            <CardTitle>Sign out</CardTitle>
+                        </div>
                     </CardHeader>
                     <CardContent>
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">

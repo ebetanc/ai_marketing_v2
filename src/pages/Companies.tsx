@@ -4,20 +4,14 @@ import { Button } from '../components/ui/Button'
 import { CreateBrandModal } from '../components/companies/CreateBrandModal'
 import { ViewCompanyModal } from '../components/companies/ViewCompanyModal'
 import { useCompanies } from '../hooks/useCompanies'
-import {
-  Plus,
-  Building2,
-  Calendar,
-  Eye,
-  Target,
-  RefreshCw,
-  Database,
-  FileText
-} from 'lucide-react'
+import { Plus, Building2, Calendar, Eye, Target, RefreshCw, Database, FileText } from 'lucide-react'
 import { formatDate, truncateText } from '../lib/utils'
 import { useToast } from '../components/ui/Toast'
 import { Skeleton } from '../components/ui/Skeleton'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { PageHeader } from '../components/layout/PageHeader'
+import { EmptyState } from '../components/ui/EmptyState'
+import { ErrorState } from '../components/ui/ErrorState'
 
 export function Companies() {
   useDocumentTitle('Companies — AI Marketing')
@@ -79,22 +73,23 @@ export function Companies() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Companies</h1>
-          <p className="mt-2 text-gray-600">Manage brands and profiles.</p>
-        </div>
-        <div className="flex space-x-3">
-          <Button onClick={() => fetchCompaniesFromSupabase(true)} loading={loading} variant="outline">
-            <RefreshCw className="h-4 w-4" />
-            Refresh
-          </Button>
-          <Button onClick={() => setShowCreateModal(true)}>
-            <Plus className="h-4 w-4" />
-            Add company
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Companies"
+        description="Manage brands and profiles."
+        icon={<Building2 className="h-5 w-5" />}
+        actions={(
+          <>
+            <Button onClick={() => fetchCompaniesFromSupabase(true)} loading={loading} variant="outline">
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </Button>
+            <Button onClick={() => setShowCreateModal(true)}>
+              <Plus className="h-4 w-4" />
+              Add company
+            </Button>
+          </>
+        )}
+      />
 
       {/* Create Brand Modal */}
       <CreateBrandModal
@@ -143,16 +138,16 @@ export function Companies() {
 
       {/* Error State */}
       {error && (
-        <Card>
-          <CardContent className="text-center py-12">
-            <Database className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading companies</h3>
-            <p className="text-red-600 mb-4">{error}</p>
+        <ErrorState
+          icon={<Database className="h-12 w-12 text-red-500" />}
+          title="Error loading companies"
+          error={error}
+          retry={(
             <Button onClick={() => fetchCompaniesFromSupabase(true)} variant="outline" loading={loading} disabled={loading}>
               Try Again
             </Button>
-          </CardContent>
-        </Card>
+          )}
+        />
       )}
 
       {/* Companies Table */}
@@ -240,19 +235,18 @@ export function Companies() {
 
       {/* Empty State */}
       {!loading && !error && companies.length === 0 && (
-        <Card>
-          <CardContent className="text-center py-12">
-            <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No companies</h3>
-            <p className="text-gray-500 mb-6">
-              No companies yet.
-            </p>
+        <EmptyState
+          icon={<Building2 className="h-8 w-8 text-white" />}
+          title="No companies"
+          message="No companies yet."
+          variant="brand"
+          actions={(
             <Button onClick={() => setShowCreateModal(true)}>
               <Plus className="h-4 w-4" />
               Add company
             </Button>
-          </CardContent>
-        </Card>
+          )}
+        />
       )}
     </div>
   )

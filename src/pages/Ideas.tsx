@@ -27,6 +27,9 @@ import { useToast } from '../components/ui/Toast';
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useAsyncCallback } from '../hooks/useAsync'
 import { z } from 'zod'
+import { PageHeader } from '../components/layout/PageHeader'
+import { ErrorState } from '../components/ui/ErrorState'
+import { EmptyState } from '../components/ui/EmptyState'
 
 // Helper: Extract topics from an idea row
 const extractTopicsFromIdea = (idea: any): { number: number; topic: string; description: string; image_prompt: string }[] => {
@@ -608,16 +611,17 @@ export function Ideas() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Ideas</h1>
-          <p className="mt-2 text-gray-600">AI ideas by brand.</p>
-        </div>
-        <Button onClick={() => fetchIdeas(true)} loading={loading} disabled={loading}>
-          <RefreshCw className="h-4 w-4" />
-          Refresh
-        </Button>
-      </div>
+      <PageHeader
+        title="Ideas"
+        description="AI ideas by brand."
+        icon={<Lightbulb className="h-5 w-5" />}
+        actions={(
+          <Button onClick={() => fetchIdeas(true)} loading={loading} disabled={loading}>
+            <RefreshCw className="h-4 w-4" />
+            Refresh
+          </Button>
+        )}
+      />
 
       {/* View Idea Modal */}
       {viewIdeaModal.isOpen && (
@@ -908,16 +912,12 @@ export function Ideas() {
 
       {/* Error State */}
       {error && (
-        <Card>
-          <CardContent className="text-center py-12">
-            <Lightbulb className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Ideas</h3>
-            <p className="text-red-600 mb-4">{error}</p>
-            <Button onClick={() => fetchIdeas(true)} variant="outline" loading={loading} disabled={loading}>
-              Try Again
-            </Button>
-          </CardContent>
-        </Card>
+        <ErrorState
+          icon={<Lightbulb className="h-12 w-12 text-red-500" />}
+          title="Error Loading Ideas"
+          error={error}
+          retry={<Button onClick={() => fetchIdeas(true)} variant="outline" loading={loading} disabled={loading}>Try Again</Button>}
+        />
       )}
 
       {/* Ideas by Brand */}
@@ -1026,19 +1026,13 @@ export function Ideas() {
       )}
       {/* Empty State */}
       {!loading && !error && ideas.length === 0 && (
-        <Card>
-          <CardContent className="text-center py-12">
-            <Lightbulb className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No ideas</h3>
-            <p className="text-gray-500 mb-6">
-              No ideas yet.
-            </p>
-            <Button onClick={() => fetchIdeas(true)}>
-              <RefreshCw className="h-4 w-4" />
-              Refresh
-            </Button>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={<Lightbulb className="h-8 w-8 text-white" />}
+          title="No ideas"
+          message="No ideas yet."
+          variant="brand"
+          actions={<Button onClick={() => fetchIdeas(true)}><RefreshCw className="h-4 w-4" />Refresh</Button>}
+        />
       )}
     </div>
   )

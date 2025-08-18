@@ -11,9 +11,12 @@ import { IconButton } from '../components/ui/IconButton'
 import { formatDate, truncateText } from '../lib/utils'
 import { useToast } from '../components/ui/Toast'
 import { Skeleton } from '../components/ui/Skeleton'
+import { ListSkeleton } from '../components/ui/ListSkeleton'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useAsyncCallback } from '../hooks/useAsync'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { PageHeader } from '../components/layout/PageHeader'
+import { EmptyState } from '../components/ui/EmptyState'
 // (reserved) formatting helpers for future rich rendering of content bodies
 // Helper function to extract and format content from JSON (reserved)
 const _extractContentBody = (content: any) => {
@@ -514,16 +517,17 @@ export function Content() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Content</h1>
-          <p className="mt-2 text-gray-600">Review and manage generated content.</p>
-        </div>
-        <Button onClick={fetchContent} loading={loadingContent} disabled={loadingContent}>
-          <RefreshCw className="h-4 w-4" />
-          Refresh
-        </Button>
-      </div>
+      <PageHeader
+        title="Content"
+        description="Review and manage generated content."
+        icon={<FileText className="h-5 w-5" />}
+        actions={(
+          <Button onClick={fetchContent} loading={loadingContent} disabled={loadingContent}>
+            <RefreshCw className="h-4 w-4" />
+            Refresh
+          </Button>
+        )}
+      />
 
       <ViewContentModal
         isOpen={viewContentModal.isOpen}
@@ -647,19 +651,8 @@ export function Content() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {Array.from({ length: 4 }).map((_, j) => (
-                  <div key={j} className="flex items-center justify-between p-4 rounded-lg bg-gray-50">
-                    <div className="flex items-center space-x-4 w-full">
-                      <Skeleton className="w-10 h-10 rounded-lg" />
-                      <div className="space-y-2 w-full">
-                        <Skeleton className="h-4 w-2/3" />
-                        <Skeleton className="h-3 w-1/2" />
-                      </div>
-                    </div>
-                    <Skeleton className="h-8 w-24 rounded-lg" />
-                  </div>
-                ))}
+              <CardContent>
+                <ListSkeleton rows={4} avatar="square" showTrailingButton />
               </CardContent>
             </Card>
           ))}
@@ -842,27 +835,15 @@ export function Content() {
         </div>
       )}
       {filteredContent.length === 0 && (
-        <Card>
-          <CardContent className="text-center py-12">
-            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {allContent.length === 0 ? 'No content' : 'No matches'}
-            </h3>
-            <p className="text-gray-500 mb-6">
-              {allContent.length === 0 ? 'Generate content from Ideas.' : 'Adjust filters to see more.'}
-            </p>
-            {allContent.length > 0 && isFiltersActive && (
-              <Button variant="outline" onClick={clearFilters}>Clear filters</Button>
-            )}
-            {allContent.length === 0 && (
-              <div className="text-center">
-                <p className="text-sm text-gray-500">
-                  Go to Ideas → View an idea → Select → Generate content
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={<FileText className="h-8 w-8 text-white" />}
+          title={allContent.length === 0 ? 'No content' : 'No matches'}
+          message={allContent.length === 0 ? 'Generate content from Ideas.' : 'Adjust filters to see more.'}
+          variant="green"
+          actions={allContent.length > 0 && isFiltersActive ? (
+            <Button variant="outline" onClick={clearFilters}>Clear filters</Button>
+          ) : undefined}
+        />
       )}
     </div>
   )

@@ -18,12 +18,16 @@ import { useContentPieces } from '../hooks/useContentPieces'
 import { formatDate, formatTime } from '../lib/utils'
 import type { CompanyUI } from '../hooks/useCompanies'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { PageHeader } from '../components/layout/PageHeader'
+import { EmptyState } from '../components/ui/EmptyState'
+import { ErrorState } from '../components/ui/ErrorState'
+import { ListSkeleton } from '../components/ui/ListSkeleton'
 
 export function Dashboard() {
   useDocumentTitle('Dashboard — AI Marketing')
   const navigate = useNavigate()
-  const { companies } = useCompanies()
-  const { contentPieces } = useContentPieces()
+  const { companies, loading: companiesLoading, error: companiesError, refetch: refetchCompanies } = useCompanies()
+  const { contentPieces, loading: contentLoading, error: contentError, refetch: refetchContent } = useContentPieces()
   const [viewCompanyModal, setViewCompanyModal] = React.useState<{
     isOpen: boolean
     company: CompanyUI | null
@@ -122,10 +126,22 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="mt-2 text-gray-600">Your marketing at a glance.</p>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        description="Your marketing at a glance."
+        icon={<TrendingUp className="h-5 w-5" />}
+        actions={
+          <>
+            <Button variant="outline" onClick={() => refetchContent()} disabled={contentLoading}>
+              Refresh
+            </Button>
+            <Button onClick={() => navigate('/content')}>
+              <FileText className="h-4 w-4 mr-2" />
+              Generate content
+            </Button>
+          </>
+        }
+      />
 
       {/* View Company Modal */}
       <ViewCompanyModal
@@ -170,43 +186,70 @@ export function Dashboard() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {recentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-start space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
-                  <div className="flex-shrink-0">
-                    {activity.type === 'content_generated' && (
-                      <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center">
-                        <FileText className="h-4 w-4 text-brand-600" />
+            {contentLoading ? (
+              <ListSkeleton rows={4} avatar="circle" primaryWidthClass="w-2/3" secondaryWidthClass="w-5/6" />
+            ) : contentError ? (
+              <ErrorState
+                title="Could not load recent activity"
+                error={contentError}
+                retry={
+                  <Button variant="outline" onClick={() => refetchContent()}>
+                    Retry
+                  </Button>
+                }
+                icon={<FileText className="h-6 w-6 text-red-500" />}
+              />
+            ) : recentActivity.length === 0 ? (
+              <EmptyState
+                title="No recent activity"
+                message="Generate content to see your latest activity here."
+                icon={<FileText className="h-8 w-8 text-white" />}
+                actions={
+                  <Button onClick={() => navigate('/content')}>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Generate content
+                  </Button>
+                }
+              />
+            ) : (
+              <div className="space-y-4">
+                {recentActivity.map((activity) => (
+                  <div key={activity.id} className="flex items-start space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
+                    <div className="flex-shrink-0">
+                      {activity.type === 'content_generated' && (
+                        <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center">
+                          <FileText className="h-4 w-4 text-brand-600" />
+                        </div>
+                      )}
+                      {activity.type === 'content_approved' && (
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        </div>
+                      )}
+                      {activity.type === 'company_added' && (
+                        <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
+                          <Users className="h-4 w-4 text-teal-600" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900">{activity.title}</p>
+                      <p className="text-sm text-gray-500">{activity.description}</p>
+                      <div className="flex items-center mt-1 space-x-2">
+                        <Clock className="h-3 w-3 text-gray-400" />
+                        <span className="text-xs text-gray-500">{formatTime(activity.time)}</span>
+                        <Badge
+                          variant={activity.status === 'approved' ? 'success' : activity.status === 'draft' ? 'warning' : 'secondary'}
+                          className="text-xs"
+                        >
+                          {activity.status}
+                        </Badge>
                       </div>
-                    )}
-                    {activity.type === 'content_approved' && (
-                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                      </div>
-                    )}
-                    {activity.type === 'company_added' && (
-                      <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
-                        <Users className="h-4 w-4 text-teal-600" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">{activity.title}</p>
-                    <p className="text-sm text-gray-500">{activity.description}</p>
-                    <div className="flex items-center mt-1 space-x-2">
-                      <Clock className="h-3 w-3 text-gray-400" />
-                      <span className="text-xs text-gray-500">{formatTime(activity.time)}</span>
-                      <Badge
-                        variant={activity.status === 'approved' ? 'success' : activity.status === 'draft' ? 'warning' : 'secondary'}
-                        className="text-xs"
-                      >
-                        {activity.status}
-                      </Badge>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -219,15 +262,31 @@ export function Dashboard() {
             </div>
           </CardHeader>
           <CardContent>
-            {companies.length === 0 ? (
-              <div className="text-center py-10">
-                <div className="w-12 h-12 bg-brand-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <Users className="h-6 w-6 text-brand-600" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No companies</h3>
-                <p className="text-gray-500 mb-6">Add a company to get started.</p>
-                <Button onClick={() => navigate('/companies')}>Add company</Button>
-              </div>
+            {companiesLoading ? (
+              <ListSkeleton rows={4} avatar="square" primaryWidthClass="w-40" secondaryWidthClass="w-64" showTrailingButton />
+            ) : companiesError ? (
+              <ErrorState
+                title="Could not load companies"
+                error={companiesError}
+                retry={
+                  <Button variant="outline" onClick={() => refetchCompanies()}>
+                    Retry
+                  </Button>
+                }
+                icon={<Users className="h-6 w-6 text-red-500" />}
+              />
+            ) : companies.length === 0 ? (
+              <EmptyState
+                title="No companies"
+                message="Add a company to get started."
+                icon={<Users className="h-8 w-8 text-white" />}
+                actions={
+                  <Button onClick={() => navigate('/companies')}>
+                    <Users className="h-4 w-4 mr-2" />
+                    Add company
+                  </Button>
+                }
+              />
             ) : (
               <div className="space-y-4">
                 {companies.map((company) => (

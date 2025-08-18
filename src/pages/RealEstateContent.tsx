@@ -16,6 +16,9 @@ import { Modal } from '../components/ui/Modal'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useAsyncCallback } from '../hooks/useAsync'
+import { PageHeader } from '../components/layout/PageHeader'
+import { ErrorState } from '../components/ui/ErrorState'
+import { EmptyState } from '../components/ui/EmptyState'
 
 interface RealEstateContent {
   id: number
@@ -165,22 +168,23 @@ export function RealEstateContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Real estate content</h1>
-          <p className="mt-2 text-gray-600">Generate content for real estate pros.</p>
-        </div>
-        <div className="flex space-x-3">
-          <Button onClick={() => fetchRealEstateContent(true)} loading={loading} disabled={loading} variant="outline">
-            <RefreshCw className="h-4 w-4" />
-            Refresh
-          </Button>
-          <Button onClick={() => setShowUrlModal(true)}>
-            <Building2 className="h-4 w-4" />
-            Generate content
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Real estate content"
+        description="Generate content for real estate pros."
+        icon={<Building2 className="h-5 w-5" />}
+        actions={(
+          <>
+            <Button onClick={() => fetchRealEstateContent(true)} loading={loading} disabled={loading} variant="outline">
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </Button>
+            <Button onClick={() => setShowUrlModal(true)}>
+              <Building2 className="h-4 w-4" />
+              Generate content
+            </Button>
+          </>
+        )}
+      />
 
       {/* URL Input Modal (shared) */}
       <Modal isOpen={showUrlModal} onClose={handleCloseModal} labelledById="realestate-url-title" className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
@@ -263,16 +267,12 @@ export function RealEstateContent() {
 
       {/* Error State */}
       {error && (
-        <Card>
-          <CardContent className="text-center py-12">
-            <Building2 className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading content</h3>
-            <p className="text-red-600 mb-4">{error}</p>
-            <Button onClick={() => fetchRealEstateContent(true)} variant="outline" loading={loading} disabled={loading}>
-              Try again
-            </Button>
-          </CardContent>
-        </Card>
+        <ErrorState
+          icon={<Building2 className="h-12 w-12 text-red-500" />}
+          title="Error loading content"
+          error={error}
+          retry={<Button onClick={() => fetchRealEstateContent(true)} variant="outline" loading={loading} disabled={loading}>Try again</Button>}
+        />
       )}
 
       {/* Real Estate Content Grid */}
@@ -367,46 +367,40 @@ export function RealEstateContent() {
 
       {/* Empty State */}
       {!loading && !error && realEstateData.length === 0 && (
-        <Card>
-          <CardContent className="text-center py-16">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-green-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <Building2 className="h-8 w-8 text-white" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-3">No content</h3>
-            <p className="text-gray-600 max-w-md mx-auto mb-8">Generate your first piece with a property URL.</p>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto mb-8">
-              <div className="text-center">
-                <div className="w-12 h-12 bg-brand-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <Home className="h-6 w-6 text-brand-600" />
+        <EmptyState
+          icon={<Building2 className="h-8 w-8 text-white" />}
+          title="No content"
+          message={(
+            <div>
+              <p className="mb-8">Generate your first piece with a property URL.</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto mb-8">
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-brand-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <Home className="h-6 w-6 text-brand-600" />
+                  </div>
+                  <h4 className="font-medium text-gray-900 mb-2">Property analysis</h4>
+                  <p className="text-sm text-gray-600">We extract key info from property URLs</p>
                 </div>
-                <h4 className="font-medium text-gray-900 mb-2">Property analysis</h4>
-                <p className="text-sm text-gray-600">We extract key info from property URLs</p>
-              </div>
-
-              <div className="text-center">
-                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <FileText className="h-6 w-6 text-green-600" />
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <FileText className="h-6 w-6 text-green-600" />
+                  </div>
+                  <h4 className="font-medium text-gray-900 mb-2">Content generation</h4>
+                  <p className="text-sm text-gray-600">We create targeted real estate content</p>
                 </div>
-                <h4 className="font-medium text-gray-900 mb-2">Content generation</h4>
-                <p className="text-sm text-gray-600">We create targeted real estate content</p>
-              </div>
-
-              <div className="text-center">
-                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <TrendingUp className="h-6 w-6 text-purple-600" />
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <TrendingUp className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <h4 className="font-medium text-gray-900 mb-2">Ready to use</h4>
+                  <p className="text-sm text-gray-600">Use it in your campaigns</p>
                 </div>
-                <h4 className="font-medium text-gray-900 mb-2">Ready to use</h4>
-                <p className="text-sm text-gray-600">Use it in your campaigns</p>
               </div>
             </div>
-
-            <Button onClick={() => setShowUrlModal(true)} size="lg">
-              <Building2 className="h-4 w-4" />
-              Generate your first content
-            </Button>
-          </CardContent>
-        </Card>
+          )}
+          variant="green"
+          actions={<Button onClick={() => setShowUrlModal(true)} size="lg"><Building2 className="h-4 w-4" />Generate your first content</Button>}
+        />
       )}
 
       {/* Delete Confirmation Dialog (shared) */}
