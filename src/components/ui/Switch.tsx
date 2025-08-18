@@ -23,6 +23,7 @@ export function Switch({ checked, onCheckedChange, disabled = false, ...rest }: 
         checked ? 'bg-blue-600' : 'bg-gray-200',
         disabled && 'opacity-50 cursor-not-allowed'
       )}
+      style={{ minWidth: 44, minHeight: 44 }}
     >
       <span
         className={cn(

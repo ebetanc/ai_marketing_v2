@@ -14,7 +14,10 @@ export function Select({ className, label, error, options, id, onKeyDown, onKeyU
   return (
     <div className="space-y-1">
       {label && (
-        <label htmlFor={selectId} className="block text-sm font-medium text-gray-700">
+        <label
+          htmlFor={selectId}
+          className={cn('block text-sm font-medium', props.disabled ? 'text-gray-500' : 'text-gray-700')}
+        >
           {label}
         </label>
       )}
@@ -35,6 +38,8 @@ export function Select({ className, label, error, options, id, onKeyDown, onKeyU
           onKeyUp={(e) => {
             onKeyUp?.(e)
           }}
+          // Ensure comfortable tap target height
+          style={{ minHeight: 44 }}
         >
           {options.map((option) => (
             <option key={option.value} value={option.value}>
@@ -42,7 +47,7 @@ export function Select({ className, label, error, options, id, onKeyDown, onKeyU
             </option>
           ))}
         </select>
-        <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+        <ChevronDown aria-hidden className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
       </div>
       {error && (
         <p id={`${selectId}-error`} className="text-sm text-red-600">{error}</p>

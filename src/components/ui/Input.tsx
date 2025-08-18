@@ -26,6 +26,7 @@ export function Input({ className, label, error, id, onKeyDown, onKeyUp, ...prop
         id={inputId}
         aria-invalid={Boolean(error) || undefined}
         aria-describedby={error ? `${inputId}-error` : undefined}
+        style={{ minHeight: 44 }}
         {...props}
         onKeyDown={(e) => {
           onKeyDown?.(e)

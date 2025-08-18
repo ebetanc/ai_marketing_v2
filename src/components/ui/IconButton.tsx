@@ -31,6 +31,7 @@ export function IconButton({
                 variant === 'danger' && 'text-gray-600 hover:text-red-700 hover:bg-red-50 focus-visible:ring-red-500',
                 className
             )}
+            style={{ minWidth: 44, minHeight: 44 }}
             {...props}
         >
             {children}

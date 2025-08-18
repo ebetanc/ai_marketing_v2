@@ -831,12 +831,12 @@ export function Content() {
                     })}
                   </ul>
 
-                  {/* Footer */}
+                  {/* Footer note (non-interactive until docs link is available) */}
                   <div className="mt-4 pt-4 border-t border-gray-100">
-                    <button className="inline-flex items-center text-xs font-normal text-gray-500 hover:underline hover:text-gray-700 transition-colors">
-                      <HelpCircle className="w-3 h-3 me-2" />
+                    <p role="note" className="inline-flex items-center text-xs font-normal text-gray-500 cursor-default">
+                      <HelpCircle aria-hidden className="w-3 h-3 me-2" />
                       How content generation works
-                    </button>
+                    </p>
                   </div>
                 </div>
               )

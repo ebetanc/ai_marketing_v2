@@ -25,6 +25,7 @@ export function Textarea({ className, label, error, id, onKeyDown, onKeyUp, ...p
         id={textareaId}
         aria-invalid={Boolean(error) || undefined}
         aria-describedby={error ? `${textareaId}-error` : undefined}
+        style={{ minHeight: 88 }}
         {...props}
         onKeyDown={(e) => {
           onKeyDown?.(e)

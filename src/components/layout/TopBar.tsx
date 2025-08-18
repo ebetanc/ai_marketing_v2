@@ -2,12 +2,18 @@ import React, { useEffect, useRef, useState } from 'react'
 import { Bell, Menu, Search, X } from 'lucide-react'
 import { IconButton } from '../ui/IconButton'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { cn } from '../../lib/utils'
 
 type TopBarProps = React.HTMLAttributes<HTMLDivElement> & {
   onMenuClick?: () => void
+  /**
+   * Extra attributes for the mobile menu button (e.g. aria-controls/aria-expanded)
+   * so consumers can wire accessibility without leaking them onto the header element.
+   */
+  menuButtonProps?: React.ButtonHTMLAttributes<HTMLButtonElement>
 }
 
-export function TopBar({ onMenuClick, ...divProps }: TopBarProps) {
+export function TopBar({ onMenuClick, menuButtonProps, ...divProps }: TopBarProps) {
   const [searchQuery, setSearchQuery] = useState('')
   // const { companies } = useCompanies() // reserved for future search scoping
   const navigate = useNavigate()
@@ -73,9 +79,10 @@ export function TopBar({ onMenuClick, ...divProps }: TopBarProps) {
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center space-x-2 sm:space-x-4 flex-1">
           <IconButton
-            className="lg:hidden"
+            className={cn('lg:hidden', menuButtonProps?.className)}
             aria-label="Open menu"
             onClick={onMenuClick}
+            {...menuButtonProps}
           >
             <Menu className="h-5 w-5" />
           </IconButton>
@@ -118,7 +125,8 @@ export function TopBar({ onMenuClick, ...divProps }: TopBarProps) {
                     navigate({ search: params.toString() }, { replace: true })
                   }
                 }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                style={{ width: 44, height: 44 }}
               >
                 <X className="h-4 w-4" />
               </button>

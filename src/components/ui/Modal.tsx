@@ -121,6 +121,7 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
                 aria-labelledby={labelledById}
                 aria-describedby={describedById}
                 id={id}
+                tabIndex={-1}
                 className={appliedClasses}
             >
                 {children}

@@ -37,8 +37,14 @@ export function Layout() {
       </Modal>
 
       <div className="flex-1 flex flex-col min-h-0">
-        <TopBar onMenuClick={() => setMobileOpen(true)} aria-controls={mobileDialogId} aria-expanded={mobileOpen} />
-        <main id="main-content" className="flex-1 overflow-auto p-4 sm:p-6">
+        <TopBar
+          onMenuClick={() => setMobileOpen(true)}
+          menuButtonProps={{
+            'aria-controls': mobileDialogId,
+            'aria-expanded': mobileOpen,
+          }}
+        />
+        <main id="main-content" role="main" aria-label="Main content" className="flex-1 overflow-auto p-4 sm:p-6">
           <Outlet />
         </main>
       </div>

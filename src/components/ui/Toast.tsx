@@ -51,7 +51,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         <ToastContext.Provider value={value}>
             {children}
             {/* Toast viewport */}
-            <div className="fixed top-4 right-4 z-[100] space-y-2 w-[calc(100%-2rem)] max-w-sm">
+            <div className="fixed top-4 right-4 z-[100] space-y-2 w-[calc(100%-2rem)] max-w-sm" role="region" aria-label="Notifications">
                 {toasts.map((t) => (
                     <div
                         key={t.id}
@@ -63,10 +63,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                         aria-live={t.variant === 'error' ? 'assertive' : 'polite'}
                     >
                         <div className="mt-0.5">
-                            {t.variant === 'success' && <CheckCircle className="h-5 w-5 text-green-600" />}
-                            {t.variant === 'error' && <XCircle className="h-5 w-5 text-red-600" />}
-                            {t.variant === 'warning' && <AlertTriangle className="h-5 w-5 text-yellow-600" />}
-                            {(!t.variant || t.variant === 'info') && <Info className="h-5 w-5 text-blue-600" />}
+                            {t.variant === 'success' && <CheckCircle aria-hidden className="h-5 w-5 text-green-600" />}
+                            {t.variant === 'error' && <XCircle aria-hidden className="h-5 w-5 text-red-600" />}
+                            {t.variant === 'warning' && <AlertTriangle aria-hidden className="h-5 w-5 text-yellow-600" />}
+                            {(!t.variant || t.variant === 'info') && <Info aria-hidden className="h-5 w-5 text-blue-600" />}
                         </div>
                         <div className="flex-1 min-w-0">
                             {t.title && <p className="text-sm font-medium text-gray-900">{t.title}</p>}
@@ -74,8 +74,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                         </div>
                         <button
                             onClick={() => remove(t.id)}
-                            className="shrink-0 rounded-md p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                            className="shrink-0 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
                             aria-label="Dismiss notification"
+                            style={{ minWidth: 44, minHeight: 44 }}
                         >
                             <X className="h-4 w-4" />
                         </button>

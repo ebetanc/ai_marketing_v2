@@ -320,7 +320,7 @@ export function RealEstateContent() {
                 {content.link_origin && (
                   <div>
                     <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
-                      <Link className="h-4 w-4 mr-1 text-blue-600" />
+                      <Link aria-hidden className="h-4 w-4 mr-1 text-blue-600" />
                       Origin Link
                     </h4>
                     <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
@@ -330,7 +330,7 @@ export function RealEstateContent() {
                         rel="noopener noreferrer"
                         className="text-blue-700 hover:text-blue-900 text-sm break-all flex items-center"
                       >
-                        <ExternalLink className="h-3 w-3 mr-1 flex-shrink-0" />
+                        <ExternalLink aria-hidden className="h-3 w-3 mr-1 flex-shrink-0" />
                         {content.link_origin}
                       </a>
                     </div>
@@ -341,7 +341,7 @@ export function RealEstateContent() {
                 {content.link_final && (
                   <div>
                     <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
-                      <FileText className="h-4 w-4 mr-1 text-green-600" />
+                      <FileText aria-hidden className="h-4 w-4 mr-1 text-green-600" />
                       Final Link
                     </h4>
                     <div className="bg-green-50 rounded-lg p-3 border border-green-100">
@@ -351,7 +351,7 @@ export function RealEstateContent() {
                         rel="noopener noreferrer"
                         className="text-green-700 hover:text-green-900 text-sm break-all flex items-center"
                       >
-                        <ExternalLink className="h-3 w-3 mr-1 flex-shrink-0" />
+                        <ExternalLink aria-hidden className="h-3 w-3 mr-1 flex-shrink-0" />
                         {content.link_final}
                       </a>
                     </div>

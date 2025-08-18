@@ -11,3 +11,31 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Improve focus visibility globally when authors forget ring classes */
+:focus-visible {
+  outline: 2px solid theme("colors.blue.500");
+  outline-offset: 2px;
+}
+
+/* Increase contrast support */
+@media (prefers-contrast: more) {
+  .shadow,
+  .shadow-md,
+  .shadow-lg {
+    --tw-shadow-color: rgba(0, 0, 0, 0.25);
+    --tw-shadow: 0 1px 3px 0 var(--tw-shadow-color),
+      0 1px 2px -1px var(--tw-shadow-color);
+  }
+}
+
+/* Reduced transparency */
+@media (prefers-reduced-transparency: reduce) {
+  .backdrop-blur-sm,
+  .bg-white\/50,
+  .bg-black\/40,
+  .bg-black\/50 {
+    backdrop-filter: none !important;
+    background-color: rgba(0, 0, 0, 0.5) !important;
+  }
+}

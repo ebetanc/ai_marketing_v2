@@ -69,7 +69,7 @@ export function Sidebar() {
         </div>
       </div>
 
-      <nav className="flex-1 px-2 sm:px-4 py-4 sm:py-6 space-y-4">
+      <nav className="flex-1 px-2 sm:px-4 py-4 sm:py-6 space-y-4" aria-label="Primary">
         {/* Primary */}
         <div className="space-y-1">
           {primaryNav.map((item) => {
@@ -79,7 +79,7 @@ export function Sidebar() {
                 key={item.name}
                 to={item.href}
                 className={cn(
-                  'group flex items-center px-2 sm:px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200',
+                  'group flex items-center px-2 sm:px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
                   isActive
                     ? 'bg-blue-50 text-blue-700 border border-blue-200'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -91,6 +91,7 @@ export function Sidebar() {
                     'mr-2 sm:mr-3 h-5 w-5 transition-colors',
                     isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'
                   )}
+                  aria-hidden
                 />
                 <span className="hidden sm:inline">{item.name}</span>
               </Link>
@@ -109,7 +110,7 @@ export function Sidebar() {
                   key={item.name}
                   to={item.href}
                   className={cn(
-                    'group flex items-center px-2 sm:px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200',
+                    'group flex items-center px-2 sm:px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
                     isActive
                       ? 'bg-blue-50 text-blue-700 border border-blue-200'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -121,6 +122,7 @@ export function Sidebar() {
                       'mr-2 sm:mr-3 h-5 w-5 transition-colors',
                       isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'
                     )}
+                    aria-hidden
                   />
                   <span className="hidden sm:inline">{item.name}</span>
                 </Link>
@@ -140,7 +142,7 @@ export function Sidebar() {
                   key={item.name}
                   to={item.href}
                   className={cn(
-                    'group flex items-center px-2 sm:px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200',
+                    'group flex items-center px-2 sm:px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
                     isActive
                       ? 'bg-blue-50 text-blue-700 border border-blue-200'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -152,6 +154,7 @@ export function Sidebar() {
                       'mr-2 sm:mr-3 h-5 w-5 transition-colors',
                       isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'
                     )}
+                    aria-hidden
                   />
                   <span className="hidden sm:inline">{item.name}</span>
                 </Link>
