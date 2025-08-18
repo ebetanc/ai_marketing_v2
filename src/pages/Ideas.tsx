@@ -577,10 +577,8 @@ export function Ideas() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Content Ideas</h1>
-          <p className="mt-2 text-gray-600">
-            AI-generated content ideas organized by brand.
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900">Ideas</h1>
+          <p className="mt-2 text-gray-600">AI ideas by brand.</p>
         </div>
         <Button onClick={() => fetchIdeas(true)} loading={loading} disabled={loading}>
           <RefreshCw className="h-4 w-4" />
@@ -600,7 +598,7 @@ export function Ideas() {
                 </div>
                 <div>
                   <h2 id="view-idea-title" className="text-xl font-bold text-gray-900">
-                    {viewIdeaModal.isEditing ? 'Edit Topic' : (viewIdeaModal.topic?.topic || `Topic ${viewIdeaModal.topic?.number}`)}
+                    {viewIdeaModal.isEditing ? 'Edit topic' : (viewIdeaModal.topic?.topic || `Topic ${viewIdeaModal.topic?.number}`)}
                   </h2>
                   <p className="text-sm text-gray-500">{viewIdeaModal.idea?.company?.brand_name || 'Unknown Brand'}</p>
                 </div>
@@ -716,7 +714,7 @@ export function Ideas() {
                       loading={saving}
                       disabled={saving}
                     >
-                      {saving ? 'Saving...' : 'Save Changes'}
+                      {saving ? 'Saving…' : 'Save changes'}
                     </Button>
                   </>
                 ) : (
@@ -733,7 +731,7 @@ export function Ideas() {
                       disabled={generatingContent}
                       className="bg-purple-600 hover:bg-purple-700"
                     >
-                      {generatingContent ? 'Generating...' : 'Generate Content'}
+                      {generatingContent ? 'Generating…' : 'Generate content'}
                     </Button>
                     <Button
                       variant="outline"
@@ -761,10 +759,10 @@ export function Ideas() {
                 </div>
                 <div>
                   <h2 id="view-idea-set-title" className="text-xl font-bold text-gray-900">
-                    Content Ideas Set #{viewIdeaSetModal.idea?.id} - {viewIdeaSetModal.idea?.company?.brand_name || 'Unknown Brand'}
+                    Idea set #{viewIdeaSetModal.idea?.id} — {viewIdeaSetModal.idea?.company?.brand_name || 'Unknown Brand'}
                   </h2>
                   <p className="text-sm text-gray-500">
-                    {viewIdeaSetModal.topics.length} content ideas • Created {viewIdeaSetModal.idea?.created_at ? formatDate(viewIdeaSetModal.idea.created_at) : 'Unknown'}
+                    {viewIdeaSetModal.topics.length} ideas • Created {viewIdeaSetModal.idea?.created_at ? formatDate(viewIdeaSetModal.idea.created_at) : 'Unknown'}
                   </p>
                 </div>
               </div>
@@ -819,7 +817,7 @@ export function Ideas() {
                       {/* View indicator */}
                       <div className="pt-1">
                         <div className="text-xs text-blue-600 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                          Click to view details →
+                          Click to view →
                         </div>
                       </div>
                     </CardContent>
@@ -887,7 +885,7 @@ export function Ideas() {
                         {brandName}
                       </h5>
                       <p className="text-sm text-gray-500">
-                        {brandIdeas.length} idea set{brandIdeas.length === 1 ? '' : 's'} • {totalTopics} total topics
+                        {brandIdeas.length} idea set{brandIdeas.length === 1 ? '' : 's'} • {totalTopics} topics
                       </p>
                     </div>
                   </div>
@@ -897,7 +895,7 @@ export function Ideas() {
                 </div>
 
                 <p className="text-sm font-normal text-gray-500 mb-4">
-                  AI-generated content ideas ready for execution. Click on any idea set to view individual topics and generate content.
+                  Click an idea set to view topics and generate content.
                 </p>
 
                 {/* Ideas List */}
@@ -916,7 +914,7 @@ export function Ideas() {
                             <div className="flex-1">
                               <div className="flex items-center space-x-3 mb-2">
                                 <span className="font-semibold text-gray-900">
-                                  Content Ideas Set #{idea.id}
+                                  Idea set #{idea.id}
                                 </span>
                                 {topics.length > 0 && (
                                   <Badge variant="success" className="text-xs">
@@ -952,7 +950,7 @@ export function Ideas() {
                             className="opacity-0 group-hover:opacity-100 transition-opacity"
                           >
                             <Eye className="h-4 w-4" />
-                            View Topics
+                            View topics
                           </Button>
                         </div>
                       </li>
@@ -964,7 +962,7 @@ export function Ideas() {
                 <div className="mt-4 pt-4 border-t border-gray-100">
                   <button className="inline-flex items-center text-xs font-normal text-gray-500 hover:underline hover:text-gray-700 transition-colors">
                     <HelpCircle className="w-3 h-3 me-2" />
-                    How do content ideas work?
+                    How ideas work
                   </button>
                 </div>
               </div>
@@ -977,9 +975,9 @@ export function Ideas() {
         <Card>
           <CardContent className="text-center py-12">
             <Lightbulb className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No ideas found</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No ideas</h3>
             <p className="text-gray-500 mb-6">
-              The ideas table in your Supabase database is empty.
+              No ideas yet.
             </p>
             <Button onClick={() => fetchIdeas(true)}>
               <RefreshCw className="h-4 w-4" />

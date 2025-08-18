@@ -42,14 +42,14 @@ export default function ResetPassword() {
         setMessage(null)
         try {
             if (password.length < minPasswordLength) {
-                throw new Error(`Password must be at least ${minPasswordLength} characters.`)
+                throw new Error(`Use at least ${minPasswordLength} characters.`)
             }
             const { error } = await supabase.auth.updateUser({ password })
             if (error) throw error
-            setMessage('Password updated. Redirecting to login...')
+            setMessage('Password updated. Redirecting to login…')
             setTimeout(() => navigate('/login', { replace: true }), 1200)
         } catch (err: any) {
-            setError(err?.message || 'Failed to update password.')
+            setError(err?.message || 'Couldn’t update password.')
         } finally {
             setLoading(false)
         }
@@ -64,7 +64,7 @@ export default function ResetPassword() {
                 </div>
                 {!hasRecoverySession && (
                     <div className="text-sm text-red-600" role="alert">
-                        Invalid or expired reset link. Request a new reset email.
+                        Invalid or expired reset link. Request a new one.
                     </div>
                 )}
                 <form onSubmit={onSubmit} className="space-y-4" aria-disabled={!hasRecoverySession}>

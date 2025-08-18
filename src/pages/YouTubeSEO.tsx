@@ -10,14 +10,12 @@ export function YouTubeSEO() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">YouTube Transcript → SEO Blog</h1>
-          <p className="mt-2 text-gray-600">
-            Transform YouTube video transcripts into SEO-optimized blog posts.
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900">YouTube → SEO blog</h1>
+          <p className="mt-2 text-gray-600">Turn transcripts into SEO blog posts.</p>
         </div>
         <Button>
           <Youtube className="h-4 w-4" />
-          Start Conversion
+          Start conversion
         </Button>
       </div>
 
@@ -27,7 +25,7 @@ export function YouTubeSEO() {
           <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <Youtube className="h-8 w-8 text-white" />
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-3">YouTube to SEO Blog Converter</h3>
+          <h3 className="text-xl font-semibold text-gray-900 mb-3">YouTube to SEO blog</h3>
           <p className="text-gray-600 max-w-md mx-auto mb-8">
             This powerful tool will extract YouTube video transcripts and transform them into
             SEO-optimized blog posts with proper headings, keywords, and structure.

@@ -32,7 +32,7 @@ export default function Login() {
         setMessage(null)
         try {
             if (password.length < minPasswordLength) {
-                throw new Error(`Password must be at least ${minPasswordLength} characters.`)
+                throw new Error(`Use at least ${minPasswordLength} characters.`)
             }
             const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin
             const { data, error } = await supabase.auth.signUp({
@@ -48,7 +48,7 @@ export default function Login() {
             if (data?.session) {
                 window.location.assign(redirectTo || '/dashboard')
             } else if (data?.user) {
-                setMessage('Account created. Check your email to confirm your address. You’ll be signed in automatically after confirming.')
+                setMessage('Account created. Check your email to confirm. You’ll be signed in after confirming.')
             }
         } catch (err: any) {
             setError(err?.message || 'Sign up failed.')
@@ -71,7 +71,7 @@ export default function Login() {
             const msg = err?.message || 'Sign in failed.'
             // Heuristic for unconfirmed email message
             if (/confirm/i.test(msg) && /email/i.test(msg)) {
-                setError('Email not confirmed. Check your inbox or resend the confirmation email below.')
+                setError('Email not confirmed. Check your inbox or resend below.')
             } else if (/invalid/i.test(msg) && /credentials|login/i.test(msg)) {
                 setError('Invalid email or password.')
             } else {
@@ -106,7 +106,7 @@ export default function Login() {
                         onChange={(e) => setPassword(e.target.value)}
                         required
                     />
-                    {/* Removed confirm password to streamline sign up */}
+                    {/* No confirm password to keep sign up quick */}
                     <div className="grid grid-cols-2 gap-2">
                         <Button type="button" onClick={handleSignIn} loading={loading} disabled={!email || !password}>Sign in</Button>
                         <Button type="button" variant="outline" onClick={handleSignUp} loading={loading} disabled={!email || !password}>Sign up</Button>

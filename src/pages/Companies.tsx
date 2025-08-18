@@ -82,9 +82,7 @@ export function Companies() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Companies</h1>
-          <p className="mt-2 text-gray-600">
-            Manage your client companies and their brand profiles.
-          </p>
+          <p className="mt-2 text-gray-600">Manage brands and profiles.</p>
         </div>
         <div className="flex space-x-3">
           <Button onClick={() => fetchCompaniesFromSupabase(true)} loading={loading} variant="outline">
@@ -93,7 +91,7 @@ export function Companies() {
           </Button>
           <Button onClick={() => setShowCreateModal(true)}>
             <Plus className="h-4 w-4" />
-            Add Company
+            Add company
           </Button>
         </div>
       </div>
@@ -148,7 +146,7 @@ export function Companies() {
         <Card>
           <CardContent className="text-center py-12">
             <Database className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Companies</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading companies</h3>
             <p className="text-red-600 mb-4">{error}</p>
             <Button onClick={() => fetchCompaniesFromSupabase(true)} variant="outline" loading={loading} disabled={loading}>
               Try Again
@@ -216,7 +214,7 @@ export function Companies() {
                       {company.additional_information && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                           <FileText className="h-2.5 w-2.5 mr-1" />
-                          Additional Info
+                          Additional info
                         </span>
                       )}
                     </div>
@@ -229,7 +227,7 @@ export function Companies() {
                         className="text-xs"
                       >
                         <Eye className="h-3 w-3 mr-1" />
-                        View Details
+                        View details
                       </Button>
                     </div>
                   </div>
@@ -245,13 +243,13 @@ export function Companies() {
         <Card>
           <CardContent className="text-center py-12">
             <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No companies found</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No companies</h3>
             <p className="text-gray-500 mb-6">
-              The companies table in your Supabase database is empty.
+              No companies yet.
             </p>
             <Button onClick={() => setShowCreateModal(true)}>
               <Plus className="h-4 w-4" />
-              Add Company
+              Add company
             </Button>
           </CardContent>
         </Card>

@@ -389,7 +389,7 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
             <div>
               <h2 id={titleId} className="text-xl font-bold text-gray-900">{content.title}</h2>
               <p className="text-sm text-gray-500">
-                {content.brand_name || 'Unknown Brand'} • {content.type?.replace('_', ' ') || 'Content'}
+                {content.brand_name || 'Unknown brand'} • {content.type?.replace('_', ' ') || 'Content'}
               </p>
             </div>
           </div>
@@ -406,7 +406,7 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
             <CardHeader>
               <CardTitle className="flex items-center text-lg">
                 <FileText className="h-5 w-5 mr-2 text-blue-600" />
-                Content Information
+                Content info
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -433,7 +433,7 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
 
                 {typeof (content.metadata as any)?.word_count === 'number' && (
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Word Count</p>
+                    <p className="text-sm font-medium text-gray-900">Word count</p>
                     <p className="text-gray-700">{String((content.metadata as any).word_count)} words</p>
                   </div>
                 )}
@@ -457,7 +457,7 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center text-lg">
                     <Target className="h-5 w-5 mr-2 text-purple-600" />
-                    Content Angles ({angles.length})
+                    Content angles ({angles.length})
                   </CardTitle>
                   <div className="flex space-x-2">
                     <Button
@@ -466,7 +466,7 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
                       onClick={expandAllAngles}
                       className="text-xs"
                     >
-                      Expand All
+                      Expand all
                     </Button>
                     <Button
                       variant="outline"
@@ -474,7 +474,7 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
                       onClick={collapseAllAngles}
                       className="text-xs"
                     >
-                      Collapse All
+                      Collapse all
                     </Button>
                   </div>
                 </div>
@@ -489,13 +489,13 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
               <CardHeader>
                 <CardTitle className="flex items-center text-lg">
                   <Zap className="h-5 w-5 mr-2 text-green-600" />
-                  Content Body
+                  Content body
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto">
                   <div className="text-sm">
-                    {formatContentBody(content.body_text || content.body || 'No content available')}
+                    {formatContentBody(content.body_text || content.body || 'No content')}
                   </div>
                 </div>
               </CardContent>
@@ -550,7 +550,7 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
                 loading={approving}
                 disabled={approving}
               >
-                {approving ? 'Approving...' : 'Approve'}
+                {approving ? 'Approving…' : 'Approve'}
               </Button>
             )}
             <Button
@@ -559,7 +559,7 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
               disabled={posting}
               className="bg-blue-600 hover:bg-blue-700"
             >
-              {posting ? 'Posting...' : 'Post'}
+              {posting ? 'Posting…' : 'Post'}
             </Button>
             <Button variant="outline" onClick={onClose} disabled={posting}>
               Close

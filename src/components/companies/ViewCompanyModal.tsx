@@ -69,7 +69,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
             </div>
             <div>
               <h2 id={titleId} className="text-xl font-bold text-gray-900">{company.name}</h2>
-              <p className="text-sm text-gray-500">Company Details</p>
+              <p className="text-sm text-gray-500">Company details</p>
             </div>
           </div>
 
@@ -89,12 +89,12 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
             <CardHeader>
               <CardTitle className="flex items-center text-lg">
                 <Building2 className="h-5 w-5 mr-2 text-blue-600" />
-                Basic Information
+                Basics
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <p className="text-sm font-medium text-gray-900">Company Name</p>
+                <p className="text-sm font-medium text-gray-900">Company name</p>
                 <p className="text-gray-700">{company.brand_name || company.name}</p>
               </div>
 
@@ -114,7 +114,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
               )}
 
               <div>
-                <p className="text-sm font-medium text-gray-900">Created</p>
+                  <p className="text-sm font-medium text-gray-900">Created</p>
                 <p className="text-gray-700 flex items-center">
                   <Calendar className="h-4 w-4 mr-1 text-gray-400" />
                   {formatDate(company.created_at)}
@@ -129,7 +129,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
               <CardHeader>
                 <CardTitle className="flex items-center text-lg">
                   <Zap className="h-5 w-5 mr-2 text-purple-600" />
-                  Brand Tone
+                  Brand tone
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -144,7 +144,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
               <CardHeader>
                 <CardTitle className="flex items-center text-lg">
                   <Target className="h-5 w-5 mr-2 text-teal-600" />
-                  Target Audience
+                  Target audience
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -159,7 +159,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
               <CardHeader>
                 <CardTitle className="flex items-center text-lg">
                   <Building2 className="h-5 w-5 mr-2 text-green-600" />
-                  Key Offer
+                  Key offer
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -174,7 +174,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
               <CardHeader>
                 <CardTitle className="flex items-center text-lg">
                   <User className="h-5 w-5 mr-2 text-gray-600" />
-                  Additional Information
+                  Additional info
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -191,17 +191,17 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
               <CardHeader>
                 <CardTitle className="flex items-center text-lg">
                   <Zap className="h-5 w-5 mr-2 text-orange-600" />
-                  Brand Voice & Tone
+                  Brand voice & tone
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-900">Brand Tone</p>
+                  <p className="text-sm font-medium text-gray-900">Brand tone</p>
                   <p className="text-gray-700 leading-relaxed">{company.brand_voice?.tone || company.brand_tone || 'Not specified'}</p>
                 </div>
 
                 <div>
-                  <p className="text-sm font-medium text-gray-900">Key Offer / Style</p>
+                  <p className="text-sm font-medium text-gray-900">Key offer / style</p>
                   <p className="text-gray-700 leading-relaxed">{company.brand_voice?.style || company.key_offer || 'Not specified'}</p>
                 </div>
 
@@ -227,7 +227,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
               <CardHeader>
                 <CardTitle className="flex items-center text-lg">
                   <Target className="h-5 w-5 mr-2 text-pink-600" />
-                  Target Audience
+                  Target audience
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -253,7 +253,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
 
                 {(company!.target_audience as any)?.pain_points && (company!.target_audience as any).pain_points.length > 0 && (
                   <div>
-                    <p className="text-sm font-medium text-gray-900 mb-2">Pain Points</p>
+                    <p className="text-sm font-medium text-gray-900 mb-2">Pain points</p>
                     <div className="flex flex-wrap gap-2">
                       {(company!.target_audience as any).pain_points.map((point: string, index: number) => (
                         <Badge key={index} variant="warning">
@@ -273,7 +273,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
               <CardHeader>
                 <CardTitle className="flex items-center text-lg">
                   <User className="h-5 w-5 mr-2 text-indigo-600" />
-                  Additional Information
+                  Additional info
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -290,7 +290,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
               <CardHeader>
                 <CardTitle className="flex items-center text-lg">
                   <Target className="h-5 w-5 mr-2 text-orange-600" />
-                  Image Guidelines
+                  Image guidelines
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -313,7 +313,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
               className=""
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              {deleting ? 'Deleting...' : 'Delete Company'}
+              {deleting ? 'Deleting…' : 'Delete company'}
             </Button>
             <Button variant="outline" onClick={onClose} disabled={deleting}>
               Close
@@ -327,8 +327,8 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
             setConfirmOpen(false)
             handleDelete()
           }}
-          title="Delete Company"
-          message={`Are you sure you want to delete "${company.brand_name || company.name}"? This action cannot be undone.`}
+          title="Delete company"
+          message={`Delete "${company.brand_name || company.name}"? This can’t be undone.`}
           confirmText="Delete"
           cancelText="Cancel"
           variant="danger"

@@ -10,14 +10,12 @@ export function SemanticSEO() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Semantic Cluster → SEO Article</h1>
-          <p className="mt-2 text-gray-600">
-            Create comprehensive SEO articles using semantic keyword clustering.
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900">Semantic SEO</h1>
+          <p className="mt-2 text-gray-600">Build articles from semantic clusters.</p>
         </div>
         <Button>
           <Network className="h-4 w-4" />
-          Build Semantic Article
+          Build article
         </Button>
       </div>
 
@@ -27,7 +25,7 @@ export function SemanticSEO() {
           <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <Network className="h-8 w-8 text-white" />
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-3">Semantic SEO Article Builder</h3>
+          <h3 className="text-xl font-semibold text-gray-900 mb-3">Semantic article builder</h3>
           <p className="text-gray-600 max-w-md mx-auto mb-8">
             Generate comprehensive, SEO-optimized articles by clustering related keywords
             and topics to create content that ranks higher in search results.

@@ -29,11 +29,11 @@ const contentWorkflowNav = [
 
 const toolsNav = [
   { name: 'Campaigns', href: '/campaigns', icon: Megaphone },
-  { name: 'YouTube Transcript → SEO Blog', href: '/youtube-seo', icon: Youtube },
-  { name: 'Trend Based Blog Generation', href: '/trend-blog', icon: TrendingUp },
-  { name: 'Semantic Cluster → SEO Article', href: '/semantic-seo', icon: Network },
-  { name: 'Keyword Research Agent', href: '/keyword-research', icon: Search },
-  { name: 'Real Estate Content Agent', href: '/real-estate-content', icon: Building2 },
+  { name: 'YouTube → SEO Blog', href: '/youtube-seo', icon: Youtube },
+  { name: 'Trend Blog', href: '/trend-blog', icon: TrendingUp },
+  { name: 'Semantic SEO', href: '/semantic-seo', icon: Network },
+  { name: 'Keyword Research', href: '/keyword-research', icon: Search },
+  { name: 'Real Estate Content', href: '/real-estate-content', icon: Building2 },
 ]
 
 export function Sidebar() {
@@ -127,9 +127,9 @@ export function Sidebar() {
           </div>
         </div>
 
-        {/* Tools & Agents */}
+        {/* Tools */}
         <div>
-          <p className="px-2 sm:px-3 mb-2 text-[10px] sm:text-xs font-semibold tracking-wider text-gray-500 uppercase">Agents & generators</p>
+          <p className="px-2 sm:px-3 mb-2 text-[10px] sm:text-xs font-semibold tracking-wider text-gray-500 uppercase">Tools</p>
           <div className="space-y-1">
             {toolsNav.map((item) => {
               const isActive = location.pathname.startsWith(item.href)

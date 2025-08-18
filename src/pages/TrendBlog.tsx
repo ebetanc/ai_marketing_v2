@@ -10,14 +10,12 @@ export function TrendBlog() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Trend Based Blog Generation</h1>
-          <p className="mt-2 text-gray-600">
-            Generate blog posts based on current trends and viral topics.
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900">Trend blog</h1>
+          <p className="mt-2 text-gray-600">Generate blog posts from trends.</p>
         </div>
         <Button>
           <TrendingUp className="h-4 w-4" />
-          Generate Trending Blog
+          Generate trend blog
         </Button>
       </div>
 
@@ -27,7 +25,7 @@ export function TrendBlog() {
           <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <TrendingUp className="h-8 w-8 text-white" />
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-3">AI-Powered Trend Blog Generator</h3>
+          <h3 className="text-xl font-semibold text-gray-900 mb-3">Trend blog generator</h3>
           <p className="text-gray-600 max-w-md mx-auto mb-8">
             Stay ahead of the curve by creating blog content based on the latest trends,
             viral topics, and emerging conversations in your industry.

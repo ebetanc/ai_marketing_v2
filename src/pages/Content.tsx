@@ -114,7 +114,7 @@ const extractContentTopic = (content: any) => {
 }
 
 export function Content() {
-  useDocumentTitle('Generated Content — AI Marketing')
+  useDocumentTitle('Content — AI Marketing')
   const location = useLocation()
   const navigate = useNavigate()
   const initialQ = new URLSearchParams(location.search).get('q') || ''
@@ -522,10 +522,8 @@ export function Content() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Generated Content</h1>
-          <p className="mt-2 text-gray-600">
-            View and manage all your AI-generated content pieces.
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900">Content</h1>
+          <p className="mt-2 text-gray-600">Review and manage generated content.</p>
         </div>
         <Button onClick={fetchContent} loading={loadingContent} disabled={loadingContent}>
           <RefreshCw className="h-4 w-4" />
@@ -562,9 +560,9 @@ export function Content() {
         isOpen={deleteDialog.isOpen}
         onClose={handleDeleteCancel}
         onConfirm={handleDeleteConfirm}
-        title="Delete Content"
+  title="Delete content"
         message={`Are you sure you want to delete "${deleteDialog.content?.title}"? This action cannot be undone.`}
-        confirmText="Delete Content"
+  confirmText="Delete"
         cancelText="Cancel"
         variant="danger"
         loading={deleteDialog.loading}
@@ -578,7 +576,7 @@ export function Content() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search content..."
+                placeholder="Search content"
                 value={searchQuery}
                 ref={searchInputRef}
                 onChange={(e) => {
@@ -702,9 +700,7 @@ export function Content() {
                         <h5 className="text-xl font-semibold text-gray-900">
                           {brandName}
                         </h5>
-                        <p className="text-sm text-gray-500">
-                          {totalContent} content piece{totalContent === 1 ? '' : 's'} • {approvedContent} approved
-                        </p>
+                        <p className="text-sm text-gray-500">{totalContent} pieces • {approvedContent} approved</p>
                       </div>
                     </div>
                     <Badge variant="primary" className="text-sm px-3 py-1">
@@ -712,9 +708,7 @@ export function Content() {
                     </Badge>
                   </div>
 
-                  <p className="text-sm font-normal text-gray-500 mb-4">
-                    AI-generated content ready for review and publishing. Click on any content piece to view details and manage approval status.
-                  </p>
+                  <p className="text-sm font-normal text-gray-500 mb-4">Click a piece to view and approve.</p>
 
                   {/* Content List */}
                   <ul className="space-y-3">
@@ -841,7 +835,7 @@ export function Content() {
                   <div className="mt-4 pt-4 border-t border-gray-100">
                     <button className="inline-flex items-center text-xs font-normal text-gray-500 hover:underline hover:text-gray-700 transition-colors">
                       <HelpCircle className="w-3 h-3 me-2" />
-                      How does content generation work?
+                      How content generation works
                     </button>
                   </div>
                 </div>
@@ -855,13 +849,10 @@ export function Content() {
           <CardContent className="text-center py-12">
             <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {allContent.length === 0 ? 'No content yet' : 'No content matches your filters'}
+              {allContent.length === 0 ? 'No content' : 'No matches'}
             </h3>
             <p className="text-gray-500 mb-6">
-              {allContent.length === 0
-                ? 'Generate content from your ideas to see them here.'
-                : 'Try adjusting your filters to see more content.'
-              }
+              {allContent.length === 0 ? 'Generate content from Ideas.' : 'Adjust filters to see more.'}
             </p>
             {allContent.length > 0 && isFiltersActive && (
               <Button variant="outline" onClick={clearFilters}>Clear filters</Button>
@@ -869,7 +860,7 @@ export function Content() {
             {allContent.length === 0 && (
               <div className="text-center">
                 <p className="text-sm text-gray-500">
-                  Go to <strong>Ideas</strong> → View an idea → Select an idea → Click <strong>Generate Content</strong>
+                  Go to Ideas → View an idea → Select → Generate content
                 </p>
               </div>
             )}

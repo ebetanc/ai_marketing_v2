@@ -23,9 +23,9 @@ export default function ForgotPassword() {
                 redirectTo: `${siteUrl}/reset-password`,
             })
             if (error) throw error
-            setMessage('If an account exists for that email, a reset link has been sent.')
+            setMessage('If that email exists, we sent a reset link.')
         } catch (err: any) {
-            setError(err?.message || 'Failed to send reset email.')
+            setError(err?.message || 'Couldn’t send reset email.')
         } finally {
             setLoading(false)
         }
@@ -36,7 +36,7 @@ export default function ForgotPassword() {
             <div className="w-full max-w-md bg-white rounded-2xl shadow p-6 space-y-6">
                 <div>
                     <h1 className="text-2xl font-semibold text-gray-900">Forgot password</h1>
-                    <p className="text-gray-500 text-sm mt-1">We’ll email you a reset link.</p>
+                    <p className="text-gray-500 text-sm mt-1">We’ll email a reset link.</p>
                 </div>
                 <form onSubmit={onSubmit} className="space-y-4">
                     <Input
@@ -47,7 +47,7 @@ export default function ForgotPassword() {
                         onChange={(e) => setEmail(e.target.value)}
                         required
                     />
-                    <Button type="submit" loading={loading} className="w-full">Send reset link</Button>
+                    <Button type="submit" loading={loading} className="w-full">Send link</Button>
                 </form>
                 {message && <div className="text-sm text-green-600">{message}</div>}
                 {error && <div className="text-sm text-red-600">{error}</div>}

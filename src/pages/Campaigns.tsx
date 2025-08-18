@@ -12,9 +12,7 @@ export function Campaigns() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Campaigns</h1>
-          <p className="mt-2 text-gray-600">
-            Create and manage multi-channel marketing campaigns.
-          </p>
+          <p className="mt-2 text-gray-600">Plan and manage campaigns.</p>
         </div>
         <Button>
           <Plus className="h-4 w-4" />
@@ -28,10 +26,9 @@ export function Campaigns() {
           <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <Megaphone className="h-8 w-8 text-white" />
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-3">Campaign Builder Coming Soon</h3>
+          <h3 className="text-xl font-semibold text-gray-900 mb-3">Campaign builder coming soon</h3>
           <p className="text-gray-600 max-w-md mx-auto mb-8">
-            The comprehensive campaign creation wizard is in development. Soon you'll be able to build
-            multi-channel campaigns with automated scheduling and performance tracking.
+            A campaign builder is in development with scheduling and performance tracking.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
@@ -39,7 +36,7 @@ export function Campaigns() {
               <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                 <Calendar className="h-6 w-6 text-blue-600" />
               </div>
-              <h4 className="font-medium text-gray-900 mb-2">Smart Scheduling</h4>
+              <h4 className="font-medium text-gray-900 mb-2">Smart scheduling</h4>
               <p className="text-sm text-gray-600">Optimize posting times across all platforms</p>
             </div>
 
@@ -47,7 +44,7 @@ export function Campaigns() {
               <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                 <Target className="h-6 w-6 text-teal-600" />
               </div>
-              <h4 className="font-medium text-gray-900 mb-2">Multi-Channel</h4>
+              <h4 className="font-medium text-gray-900 mb-2">Multi‑channel</h4>
               <p className="text-sm text-gray-600">Coordinate campaigns across social, email, and ads</p>
             </div>
 
@@ -55,7 +52,7 @@ export function Campaigns() {
               <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                 <Users className="h-6 w-6 text-orange-600" />
               </div>
-              <h4 className="font-medium text-gray-900 mb-2">Team Collaboration</h4>
+              <h4 className="font-medium text-gray-900 mb-2">Team collaboration</h4>
               <p className="text-sm text-gray-600">Review and approve campaigns with your team</p>
             </div>
           </div>

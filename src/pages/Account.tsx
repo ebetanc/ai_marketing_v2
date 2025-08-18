@@ -42,16 +42,16 @@ export function Account() {
     const saveMetadata = async () => {
         if (!canSave) return
         if (!isSupabaseConfigured) {
-            push({ title: 'Demo mode', message: 'Supabase is not configured; changes are not persisted.', variant: 'warning' })
+            push({ title: 'Demo mode', message: 'Supabase is not configured; changes won’t persist.', variant: 'warning' })
             return
         }
         setMetaSaving(true)
         try {
             const { error } = await supabase.auth.updateUser({ data: { name } as any })
             if (error) throw error
-            push({ title: 'Profile updated', message: 'Your profile details were saved.', variant: 'success' })
+            push({ title: 'Profile updated', message: 'Profile saved.', variant: 'success' })
         } catch (e: any) {
-            push({ title: 'Update failed', message: e?.message || 'Could not update profile.', variant: 'error' })
+            push({ title: 'Update failed', message: e?.message || 'Couldn’t update profile.', variant: 'error' })
         } finally {
             setMetaSaving(false)
         }
@@ -61,24 +61,24 @@ export function Account() {
         if (!canSave) return
         const next = email.trim()
         if (!next) {
-            push({ title: 'Invalid email', message: 'Email cannot be empty.', variant: 'warning' })
+            push({ title: 'Invalid email', message: 'Email can’t be empty.', variant: 'warning' })
             return
         }
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(next)) {
-            push({ title: 'Invalid email', message: 'Please enter a valid email address.', variant: 'warning' })
+            push({ title: 'Invalid email', message: 'Enter a valid email address.', variant: 'warning' })
             return
         }
         if (!isSupabaseConfigured) {
-            push({ title: 'Demo mode', message: 'Supabase is not configured; email change not persisted.', variant: 'warning' })
+            push({ title: 'Demo mode', message: 'Supabase is not configured; email change won’t persist.', variant: 'warning' })
             return
         }
         setEmailSaving(true)
         try {
             const { error } = await supabase.auth.updateUser({ email: next })
             if (error) throw error
-            push({ title: 'Check your email', message: 'We sent a confirmation link to update your address.', variant: 'info' })
+            push({ title: 'Check your email', message: 'We sent a confirmation link.', variant: 'info' })
         } catch (e: any) {
-            push({ title: 'Email update failed', message: e?.message || 'Could not update email.', variant: 'error' })
+            push({ title: 'Email update failed', message: e?.message || 'Couldn’t update email.', variant: 'error' })
         } finally {
             setEmailSaving(false)
         }
@@ -87,15 +87,15 @@ export function Account() {
     const savePassword = async () => {
         if (!canSave) return
         if (newPassword.length < 8) {
-            push({ title: 'Weak password', message: 'Password must be at least 8 characters.', variant: 'warning' })
+            push({ title: 'Weak password', message: 'Use at least 8 characters.', variant: 'warning' })
             return
         }
         if (newPassword !== confirmPassword) {
-            push({ title: 'Mismatch', message: 'New password and confirmation do not match.', variant: 'warning' })
+            push({ title: 'Mismatch', message: 'Passwords don’t match.', variant: 'warning' })
             return
         }
         if (!isSupabaseConfigured) {
-            push({ title: 'Demo mode', message: 'Supabase is not configured; password change not persisted.', variant: 'warning' })
+            push({ title: 'Demo mode', message: 'Supabase is not configured; password change won’t persist.', variant: 'warning' })
             return
         }
         setPwdSaving(true)
@@ -104,7 +104,7 @@ export function Account() {
             if (currentPassword && user?.email) {
                 const { error: reauthError } = await supabase.auth.signInWithPassword({ email: user.email, password: currentPassword })
                 if (reauthError) {
-                    push({ title: 'Invalid current password', message: 'Please verify your current password.', variant: 'error' })
+                    push({ title: 'Invalid current password', message: 'Check your current password.', variant: 'error' })
                     setPwdSaving(false)
                     return
                 }
@@ -114,9 +114,9 @@ export function Account() {
             setCurrentPassword('')
             setNewPassword('')
             setConfirmPassword('')
-            push({ title: 'Password updated', message: 'Your password was changed successfully.', variant: 'success' })
+            push({ title: 'Password updated', message: 'Password changed.', variant: 'success' })
         } catch (e: any) {
-            push({ title: 'Password update failed', message: e?.message || 'Could not update password.', variant: 'error' })
+            push({ title: 'Password update failed', message: e?.message || 'Couldn’t update password.', variant: 'error' })
         } finally {
             setPwdSaving(false)
         }
@@ -126,12 +126,12 @@ export function Account() {
         <div className="space-y-6">
             <div>
                 <h1 className="text-3xl font-bold text-gray-900">Account</h1>
-                <p className="mt-2 text-gray-600">Manage your Supabase Auth profile, email, and password.</p>
+                <p className="mt-2 text-gray-600">Manage your profile, email, and password.</p>
             </div>
 
             {!isSupabaseConfigured && (
                 <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
-                    Supabase is not configured. This page runs in demo mode and will not persist changes.
+                    Supabase is not configured. Demo mode: changes won’t persist.
                 </div>
             )}
 
@@ -151,7 +151,7 @@ export function Account() {
                                 <Input label="Email verified" value={emailVerified ? 'Yes' : 'No'} disabled />
                             </div>
                             <div className="flex justify-end">
-                                <Button onClick={saveMetadata} loading={metaSaving} disabled={!canSave}>Save profile</Button>
+                                <Button onClick={saveMetadata} loading={metaSaving} disabled={!canSave}>Save</Button>
                             </div>
                         </div>
                     </CardContent>

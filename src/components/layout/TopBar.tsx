@@ -97,7 +97,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search... (Ctrl/Cmd + K)"
+              placeholder="Search (Cmd/Ctrl+K)"
               value={searchQuery}
               onChange={(e) => {
                 const v = e.target.value
@@ -151,7 +151,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
           </IconButton>
           {session && (
             <Button variant="outline" size="sm" onClick={handleSignOut}>
-              Sign out
+              Sign Out
             </Button>
           )}
         </div>

@@ -124,9 +124,7 @@ export function Dashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="mt-2 text-gray-600">
-          Welcome back! Here's what's happening with your marketing campaigns.
-        </p>
+  <p className="mt-2 text-gray-600">Your marketing at a glance.</p>
       </div>
 
       {/* View Company Modal */}
@@ -165,7 +163,7 @@ export function Dashboard() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Recent Activity</CardTitle>
+              <CardTitle>Recent activity</CardTitle>
               <div className="flex items-center gap-2">
                 <Badge variant="secondary">{recentActivity.length} items</Badge>
               </div>
@@ -216,7 +214,7 @@ export function Dashboard() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Active Companies</CardTitle>
+              <CardTitle>Active companies</CardTitle>
               <Badge variant="primary">{companies.length} companies</Badge>
             </div>
           </CardHeader>
@@ -226,9 +224,9 @@ export function Dashboard() {
                 <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                   <Users className="h-6 w-6 text-blue-600" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No companies yet</h3>
-                <p className="text-gray-500 mb-6">Create your first company to get started.</p>
-                <Button onClick={() => navigate('/companies')}>Add Company</Button>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No companies</h3>
+                <p className="text-gray-500 mb-6">Add a company to get started.</p>
+                <Button onClick={() => navigate('/companies')}>Add company</Button>
               </div>
             ) : (
               <div className="space-y-4">
@@ -280,7 +278,7 @@ export function Dashboard() {
       {/* Quick Actions */}
       <Card>
         <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
+          <CardTitle>Quick actions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -289,8 +287,8 @@ export function Dashboard() {
               className="p-4 border-2 border-dashed border-gray-200 rounded-xl hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 group"
             >
               <FileText className="h-8 w-8 text-gray-400 group-hover:text-blue-600 mx-auto mb-3" />
-              <h3 className="font-medium text-gray-900 group-hover:text-blue-900">Generate Content</h3>
-              <p className="text-sm text-gray-500 mt-1 hidden sm:block">Create new blog posts, social content, and more</p>
+              <h3 className="font-medium text-gray-900 group-hover:text-blue-900">Generate content</h3>
+              <p className="text-sm text-gray-500 mt-1 hidden sm:block">Create posts, blogs, and more.</p>
             </button>
 
             <button
@@ -298,8 +296,8 @@ export function Dashboard() {
               className="p-4 border-2 border-dashed border-gray-200 rounded-xl hover:border-teal-300 hover:bg-teal-50 transition-all duration-200 group"
             >
               <Target className="h-8 w-8 text-gray-400 group-hover:text-teal-600 mx-auto mb-3" />
-              <h3 className="font-medium text-gray-900 group-hover:text-teal-900">New Campaign</h3>
-              <p className="text-sm text-gray-500 mt-1 hidden sm:block">Build multi-channel marketing campaigns</p>
+              <h3 className="font-medium text-gray-900 group-hover:text-teal-900">New campaign</h3>
+              <p className="text-sm text-gray-500 mt-1 hidden sm:block">Plan a multi‑channel campaign.</p>
             </button>
 
             <button
@@ -307,8 +305,8 @@ export function Dashboard() {
               className="p-4 border-2 border-dashed border-gray-200 rounded-xl hover:border-orange-300 hover:bg-orange-50 transition-all duration-200 group"
             >
               <Users className="h-8 w-8 text-gray-400 group-hover:text-orange-600 mx-auto mb-3" />
-              <h3 className="font-medium text-gray-900 group-hover:text-orange-900">Add Company</h3>
-              <p className="text-sm text-gray-500 mt-1 hidden sm:block">Onboard a new client company</p>
+              <h3 className="font-medium text-gray-900 group-hover:text-orange-900">Add company</h3>
+              <p className="text-sm text-gray-500 mt-1 hidden sm:block">Onboard a client.</p>
             </button>
           </div>
         </CardContent>

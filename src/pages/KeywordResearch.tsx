@@ -10,14 +10,12 @@ export function KeywordResearch() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Keyword Research Agent</h1>
-          <p className="mt-2 text-gray-600">
-            Turn one keyword into 5 smart, semantically distinct blog post ideas — researched, mapped and ready to brief.
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900">Keyword research</h1>
+          <p className="mt-2 text-gray-600">Turn a keyword into 5 distinct blog ideas.</p>
         </div>
         <Button>
           <Search className="h-4 w-4" />
-          Start Research
+          Start research
         </Button>
       </div>
 
@@ -27,7 +25,7 @@ export function KeywordResearch() {
           <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <Search className="h-8 w-8 text-white" />
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-3">AI-Powered Keyword Research Agent</h3>
+          <h3 className="text-xl font-semibold text-gray-900 mb-3">Keyword research</h3>
           <p className="text-gray-600 max-w-md mx-auto mb-8">
             Transform a single keyword into a comprehensive content strategy with 5 unique,
             semantically distinct blog post ideas that are fully researched and ready to execute.
@@ -60,7 +58,7 @@ export function KeywordResearch() {
           </div>
 
           <div className="mt-8 bg-gray-50 rounded-xl p-6 max-w-lg mx-auto">
-            <h4 className="font-semibold text-gray-900 mb-3">What You'll Get:</h4>
+            <h4 className="font-semibold text-gray-900 mb-3">What you get</h4>
             <div className="space-y-2 text-sm text-gray-700">
               <div className="flex items-center">
                 <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>

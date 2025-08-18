@@ -324,10 +324,8 @@ export function Strategies() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Content Strategies</h1>
-            <p className="mt-2 text-gray-600">
-              AI-generated content strategies organized by company.
-            </p>
+            <h1 className="text-3xl font-bold text-gray-900">Strategies</h1>
+            <p className="mt-2 text-gray-600">AI strategies by company.</p>
           </div>
         </div>
         <Card>
@@ -358,10 +356,8 @@ export function Strategies() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Content Strategies</h1>
-            <p className="mt-2 text-gray-600">
-              AI-generated content strategies organized by company.
-            </p>
+            <h1 className="text-3xl font-bold text-gray-900">Strategies</h1>
+            <p className="mt-2 text-gray-600">AI strategies by company.</p>
           </div>
           <Button onClick={fetchStrategies} loading={loading} disabled={loading}>
             <RefreshCw className="h-4 w-4" />
@@ -386,10 +382,8 @@ export function Strategies() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Content Strategies</h1>
-          <p className="mt-2 text-gray-600">
-            AI-generated content strategies organized by company.
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900">Strategies</h1>
+          <p className="mt-2 text-gray-600">AI strategies by company.</p>
         </div>
         <div className="flex space-x-3">
           <Button onClick={fetchStrategies} variant="outline" loading={loading} disabled={loading}>
@@ -398,7 +392,7 @@ export function Strategies() {
           </Button>
           <Button onClick={handleGenerateStrategy}>
             <Plus className="h-4 w-4" />
-            Generate Strategy
+            Generate strategy
           </Button>
         </div>
       </div>
@@ -462,7 +456,7 @@ export function Strategies() {
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <Target className="h-5 w-5 mr-2 text-purple-600" />
-                  Content Angles ({countAngles(viewModal.strategy)})
+                  Content angles ({countAngles(viewModal.strategy)})
                 </h3>
                 <div className="space-y-4">
                   {getAnglesFromStrategy(viewModal.strategy).map((angle, index) => (
@@ -480,7 +474,7 @@ export function Strategies() {
                             <h4 className="text-xl font-bold text-gray-900 group-hover:text-blue-700 transition-colors">
                               {angle.header}
                             </h4>
-                            <p className="text-sm text-gray-500">Click to expand details</p>
+                            <p className="text-sm text-gray-500">Click to expand</p>
                           </div>
                         </div>
                         <Button
@@ -493,7 +487,7 @@ export function Strategies() {
                           className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                         >
                           <Lightbulb className="h-4 w-4" />
-                          {generatingIdeas === angle.number ? 'Generating...' : 'Generate Ideas'}
+                          {generatingIdeas === angle.number ? 'Generating…' : 'Generate ideas'}
                         </Button>
                       </div>
 
@@ -570,9 +564,7 @@ export function Strategies() {
                 </Badge>
               </div>
 
-              <p className="text-sm font-normal text-gray-500 mb-4">
-                Choose from available content strategies to generate targeted content ideas and campaigns.
-              </p>
+              <p className="text-sm font-normal text-gray-500 mb-4">Pick a strategy to generate ideas.</p>
 
               {/* Strategies List */}
               <ul className="space-y-3">
@@ -623,7 +615,7 @@ export function Strategies() {
                           className="opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <Eye className="h-4 w-4" />
-                          View Details
+                          View details
                         </Button>
                       </div>
                     </li>
@@ -635,7 +627,7 @@ export function Strategies() {
               <div className="mt-4 pt-4 border-t border-gray-100">
                 <button className="inline-flex items-center text-xs font-normal text-gray-500 hover:underline hover:text-gray-700 transition-colors">
                   <HelpCircle className="w-3 h-3 me-2" />
-                  How do content strategies work?
+                  How strategies work
                 </button>
               </div>
             </div>
@@ -648,9 +640,9 @@ export function Strategies() {
             <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
               <FileText className="h-8 w-8 text-white" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-3">No Strategies Found</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-3">No strategies</h3>
             <p className="text-gray-600 max-w-md mx-auto mb-8">
-              No content strategies have been generated yet. Create your first strategy to get started with AI-powered content planning.
+              No strategies yet. Create one to start planning.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto mb-8">
@@ -658,7 +650,7 @@ export function Strategies() {
                 <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                   <Target className="h-6 w-6 text-blue-600" />
                 </div>
-                <h4 className="font-medium text-gray-900 mb-2">Multi-Platform</h4>
+                <h4 className="font-medium text-gray-900 mb-2">Multi‑platform</h4>
                 <p className="text-sm text-gray-600">Strategies for all your marketing channels</p>
               </div>
 
@@ -666,7 +658,7 @@ export function Strategies() {
                 <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                   <Zap className="h-6 w-6 text-purple-600" />
                 </div>
-                <h4 className="font-medium text-gray-900 mb-2">AI-Powered</h4>
+                <h4 className="font-medium text-gray-900 mb-2">AI‑powered</h4>
                 <p className="text-sm text-gray-600">Generated using advanced AI algorithms</p>
               </div>
 
@@ -674,14 +666,14 @@ export function Strategies() {
                 <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                   <Building2 className="h-6 w-6 text-teal-600" />
                 </div>
-                <h4 className="font-medium text-gray-900 mb-2">Brand-Specific</h4>
+                <h4 className="font-medium text-gray-900 mb-2">Brand‑specific</h4>
                 <p className="text-sm text-gray-600">Tailored to your company's voice and goals</p>
               </div>
             </div>
 
             <Button onClick={handleGenerateStrategy} size="lg">
               <Plus className="h-4 w-4" />
-              Generate Your First Strategy
+              Generate your first strategy
             </Button>
           </CardContent>
         </Card>

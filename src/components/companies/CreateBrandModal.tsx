@@ -46,7 +46,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
 
   const handleAutofill = async () => {
     if (!formData.website) {
-      push({ title: 'Missing URL', message: 'Please enter a website URL', variant: 'warning' })
+      push({ title: 'Missing URL', message: 'Enter a website URL.', variant: 'warning' })
       return
     }
 
@@ -78,7 +78,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
       console.log('Raw autofill webhook response:', responseText)
 
       if (!responseText) {
-        throw new Error('Empty response from server')
+        throw new Error('Empty server response')
       }
 
       let data
@@ -88,7 +88,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
       } catch (parseError) {
         console.error('Failed to parse JSON response:', parseError)
         console.error('Raw response text:', responseText)
-        throw new Error('Invalid JSON response from server')
+        throw new Error('Invalid server response')
       }
 
       console.log('=== UPDATING FORM DATA ===')
@@ -104,11 +104,11 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
       }))
 
       console.log('Form data updated successfully')
-      push({ title: 'Analyzed', message: 'Fields updated from website', variant: 'success' })
+  push({ title: 'Analyzed', message: 'Updated from website.', variant: 'success' })
 
     } catch (error) {
       console.error('Autofill error:', error)
-      push({ title: 'Analysis failed', message: `${error instanceof Error ? error.message : 'Unknown error'}. Fill fields manually.`, variant: 'error' })
+  push({ title: 'Analysis failed', message: `${error instanceof Error ? error.message : 'Unknown error'}. Fill fields manually.`, variant: 'error' })
     } finally {
       setAutofillLoading(false)
     }
@@ -116,7 +116,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
 
   const handleNext = () => {
     if (currentStep === 1 && !formData.name) {
-      push({ title: 'Missing name', message: 'Please enter a brand name', variant: 'warning' })
+      push({ title: 'Missing name', message: 'Enter a brand name.', variant: 'warning' })
       return
     }
     setCurrentStep(2)
@@ -129,7 +129,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.name || !formData.targetAudience || !formData.brandTone || !formData.keyOffer) {
-      push({ title: 'Missing fields', message: 'Please complete all required fields', variant: 'warning' })
+      push({ title: 'Missing fields', message: 'Complete all required fields.', variant: 'warning' })
       return
     }
 
@@ -164,7 +164,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
       }
 
       console.log('Company created successfully:', data)
-      push({ title: 'Created', message: 'Company added', variant: 'success' })
+  push({ title: 'Created', message: 'Company added.', variant: 'success' })
 
       // Reset form and close modal
       resetForm()
@@ -173,7 +173,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
 
     } catch (error) {
       console.error('Error creating company:', error)
-      push({ title: 'Create failed', message: 'Please try again', variant: 'error' })
+      push({ title: 'Create failed', message: 'Try again.', variant: 'error' })
     } finally {
       setSubmitLoading(false)
     }
@@ -207,15 +207,15 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
   const titleId = 'create-brand-title'
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} labelledById={titleId}>
+  <Modal isOpen={isOpen} onClose={handleClose} labelledById={titleId}>
       <div className="w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center space-x-4">
-            <IconButton onClick={handleClose} aria-label="Back to dashboard" variant="ghost">
+      <IconButton onClick={handleClose} aria-label="Back" variant="ghost">
               <ArrowLeft className="h-5 w-5 text-gray-600" />
             </IconButton>
-            <div className="text-sm text-gray-500">Back to Dashboard</div>
+      <div className="text-sm text-gray-500">Back</div>
 
             {/* Step Indicators */}
             <div className="flex items-center space-x-3 ml-8">
@@ -236,7 +236,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
               )}>
                 2
               </div>
-              <div id={titleId} className="ml-3 text-gray-600 font-medium">Create Company</div>
+              <div id={titleId} className="ml-3 text-gray-600 font-medium">Add company</div>
             </div>
           </div>
 
@@ -247,16 +247,16 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
 
         {/* Content */}
         <div className="flex-1 min-h-0 p-8 overflow-y-auto">
-          {currentStep === 1 ? (
+      {currentStep === 1 ? (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Basic Information</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Basics</h2>
               </div>
 
               <div className="space-y-6">
                 <Input
-                  label="Company Name"
-                  placeholder="Enter brand name"
+                  label="Company name"
+                  placeholder="Brand name"
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   required
@@ -270,8 +270,8 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
                 />
 
                 <Textarea
-                  label="Additional Information (Optional)"
-                  placeholder="Any additional context about the brand..."
+                  label="Additional info (optional)"
+                  placeholder="Add context about the brand…"
                   value={formData.additionalInfo}
                   onChange={(e) => setFormData(prev => ({ ...prev, additionalInfo: e.target.value }))}
                   rows={4}
@@ -281,7 +281,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
 
               <div className="flex justify-end">
                 <Button onClick={handleNext} size="lg">
-                  Next Step
+                  Next
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </div>
@@ -290,11 +290,11 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Brand Details</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Brand details</h2>
                   <div className="flex items-center text-gray-600 mb-4">
                     <Globe className="h-4 w-4 mr-2" />
-                    <span className="text-sm">Let AI help you fill this out</span>
-                    <span className="text-xs text-gray-500 ml-2">We can analyze your website to suggest brand details</span>
+                    <span className="text-sm">Let AI help</span>
+                    <span className="text-xs text-gray-500 ml-2">We can analyze your site to suggest details</span>
                   </div>
                 </div>
                 <Button
@@ -311,8 +311,8 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <Textarea
-                  label="Target Audience"
-                  placeholder="Describe your target audience..."
+                  label="Target audience"
+                  placeholder="Describe your target audience…"
                   value={formData.targetAudience}
                   onChange={(e) => setFormData(prev => ({ ...prev, targetAudience: e.target.value }))}
                   rows={3}
@@ -320,8 +320,8 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
                 />
 
                 <Textarea
-                  label="Brand Tone"
-                  placeholder="Describe your brand's tone and personality..."
+                  label="Brand tone"
+                  placeholder="Describe your brand tone…"
                   value={formData.brandTone}
                   onChange={(e) => setFormData(prev => ({ ...prev, brandTone: e.target.value }))}
                   rows={3}
@@ -329,8 +329,8 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
                 />
 
                 <Textarea
-                  label="Key Offer"
-                  placeholder="What is your main value proposition?"
+                  label="Key offer"
+                  placeholder="What's your main value proposition?"
                   value={formData.keyOffer}
                   onChange={(e) => setFormData(prev => ({ ...prev, keyOffer: e.target.value }))}
                   rows={3}
@@ -338,8 +338,8 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
                 />
 
                 <Textarea
-                  label="Image Guidelines (Optional)"
-                  placeholder="Any specific guidelines for generated images..."
+                  label="Image guidelines (optional)"
+                  placeholder="Any guidelines for generated images…"
                   value={formData.imageGuidelines}
                   onChange={(e) => setFormData(prev => ({ ...prev, imageGuidelines: e.target.value }))}
                   rows={3}
@@ -353,7 +353,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
                     className="flex items-center"
                   >
                     <ArrowLeft className="h-4 w-4" />
-                    Previous
+                    Back
                   </Button>
 
                   <Button
@@ -362,7 +362,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
                     size="lg"
                     className="bg-gray-900 hover:bg-gray-800"
                   >
-                    Create Company
+                    Add company
                   </Button>
                 </div>
               </form>
@@ -379,7 +379,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
           onClose()
         }}
         title="Discard changes?"
-        message="You have unsaved changes. Do you want to discard them?"
+        message="Unsaved changes will be lost."
         confirmText="Discard"
         cancelText="Keep editing"
         variant="danger"
