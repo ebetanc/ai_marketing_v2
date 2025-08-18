@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 
 // Simple modal stack to ensure only the top-most modal handles ESC/overlay
 const modalStack: HTMLElement[] = []
@@ -131,12 +132,13 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
     const defaultClasses = `bg-white rounded-card shadow-2xl ${sizeClass}`
     const appliedClasses = className ? `${className} ${baseClasses}` : `${defaultClasses} ${baseClasses}`
 
-    return (
+    const modalUI = (
         <div
             ref={overlayRef}
             onMouseDown={onOverlayClick}
             role="presentation"
-            className={backdropClassName || 'fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50'}
+            // Use very high z-index to stay above app chrome; attach via portal to body so it always spans viewport
+            className={backdropClassName || 'fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-[9999]'}
         >
             <div
                 ref={dialogRef}
@@ -152,4 +154,6 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
             </div>
         </div>
     )
+
+    return createPortal(modalUI, document.body)
 }
