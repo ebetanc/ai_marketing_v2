@@ -104,11 +104,11 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
       }))
 
       console.log('Form data updated successfully')
-  push({ title: 'Analyzed', message: 'Updated from website.', variant: 'success' })
+      push({ title: 'Analyzed', message: 'Updated from website.', variant: 'success' })
 
     } catch (error) {
       console.error('Autofill error:', error)
-  push({ title: 'Analysis failed', message: `${error instanceof Error ? error.message : 'Unknown error'}. Fill fields manually.`, variant: 'error' })
+      push({ title: 'Analysis failed', message: `${error instanceof Error ? error.message : 'Unknown error'}. Fill fields manually.`, variant: 'error' })
     } finally {
       setAutofillLoading(false)
     }
@@ -164,7 +164,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
       }
 
       console.log('Company created successfully:', data)
-  push({ title: 'Created', message: 'Company added.', variant: 'success' })
+      push({ title: 'Created', message: 'Company added.', variant: 'success' })
 
       // Reset form and close modal
       resetForm()
@@ -207,15 +207,15 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
   const titleId = 'create-brand-title'
 
   return (
-  <Modal isOpen={isOpen} onClose={handleClose} labelledById={titleId}>
+    <Modal isOpen={isOpen} onClose={handleClose} labelledById={titleId}>
       <div className="w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center space-x-4">
-      <IconButton onClick={handleClose} aria-label="Back" variant="ghost">
+            <IconButton onClick={handleClose} aria-label="Back" variant="ghost">
               <ArrowLeft className="h-5 w-5 text-gray-600" />
             </IconButton>
-      <div className="text-sm text-gray-500">Back</div>
+            <div className="text-sm text-gray-500">Back</div>
 
             {/* Step Indicators */}
             <div className="flex items-center space-x-3 ml-8">
@@ -247,10 +247,10 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
 
         {/* Content */}
         <div className="flex-1 min-h-0 p-8 overflow-y-auto">
-      {currentStep === 1 ? (
+          {currentStep === 1 ? (
             <div className="space-y-6">
               <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Basics</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Basics</h2>
               </div>
 
               <div className="space-y-6">

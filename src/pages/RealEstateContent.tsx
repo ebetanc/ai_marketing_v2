@@ -66,7 +66,7 @@ export function RealEstateContent() {
       setDeleteDialog({ isOpen: false, content: null, loading: false })
     } catch (error) {
       console.error('Error deleting real estate content:', error)
-  push({ title: 'Delete failed', message: 'Try again.', variant: 'error' })
+      push({ title: 'Delete failed', message: 'Try again.', variant: 'error' })
       setDeleteDialog(prev => ({ ...prev, loading: false }))
     }
   }
@@ -422,9 +422,9 @@ export function RealEstateContent() {
         isOpen={deleteDialog.isOpen && !!deleteDialog.content}
         onClose={handleDeleteCancel}
         onConfirm={handleDeleteConfirm}
-  title="Delete content"
-  message={`Delete Real estate content #${deleteDialog.content?.id}? This can’t be undone.`}
-  confirmText={deleteDialog.loading ? 'Deleting…' : 'Delete'}
+        title="Delete content"
+        message={`Delete Real estate content #${deleteDialog.content?.id}? This can’t be undone.`}
+        confirmText={deleteDialog.loading ? 'Deleting…' : 'Delete'}
         cancelText="Cancel"
         variant="danger"
         loading={deleteDialog.loading}

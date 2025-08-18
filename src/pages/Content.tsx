@@ -490,9 +490,9 @@ export function Content() {
     const url = `${siteUrl}/content?${params.toString()}`
     try {
       await navigator.clipboard.writeText(url)
-  push({ message: 'Link copied', variant: 'success' })
+      push({ message: 'Link copied', variant: 'success' })
     } catch (_e) {
-  push({ message: 'Copy failed. Try again.', variant: 'error' })
+      push({ message: 'Copy failed. Try again.', variant: 'error' })
     }
   }
 

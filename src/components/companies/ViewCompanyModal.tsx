@@ -114,7 +114,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
               )}
 
               <div>
-                  <p className="text-sm font-medium text-gray-900">Created</p>
+                <p className="text-sm font-medium text-gray-900">Created</p>
                 <p className="text-gray-700 flex items-center">
                   <Calendar className="h-4 w-4 mr-1 text-gray-400" />
                   {formatDate(company.created_at)}
