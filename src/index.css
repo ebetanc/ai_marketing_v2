@@ -7,6 +7,30 @@
   --app-header-h: 76px;
 }
 
+/* Apply Geist as the default font stacks */
+@layer base {
+  :root {
+    --font-sans: "Geist Sans";
+    --font-mono: "Geist Mono";
+  }
+  html {
+    font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system,
+      "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans",
+      "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+      "Noto Color Emoji";
+  }
+  body {
+    font-family: inherit;
+  }
+  code,
+  pre,
+  kbd,
+  samp {
+    font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco,
+      Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+}
+
 /* Respect reduced motion: disable non-essential animations/transitions */
 @media (prefers-reduced-motion: reduce) {
   * {

@@ -73,7 +73,17 @@ export default function ResetPassword() {
                         Invalid or expired reset link. Request a new one.
                     </div>
                 )}
-                <form onSubmit={onSubmit} className="space-y-4" aria-disabled={!hasRecoverySession}>
+                <form
+                    onSubmit={onSubmit}
+                    className="space-y-4"
+                    aria-disabled={!hasRecoverySession}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            const blocked = !hasRecoverySession || password.trim().length < minPasswordLength || loading
+                            if (blocked) e.preventDefault()
+                        }
+                    }}
+                >
                     <Input
                         type="password"
                         label="New password"
@@ -85,7 +95,14 @@ export default function ResetPassword() {
                         disabled={!hasRecoverySession}
                     />
                     {/* Confirm password removed per request */}
-                    <Button type="submit" loading={loading} className="w-full" disabled={!hasRecoverySession}>Update password</Button>
+                    <Button
+                        type="submit"
+                        loading={loading}
+                        className="w-full"
+                        disabled={!hasRecoverySession || password.trim().length < minPasswordLength}
+                    >
+                        Update password
+                    </Button>
                 </form>
                 {message && <div className="text-sm text-green-600">{message}</div>}
                 {error && <div className="text-sm text-red-600">{error}</div>}

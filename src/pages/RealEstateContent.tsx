@@ -120,12 +120,14 @@ export function RealEstateContent() {
       push({ title: 'Missing URL', message: 'Please enter a URL', variant: 'warning' })
       return
     }
-    console.log('Sending URL to n8n webhook:', url)
+    const trimmed = url.trim()
+    const normalizedUrl = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
+    console.log('Sending URL to n8n webhook:', normalizedUrl)
     const { data: sessionData } = await supabase.auth.getSession()
     const userId = sessionData.session?.user.id
     const response = await postToN8n('content_saas', {
       operation: 'real_estate_ingest',
-      url: url.trim(),
+      url: normalizedUrl,
       user_id: userId,
       meta: { user_id: userId, source: 'app', ts: new Date().toISOString() },
     }, { path: '1776dcc3-2b3e-4cfa-abfd-0ad9cabaf6ea' })

@@ -4,6 +4,10 @@ import { cn } from '../../lib/utils'
 
 // Simple modal stack to ensure only the top-most modal handles ESC/overlay
 const modalStack: HTMLElement[] = []
+// Global management for background inertness and scroll lock across multiple modals
+let hiddenRoots: HTMLElement[] | null = null
+let scrollLockCount = 0
+let originalBodyOverflow: string | null = null
 
 type ModalProps = {
     isOpen: boolean
@@ -24,19 +28,22 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
     const [overlayEl, setOverlayEl] = useState<HTMLDivElement | null>(null)
     const [dialogEl, setDialogEl] = useState<HTMLDivElement | null>(null)
     const previouslyFocused = useRef<Element | null>(null)
-    const appRootsRef = useRef<HTMLElement[]>([])
     // Keep latest onClose without retriggering effects
     const onCloseRef = useRef(onClose)
     useEffect(() => {
         onCloseRef.current = onClose
     }, [onClose])
     useEffect(() => {
-        if (!isOpen) return
+        // Wait until dialog and overlay refs exist before applying modal behaviors
+        if (!isOpen || !dialogEl || !overlayEl) return
         previouslyFocused.current = document.activeElement
 
-        // Lock body scroll
-        const originalOverflow = document.body.style.overflow
-        document.body.style.overflow = 'hidden'
+        // Lock body scroll with global reference count
+        if (scrollLockCount === 0) {
+            originalBodyOverflow = document.body.style.overflow
+            document.body.style.overflow = 'hidden'
+        }
+        scrollLockCount += 1
 
         // Register in modal stack using stable element references
         const currentDialog = dialogEl || undefined
@@ -44,17 +51,20 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
         if (currentDialog) {
             modalStack.push(currentDialog)
         }
+        const isFirstModal = modalStack.length === 1
 
         // Hide background from assistive tech and disable interaction (where supported)
         // Consider all immediate children of body except the overlay/dialog we portal into
-        const bodyChildren = Array.from(document.body.children) as HTMLElement[]
-        const appRoots = bodyChildren.filter((el) => el !== currentOverlay)
-        appRootsRef.current = appRoots
-        appRoots.forEach((el) => {
-            el.setAttribute('aria-hidden', 'true')
-            // inert is not supported in all browsers; use where available to disable focus/interaction
-            try { (el as any).inert = true } catch { /* no-op */ }
-        })
+        if (isFirstModal) {
+            const bodyChildren = Array.from(document.body.children) as HTMLElement[]
+            const appRoots = bodyChildren.filter((el) => el !== currentOverlay)
+            hiddenRoots = appRoots
+            appRoots.forEach((el) => {
+                el.setAttribute('aria-hidden', 'true')
+                // inert is not supported in all browsers; use where available to disable focus/interaction
+                try { (el as any).inert = true } catch { /* no-op */ }
+            })
+        }
 
         // Focus management: prefer form fields and don't steal focus if user already focused inside
         const isVisible = (el: HTMLElement) => {
@@ -123,18 +133,26 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
         return () => {
             window.clearTimeout(timeoutId)
             document.removeEventListener('keydown', handleKeyDown, true)
-            document.body.style.overflow = originalOverflow
+            // Unlock body scroll when the last modal closes
+            scrollLockCount = Math.max(0, scrollLockCount - 1)
+            if (scrollLockCount === 0) {
+                document.body.style.overflow = originalBodyOverflow ?? ''
+                originalBodyOverflow = null
+            }
             // Unregister from modal stack
             const dialogNode = currentDialog
             if (dialogNode) {
                 const idx = modalStack.lastIndexOf(dialogNode)
                 if (idx !== -1) modalStack.splice(idx, 1)
             }
-            // Restore background interactivity and a11y exposure
-            appRootsRef.current.forEach((el) => {
-                el.removeAttribute('aria-hidden')
-                try { (el as any).inert = false } catch { /* no-op */ }
-            })
+            // Restore background interactivity and a11y exposure only when last modal closes
+            if (modalStack.length === 0 && hiddenRoots) {
+                hiddenRoots.forEach((el) => {
+                    el.removeAttribute('aria-hidden')
+                    try { (el as any).inert = false } catch { /* no-op */ }
+                })
+                hiddenRoots = null
+            }
             // Restore focus
             const prev = previouslyFocused.current as HTMLElement | null
             prev?.focus?.()

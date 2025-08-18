@@ -40,8 +40,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
       .string()
       .trim()
       .optional()
-      .transform((v) => (v && v.length > 0 ? v : undefined))
-      .pipe(z.string().url('Enter a valid URL (e.g. https://example.com)').optional()),
+      .transform((v) => (v && v.length > 0 ? v : undefined)),
     additionalInfo: z.string().optional(),
     targetAudience: z.string().trim().min(1, 'Target audience is required'),
     brandTone: z.string().trim().min(1, 'Brand tone is required'),
@@ -177,25 +176,14 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
 
   const handleNext = () => {
     if (currentStep === 1) {
-      // Validate just the fields from step 1
-      const partial = {
-        name: formData.name,
-        website: formData.website,
-        additionalInfo: formData.additionalInfo,
-        targetAudience: 'placeholder',
-        brandTone: 'placeholder',
-        keyOffer: 'placeholder',
-        imageGuidelines: ''
-      }
-      const result = BrandSchema.safeParse(partial)
+      // Step 1 only requires a name to proceed; defer strict URL validation to final submit
+      const nameOk = formData.name.trim().length > 0
       const e: typeof errors = {}
-      if (!result.success) {
-        const issues = result.error.flatten().fieldErrors
-        if (issues.name?.[0]) e.name = issues.name[0]
-        if (issues.website?.[0]) e.website = issues.website[0]
+      if (!nameOk) {
+        e.name = 'Company name is required'
       }
       setErrors(e)
-      if (Object.keys(e).length > 0) return
+      if (!nameOk) return
       setCurrentStep(2)
     }
   }
@@ -218,6 +206,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
       }
       setErrors(eState)
       e.preventDefault()
+      push({ title: 'Fix errors', message: 'Complete the required fields before submitting.', variant: 'warning' })
       return
     }
     void runSubmit(e)
@@ -249,6 +238,18 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
   if (!isOpen) return null
 
   const titleId = 'create-brand-title'
+  const missingMap: Record<string, string> = {
+    name: 'Company name',
+    targetAudience: 'Target audience',
+    brandTone: 'Brand tone',
+    keyOffer: 'Key offer',
+  }
+  const missingFields = Object.entries({
+    name: !formData.name.trim(),
+    targetAudience: !formData.targetAudience.trim(),
+    brandTone: !formData.brandTone.trim(),
+    keyOffer: !formData.keyOffer.trim(),
+  }).filter(([, v]) => v).map(([k]) => missingMap[k])
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} labelledById={titleId}>
@@ -286,6 +287,13 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   error={errors.name}
                   required
+                  data-autofocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      handleNext()
+                    }
+                  }}
                 />
 
                 <Input
@@ -293,6 +301,12 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
                   placeholder="https://example.com"
                   value={formData.website}
                   onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      handleNext()
+                    }
+                  }}
                 />
 
                 <Textarea
@@ -305,11 +319,14 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
 
               </div>
 
-              <div className="flex justify-end">
-                <Button onClick={handleNext} size="lg">
+              <div className="flex flex-col items-end">
+                <Button onClick={handleNext} size="lg" disabled={!formData.name.trim()} aria-describedby={!formData.name.trim() ? 'step1-next-help' : undefined}>
                   Next
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
+                {!formData.name.trim() && (
+                  <p id="step1-next-help" className="text-xs text-gray-500 mt-2">Enter a company name to continue.</p>
+                )}
               </div>
             </div>
           ) : (
@@ -336,7 +353,20 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
                 </Button>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form
+                onSubmit={handleSubmit}
+                className="space-y-6"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const blocked = submitLoading ||
+                      !formData.name.trim() ||
+                      !formData.targetAudience.trim() ||
+                      !formData.brandTone.trim() ||
+                      !formData.keyOffer.trim()
+                    if (blocked) e.preventDefault()
+                  }
+                }}
+              >
                 <Textarea
                   label="Target audience"
                   placeholder="Describe your target audience…"
@@ -375,7 +405,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
                   rows={3}
                 />
 
-                <div className="flex justify-between pt-4">
+                <div className="flex justify-between items-start pt-4">
                   <Button
                     type="button"
                     variant="ghost"
@@ -391,10 +421,22 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
                     loading={submitLoading}
                     size="lg"
                     className="bg-gray-900 hover:bg-gray-800"
+                    disabled={
+                      !formData.name.trim() ||
+                      !formData.targetAudience.trim() ||
+                      !formData.brandTone.trim() ||
+                      !formData.keyOffer.trim()
+                    }
+                    aria-describedby={missingFields.length > 0 ? 'final-submit-help' : undefined}
                   >
                     Add company
                   </Button>
                 </div>
+                {missingFields.length > 0 && (
+                  <p id="final-submit-help" className="text-xs text-gray-600 text-right mt-2">
+                    Complete required fields: {missingFields.join(', ')}.
+                  </p>
+                )}
               </form>
             </div>
           )}

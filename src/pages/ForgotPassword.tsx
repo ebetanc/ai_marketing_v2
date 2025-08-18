@@ -41,7 +41,15 @@ export default function ForgotPassword() {
                     <h1 className="text-2xl font-semibold text-gray-900">Forgot password</h1>
                     <p className="text-gray-500 text-sm mt-1">We’ll email a reset link.</p>
                 </div>
-                <form onSubmit={onSubmit} className="space-y-4">
+                <form
+                    onSubmit={onSubmit}
+                    className="space-y-4"
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' && (!email.trim() || loading)) {
+                            e.preventDefault()
+                        }
+                    }}
+                >
                     <Input
                         type="email"
                         label="Email"
@@ -52,7 +60,9 @@ export default function ForgotPassword() {
                         autoComplete="email"
                         required
                     />
-                    <Button type="submit" loading={loading} className="w-full">Send link</Button>
+                    <Button type="submit" loading={loading} className="w-full" disabled={!email.trim()}>
+                        Send link
+                    </Button>
                 </form>
                 {message && <div className="text-sm text-green-600">{message}</div>}
                 {error && <div className="text-sm text-red-600">{error.message || 'Couldn’t send reset email.'}</div>}

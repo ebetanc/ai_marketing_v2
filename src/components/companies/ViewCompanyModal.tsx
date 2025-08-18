@@ -89,7 +89,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
                 <div>
                   <p className="text-sm font-medium text-gray-900">Website</p>
                   <a
-                    href={company.website}
+                    href={/^https?:\/\//i.test(company.website) ? company.website : `https://${company.website}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={`Open ${company.website} in a new tab`}

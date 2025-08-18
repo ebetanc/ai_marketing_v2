@@ -202,7 +202,7 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
             </IconButton>
             <div>
               <ModalTitle id="generate-strategy-title" className="text-base">Generate content strategy</ModalTitle>
-              <div className="text-xs text-gray-500">Back</div>
+              <div className="text-xs text-gray-500">{selectedCompany ? 'Back' : 'Close'}</div>
             </div>
           </div>
           <IconButton onClick={handleClose} aria-label="Close dialog" variant="ghost">

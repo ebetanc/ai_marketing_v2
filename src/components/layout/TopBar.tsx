@@ -93,7 +93,8 @@ export function TopBar({ onMenuClick, menuButtonProps, ...divProps }: TopBarProp
           <form role="search" className="relative max-w-md flex-1" onSubmit={(e) => {
             e.preventDefault()
             const q = searchQuery.trim()
-            navigate(q ? `/content?q=${encodeURIComponent(q)}` : '/content')
+            if (!q) return // don’t submit empty queries
+            navigate(`/content?q=${encodeURIComponent(q)}`)
           }}>
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
@@ -116,8 +117,9 @@ export function TopBar({ onMenuClick, menuButtonProps, ...divProps }: TopBarProp
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   const q = searchQuery.trim()
+                  if (!q) { e.preventDefault(); return }
                   if (debounceRef.current) window.clearTimeout(debounceRef.current)
-                  navigate(q ? `/content?q=${encodeURIComponent(q)}` : '/content')
+                  navigate(`/content?q=${encodeURIComponent(q)}`)
                 }
               }}
               aria-label="Search"
