@@ -6,11 +6,13 @@ import { useToast } from '../components/ui/Toast'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { useNavigate } from 'react-router-dom'
 
 export function Account() {
     useDocumentTitle('Account — AI Marketing')
     const { session } = useAuth()
     const { push } = useToast()
+    const navigate = useNavigate()
 
     const user = session?.user
 
@@ -122,6 +124,16 @@ export function Account() {
         }
     }
 
+    const handleSignOut = async () => {
+        try {
+            await supabase.auth.signOut()
+        } catch (_e) {
+            // ignore and navigate regardless
+        } finally {
+            navigate('/login', { replace: true })
+        }
+    }
+
     return (
         <div className="space-y-6">
             <div>
@@ -186,6 +198,21 @@ export function Account() {
                             </div>
                             <div className="flex justify-end">
                                 <Button onClick={savePassword} loading={pwdSaving} disabled={!canSave}>Update password</Button>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Sign out */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Sign out</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <p className="text-gray-600 text-sm">Sign out of your account on this device.</p>
+                            <div className="flex justify-end">
+                                <Button variant="outline" onClick={handleSignOut} disabled={!session}>Sign Out</Button>
                             </div>
                         </div>
                     </CardContent>

@@ -1,9 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Button } from '../ui/Button'
 import { Bell, Menu, Search, X } from 'lucide-react'
 import { IconButton } from '../ui/IconButton'
-import { supabase } from '../../lib/supabase'
-import { useAuth } from '../../lib/auth'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 type TopBarProps = {
@@ -13,21 +10,10 @@ type TopBarProps = {
 export function TopBar({ onMenuClick }: TopBarProps) {
   const [searchQuery, setSearchQuery] = useState('')
   // const { companies } = useCompanies() // reserved for future search scoping
-  const { session } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const searchRef = useRef<HTMLInputElement | null>(null)
   const notificationsCount = 0 // Hide when zero; wire real data when available
-
-  const handleSignOut = async () => {
-    try {
-      await supabase.auth.signOut()
-    } catch (_e) {
-      // no-op: navigate away regardless
-    } finally {
-      navigate('/login', { replace: true })
-    }
-  }
 
   // Keyboard shortcut to focus search (Ctrl/Cmd + K)
   useEffect(() => {
@@ -149,11 +135,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
               </span>
             )}
           </IconButton>
-          {session && (
-            <Button variant="outline" size="sm" onClick={handleSignOut}>
-              Sign Out
-            </Button>
-          )}
+          {/* Sign Out button moved to Account page */}
         </div>
       </div>
     </header>
