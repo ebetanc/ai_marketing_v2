@@ -15,6 +15,7 @@ type TopBarProps = React.HTMLAttributes<HTMLDivElement> & {
 
 export function TopBar({ onMenuClick, menuButtonProps, ...divProps }: TopBarProps) {
   const [searchQuery, setSearchQuery] = useState('')
+  const debounceRef = useRef<number | null>(null)
   // const { companies } = useCompanies() // reserved for future search scoping
   const navigate = useNavigate()
   const location = useLocation()
@@ -72,6 +73,9 @@ export function TopBar({ onMenuClick, menuButtonProps, ...divProps }: TopBarProp
     } else {
       setSearchQuery('')
     }
+    return () => {
+      if (debounceRef.current) window.clearTimeout(debounceRef.current)
+    }
   }, [location.pathname, location.search])
 
   return (
@@ -86,25 +90,33 @@ export function TopBar({ onMenuClick, menuButtonProps, ...divProps }: TopBarProp
           >
             <Menu className="h-5 w-5" />
           </IconButton>
-          <div className="relative max-w-md flex-1">
+          <form role="search" className="relative max-w-md flex-1" onSubmit={(e) => {
+            e.preventDefault()
+            const q = searchQuery.trim()
+            navigate(q ? `/content?q=${encodeURIComponent(q)}` : '/content')
+          }}>
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
-              type="text"
+              type="search"
               placeholder="Search (Cmd/Ctrl+K)"
               value={searchQuery}
               onChange={(e) => {
                 const v = e.target.value
                 setSearchQuery(v)
-                // Live-sync the Content page search via the URL when on /content
+                // Debounced URL sync while typing only when on /content
                 if (location.pathname.startsWith('/content')) {
-                  const params = new URLSearchParams(location.search)
-                  if (v) params.set('q', v); else params.delete('q')
-                  navigate({ search: params.toString() }, { replace: true })
+                  if (debounceRef.current) window.clearTimeout(debounceRef.current)
+                  debounceRef.current = window.setTimeout(() => {
+                    const params = new URLSearchParams(location.search)
+                    if (v) params.set('q', v); else params.delete('q')
+                    navigate({ search: params.toString() }, { replace: true })
+                  }, 250)
                 }
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   const q = searchQuery.trim()
+                  if (debounceRef.current) window.clearTimeout(debounceRef.current)
                   navigate(q ? `/content?q=${encodeURIComponent(q)}` : '/content')
                 }
               }}
@@ -132,7 +144,7 @@ export function TopBar({ onMenuClick, menuButtonProps, ...divProps }: TopBarProp
                 <X className="h-4 w-4" />
               </button>
             )}
-          </div>
+          </form>
         </div>
 
         <div className="flex items-center space-x-2 sm:space-x-3">

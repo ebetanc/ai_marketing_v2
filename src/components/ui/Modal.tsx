@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { cn } from '../../lib/utils'
 
 // Simple modal stack to ensure only the top-most modal handles ESC/overlay
 const modalStack: HTMLElement[] = []
@@ -20,8 +21,6 @@ type ModalProps = {
 
 // Accessible modal with focus trap, ESC/overlay close, and body scroll lock
 export function Modal({ isOpen, onClose, children, labelledById, describedById, role = 'dialog', className, backdropClassName, id, dismissible = true, size = 'md' }: ModalProps) {
-    const overlayRef = useRef<HTMLDivElement | null>(null)
-    const dialogRef = useRef<HTMLDivElement | null>(null)
     const [overlayEl, setOverlayEl] = useState<HTMLDivElement | null>(null)
     const [dialogEl, setDialogEl] = useState<HTMLDivElement | null>(null)
     const previouslyFocused = useRef<Element | null>(null)
@@ -163,14 +162,14 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
 
     const modalUI = (
         <div
-            ref={(el) => { overlayRef.current = el; setOverlayEl(el) }}
+            ref={(el) => { setOverlayEl(el) }}
             onMouseDown={onOverlayClick}
             role="presentation"
             // Use very high z-index to stay above app chrome; attach via portal to body so it always spans viewport
             className={backdropClassName || 'fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-[9999]'}
         >
             <div
-                ref={(el) => { dialogRef.current = el; setDialogEl(el) }}
+                ref={(el) => { setDialogEl(el) }}
                 role={role}
                 aria-modal="true"
                 aria-labelledby={labelledById}
@@ -185,4 +184,41 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
     )
 
     return createPortal(modalUI, document.body)
+}
+
+// Modal subcomponents for consistent layout and semantics
+type ModalSectionProps = React.HTMLAttributes<HTMLDivElement>
+
+export function ModalHeader({ className, ...props }: ModalSectionProps) {
+    return (
+        <div
+            className={cn('flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0', className)}
+            {...props}
+        />
+    )
+}
+
+export function ModalBody({ className, ...props }: ModalSectionProps) {
+    return (
+        <div
+            className={cn('flex-1 min-h-0 overflow-y-auto p-6', className)}
+            {...props}
+        />
+    )
+}
+
+export function ModalFooter({ className, ...props }: ModalSectionProps) {
+    return (
+        <div
+            className={cn('flex items-center justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0', className)}
+            {...props}
+        />
+    )
+}
+
+type ModalTitleProps = React.HTMLAttributes<HTMLHeadingElement> & { id?: string }
+export function ModalTitle({ className, ...props }: ModalTitleProps) {
+    return (
+        <h2 className={cn('text-xl font-bold text-gray-900', className)} {...props} />
+    )
 }

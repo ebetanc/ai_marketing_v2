@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card'
 import { X, Building2, Globe, Target, Zap, Calendar, User, Trash2 } from 'lucide-react'
 import { formatDate } from '../../lib/utils'
 import { supabase } from '../../lib/supabase'
-import { Modal } from '../ui/Modal'
+import { Modal, ModalBody, ModalHeader, ModalTitle } from '../ui/Modal'
 import { IconButton } from '../ui/IconButton'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { useToast } from '../ui/Toast'
@@ -49,14 +49,13 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
   return (
     <Modal isOpen={isOpen} onClose={onClose} labelledById={titleId} size="md">
       <div className="w-full max-h-[90vh] flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
+        <ModalHeader>
           <div className="flex items-center space-x-3">
             <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center">
               <Building2 className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h2 id={titleId} className="text-xl font-bold text-gray-900">{company.name}</h2>
+              <ModalTitle id={titleId}>{company.name}</ModalTitle>
               <p className="text-sm text-gray-500">Company details</p>
             </div>
           </div>
@@ -68,10 +67,10 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
           >
             <X className="h-5 w-5 text-gray-400" />
           </IconButton>
-        </div>
+        </ModalHeader>
 
         {/* Content */}
-        <div className="flex-1 p-6 overflow-y-auto space-y-6 min-h-0">
+        <ModalBody className="space-y-6">
           {/* Basic Information */}
           <Card>
             <CardHeader>
@@ -93,6 +92,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
                     href={company.website}
                     target="_blank"
                     rel="noopener noreferrer"
+                    aria-label={`Open ${company.website} in a new tab`}
                     className="text-brand-600 hover:text-brand-800 flex items-center"
                   >
                     <Globe className="h-4 w-4 mr-1" />
@@ -288,7 +288,7 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
               </CardContent>
             </Card>
           )}
-        </div>
+        </ModalBody>
 
         {/* Footer */}
         <div className="flex justify-end p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">

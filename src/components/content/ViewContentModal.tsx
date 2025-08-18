@@ -4,7 +4,7 @@ import { Badge } from '../ui/Badge'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card'
 import { X, FileText, Calendar, User, Target, Zap, ChevronDown, ChevronUp, Eye, Clipboard, Share2 } from 'lucide-react'
 import { formatDate } from '../../lib/utils'
-import { Modal } from '../ui/Modal'
+import { Modal, ModalHeader, ModalBody, ModalFooter, ModalTitle } from '../ui/Modal'
 import { IconButton } from '../ui/IconButton'
 import { useToast } from '../ui/Toast'
 import type { Tables } from '../../lib/supabase'
@@ -362,194 +362,188 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} labelledById={titleId} size="lg">
-      <div className="w-full max-h-[90vh] flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-brand-500 to-purple-500 rounded-xl flex items-center justify-center">
-              <FileText className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h2 id={titleId} className="text-xl font-bold text-gray-900">{content.title}</h2>
-              <p className="text-sm text-gray-500">
-                {content.brand_name || 'Unknown brand'} • {content.type?.replace('_', ' ') || 'Content'}
-              </p>
-            </div>
+      <ModalHeader>
+        <div className="flex items-center space-x-3">
+          <div className="w-12 h-12 bg-gradient-to-br from-brand-500 to-purple-500 rounded-xl flex items-center justify-center">
+            <FileText className="h-6 w-6 text-white" />
           </div>
-
-          <IconButton onClick={onClose} aria-label="Close dialog" variant="ghost">
-            <X className="h-5 w-5 text-gray-400" />
-          </IconButton>
+          <div>
+            <ModalTitle id={titleId}>{content.title}</ModalTitle>
+            <p className="text-sm text-gray-500">
+              {content.brand_name || 'Unknown brand'} • {content.type?.replace('_', ' ') || 'Content'}
+            </p>
+          </div>
         </div>
+        <IconButton onClick={onClose} aria-label="Close dialog" variant="ghost">
+          <X className="h-5 w-5 text-gray-400" />
+        </IconButton>
+      </ModalHeader>
 
-        {/* Content */}
-        <div className="flex-1 p-6 overflow-y-auto space-y-6 min-h-0">
-          {/* Basic Information */}
+      <ModalBody className="space-y-6">
+        {/* Basic Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center text-lg">
+              <FileText className="h-5 w-5 mr-2 text-brand-600" />
+              Content info
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm font-medium text-gray-900">Status</p>
+                <Badge variant={content.status === 'approved' ? 'success' : 'warning'}>
+                  {content.status || 'draft'}
+                </Badge>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium text-gray-900">Type</p>
+                <p className="text-gray-700 capitalize">{content.type?.replace('_', ' ') || 'Content'}</p>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium text-gray-900">Created</p>
+                <p className="text-gray-700 flex items-center">
+                  <Calendar className="h-4 w-4 mr-1 text-gray-400" />
+                  {formatDate(content.created_at)}
+                </p>
+              </div>
+
+              {typeof (content.metadata as any)?.word_count === 'number' && (
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Word count</p>
+                  <p className="text-gray-700">{String((content.metadata as any).word_count)} words</p>
+                </div>
+              )}
+            </div>
+
+            {strategyId && (
+              <div>
+                <p className="text-sm font-medium text-gray-900">Strategy ID</p>
+                <Badge variant="secondary" className="font-mono text-xs">
+                  {strategyId}
+                </Badge>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Angles Section */}
+        {hasAngles ? (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center text-lg">
+                  <Target className="h-5 w-5 mr-2 text-purple-600" />
+                  Content angles ({angles.length})
+                </CardTitle>
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={expandAllAngles}
+                    className="text-xs"
+                  >
+                    Expand all
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={collapseAllAngles}
+                    className="text-xs"
+                  >
+                    Collapse all
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {angles.map((angle: any, index: number) => renderAngleContent(angle, index))}
+            </CardContent>
+          </Card>
+        ) : (
+          /* Raw Content */
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center text-lg">
-                <FileText className="h-5 w-5 mr-2 text-brand-600" />
-                Content info
+                <Zap className="h-5 w-5 mr-2 text-green-600" />
+                Content body
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Status</p>
-                  <Badge variant={content.status === 'approved' ? 'success' : 'warning'}>
-                    {content.status || 'draft'}
-                  </Badge>
+            <CardContent>
+              <div className="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto">
+                <div className="text-sm">
+                  {formatContentBody(content.body_text || content.body || 'No content')}
                 </div>
-
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Type</p>
-                  <p className="text-gray-700 capitalize">{content.type?.replace('_', ' ') || 'Content'}</p>
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Created</p>
-                  <p className="text-gray-700 flex items-center">
-                    <Calendar className="h-4 w-4 mr-1 text-gray-400" />
-                    {formatDate(content.created_at)}
-                  </p>
-                </div>
-
-                {typeof (content.metadata as any)?.word_count === 'number' && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Word count</p>
-                    <p className="text-gray-700">{String((content.metadata as any).word_count)} words</p>
-                  </div>
-                )}
               </div>
-
-              {strategyId && (
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Strategy ID</p>
-                  <Badge variant="secondary" className="font-mono text-xs">
-                    {strategyId}
-                  </Badge>
-                </div>
-              )}
             </CardContent>
           </Card>
+        )}
 
-          {/* Angles Section */}
-          {hasAngles ? (
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center text-lg">
-                    <Target className="h-5 w-5 mr-2 text-purple-600" />
-                    Content angles ({angles.length})
-                  </CardTitle>
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={expandAllAngles}
-                      className="text-xs"
-                    >
-                      Expand all
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={collapseAllAngles}
-                      className="text-xs"
-                    >
-                      Collapse all
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {angles.map((angle: any, index: number) => renderAngleContent(angle, index))}
-              </CardContent>
-            </Card>
-          ) : (
-            /* Raw Content */
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center text-lg">
-                  <Zap className="h-5 w-5 mr-2 text-green-600" />
-                  Content body
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto">
-                  <div className="text-sm">
-                    {formatContentBody(content.body_text || content.body || 'No content')}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+        {/* Metadata */}
+        {content.metadata && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center text-lg">
+                <User className="h-5 w-5 mr-2 text-gray-600" />
+                Metadata
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <pre className="text-xs text-gray-700 whitespace-pre-wrap">
+                  {JSON.stringify(content.metadata, null, 2)}
+                </pre>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </ModalBody>
 
-          {/* Metadata */}
-          {content.metadata && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center text-lg">
-                  <User className="h-5 w-5 mr-2 text-gray-600" />
-                  Metadata
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <pre className="text-xs text-gray-700 whitespace-pre-wrap">
-                    {JSON.stringify(content.metadata, null, 2)}
-                  </pre>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+      <ModalFooter className="justify-between">
+        <div className="flex space-x-2">
+          <Button variant="outline" size="sm" onClick={handleCopyTitle}>
+            <Clipboard className="h-4 w-4 mr-2" />
+            Copy title
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleCopyBody}>
+            <Clipboard className="h-4 w-4 mr-2" />
+            Copy body
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => deepLink ? void copyToClipboard(deepLink, 'Link copied') : push({ message: 'No link available', variant: 'warning' })} disabled={copyingGeneric}>
+            <Share2 className="h-4 w-4 mr-2" />
+            Copy link
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => void shareCall()} disabled={sharing}>
+            <Share2 className="h-4 w-4 mr-2" />
+            Share
+          </Button>
         </div>
-
-        {/* Footer */}
-        <div className="flex justify-between p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
-          <div className="flex space-x-2">
-            <Button variant="outline" size="sm" onClick={handleCopyTitle}>
-              <Clipboard className="h-4 w-4 mr-2" />
-              Copy title
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleCopyBody}>
-              <Clipboard className="h-4 w-4 mr-2" />
-              Copy body
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => deepLink ? void copyToClipboard(deepLink, 'Link copied') : push({ message: 'No link available', variant: 'warning' })} disabled={copyingGeneric}>
-              <Share2 className="h-4 w-4 mr-2" />
-              Copy link
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => void shareCall()} disabled={sharing}>
-              <Share2 className="h-4 w-4 mr-2" />
-              Share
-            </Button>
-          </div>
-          <div className="flex space-x-3">
-            {content.status !== 'approved' && (
-              <Button
-                variant="outline"
-                onClick={handleApprove}
-                loading={approving}
-                disabled={approving}
-              >
-                {approving ? 'Approving…' : 'Approve'}
-              </Button>
-            )}
+        <div className="flex space-x-3">
+          {content.status !== 'approved' && (
             <Button
-              onClick={handlePost}
-              loading={posting}
-              disabled={posting}
-              variant="primary"
+              variant="outline"
+              onClick={handleApprove}
+              loading={approving}
+              disabled={approving}
             >
-              {posting ? 'Posting…' : 'Post'}
+              {approving ? 'Approving…' : 'Approve'}
             </Button>
-            <Button variant="outline" onClick={onClose} disabled={posting}>
-              Close
-            </Button>
-          </div>
+          )}
+          <Button
+            onClick={handlePost}
+            loading={posting}
+            disabled={posting}
+            variant="primary"
+          >
+            {posting ? 'Posting…' : 'Post'}
+          </Button>
+          <Button variant="outline" onClick={onClose} disabled={posting}>
+            Close
+          </Button>
         </div>
-      </div>
+      </ModalFooter>
     </Modal>
   )
 }

@@ -4,7 +4,7 @@ import { Input } from '../ui/Input'
 import { Textarea } from '../ui/Textarea'
 import { X, ArrowLeft, ArrowRight, Sparkles, Globe } from 'lucide-react'
 import { supabase, type TablesInsert } from '../../lib/supabase'
-import { Modal } from '../ui/Modal'
+import { Modal, ModalBody, ModalHeader, ModalTitle } from '../ui/Modal'
 import { useToast } from '../ui/Toast'
 import { IconButton } from '../ui/IconButton'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
@@ -253,24 +253,27 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
   return (
     <Modal isOpen={isOpen} onClose={handleClose} labelledById={titleId}>
       <div className="w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
+        <ModalHeader>
           <div className="flex items-center space-x-4">
             <IconButton onClick={() => (currentStep === 2 ? handlePrevious() : handleClose())} aria-label="Back" variant="ghost">
               <ArrowLeft className="h-5 w-5 text-gray-600" />
             </IconButton>
-            <div className="text-sm text-gray-500">Back</div>
+            <div>
+              <ModalTitle id={titleId} className="text-base">
+                {currentStep === 1 ? 'Create company – Basics' : 'Create company – Brand details'}
+              </ModalTitle>
+              <div className="text-xs text-gray-500">Back</div>
+            </div>
           </div>
-
           <IconButton onClick={handleClose} aria-label="Close dialog" variant="ghost">
             <X className="h-5 w-5 text-gray-400" />
           </IconButton>
-        </div>
+        </ModalHeader>
 
-        {/* Content */}
-        <div className="flex-1 min-h-0 p-6 overflow-y-auto">
+        <ModalBody>
           {currentStep === 1 ? (
             <div className="space-y-6">
+              <p className="text-xs font-medium text-gray-500">Step 1 of 2</p>
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Basics</h2>
               </div>
@@ -311,6 +314,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
             </div>
           ) : (
             <div className="space-y-6">
+              <p className="text-xs font-medium text-gray-500">Step 2 of 2</p>
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">Brand details</h2>
@@ -394,7 +398,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
               </form>
             </div>
           )}
-        </div>
+        </ModalBody>
       </div>
       <ConfirmDialog
         isOpen={confirmOpen}

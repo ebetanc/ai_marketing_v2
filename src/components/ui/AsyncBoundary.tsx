@@ -6,10 +6,11 @@ type AsyncBoundaryProps = {
     loading: boolean
     error?: string | null
     fallbackItems?: number
+    onRetry?: () => void
     children: React.ReactNode
 }
 
-export function AsyncBoundary({ loading, error, fallbackItems = 3, children }: AsyncBoundaryProps) {
+export function AsyncBoundary({ loading, error, fallbackItems = 3, onRetry, children }: AsyncBoundaryProps) {
     if (loading) {
         return (
             <div className="space-y-4">
@@ -29,7 +30,20 @@ export function AsyncBoundary({ loading, error, fallbackItems = 3, children }: A
     if (error) {
         return (
             <Card>
-                <CardContent className="p-6 text-red-600">{error}</CardContent>
+                <CardContent className="p-6">
+                    <div role="alert" aria-live="polite" className="flex items-center justify-between">
+                        <p className="text-red-600">{error}</p>
+                        {onRetry && (
+                            <button
+                                type="button"
+                                onClick={onRetry}
+                                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                            >
+                                Retry
+                            </button>
+                        )}
+                    </div>
+                </CardContent>
             </Card>
         )
     }

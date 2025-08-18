@@ -3,7 +3,7 @@ import { Button } from '../ui/Button'
 import { ArrowLeft, X, Sparkles } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { useToast } from '../ui/Toast'
-import { Modal } from '../ui/Modal'
+import { Modal, ModalBody, ModalHeader, ModalTitle } from '../ui/Modal'
 import { IconButton } from '../ui/IconButton'
 import { supabase } from '../../lib/supabase'
 import { postToN8n } from '../../lib/n8n'
@@ -195,19 +195,20 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
   return (
     <Modal isOpen={isOpen} onClose={handleClose} labelledById="generate-strategy-title" size="md">
       <div className="w-full max-h-[90vh] flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
+        <ModalHeader>
           <div className="flex items-center space-x-4">
             <IconButton onClick={handleClose} aria-label="Back" variant="ghost">
               <ArrowLeft className="h-5 w-5 text-gray-600" />
             </IconButton>
-            <div className="text-sm text-gray-500">Back</div>
+            <div>
+              <ModalTitle id="generate-strategy-title" className="text-base">Generate content strategy</ModalTitle>
+              <div className="text-xs text-gray-500">Back</div>
+            </div>
           </div>
-
           <IconButton onClick={handleClose} aria-label="Close dialog" variant="ghost">
             <X className="h-5 w-5 text-gray-400" />
           </IconButton>
-        </div>
+        </ModalHeader>
 
         {/* Brand Info */}
         {selectedCompany && (
@@ -227,12 +228,12 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
         )}
 
         {/* Content */}
-        <div className="flex-1 min-h-0 p-6 text-center overflow-y-auto">
+        <ModalBody className="text-center">
           <div className="w-16 h-16 bg-gradient-to-br from-brand-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <Sparkles className="h-8 w-8 text-white" />
           </div>
 
-          <h2 id="generate-strategy-title" className="text-2xl font-bold text-gray-900 mb-3">Generate content strategy</h2>
+          {/* Title moved to ModalHeader via ModalTitle */}
           <p className="text-gray-600 mb-6">Create AI angles for your selected brand.</p>
 
           <div className="mb-6">
@@ -278,7 +279,7 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
                       }
                     }}
                     className={cn(
-                      'w-full p-3 rounded-xl border-2 transition-all duration-200 text-left',
+                      'w-full p-3 rounded-xl border-2 transition-all duration-200 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2',
                       isSelected
                         ? 'border-brand-500 bg-brand-50'
                         : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
@@ -330,7 +331,7 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
                       }
                     }}
                     className={cn(
-                      'p-3 rounded-xl border-2 transition-all duration-200 text-sm font-medium',
+                      'p-3 rounded-xl border-2 transition-all duration-200 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2',
                       active
                         ? `${platform.color} text-white border-transparent shadow-md`
                         : 'bg-gray-50 text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-100'
@@ -366,7 +367,7 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
               </>
             )}
           </Button>
-        </div>
+        </ModalBody>
       </div>
     </Modal>
   )
