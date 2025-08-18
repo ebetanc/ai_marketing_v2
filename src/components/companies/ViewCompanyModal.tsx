@@ -10,6 +10,7 @@ import { IconButton } from '../ui/IconButton'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { useToast } from '../ui/Toast'
 import type { CompanyUI } from '../../hooks/useCompanies'
+import { useAsyncCallback } from '../../hooks/useAsync'
 
 interface ViewCompanyModalProps {
   isOpen: boolean
@@ -19,42 +20,29 @@ interface ViewCompanyModalProps {
 }
 
 export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCompanyModalProps) {
-  const [deleting, setDeleting] = React.useState(false)
+  const { call: runDelete, loading: deleting } = useAsyncCallback(async () => {
+    if (!company?.id) return
+    const { error } = await supabase
+      .from('companies')
+      .delete()
+      .eq('id', company.id)
+
+    if (error) {
+      console.error('Error deleting company:', error)
+      push({ title: 'Delete failed', message: `Failed to delete company: ${error.message}`, variant: 'error' })
+      return
+    }
+
+    onDelete?.()
+    push({ title: 'Deleted', message: 'Company removed', variant: 'success' })
+    onClose()
+  })
   const [confirmOpen, setConfirmOpen] = React.useState(false)
   const { push } = useToast()
 
   if (!isOpen || !company) return null
 
-  const handleDelete = async () => {
-    if (!company?.id) return
-
-    // Defer to parent confirmation dialog if present via onDelete prop; otherwise proceed
-
-    setDeleting(true)
-
-    try {
-      const { error } = await supabase
-        .from('companies')
-        .delete()
-        .eq('id', company.id)
-
-      if (error) {
-        console.error('Error deleting company:', error)
-        push({ title: 'Delete failed', message: `Failed to delete company: ${error.message}`, variant: 'error' })
-        return
-      }
-
-      // Success feedback to be handled by parent toast system if available
-      onDelete?.() // Call the callback to refresh the companies list
-      push({ title: 'Deleted', message: 'Company removed', variant: 'success' })
-      onClose() // Close the modal
-    } catch (error) {
-      console.error('Error deleting company:', error)
-      push({ title: 'Delete failed', message: 'Try again.', variant: 'error' })
-    } finally {
-      setDeleting(false)
-    }
-  }
+  const handleDelete = () => { void runDelete() }
 
   const titleId = 'view-company-title'
 

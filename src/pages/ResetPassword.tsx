@@ -4,11 +4,11 @@ import { Button } from '../components/ui/Button'
 import { supabase } from '../lib/supabase'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useNavigate } from 'react-router-dom'
+import { useAsyncCallback } from '../hooks/useAsync'
 
 export default function ResetPassword() {
     useDocumentTitle('Reset password — AI Marketing')
     const [password, setPassword] = useState('')
-    const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState<string | null>(null)
     const [error, setError] = useState<string | null>(null)
     const minPasswordLength = 6
@@ -35,23 +35,24 @@ export default function ResetPassword() {
         }
     }, [])
 
+    const { call: updatePassword, loading, reset } = useAsyncCallback(async () => {
+        if (password.length < minPasswordLength) {
+            throw new Error(`Use at least ${minPasswordLength} characters.`)
+        }
+        const { error } = await supabase.auth.updateUser({ password })
+        if (error) throw error
+        setMessage('Password updated. Redirecting to login…')
+        setTimeout(() => navigate('/login', { replace: true }), 1200)
+    })
+
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        setLoading(true)
-        setError(null)
         setMessage(null)
-        try {
-            if (password.length < minPasswordLength) {
-                throw new Error(`Use at least ${minPasswordLength} characters.`)
-            }
-            const { error } = await supabase.auth.updateUser({ password })
-            if (error) throw error
-            setMessage('Password updated. Redirecting to login…')
-            setTimeout(() => navigate('/login', { replace: true }), 1200)
-        } catch (err: any) {
-            setError(err?.message || 'Couldn’t update password.')
-        } finally {
-            setLoading(false)
+        setError(null)
+        reset()
+        const res = await updatePassword()
+        if (res && 'error' in res && res.error) {
+            setError(res.error.message || 'Couldn’t update password.')
         }
     }
 

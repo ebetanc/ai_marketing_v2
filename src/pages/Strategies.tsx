@@ -24,6 +24,7 @@ import { Modal } from '../components/ui/Modal'
 import { Skeleton } from '../components/ui/Skeleton'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { postToN8n } from '../lib/n8n'
+import { useAsyncCallback } from '../hooks/useAsync'
 
 type Strategy = Tables<'strategies'> & {
   company?: { id: number; brand_name: string; created_at: string }
@@ -186,98 +187,60 @@ export function Strategies() {
     })
   }
 
+  const { call: runGenerateIdeas } = useAsyncCallback(async (angle: any) => {
+    if (!viewModal.strategy || !viewModal.company) return
+    // Attach user identity for RLS-locked inserts
+    const { data: sessionData } = await supabase.auth.getSession()
+    const userId = sessionData.session?.user.id || null
+    // Normalize platforms into lowercase string ids
+    const normalizedPlatforms = getPlatformBadges(viewModal.strategy.platforms)
+      .map((p: string) => String(p).trim().toLowerCase())
+      .filter(Boolean)
+    // Fixed index map so each platform always occupies the same slot
+    const PLATFORM_ORDER = ['twitter', 'linkedin', 'newsletter', 'facebook', 'instagram', 'youtube', 'tiktok', 'blog']
+    const platformsSlotted: string[] = PLATFORM_ORDER.map(() => '')
+    normalizedPlatforms.forEach((p) => {
+      const idx = PLATFORM_ORDER.indexOf(p)
+      if (idx !== -1) platformsSlotted[idx] = p
+    })
+
+    // Build payload to match n8n content-saas workflow expectations
+    const payload = {
+      identifier: 'generateIdeas',
+      operation: 'create_ideas_from_angle',
+      company_id: viewModal.company.id,
+      strategy_id: viewModal.strategy.id,
+      strategyIndex: angle.number,
+      angle_number: angle.number,
+      platforms: platformsSlotted,
+      meta: { user_id: userId, source: 'app', ts: new Date().toISOString() },
+      user_id: userId,
+      brand: { id: viewModal.company.id, name: viewModal.company.brand_name },
+      brandDetails: { id: viewModal.company.id, name: viewModal.company.brand_name },
+      data: { brandData: { id: viewModal.company.id, name: viewModal.company.brand_name } },
+      company: { id: viewModal.company.id, brand_name: viewModal.company.brand_name },
+      strategy: { id: viewModal.strategy.id, platforms: viewModal.strategy.platforms, created_at: viewModal.strategy.created_at },
+      angle: {
+        angleNumber: angle.number,
+        number: angle.number,
+        header: angle.header,
+        description: angle.description,
+        objective: angle.objective,
+        tonality: angle.tonality,
+        strategy: { id: viewModal.strategy.id, platforms: viewModal.strategy.platforms },
+      },
+    }
+
+    const response = await postToN8n('generateIdeas', payload)
+    if (!response.ok) throw new Error('Failed to generate ideas')
+    console.log('Ideas generation started successfully')
+  })
+
   const handleGenerateIdeas = async (angle: any) => {
     if (!viewModal.strategy || !viewModal.company) return
-
-    try {
-      setGeneratingIdeas(angle.number)
-
-      // Attach user identity for RLS-locked inserts
-      const { data: sessionData } = await supabase.auth.getSession()
-      const userId = sessionData.session?.user.id || null
-
-      // Normalize platforms into lowercase string ids
-      const normalizedPlatforms = getPlatformBadges(viewModal.strategy.platforms)
-        .map((p: string) => String(p).trim().toLowerCase())
-        .filter(Boolean)
-      // Fixed index map so each platform always occupies the same slot
-      const PLATFORM_ORDER = ['twitter', 'linkedin', 'newsletter', 'facebook', 'instagram', 'youtube', 'tiktok', 'blog']
-      const platformsSlotted: string[] = PLATFORM_ORDER.map(() => '')
-      normalizedPlatforms.forEach((p) => {
-        const idx = PLATFORM_ORDER.indexOf(p)
-        if (idx !== -1) platformsSlotted[idx] = p
-      })
-
-      // Build payload to match n8n content-saas workflow expectations
-      const payload = {
-        identifier: 'generateIdeas',
-        operation: 'create_ideas_from_angle',
-        // Core identifiers for downstream CRUD
-        company_id: viewModal.company.id,
-        strategy_id: viewModal.strategy.id,
-        // Some n8n nodes expect `strategyIndex` for the selected angle number
-        strategyIndex: angle.number,
-        // Also keep a plain angle_number for backward compatibility
-        angle_number: angle.number,
-        // Top-level platforms array as fixed-length string slots for n8n Switch
-        platforms: platformsSlotted,
-        meta: {
-          user_id: userId,
-          source: 'app',
-          ts: new Date().toISOString(),
-        },
-        user_id: userId,
-        // n8n "ideas" generators often reference `body.brand.*` and/or `body.data.brandData.*`
-        brand: {
-          id: viewModal.company.id,
-          name: viewModal.company.brand_name,
-        },
-        brandDetails: {
-          id: viewModal.company.id,
-          name: viewModal.company.brand_name,
-        },
-        data: {
-          brandData: {
-            id: viewModal.company.id,
-            name: viewModal.company.brand_name,
-          }
-        },
-        company: {
-          id: viewModal.company.id,
-          brand_name: viewModal.company.brand_name,
-        },
-        strategy: {
-          id: viewModal.strategy.id,
-          platforms: viewModal.strategy.platforms,
-          created_at: viewModal.strategy.created_at,
-        },
-        // Angle object with nested strategy as expected by n8n Create Ideas node
-        angle: {
-          angleNumber: angle.number,
-          number: angle.number,
-          header: angle.header,
-          description: angle.description,
-          objective: angle.objective,
-          tonality: angle.tonality,
-          strategy: {
-            id: viewModal.strategy.id,
-            platforms: viewModal.strategy.platforms,
-          },
-        },
-      }
-
-      const response = await postToN8n('generateIdeas', payload)
-
-      if (!response.ok) {
-        throw new Error('Failed to generate ideas')
-      }
-
-      console.log('Ideas generation started successfully')
-    } catch (error) {
-      console.error('Error generating ideas:', error)
-    } finally {
-      setGeneratingIdeas(null)
-    }
+    setGeneratingIdeas(angle.number)
+    await runGenerateIdeas(angle)
+    setGeneratingIdeas(null)
   }
 
   const handleGenerateStrategy = () => {

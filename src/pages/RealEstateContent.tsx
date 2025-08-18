@@ -15,6 +15,7 @@ import { Skeleton } from '../components/ui/Skeleton'
 import { Modal } from '../components/ui/Modal'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { useAsyncCallback } from '../hooks/useAsync'
 
 interface RealEstateContent {
   id: number
@@ -46,23 +47,21 @@ export function RealEstateContent() {
     setDeleteDialog({ isOpen: true, content, loading: false })
   }
 
+  const { call: deleteConfirmCall } = useAsyncCallback(async () => {
+    if (!deleteDialog.content) return
+    const { error } = await supabase
+      .from('real_estate_content')
+      .delete()
+      .eq('id', deleteDialog.content.id)
+    if (error) throw error
+    setRealEstateData(prev => prev.filter(item => item.id !== deleteDialog.content!.id))
+  })
   const handleDeleteConfirm = async () => {
     if (!deleteDialog.content) return
-
     setDeleteDialog(prev => ({ ...prev, loading: true }))
-
     try {
-      const { error } = await supabase
-        .from('real_estate_content')
-        .delete()
-        .eq('id', deleteDialog.content.id)
-
-      if (error) throw error
-
-      // Remove from local state
-      setRealEstateData(prev => prev.filter(item => item.id !== deleteDialog.content!.id))
-
-      // Close dialog
+      const res = await deleteConfirmCall()
+      if (res && 'error' in res && res.error) throw res.error
       setDeleteDialog({ isOpen: false, content: null, loading: false })
     } catch (error) {
       console.error('Error deleting real estate content:', error)
@@ -116,43 +115,34 @@ export function RealEstateContent() {
     fetchRealEstateContent()
   }, [fetchRealEstateContent])
 
-  const handleGenerateContent = async () => {
+  const { call: generateContentCall } = useAsyncCallback(async () => {
     if (!url.trim()) {
       push({ title: 'Missing URL', message: 'Please enter a URL', variant: 'warning' })
       return
     }
-
+    console.log('Sending URL to n8n webhook:', url)
+    const { data: sessionData } = await supabase.auth.getSession()
+    const userId = sessionData.session?.user.id
+    const response = await postToN8n('content_saas', {
+      operation: 'real_estate_ingest',
+      url: url.trim(),
+      user_id: userId,
+      meta: { user_id: userId, source: 'app', ts: new Date().toISOString() },
+    }, { path: '1776dcc3-2b3e-4cfa-abfd-0ad9cabaf6ea' })
+    console.log('Webhook response status:', response.status)
+    if (!response.ok) throw new Error(`Webhook request failed with status: ${response.status}`)
+    const result = await response.text()
+    console.log('Webhook response:', result)
+    push({ title: 'Generation started', message: 'Check back in a few minutes', variant: 'success' })
+    setShowUrlModal(false)
+    setUrl('')
+    setTimeout(() => { fetchRealEstateContent() }, 2000)
+  })
+  const handleGenerateContent = async () => {
     setIsGenerating(true)
-
     try {
-      console.log('Sending URL to n8n webhook:', url)
-
-      // Include user id so the webhook can associate the created records to this user
-      const { data: sessionData } = await supabase.auth.getSession()
-      const userId = sessionData.session?.user.id
-
-      const response = await postToN8n('content_saas', {
-        operation: 'real_estate_ingest',
-        url: url.trim(),
-        user_id: userId,
-        meta: { user_id: userId, source: 'app', ts: new Date().toISOString() },
-      }, { path: '1776dcc3-2b3e-4cfa-abfd-0ad9cabaf6ea' })
-
-      console.log('Webhook response status:', response.status)
-
-      if (!response.ok) {
-        throw new Error(`Webhook request failed with status: ${response.status}`)
-      }
-
-      const result = await response.text()
-      console.log('Webhook response:', result)
-
-      push({ title: 'Generation started', message: 'Check back in a few minutes', variant: 'success' })
-      setShowUrlModal(false)
-      setUrl('')
-
-      // Refresh the data after successful generation
-      setTimeout(() => { fetchRealEstateContent() }, 2000)
+      const res = await generateContentCall()
+      if (res && 'error' in res && res.error) throw res.error
     } catch (error) {
       console.error('Error generating content:', error)
       if (error instanceof Error) {

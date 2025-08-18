@@ -25,6 +25,7 @@ import { formatDate, truncateText } from '../lib/utils';
 import { Skeleton } from '../components/ui/Skeleton';
 import { useToast } from '../components/ui/Toast';
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { useAsyncCallback } from '../hooks/useAsync'
 
 // Helper: Extract topics from an idea row
 const extractTopicsFromIdea = (idea: any): { number: number; topic: string; description: string; image_prompt: string }[] => {
@@ -173,87 +174,84 @@ export function Ideas() {
     }
   }
 
-  const handleSaveChanges = async () => {
+  const { call: saveChangesCall } = useAsyncCallback(async () => {
     if (!viewIdeaModal.idea || !viewIdeaModal.topic) return
+    const topicNumber = viewIdeaModal.topic.number
 
+
+
+    const baseColumnIndex = 8 + (topicNumber - 1) * 3 // 9 for topic 1, 12 for topic 2, etc.
+
+
+    const columns = Object.keys(viewIdeaModal.idea).sort()
+
+
+    const topicColumn = columns[baseColumnIndex] || `topic${topicNumber}`
+    const descriptionColumn = columns[baseColumnIndex + 1] || `description${topicNumber}`
+    const imagePromptColumn = columns[baseColumnIndex + 2] || `image_prompt${topicNumber}`
+
+    const updateData = {
+      [topicColumn]: editForm.topic,
+      [descriptionColumn]: editForm.description,
+      [imagePromptColumn]: editForm.image_prompt
+    }
+
+    console.log('=== SAVE TOPIC OPERATION DEBUG ===')
+    console.log('Idea ID:', viewIdeaModal.idea.id)
+    console.log('Topic Number:', topicNumber)
+    console.log('Column mappings:', {
+      topicColumn,
+      descriptionColumn,
+      imagePromptColumn
+    })
+    console.log('Update Data:', updateData)
+
+    const { error } = await supabase
+      .from('ideas')
+      .update(updateData)
+      .eq('id', viewIdeaModal.idea.id)
+
+    console.log('Supabase Update Response Error:', error)
+
+    if (error) throw error
+
+    console.log('Topic updated successfully')
+
+
+    setIdeas(prev => prev.map(idea => {
+      if (idea.id === viewIdeaModal.idea!.id) {
+        return { ...idea, ...updateData }
+      }
+      return idea
+    }))
+
+
+    const updatedTopic = {
+      ...viewIdeaModal.topic,
+      topic: editForm.topic,
+      description: editForm.description,
+      image_prompt: editForm.image_prompt
+    }
+
+    setViewIdeaModal(prev => ({
+      ...prev,
+      topic: updatedTopic,
+      isEditing: false
+    }))
+
+
+    await fetchIdeas()
+
+    push({ title: 'Saved', message: 'Changes updated', variant: 'success' })
+  })
+
+  const handleSaveChanges = async () => {
     setSaving(true)
-
     try {
-      const topicNumber = viewIdeaModal.topic.number
-
-
-
-      const baseColumnIndex = 8 + (topicNumber - 1) * 3 // 9 for topic 1, 12 for topic 2, etc.
-
-
-      const columns = Object.keys(viewIdeaModal.idea).sort()
-
-
-      const topicColumn = columns[baseColumnIndex] || `topic${topicNumber}`
-      const descriptionColumn = columns[baseColumnIndex + 1] || `description${topicNumber}`
-      const imagePromptColumn = columns[baseColumnIndex + 2] || `image_prompt${topicNumber}`
-
-      const updateData = {
-        [topicColumn]: editForm.topic,
-        [descriptionColumn]: editForm.description,
-        [imagePromptColumn]: editForm.image_prompt
+      const res = await saveChangesCall()
+      if (res && 'error' in res && res.error) {
+        throw res.error
       }
-
-      console.log('=== SAVE TOPIC OPERATION DEBUG ===')
-      console.log('Idea ID:', viewIdeaModal.idea.id)
-      console.log('Topic Number:', topicNumber)
-      console.log('Column mappings:', {
-        topicColumn,
-        descriptionColumn,
-        imagePromptColumn
-      })
-      console.log('Update Data:', updateData)
-
-      const { error } = await supabase
-        .from('ideas')
-        .update(updateData)
-        .eq('id', viewIdeaModal.idea.id)
-
-      console.log('Supabase Update Response Error:', error)
-
-      if (error) {
-        console.error('=== SUPABASE UPDATE ERROR ===')
-        console.error('Error Code:', error.code)
-        console.error('Error Message:', error.message)
-        console.error('Error Details:', error.details)
-        push({ title: 'Save failed', message: `${error instanceof Error ? error.message : 'Unknown error'}`, variant: 'error' })
-        return
-      }
-
-      console.log('Topic updated successfully')
-
-
-      setIdeas(prev => prev.map(idea => {
-        if (idea.id === viewIdeaModal.idea!.id) {
-          return { ...idea, ...updateData }
-        }
-        return idea
-      }))
-
-
-      const updatedTopic = {
-        ...viewIdeaModal.topic,
-        topic: editForm.topic,
-        description: editForm.description,
-        image_prompt: editForm.image_prompt
-      }
-
-      setViewIdeaModal(prev => ({
-        ...prev,
-        topic: updatedTopic,
-        isEditing: false
-      }))
-
-
-      await fetchIdeas()
-
-      push({ title: 'Saved', message: 'Changes updated', variant: 'success' })
-
     } catch (error) {
       console.error('Error saving changes:', error)
       push({ title: 'Save failed', message: `${error instanceof Error ? error.message : 'Unknown error'}`, variant: 'error' })
@@ -294,277 +292,280 @@ export function Ideas() {
     setViewIdeaModal({ isOpen: true, idea, topic, isEditing: false })
   }
 
-  const handleGenerateContent = async () => {
+  const { call: generateContentCall } = useAsyncCallback(async () => {
     if (!viewIdeaModal.idea || !viewIdeaModal.topic) return
 
-    setGeneratingContent(true)
+    console.log('=== FETCHING COMPANY DETAILS ===')
+    console.log('Idea company_id:', viewIdeaModal.idea.company_id)
 
-    try {
+    let companyData: CompanyRow | null = null
+    let companyError: unknown = null
+    if (viewIdeaModal.idea.company_id) {
+      const res = await supabase
+        .from('companies')
+        .select('*')
+        .eq('id', viewIdeaModal.idea.company_id)
+        .single()
+      companyData = res.data as CompanyRow | null
+      companyError = res.error
+    }
 
-      console.log('=== FETCHING COMPANY DETAILS ===')
-      console.log('Idea company_id:', viewIdeaModal.idea.company_id)
+    if (companyError) {
+      console.error('Error fetching company details:', companyError)
+      console.log('Continuing without company details...')
+    }
 
-      let companyData: CompanyRow | null = null
-      let companyError: unknown = null
-      if (viewIdeaModal.idea.company_id) {
-        const res = await supabase
-          .from('companies')
-          .select('*')
-          .eq('id', viewIdeaModal.idea.company_id)
-          .single()
-        companyData = res.data as CompanyRow | null
-        companyError = res.error
-      }
-
-      if (companyError) {
-        console.error('Error fetching company details:', companyError)
-        console.log('Continuing without company details...')
-      }
-
-      console.log('Company data fetched:', companyData)
+    console.log('Company data fetched:', companyData)
 
 
-      console.log('=== FETCHING STRATEGY AND ANGLE DETAILS ===')
-      console.log('Strategy ID:', viewIdeaModal.idea.strategy_id)
-      console.log('Angle Number:', viewIdeaModal.idea.angle_number)
+    console.log('=== FETCHING STRATEGY AND ANGLE DETAILS ===')
+    console.log('Strategy ID:', viewIdeaModal.idea.strategy_id)
+    console.log('Angle Number:', viewIdeaModal.idea.angle_number)
 
-      let strategyData: StrategyRow | null = null
-      let angleDetails: {
-        number: number
-        header: string
-        description: string
-        objective: string
-        tonality: string
-      } | null = null
+    let strategyData: StrategyRow | null = null
+    let angleDetails: {
+      number: number
+      header: string
+      description: string
+      objective: string
+      tonality: string
+    } | null = null
 
-      if (viewIdeaModal.idea.strategy_id && viewIdeaModal.idea.angle_number) {
-        const { data: strategy, error: strategyError } = await supabase
-          .from('strategies')
-          .select('*')
-          .eq('id', viewIdeaModal.idea.strategy_id)
-          .single()
+    if (viewIdeaModal.idea.strategy_id && viewIdeaModal.idea.angle_number) {
+      const { data: strategy, error: strategyError } = await supabase
+        .from('strategies')
+        .select('*')
+        .eq('id', viewIdeaModal.idea.strategy_id)
+        .single()
 
-        if (strategyError) {
-          console.error('Error fetching strategy details:', strategyError)
-          console.log('Continuing without strategy details...')
-        } else {
-          strategyData = strategy as StrategyRow
+      if (strategyError) {
+        console.error('Error fetching strategy details:', strategyError)
+        console.log('Continuing without strategy details...')
+      } else {
+        strategyData = strategy as StrategyRow
 
 
-          const angleNumber = viewIdeaModal.idea.angle_number
-          angleDetails = {
-            number: angleNumber,
-            header: (strategy as any)[`angle${angleNumber}_header`] || '',
-            description: (strategy as any)[`angle${angleNumber}_description`] || '',
-            objective: (strategy as any)[`angle${angleNumber}_objective`] || '',
-            tonality: (strategy as any)[`angle${angleNumber}_tonality`] || ''
-          }
-
-          console.log('Strategy data fetched:', strategyData)
-          console.log('Angle details extracted:', angleDetails)
+        const angleNumber = viewIdeaModal.idea.angle_number
+        angleDetails = {
+          number: angleNumber,
+          header: (strategy as any)[`angle${angleNumber}_header`] || '',
+          description: (strategy as any)[`angle${angleNumber}_description`] || '',
+          objective: (strategy as any)[`angle${angleNumber}_objective`] || '',
+          tonality: (strategy as any)[`angle${angleNumber}_tonality`] || ''
         }
+
+        console.log('Strategy data fetched:', strategyData)
+        console.log('Angle details extracted:', angleDetails)
       }
+    }
 
-      const topicData = {
-        topicNumber: viewIdeaModal.topic.number,
-        topic: viewIdeaModal.topic.topic,
-        description: viewIdeaModal.topic.description,
-        image_prompt: viewIdeaModal.topic.image_prompt,
-        idea: {
-          id: viewIdeaModal.idea.id,
-          brand: companyData?.brand_name || viewIdeaModal.idea.company?.brand_name || 'Unknown Brand',
-          strategy_id: viewIdeaModal.idea.strategy_id,
-          angle_number: viewIdeaModal.idea.angle_number,
-          created_at: viewIdeaModal.idea.created_at
-        }
-      }
-
-      // Derive normalized-first fields from companyData for consistent payloads
-      const brandName: string = companyData?.brand_name || viewIdeaModal.idea.company?.brand_name || 'Unknown Brand'
-      const website: string = companyData?.website || ''
-      const tone: string = companyData?.brand_tone || ''
-      const style: string = companyData?.key_offer || ''
-      const targetAudienceStr: string = companyData?.target_audience || ''
-      const additionalInfo: string = companyData?.additional_information || ''
-
-      const { data: genSession } = await supabase.auth.getSession()
-      const userId = genSession.session?.user.id || null
-
-      // Normalize platforms from strategy or use a sensible default. n8n Switch expects
-      // string items at fixed indices (platforms[0]..platforms[7]).
-      const normalizePlatforms = (platforms: string | null | undefined): string[] => {
-        if (!platforms) return []
-        try {
-          const parsed = JSON.parse(platforms)
-          if (Array.isArray(parsed)) return parsed
-        } catch {/* not JSON */ }
-        return String(platforms).split(',')
-          .map(s => s.trim())
-          .filter(Boolean)
-      }
-
-      const normalizedPlatforms = normalizePlatforms(strategyData?.platforms || null)
-        .map(p => p.toLowerCase())
-      // Fixed platform order to reserve indexes consistently
-      const PLATFORM_ORDER = ['twitter', 'linkedin', 'newsletter', 'facebook', 'instagram', 'youtube', 'tiktok', 'blog']
-      const platformsSlotted: string[] = PLATFORM_ORDER.map(() => '')
-      normalizedPlatforms.forEach(p => {
-        const idx = PLATFORM_ORDER.indexOf(p)
-        if (idx !== -1) platformsSlotted[idx] = p
-      })
-
-      const webhookPayload = {
-        identifier: 'generateContent',
-        operation: 'generate_content_from_idea',
-        meta: {
-          user_id: userId,
-          source: 'app',
-          ts: new Date().toISOString(),
-        },
-        user_id: userId,
-        // Core identifiers for downstream CRUD
-        company_id: viewIdeaModal.idea.company_id,
+    const topicData = {
+      topicNumber: viewIdeaModal.topic.number,
+      topic: viewIdeaModal.topic.topic,
+      description: viewIdeaModal.topic.description,
+      image_prompt: viewIdeaModal.topic.image_prompt,
+      idea: {
+        id: viewIdeaModal.idea.id,
+        brand: companyData?.brand_name || viewIdeaModal.idea.company?.brand_name || 'Unknown Brand',
         strategy_id: viewIdeaModal.idea.strategy_id,
-        idea_id: viewIdeaModal.idea.id,
-        topic: topicData,
-        // Fixed-length string array for n8n Switch node compatibility
-        platforms: platformsSlotted,
-        // Fields expected by various n8n nodes (brand, data.brandData, etc.)
-        brand: {
-          id: companyData?.id ?? viewIdeaModal.idea.company_id,
-          name: brandName,
-          additionalInfo,
-          targetAudience: targetAudienceStr,
-          brandTone: tone,
-          keyOffer: style,
-          website,
-        },
-        brandDetails: {
-          id: companyData?.id ?? viewIdeaModal.idea.company_id,
-          name: brandName,
-        },
-        data: {
-          brandData: {
-            id: companyData?.id ?? viewIdeaModal.idea.company_id,
-            name: brandName,
-            keyOffer: style,
-          },
-        },
-        companyDetails: companyData ? {
-          ...companyData,
-          name: brandName,
-          brandTone: tone,
-          keyOffer: style,
-          targetAudience: targetAudienceStr,
-          additionalInfo,
-          website,
-        } : null,
-        // SPECIFIC ANGLE DETAILS THAT GENERATED THIS IDEA
-        angleDetails: angleDetails,
-        // FULL STRATEGY CONTEXT
-        strategyContext: strategyData ? {
-          id: strategyData.id,
-          brand: brandName,
-          name: brandName,
-          description: 'No strategy description available',
-          platforms: strategyData.platforms,
-          created_at: strategyData.created_at,
-          totalAngles: (() => {
-            let count = 0
-            for (let i = 1; i <= 10; i++) {
-              if ((strategyData as any)[`angle${i}_header`]) count++
-            }
-            return count
-          })()
-        } : null,
-        // REQUIRED FIELDS FOR AI AGENT CONTEXT
-        aiContext: {
-          strategyName: brandName,
-          strategyDescription: 'No strategy description available',
-          tonality: angleDetails?.tonality || 'No tonality specified',
-          objective: angleDetails?.objective || 'No objective specified',
-          keyOffer: style || 'No key offer specified',
-          brandTone: tone || 'No brand tone specified',
-          targetAudience: targetAudienceStr || 'No target audience specified',
-          platforms: platformsSlotted,
-          contentType: 'idea_to_content_generation'
-        },
-        context: {
-          requestType: 'generate_content_from_idea',
-          timestamp: new Date().toISOString(),
-          hasCompanyDetails: !!companyData,
-          hasAngleDetails: !!angleDetails,
-          hasStrategyContext: !!strategyData,
-          ideaSetId: viewIdeaModal.idea.id,
-          topicNumber: viewIdeaModal.topic.number
-        }
+        angle_number: viewIdeaModal.idea.angle_number,
+        created_at: viewIdeaModal.idea.created_at
       }
+    }
 
-      console.log('=== ENHANCED GENERATE CONTENT WEBHOOK ===')
-      console.log('Sending payload:', webhookPayload)
-      console.log('Company details included:', !!companyData)
-      console.log('Angle details included:', !!angleDetails)
-      console.log('Strategy context included:', !!strategyData)
+    // Derive normalized-first fields from companyData for consistent payloads
+    const brandName: string = companyData?.brand_name || viewIdeaModal.idea.company?.brand_name || 'Unknown Brand'
+    const website: string = companyData?.website || ''
+    const tone: string = companyData?.brand_tone || ''
+    const style: string = companyData?.key_offer || ''
+    const targetAudienceStr: string = companyData?.target_audience || ''
+    const additionalInfo: string = companyData?.additional_information || ''
 
-      // WEBHOOK SENDING DISABLED FOR ANALYSIS
-      // const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(webhookPayload)
-      // })
+    const { data: genSession } = await supabase.auth.getSession()
+    const userId = genSession.session?.user.id || null
 
-      // console.log('Webhook response status:', response.status)
-
-      // if (!response.ok) {
-      //   throw new Error(`Webhook failed with status: ${response.status}`)
-      // }
-
-      // const responseText = await response.text()
-      // console.log('Raw webhook response:', responseText)
-
-      // let result
-      // try {
-      //   result = JSON.parse(responseText)
-      // } catch (parseError) {
-      //   console.error('Failed to parse JSON response:', parseError)
-      //   console.error('Raw response text:', responseText)
-      //   // If JSON parsing fails, treat as success if status is ok
-      //   result = { message: 'Content generation started' }
-      // }
-
-      // console.log('Webhook response:', result)
-
-      console.log('=== FINAL WEBHOOK PAYLOAD FOR ANALYSIS ===')
-      console.log(JSON.stringify(webhookPayload, null, 2))
-
-      console.log('=== MAKING WEBHOOK REQUEST ===')
-      const response = await postToN8n('generateContent', webhookPayload)
-
-      console.log('Webhook response status:', response.status)
-      console.log('Webhook response headers:', Object.fromEntries(response.headers.entries()))
-
-      if (!response.ok) {
-        throw new Error(`Webhook failed with status: ${response.status}`)
-      }
-
-      const responseText = await response.text()
-      console.log('Raw webhook response:', responseText)
-
-      let result
+    // Normalize platforms from strategy or use a sensible default. n8n Switch expects
+    // string items at fixed indices (platforms[0]..platforms[7]).
+    const normalizePlatforms = (platforms: string | null | undefined): string[] => {
+      if (!platforms) return []
       try {
-        result = JSON.parse(responseText)
-      } catch (parseError) {
-        console.error('Failed to parse JSON response:', parseError)
-        console.error('Raw response text:', responseText)
-        // If JSON parsing fails, treat as success if status is ok
-        result = { message: 'Content generation started' }
+        const parsed = JSON.parse(platforms)
+        if (Array.isArray(parsed)) return parsed
+      } catch {/* not JSON */ }
+      return String(platforms).split(',')
+        .map(s => s.trim())
+        .filter(Boolean)
+    }
+
+    const normalizedPlatforms = normalizePlatforms(strategyData?.platforms || null)
+      .map(p => p.toLowerCase())
+    // Fixed platform order to reserve indexes consistently
+    const PLATFORM_ORDER = ['twitter', 'linkedin', 'newsletter', 'facebook', 'instagram', 'youtube', 'tiktok', 'blog']
+    const platformsSlotted: string[] = PLATFORM_ORDER.map(() => '')
+    normalizedPlatforms.forEach(p => {
+      const idx = PLATFORM_ORDER.indexOf(p)
+      if (idx !== -1) platformsSlotted[idx] = p
+    })
+
+    const webhookPayload = {
+      identifier: 'generateContent',
+      operation: 'generate_content_from_idea',
+      meta: {
+        user_id: userId,
+        source: 'app',
+        ts: new Date().toISOString(),
+      },
+      user_id: userId,
+      // Core identifiers for downstream CRUD
+      company_id: viewIdeaModal.idea.company_id,
+      strategy_id: viewIdeaModal.idea.strategy_id,
+      idea_id: viewIdeaModal.idea.id,
+      topic: topicData,
+      // Fixed-length string array for n8n Switch node compatibility
+      platforms: platformsSlotted,
+      // Fields expected by various n8n nodes (brand, data.brandData, etc.)
+      brand: {
+        id: companyData?.id ?? viewIdeaModal.idea.company_id,
+        name: brandName,
+        additionalInfo,
+        targetAudience: targetAudienceStr,
+        brandTone: tone,
+        keyOffer: style,
+        website,
+      },
+      brandDetails: {
+        id: companyData?.id ?? viewIdeaModal.idea.company_id,
+        name: brandName,
+      },
+      data: {
+        brandData: {
+          id: companyData?.id ?? viewIdeaModal.idea.company_id,
+          name: brandName,
+          keyOffer: style,
+        },
+      },
+      companyDetails: companyData ? {
+        ...companyData,
+        name: brandName,
+        brandTone: tone,
+        keyOffer: style,
+        targetAudience: targetAudienceStr,
+        additionalInfo,
+        website,
+      } : null,
+      // SPECIFIC ANGLE DETAILS THAT GENERATED THIS IDEA
+      angleDetails: angleDetails,
+      // FULL STRATEGY CONTEXT
+      strategyContext: strategyData ? {
+        id: strategyData.id,
+        brand: brandName,
+        name: brandName,
+        description: 'No strategy description available',
+        platforms: strategyData.platforms,
+        created_at: strategyData.created_at,
+        totalAngles: (() => {
+          let count = 0
+          for (let i = 1; i <= 10; i++) {
+            if ((strategyData as any)[`angle${i}_header`]) count++
+          }
+          return count
+        })()
+      } : null,
+      // REQUIRED FIELDS FOR AI AGENT CONTEXT
+      aiContext: {
+        strategyName: brandName,
+        strategyDescription: 'No strategy description available',
+        tonality: angleDetails?.tonality || 'No tonality specified',
+        objective: angleDetails?.objective || 'No objective specified',
+        keyOffer: style || 'No key offer specified',
+        brandTone: tone || 'No brand tone specified',
+        targetAudience: targetAudienceStr || 'No target audience specified',
+        platforms: platformsSlotted,
+        contentType: 'idea_to_content_generation'
+      },
+      context: {
+        requestType: 'generate_content_from_idea',
+        timestamp: new Date().toISOString(),
+        hasCompanyDetails: !!companyData,
+        hasAngleDetails: !!angleDetails,
+        hasStrategyContext: !!strategyData,
+        ideaSetId: viewIdeaModal.idea.id,
+        topicNumber: viewIdeaModal.topic.number
       }
+    }
 
-      console.log('Webhook response:', result)
-      push({ title: 'Generation started', message: 'Check Content page soon', variant: 'success' })
+    console.log('=== ENHANCED GENERATE CONTENT WEBHOOK ===')
+    console.log('Sending payload:', webhookPayload)
+    console.log('Company details included:', !!companyData)
+    console.log('Angle details included:', !!angleDetails)
+    console.log('Strategy context included:', !!strategyData)
 
+    // WEBHOOK SENDING DISABLED FOR ANALYSIS
+    // const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
+    //   method: 'POST',
+    //   headers: {
+    //     'Content-Type': 'application/json',
+    //   },
+    //   body: JSON.stringify(webhookPayload)
+    // })
+
+    // console.log('Webhook response status:', response.status)
+
+    // if (!response.ok) {
+    //   throw new Error(`Webhook failed with status: ${response.status}`)
+    // }
+
+    // const responseText = await response.text()
+    // console.log('Raw webhook response:', responseText)
+
+    // let result
+    // try {
+    //   result = JSON.parse(responseText)
+    // } catch (parseError) {
+    //   console.error('Failed to parse JSON response:', parseError)
+    //   console.error('Raw response text:', responseText)
+    //   // If JSON parsing fails, treat as success if status is ok
+    //   result = { message: 'Content generation started' }
+    // }
+
+    // console.log('Webhook response:', result)
+
+    console.log('=== FINAL WEBHOOK PAYLOAD FOR ANALYSIS ===')
+    console.log(JSON.stringify(webhookPayload, null, 2))
+
+    console.log('=== MAKING WEBHOOK REQUEST ===')
+    const response = await postToN8n('generateContent', webhookPayload)
+
+    console.log('Webhook response status:', response.status)
+    console.log('Webhook response headers:', Object.fromEntries(response.headers.entries()))
+
+    if (!response.ok) {
+      throw new Error(`Webhook failed with status: ${response.status}`)
+    }
+
+    const responseText = await response.text()
+    console.log('Raw webhook response:', responseText)
+
+    let result
+    try {
+      result = JSON.parse(responseText)
+    } catch (parseError) {
+      console.error('Failed to parse JSON response:', parseError)
+      console.error('Raw response text:', responseText)
+      // If JSON parsing fails, treat as success if status is ok
+      result = { message: 'Content generation started' }
+    }
+
+    console.log('Webhook response:', result)
+    push({ title: 'Generation started', message: 'Check Content page soon', variant: 'success' })
+  })
+
+  const handleGenerateContent = async () => {
+    if (!viewIdeaModal.idea || !viewIdeaModal.topic) return
+    setGeneratingContent(true)
+    try {
+      const res = await generateContentCall()
+      if (res && 'error' in res && res.error) throw res.error
     } catch (error) {
       console.error('Error generating content:', error)
       push({ title: 'Generation failed', message: `${error instanceof Error ? error.message : 'Unknown error'}`, variant: 'error' })

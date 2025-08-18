@@ -10,6 +10,7 @@ import { useToast } from '../ui/Toast'
 import { IconButton } from '../ui/IconButton'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { postToN8n } from '../../lib/n8n'
+import { useAsyncCallback } from '../../hooks/useAsync'
 
 interface CreateBrandModalProps {
   isOpen: boolean
@@ -30,8 +31,119 @@ interface BrandFormData {
 
 export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }: CreateBrandModalProps) {
   const [currentStep, setCurrentStep] = useState(1)
-  const [autofillLoading, setAutofillLoading] = useState(false)
-  const [submitLoading, setSubmitLoading] = useState(false)
+  const { call: runAutofill, loading: autofillLoading } = useAsyncCallback(async () => {
+    if (!formData.website) {
+      push({ title: 'Missing URL', message: 'Enter a website URL.', variant: 'warning' })
+      return
+    }
+
+    console.log('=== AUTOFILL WEBHOOK REQUEST ===')
+    console.log('Sending autofill request for website:', formData.website)
+
+    const response = await postToN8n('autofill', {
+      operation: 'company_autofill',
+      website: formData.website,
+      brandName: formData.name,
+      additionalInfo: formData.additionalInfo,
+      meta: {
+        user_id: (await supabase.auth.getSession()).data.session?.user.id || null,
+        source: 'app',
+        ts: new Date().toISOString(),
+      },
+    })
+
+    console.log('Autofill webhook response status:', response.status)
+    console.log('Autofill webhook response headers:', Object.fromEntries(response.headers.entries()))
+
+    if (!response.ok) {
+      throw new Error(`Webhook request failed with status: ${response.status}`)
+    }
+
+    const responseText = await response.text()
+    console.log('Raw autofill webhook response:', responseText)
+
+    if (!responseText) {
+      throw new Error('Empty server response')
+    }
+
+    let data
+    try {
+      data = JSON.parse(responseText)
+      console.log('Parsed autofill webhook response:', data)
+    } catch (parseError) {
+      console.error('Failed to parse JSON response:', parseError)
+      console.error('Raw response text:', responseText)
+      throw new Error('Invalid server response')
+    }
+
+    console.log('=== UPDATING FORM DATA ===')
+    console.log('Target Audience from webhook:', data.targetAudience)
+    console.log('Brand Tone from webhook:', data.brandTone)
+    console.log('Key Offer from webhook:', data.keyOffer)
+
+    const stripQuotes = (s: unknown) => {
+      const str = String(s).trim()
+      if (!str) return str
+      const firstCode = str.charCodeAt(0)
+      const lastCode = str.charCodeAt(str.length - 1)
+      // 34 is the double-quote character (") and 39 is the single-quote character (')
+      const isDouble = firstCode === 34 && lastCode === 34
+      const isSingle = firstCode === 39 && lastCode === 39
+      if (isDouble || isSingle) return str.slice(1, -1)
+      return str
+    }
+    setFormData(prev => ({
+      ...prev,
+      targetAudience: data.targetAudience ? stripQuotes(data.targetAudience) : prev.targetAudience,
+      brandTone: data.brandTone ? stripQuotes(data.brandTone) : prev.brandTone,
+      keyOffer: data.keyOffer ? stripQuotes(data.keyOffer) : prev.keyOffer
+    }))
+
+    console.log('Form data updated successfully')
+    push({ title: 'Analyzed', message: 'Updated from website.', variant: 'success' })
+  })
+  const { call: runSubmit, loading: submitLoading } = useAsyncCallback(async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    if (!formData.name || !formData.targetAudience || !formData.brandTone || !formData.keyOffer) {
+      push({ title: 'Missing fields', message: 'Complete all required fields.', variant: 'warning' })
+      return
+    }
+
+    // Ensure website conforms to DB URL check (must start with http/https)
+    const normalizedWebsite = formData.website && formData.website.trim().length > 0
+      ? (/^https?:\/\//i.test(formData.website.trim()) ? formData.website.trim() : `https://${formData.website.trim()}`)
+      : ''
+
+    const brandData: TablesInsert<'companies'> = {
+      brand_name: formData.name,
+      website: normalizedWebsite || null,
+      additional_information: formData.additionalInfo,
+      target_audience: formData.targetAudience,
+      brand_tone: formData.brandTone,
+      key_offer: formData.keyOffer
+    }
+
+    console.log('Creating company in Supabase:', brandData)
+
+    const { data, error } = await supabase
+      .from('companies')
+      .insert([brandData])
+      .select()
+
+    if (error) {
+      console.error('Supabase error:', error)
+      push({ title: 'Create failed', message: `${error.message}`, variant: 'error' })
+      return
+    }
+
+    console.log('Company created successfully:', data)
+    push({ title: 'Created', message: 'Company added.', variant: 'success' })
+
+    // Reset form and close modal
+    resetForm()
+    refetchCompanies() // Refresh the companies list
+    onSubmit()
+  })
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [formData, setFormData] = useState<BrandFormData>({
     name: '',
@@ -44,75 +156,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
   })
   const { push } = useToast()
 
-  const handleAutofill = async () => {
-    if (!formData.website) {
-      push({ title: 'Missing URL', message: 'Enter a website URL.', variant: 'warning' })
-      return
-    }
-
-    setAutofillLoading(true)
-    try {
-      console.log('=== AUTOFILL WEBHOOK REQUEST ===')
-      console.log('Sending autofill request for website:', formData.website)
-
-      const response = await postToN8n('autofill', {
-        operation: 'company_autofill',
-        website: formData.website,
-        brandName: formData.name,
-        additionalInfo: formData.additionalInfo,
-        meta: {
-          user_id: (await supabase.auth.getSession()).data.session?.user.id || null,
-          source: 'app',
-          ts: new Date().toISOString(),
-        },
-      })
-
-      console.log('Autofill webhook response status:', response.status)
-      console.log('Autofill webhook response headers:', Object.fromEntries(response.headers.entries()))
-
-      if (!response.ok) {
-        throw new Error(`Webhook request failed with status: ${response.status}`)
-      }
-
-      const responseText = await response.text()
-      console.log('Raw autofill webhook response:', responseText)
-
-      if (!responseText) {
-        throw new Error('Empty server response')
-      }
-
-      let data
-      try {
-        data = JSON.parse(responseText)
-        console.log('Parsed autofill webhook response:', data)
-      } catch (parseError) {
-        console.error('Failed to parse JSON response:', parseError)
-        console.error('Raw response text:', responseText)
-        throw new Error('Invalid server response')
-      }
-
-      console.log('=== UPDATING FORM DATA ===')
-      console.log('Target Audience from webhook:', data.targetAudience)
-      console.log('Brand Tone from webhook:', data.brandTone)
-      console.log('Key Offer from webhook:', data.keyOffer)
-
-      setFormData(prev => ({
-        ...prev,
-        targetAudience: data.targetAudience ? String(data.targetAudience).replace(/^"|"$/g, '') : prev.targetAudience,
-        brandTone: data.brandTone ? String(data.brandTone).replace(/^"|"$/g, '') : prev.brandTone,
-        keyOffer: data.keyOffer ? String(data.keyOffer).replace(/^"|"$/g, '') : prev.keyOffer
-      }))
-
-      console.log('Form data updated successfully')
-      push({ title: 'Analyzed', message: 'Updated from website.', variant: 'success' })
-
-    } catch (error) {
-      console.error('Autofill error:', error)
-      push({ title: 'Analysis failed', message: `${error instanceof Error ? error.message : 'Unknown error'}. Fill fields manually.`, variant: 'error' })
-    } finally {
-      setAutofillLoading(false)
-    }
-  }
+  const handleAutofill = () => { void runAutofill() }
 
   const handleNext = () => {
     if (currentStep === 1 && !formData.name) {
@@ -126,58 +170,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
     setCurrentStep(1)
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!formData.name || !formData.targetAudience || !formData.brandTone || !formData.keyOffer) {
-      push({ title: 'Missing fields', message: 'Complete all required fields.', variant: 'warning' })
-      return
-    }
-
-    setSubmitLoading(true)
-
-    try {
-      // Ensure website conforms to DB URL check (must start with http/https)
-      const normalizedWebsite = formData.website && formData.website.trim().length > 0
-        ? (/^https?:\/\//i.test(formData.website.trim()) ? formData.website.trim() : `https://${formData.website.trim()}`)
-        : ''
-
-      const brandData: TablesInsert<'companies'> = {
-        brand_name: formData.name,
-        website: normalizedWebsite || null,
-        additional_information: formData.additionalInfo,
-        target_audience: formData.targetAudience,
-        brand_tone: formData.brandTone,
-        key_offer: formData.keyOffer
-      }
-
-      console.log('Creating company in Supabase:', brandData)
-
-      const { data, error } = await supabase
-        .from('companies')
-        .insert([brandData])
-        .select()
-
-      if (error) {
-        console.error('Supabase error:', error)
-        push({ title: 'Create failed', message: `${error.message}`, variant: 'error' })
-        return
-      }
-
-      console.log('Company created successfully:', data)
-      push({ title: 'Created', message: 'Company added.', variant: 'success' })
-
-      // Reset form and close modal
-      resetForm()
-      refetchCompanies() // Refresh the companies list
-      onSubmit()
-
-    } catch (error) {
-      console.error('Error creating company:', error)
-      push({ title: 'Create failed', message: 'Try again.', variant: 'error' })
-    } finally {
-      setSubmitLoading(false)
-    }
-  }
+  const handleSubmit = (e: React.FormEvent) => { void runSubmit(e) }
 
   const resetForm = () => {
     setFormData({

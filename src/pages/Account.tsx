@@ -7,6 +7,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useNavigate } from 'react-router-dom'
+import { useAsyncCallback } from '../hooks/useAsync'
 
 export function Account() {
     useDocumentTitle('Account — AI Marketing')
@@ -41,25 +42,18 @@ export function Account() {
 
     const canSave = useMemo(() => Boolean(user), [user])
 
-    const saveMetadata = async () => {
+    const { call: saveMetaCall, loading: metaLoading } = useAsyncCallback(async () => {
         if (!canSave) return
         if (!isSupabaseConfigured) {
             push({ title: 'Demo mode', message: 'Supabase is not configured; changes won’t persist.', variant: 'warning' })
             return
         }
-        setMetaSaving(true)
-        try {
-            const { error } = await supabase.auth.updateUser({ data: { name } as any })
-            if (error) throw error
-            push({ title: 'Profile updated', message: 'Profile saved.', variant: 'success' })
-        } catch (e: any) {
-            push({ title: 'Update failed', message: e?.message || 'Couldn’t update profile.', variant: 'error' })
-        } finally {
-            setMetaSaving(false)
-        }
-    }
+        const { error } = await supabase.auth.updateUser({ data: { name } as any })
+        if (error) throw error
+        push({ title: 'Profile updated', message: 'Profile saved.', variant: 'success' })
+    })
 
-    const saveEmail = async () => {
+    const { call: saveEmailCall, loading: emailLoading } = useAsyncCallback(async () => {
         if (!canSave) return
         const next = email.trim()
         if (!next) {
@@ -74,19 +68,12 @@ export function Account() {
             push({ title: 'Demo mode', message: 'Supabase is not configured; email change won’t persist.', variant: 'warning' })
             return
         }
-        setEmailSaving(true)
-        try {
-            const { error } = await supabase.auth.updateUser({ email: next })
-            if (error) throw error
-            push({ title: 'Check your email', message: 'We sent a confirmation link.', variant: 'info' })
-        } catch (e: any) {
-            push({ title: 'Email update failed', message: e?.message || 'Couldn’t update email.', variant: 'error' })
-        } finally {
-            setEmailSaving(false)
-        }
-    }
+        const { error } = await supabase.auth.updateUser({ email: next })
+        if (error) throw error
+        push({ title: 'Check your email', message: 'We sent a confirmation link.', variant: 'info' })
+    })
 
-    const savePassword = async () => {
+    const { call: savePasswordCall, loading: pwdLoading } = useAsyncCallback(async () => {
         if (!canSave) return
         if (newPassword.length < 8) {
             push({ title: 'Weak password', message: 'Use at least 8 characters.', variant: 'warning' })
@@ -100,39 +87,28 @@ export function Account() {
             push({ title: 'Demo mode', message: 'Supabase is not configured; password change won’t persist.', variant: 'warning' })
             return
         }
-        setPwdSaving(true)
-        try {
-            // Optional re-auth check if currentPassword provided
-            if (currentPassword && user?.email) {
-                const { error: reauthError } = await supabase.auth.signInWithPassword({ email: user.email, password: currentPassword })
-                if (reauthError) {
-                    push({ title: 'Invalid current password', message: 'Check your current password.', variant: 'error' })
-                    setPwdSaving(false)
-                    return
-                }
+        if (currentPassword && user?.email) {
+            const { error: reauthError } = await supabase.auth.signInWithPassword({ email: user.email, password: currentPassword })
+            if (reauthError) {
+                push({ title: 'Invalid current password', message: 'Check your current password.', variant: 'error' })
+                return
             }
-            const { error } = await supabase.auth.updateUser({ password: newPassword })
-            if (error) throw error
-            setCurrentPassword('')
-            setNewPassword('')
-            setConfirmPassword('')
-            push({ title: 'Password updated', message: 'Password changed.', variant: 'success' })
-        } catch (e: any) {
-            push({ title: 'Password update failed', message: e?.message || 'Couldn’t update password.', variant: 'error' })
-        } finally {
-            setPwdSaving(false)
         }
-    }
+        const { error } = await supabase.auth.updateUser({ password: newPassword })
+        if (error) throw error
+        setCurrentPassword('')
+        setNewPassword('')
+        setConfirmPassword('')
+        push({ title: 'Password updated', message: 'Password changed.', variant: 'success' })
+    })
 
-    const handleSignOut = async () => {
+    const { call: signOutCall } = useAsyncCallback(async () => {
         try {
             await supabase.auth.signOut()
-        } catch (_e) {
-            // ignore and navigate regardless
         } finally {
             navigate('/login', { replace: true })
         }
-    }
+    })
 
     return (
         <div className="space-y-6">
@@ -163,7 +139,7 @@ export function Account() {
                                 <Input label="Email verified" value={emailVerified ? 'Yes' : 'No'} disabled />
                             </div>
                             <div className="flex justify-end">
-                                <Button onClick={saveMetadata} loading={metaSaving} disabled={!canSave}>Save</Button>
+                                <Button onClick={() => { setMetaSaving(true); saveMetaCall()?.finally(() => setMetaSaving(false)) }} loading={metaSaving || metaLoading} disabled={!canSave}>Save</Button>
                             </div>
                         </div>
                     </CardContent>
@@ -178,7 +154,7 @@ export function Account() {
                         <div className="space-y-4">
                             <Input label="Email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
                             <div className="flex justify-end">
-                                <Button onClick={saveEmail} loading={emailSaving} disabled={!canSave}>Update email</Button>
+                                <Button onClick={() => { setEmailSaving(true); saveEmailCall()?.finally(() => setEmailSaving(false)) }} loading={emailSaving || emailLoading} disabled={!canSave}>Update email</Button>
                             </div>
                         </div>
                     </CardContent>
@@ -197,7 +173,7 @@ export function Account() {
                                 <Input label="Confirm new password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} autoComplete="new-password" />
                             </div>
                             <div className="flex justify-end">
-                                <Button onClick={savePassword} loading={pwdSaving} disabled={!canSave}>Update password</Button>
+                                <Button onClick={() => { setPwdSaving(true); savePasswordCall()?.finally(() => setPwdSaving(false)) }} loading={pwdSaving || pwdLoading} disabled={!canSave}>Update password</Button>
                             </div>
                         </div>
                     </CardContent>
@@ -212,7 +188,7 @@ export function Account() {
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <p className="text-gray-600 text-sm">Sign out of your account on this device.</p>
                             <div className="flex justify-end">
-                                <Button variant="outline" onClick={handleSignOut} disabled={!session}>Sign Out</Button>
+                                <Button variant="outline" onClick={() => { signOutCall() }} disabled={!session}>Sign Out</Button>
                             </div>
                         </div>
                     </CardContent>

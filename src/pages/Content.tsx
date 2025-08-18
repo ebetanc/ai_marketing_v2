@@ -12,6 +12,7 @@ import { formatDate, truncateText } from '../lib/utils'
 import { useToast } from '../components/ui/Toast'
 import { Skeleton } from '../components/ui/Skeleton'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { useAsyncCallback } from '../hooks/useAsync'
 import { useLocation, useNavigate } from 'react-router-dom'
 // (reserved) formatting helpers for future rich rendering of content bodies
 // Helper function to extract and format content from JSON (reserved)
@@ -151,6 +152,7 @@ export function Content() {
     content: null,
     strategyId: undefined
   })
+  const [approvingId, setApprovingId] = useState<number | null>(null)
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean
     content: any
@@ -159,6 +161,11 @@ export function Content() {
     isOpen: false,
     content: null,
     loading: false
+  })
+  // Approve action handler
+  const { call: approveCall } = useAsyncCallback(async (id: number) => {
+    const { error } = await supabase.from('content').update({ status: 'approved' }).eq('id', id)
+    if (error) throw error
   })
   const { push } = useToast()
   const searchInputRef = useRef<HTMLInputElement | null>(null)
@@ -343,43 +350,30 @@ export function Content() {
     })
   }
 
-  const handleDeleteConfirm = async () => {
+  const { call: runDelete, loading: deleting } = useAsyncCallback(async () => {
     if (!deleteDialog.content) return
+    console.log(`Attempting to delete content from ${deleteDialog.content.source}`)
+    console.log('Content to delete:', deleteDialog.content)
 
-    setDeleteDialog(prev => ({ ...prev, loading: true }))
+    const { error } = await supabase
+      .from(deleteDialog.content.source)
+      .delete()
+      .eq('id', deleteDialog.content.id)
 
-    try {
-      console.log(`Attempting to delete content from ${deleteDialog.content.source}`)
-      console.log('Content to delete:', deleteDialog.content)
-
-      const { error } = await supabase
-        .from(deleteDialog.content.source)
-        .delete()
-        .eq('id', deleteDialog.content.id)
-
-      if (error) {
-        console.error('Supabase delete error:', error)
-        push({ title: 'Delete failed', message: `Failed to delete: ${error.message}`, variant: 'error' })
-        return
-      }
-
-      console.log('Content deleted successfully from Supabase')
-
-      // Update local state
-      setGeneratedContent(prev => prev.filter(content => content.id !== deleteDialog.content.id))
-
-      // Close dialog
-      setDeleteDialog({ isOpen: false, content: null, loading: false })
-
-      console.log('Content deleted successfully and UI updated')
-      push({ title: 'Deleted', message: 'Content removed', variant: 'success' })
-    } catch (_error) {
-      console.error('Error deleting content:', error)
-      push({ title: 'Delete failed', message: 'Try again.', variant: 'error' })
-    } finally {
-      setDeleteDialog(prev => ({ ...prev, loading: false }))
+    if (error) {
+      console.error('Supabase delete error:', error)
+      push({ title: 'Delete failed', message: `Failed to delete: ${error.message}`, variant: 'error' })
+      return
     }
-  }
+
+    console.log('Content deleted successfully from Supabase')
+    setGeneratedContent(prev => prev.filter(content => content.id !== deleteDialog.content.id))
+    setDeleteDialog({ isOpen: false, content: null, loading: false })
+    console.log('Content deleted successfully and UI updated')
+    push({ title: 'Deleted', message: 'Content removed', variant: 'success' })
+  })
+
+  const handleDeleteConfirm = () => { void runDelete() }
 
   const handleDeleteCancel = () => {
     setDeleteDialog({ isOpen: false, content: null, loading: false })
@@ -481,8 +475,8 @@ export function Content() {
       default: return '📄'
     }
   }
-
-  const handleCopyLink = async (content: any) => {
+  // Copy link action handler
+  const { call: copyLinkCall } = useAsyncCallback(async (content: any) => {
     const params = new URLSearchParams(location.search)
     const source = 'content'
     params.set('open', `${source}:${content.id}`)
@@ -494,7 +488,7 @@ export function Content() {
     } catch (_e) {
       push({ message: 'Copy failed. Try again.', variant: 'error' })
     }
-  }
+  })
 
   const isFiltersActive = (
     (searchQuery && searchQuery.length > 0) ||
@@ -565,7 +559,7 @@ export function Content() {
         confirmText="Delete"
         cancelText="Cancel"
         variant="danger"
-        loading={deleteDialog.loading}
+        loading={deleting}
       />
 
       {/* Filters */}
@@ -747,18 +741,20 @@ export function Content() {
                                     <Button
                                       variant="outline"
                                       size="xs"
-                                      onClick={(e) => {
+                                      onClick={async (e) => {
                                         e.stopPropagation()
-                                        // Optimistically update local state
+                                        setApprovingId(content.id)
+                                        // Optimistic update
                                         setGeneratedContent(prev => prev.map(c => c.id === content.id ? { ...c, status: 'approved' } : c))
-                                        // Persist to backing table
-                                        supabase.from('content').update({ status: 'approved' }).eq('id', content.id).then(({ error }: { error: any }) => {
-                                          if (error) {
-                                            // Revert if failed
-                                            setGeneratedContent(prev => prev.map(c => c.id === content.id ? { ...c, status: 'draft' } : c))
-                                          }
-                                        })
+                                        const res = await approveCall(content.id)
+                                        if (res && 'error' in res && res.error) {
+                                          // Revert on error
+                                          setGeneratedContent(prev => prev.map(c => c.id === content.id ? { ...c, status: 'draft' } : c))
+                                        }
+                                        setApprovingId(null)
                                       }}
+                                      loading={approvingId === content.id}
+                                      disabled={approvingId === content.id}
                                       className="ml-2"
                                     >
                                       Approve
@@ -796,7 +792,7 @@ export function Content() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={(e) => { e.stopPropagation(); handleCopyLink(content) }}
+                                onClick={(e) => { e.stopPropagation(); void copyLinkCall(content) }}
                                 aria-label={`Copy link for content ${content.id}`}
                                 title="Copy link"
                                 className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"

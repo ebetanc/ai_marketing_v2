@@ -8,6 +8,7 @@ import { Modal } from '../ui/Modal'
 import { IconButton } from '../ui/IconButton'
 import { useToast } from '../ui/Toast'
 import type { Tables } from '../../lib/supabase'
+import { useAsyncCallback } from '../../hooks/useAsync'
 
 type CompanyRow = Tables<'companies'>
 type StrategyRow = Tables<'strategies'>
@@ -102,9 +103,62 @@ const formatContentBody = (content: string) => {
 
 export function ViewContentModal({ isOpen, onClose, content, strategyId, onPosted, deepLink, onApproved }: ViewContentModalProps) {
   const [expandedAngles, setExpandedAngles] = useState<{ [key: number]: boolean }>({})
-  const [posting, setPosting] = useState(false)
-  const [approving, setApproving] = useState(false)
+  const { call: runPost, loading: posting } = useAsyncCallback(async () => {
+    if (!content?.id || !content?.source) return
+    console.log('Posting content:', content.id, 'from table:', content.source)
+    const { error } = await supabase
+      .from(content.source)
+      .update({ post: true })
+      .eq('id', content.id)
+
+    if (error) {
+      console.error('Error posting content:', error)
+      push({ message: `Failed to post: ${error.message}`, variant: 'error' })
+      return
+    }
+
+    console.log('Content posted successfully')
+    push({ message: 'Content posted successfully!', variant: 'success' })
+    onPosted?.({ ...content, post: true })
+    onClose()
+  })
+  const { call: runApprove, loading: approving } = useAsyncCallback(async () => {
+    if (!content?.id || !content?.source) return
+    const { error } = await supabase
+      .from(content.source)
+      .update({ status: 'approved' })
+      .eq('id', content.id)
+
+    if (error) {
+      push({ message: `Failed to approve: ${error.message}`, variant: 'error' })
+      return
+    }
+    push({ message: 'Content approved', variant: 'success' })
+    onApproved?.({ ...content, status: 'approved' })
+  })
   const { push } = useToast()
+
+  // Clipboard and share actions as hooks (must be before any early return)
+  const { call: copyToClipboard, loading: copyingGeneric } = useAsyncCallback(async (text: string, successMsg: string) => {
+    await navigator.clipboard.writeText(text)
+    push({ message: successMsg, variant: 'success' })
+  })
+  const { call: shareCall, loading: sharing } = useAsyncCallback(async () => {
+    const shareData = {
+      title: content.title || 'Content',
+      text: content.title || undefined,
+      url: deepLink || undefined
+    } as any
+    if ((navigator as any).share) {
+      await (navigator as any).share(shareData)
+    } else {
+      if (deepLink) {
+        await copyToClipboard(deepLink, 'Link copied')
+      } else {
+        await copyToClipboard(content.title || 'Untitled', 'Title copied')
+      }
+    }
+  })
 
   if (!isOpen || !content) return null
 
@@ -167,61 +221,9 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
     setExpandedAngles({})
   }
 
-  const handlePost = async () => {
-    if (!content?.id || !content?.source) return
+  const handlePost = () => { void runPost() }
 
-    setPosting(true)
-
-    try {
-      console.log('Posting content:', content.id, 'from table:', content.source)
-
-      const { error } = await supabase
-        .from(content.source)
-        .update({ post: true })
-        .eq('id', content.id)
-
-      if (error) {
-        console.error('Error posting content:', error)
-        push({ message: `Failed to post: ${error.message}`, variant: 'error' })
-        return
-      }
-
-      console.log('Content posted successfully')
-      push({ message: 'Content posted successfully!', variant: 'success' })
-      // Notify parent to update local state
-      onPosted?.({ ...content, post: true })
-      // Close the modal after successful posting
-      onClose()
-
-    } catch (error) {
-      console.error('Error posting content:', error)
-      push({ message: 'Failed to post. Try again.', variant: 'error' })
-    } finally {
-      setPosting(false)
-    }
-  }
-
-  const handleApprove = async () => {
-    if (!content?.id || !content?.source) return
-    setApproving(true)
-    try {
-      const { error } = await supabase
-        .from(content.source)
-        .update({ status: 'approved' })
-        .eq('id', content.id)
-
-      if (error) {
-        push({ message: `Failed to approve: ${error.message}`, variant: 'error' })
-        return
-      }
-      push({ message: 'Content approved', variant: 'success' })
-      onApproved?.({ ...content, status: 'approved' })
-    } catch (_e) {
-      push({ message: 'Failed to approve. Try again.', variant: 'error' })
-    } finally {
-      setApproving(false)
-    }
-  }
+  const handleApprove = () => { void runApprove() }
 
   const renderAngleProperty = (key: string, value: unknown) => {
     if (!value) return null
@@ -334,18 +336,7 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
 
   const titleId = 'view-content-title'
 
-  const copyToClipboard = async (text: string, successMsg: string) => {
-    try {
-      await navigator.clipboard.writeText(text)
-      push({ message: successMsg, variant: 'success' })
-    } catch (_e) {
-      push({ message: 'Copy failed. Try again.', variant: 'error' })
-    }
-  }
-
-  const handleCopyTitle = () => {
-    copyToClipboard(content.title || 'Untitled', 'Title copied')
-  }
+  const handleCopyTitle = () => { void copyToClipboard(content.title || 'Untitled', 'Title copied') }
 
   const handleCopyBody = () => {
     const text = String(content.body_text || content.body || '')
@@ -353,29 +344,10 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
       push({ message: 'No body to copy', variant: 'warning' })
       return
     }
-    copyToClipboard(text, 'Content copied')
+    void copyToClipboard(text, 'Content copied')
   }
 
-  const handleShare = async () => {
-    const shareData = {
-      title: content.title || 'Content',
-      text: content.title || undefined,
-      url: deepLink || undefined
-    } as any
-    try {
-      if ((navigator as any).share) {
-        await (navigator as any).share(shareData)
-      } else {
-        if (deepLink) {
-          await copyToClipboard(deepLink, 'Link copied')
-        } else {
-          handleCopyTitle()
-        }
-      }
-    } catch (_e) {
-      // Ignore cancel
-    }
-  }
+
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} labelledById={titleId}>
@@ -533,11 +505,11 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
               <Clipboard className="h-4 w-4 mr-2" />
               Copy body
             </Button>
-            <Button variant="outline" size="sm" onClick={() => deepLink ? copyToClipboard(deepLink, 'Link copied') : push({ message: 'No link available', variant: 'warning' })}>
+            <Button variant="outline" size="sm" onClick={() => deepLink ? void copyToClipboard(deepLink, 'Link copied') : push({ message: 'No link available', variant: 'warning' })} disabled={copyingGeneric}>
               <Share2 className="h-4 w-4 mr-2" />
               Copy link
             </Button>
-            <Button variant="outline" size="sm" onClick={handleShare}>
+            <Button variant="outline" size="sm" onClick={() => void shareCall()} disabled={sharing}>
               <Share2 className="h-4 w-4 mr-2" />
               Share
             </Button>

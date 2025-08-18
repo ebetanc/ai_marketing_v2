@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from 'react'
-import { Navigate, useLocation } from 'react-router-dom'
+import React, { useMemo, useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { supabase } from '../lib/supabase'
 import { Input } from '../components/ui/Input'
 import { Button } from '../components/ui/Button'
+import { useAsyncCallback } from '../hooks/useAsync'
 
 export default function Login() {
     useDocumentTitle('Sign in — AI Marketing')
@@ -17,70 +18,43 @@ export default function Login() {
 
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
-    const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState<string | null>(null)
     const [error, setError] = useState<string | null>(null)
     const minPasswordLength = 6
 
-    if (session) {
-        return <Navigate to={redirectTo || '/dashboard'} replace />
-    }
-
-    const handleSignUp = async () => {
-        setLoading(true)
-        setError(null)
-        setMessage(null)
-        try {
-            if (password.length < minPasswordLength) {
-                throw new Error(`Use at least ${minPasswordLength} characters.`)
-            }
-            const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin
-            const { data, error } = await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                    // If email confirmations are enabled, this controls where Supabase redirects after the user confirms.
-                    emailRedirectTo: `${siteUrl}/?redirectTo=${encodeURIComponent(redirectTo)}`,
-                },
-            })
-            if (error) throw error
-            // If confirmations are enabled, session will be null and user must confirm via email first.
-            if (data?.session) {
-                window.location.assign(redirectTo || '/dashboard')
-            } else if (data?.user) {
-                setMessage('Account created. Check your email to confirm. You’ll be signed in after confirming.')
-            }
-        } catch (err: any) {
-            setError(err?.message || 'Sign up failed.')
-        } finally {
-            setLoading(false)
+    const { call: signUp, loading: signingUp, error: signUpError, reset: resetSignUp } = useAsyncCallback(async () => {
+        if (password.length < minPasswordLength) {
+            throw new Error(`Use at least ${minPasswordLength} characters.`)
         }
-    }
-
-    const handleSignIn = async () => {
-        setLoading(true)
-        setError(null)
-        setMessage(null)
-        try {
-            const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-            if (error) throw error
-            if (data?.user) {
-                window.location.assign(redirectTo || '/dashboard')
-            }
-        } catch (err: any) {
-            const msg = err?.message || 'Sign in failed.'
-            // Heuristic for unconfirmed email message
-            if (/confirm/i.test(msg) && /email/i.test(msg)) {
-                setError('Email not confirmed. Check your inbox or resend below.')
-            } else if (/invalid/i.test(msg) && /credentials|login/i.test(msg)) {
-                setError('Invalid email or password.')
-            } else {
-                setError(msg)
-            }
-        } finally {
-            setLoading(false)
+        const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                emailRedirectTo: `${(import.meta.env.VITE_SITE_URL as string) || window.location.origin}/?redirectTo=${encodeURIComponent(redirectTo)}`,
+            },
+        })
+        if (error) throw error
+        if (data?.session) {
+            window.location.assign(redirectTo || '/dashboard')
+        } else if (data?.user) {
+            setMessage('Account created. Check your email to confirm. You’ll be signed in after confirming.')
         }
-    }
+    })
+
+    const { call: signIn, loading: signingIn, error: signInError, reset: resetSignIn } = useAsyncCallback(async () => {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+        if (error) throw error
+        if (data?.user) {
+            window.location.assign(redirectTo || '/dashboard')
+        }
+    })
+
+    // Redirect authenticated users via effect to avoid any hook-order confusion
+    useEffect(() => {
+        if (session) {
+            window.location.assign(redirectTo || '/dashboard')
+        }
+    }, [session, redirectTo])
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -108,8 +82,42 @@ export default function Login() {
                     />
                     {/* No confirm password to keep sign up quick */}
                     <div className="grid grid-cols-2 gap-2">
-                        <Button type="button" onClick={handleSignIn} loading={loading} disabled={!email || !password}>Sign in</Button>
-                        <Button type="button" variant="outline" onClick={handleSignUp} loading={loading} disabled={!email || !password}>Sign up</Button>
+                        <Button
+                            type="button"
+                            onClick={async () => {
+                                setMessage(null); setError(null); resetSignIn();
+                                const res = await signIn()
+                                if (res && 'error' in res && res.error) {
+                                    const msg = res.error.message || 'Sign in failed.'
+                                    if (/confirm/i.test(msg) && /email/i.test(msg)) {
+                                        setError('Email not confirmed. Check your inbox or resend below.')
+                                    } else if (/invalid/i.test(msg) && /credentials|login/i.test(msg)) {
+                                        setError('Invalid email or password.')
+                                    } else {
+                                        setError(msg)
+                                    }
+                                }
+                            }}
+                            loading={signingIn}
+                            disabled={!email || !password}
+                        >
+                            Sign in
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={async () => {
+                                setMessage(null); setError(null); resetSignUp();
+                                const res = await signUp()
+                                if (res && 'error' in res && res.error) {
+                                    setError(res.error.message || 'Sign up failed.')
+                                }
+                            }}
+                            loading={signingUp}
+                            disabled={!email || !password}
+                        >
+                            Sign up
+                        </Button>
                     </div>
                     <div className="text-right">
                         <a href="/forgot-password" className="text-xs text-brand-600 hover:underline">Forgot password?</a>
@@ -117,10 +125,10 @@ export default function Login() {
                 </div>
 
                 {message && <div className="text-sm text-green-600">{message}</div>}
-                {error && (
+                {(error || signInError || signUpError) && (
                     <div className="space-y-2">
-                        <div className="text-sm text-red-600">{error}</div>
-                        {(/not\s*confirmed/i.test(error) || /resend/i.test(error)) && (
+                        <div className="text-sm text-red-600">{error || signInError?.message || signUpError?.message}</div>
+                        {(/not\s*confirmed/i.test(error || signInError?.message || '') || /resend/i.test(error || '')) && (
                             <div>
                                 <ResendConfirmation email={email} redirectTo={redirectTo} onDone={(ok) => setMessage(ok ? 'Confirmation email sent.' : null)} />
                             </div>
@@ -133,31 +141,29 @@ export default function Login() {
 }
 
 function ResendConfirmation({ email, redirectTo, onDone }: { email: string; redirectTo: string; onDone?: (ok: boolean) => void }) {
-    const [sending, setSending] = React.useState(false)
     const [error, setError] = React.useState<string | null>(null)
-    const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin
-    const onClick = async () => {
+    const { call, loading, reset } = useAsyncCallback(async () => {
         if (!email) return
-        setSending(true)
+        const { error } = await supabase.auth.resend({
+            type: 'signup',
+            email,
+            options: { emailRedirectTo: `${(import.meta.env.VITE_SITE_URL as string) || window.location.origin}/?redirectTo=${encodeURIComponent(redirectTo)}` },
+        })
+        if (error) throw error
+        onDone?.(true)
+    })
+    const onClick = async () => {
         setError(null)
-        try {
-            const { error } = await supabase.auth.resend({
-                type: 'signup',
-                email,
-                options: { emailRedirectTo: `${siteUrl}/?redirectTo=${encodeURIComponent(redirectTo)}` },
-            })
-            if (error) throw error
-            onDone?.(true)
-        } catch (err: any) {
-            setError(err?.message || 'Failed to resend confirmation.')
+        reset()
+        const res = await call()
+        if (res && 'error' in res && res.error) {
+            setError(res.error.message || 'Failed to resend confirmation.')
             onDone?.(false)
-        } finally {
-            setSending(false)
         }
     }
     return (
         <div className="text-xs">
-            <Button type="button" size="sm" variant="outline" onClick={onClick} disabled={!email} loading={sending}>
+            <Button type="button" size="sm" variant="outline" onClick={onClick} disabled={!email} loading={loading}>
                 Resend confirmation email
             </Button>
             {error && <div className="text-red-600 mt-1">{error}</div>}

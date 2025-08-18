@@ -3,32 +3,27 @@ import { Input } from '../components/ui/Input'
 import { Button } from '../components/ui/Button'
 import { supabase } from '../lib/supabase'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { useAsyncCallback } from '../hooks/useAsync'
 
 export default function ForgotPassword() {
     useDocumentTitle('Forgot password — AI Marketing')
     const [email, setEmail] = useState('')
-    const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState<string | null>(null)
-    const [error, setError] = useState<string | null>(null)
+    const { call: sendReset, loading, error, reset } = useAsyncCallback(async () => {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${siteUrl}/reset-password`,
+        })
+        if (error) throw error
+        setMessage('If that email exists, we sent a reset link.')
+    })
 
     const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin
 
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        setLoading(true)
-        setError(null)
         setMessage(null)
-        try {
-            const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `${siteUrl}/reset-password`,
-            })
-            if (error) throw error
-            setMessage('If that email exists, we sent a reset link.')
-        } catch (err: any) {
-            setError(err?.message || 'Couldn’t send reset email.')
-        } finally {
-            setLoading(false)
-        }
+        reset()
+        await sendReset()
     }
 
     return (
@@ -50,7 +45,7 @@ export default function ForgotPassword() {
                     <Button type="submit" loading={loading} className="w-full">Send link</Button>
                 </form>
                 {message && <div className="text-sm text-green-600">{message}</div>}
-                {error && <div className="text-sm text-red-600">{error}</div>}
+                {error && <div className="text-sm text-red-600">{error.message || 'Couldn’t send reset email.'}</div>}
             </div>
         </div>
     )

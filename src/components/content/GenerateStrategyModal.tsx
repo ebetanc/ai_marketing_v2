@@ -7,6 +7,7 @@ import { Modal } from '../ui/Modal'
 import { IconButton } from '../ui/IconButton'
 import { supabase } from '../../lib/supabase'
 import { postToN8n } from '../../lib/n8n'
+import { useAsyncCallback } from '../../hooks/useAsync'
 
 interface GenerateStrategyModalProps {
   isOpen: boolean
@@ -29,18 +30,7 @@ const platforms = [
 export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGenerated }: GenerateStrategyModalProps) {
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([])
   const [selectedCompany, setSelectedCompany] = useState<any>(null)
-  const [isGenerating, setIsGenerating] = useState(false)
-  const { push } = useToast()
-
-  const togglePlatform = (platformId: string) => {
-    setSelectedPlatforms(prev =>
-      prev.includes(platformId)
-        ? prev.filter(id => id !== platformId)
-        : [...prev, platformId]
-    )
-  }
-
-  const handleGenerateStrategy = async () => {
+  const { call: runGenerate, loading: isGenerating } = useAsyncCallback(async () => {
     if (!selectedCompany) {
       push({ title: 'Missing company', message: 'Please select a company', variant: 'warning' })
       return
@@ -51,142 +41,141 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
       return
     }
 
-    setIsGenerating(true)
+    // Identify current user to pass ownership for backend CRUD
+    const { data: sessionData } = await supabase.auth.getSession()
+    const userId = sessionData.session?.user.id || null
+    // Derive normalized-first brand fields with safe fallbacks
+    const brandName: string = selectedCompany.brand_name || selectedCompany.name || 'Unknown Brand'
+    const website: string = selectedCompany.website || ''
+    const tone: string = (selectedCompany.brand_voice?.tone)
+      || selectedCompany.brand_tone
+      || ''
+    const style: string = (selectedCompany.brand_voice?.style)
+      || selectedCompany.key_offer
+      || ''
+    const keywords: string[] = selectedCompany.brand_voice?.keywords || []
 
-    try {
-      // Identify current user to pass ownership for backend CRUD
-      const { data: sessionData } = await supabase.auth.getSession()
-      const userId = sessionData.session?.user.id || null
-      // Derive normalized-first brand fields with safe fallbacks
-      const brandName: string = selectedCompany.brand_name || selectedCompany.name || 'Unknown Brand'
-      const website: string = selectedCompany.website || ''
-      const tone: string = (selectedCompany.brand_voice?.tone)
-        || selectedCompany.brand_tone
-        || ''
-      const style: string = (selectedCompany.brand_voice?.style)
-        || selectedCompany.key_offer
-        || ''
-      const keywords: string[] = selectedCompany.brand_voice?.keywords || []
+    // Target audience as string (raw) and object (normalized)
+    const targetAudienceStr: string = typeof selectedCompany.target_audience === 'string'
+      ? selectedCompany.target_audience
+      : (selectedCompany.target_audience?.demographics || '')
+    const targetAudienceObj: { demographics: string; interests: string[]; pain_points: string[] } = {
+      demographics: selectedCompany.target_audience?.demographics || targetAudienceStr || '',
+      interests: selectedCompany.target_audience?.interests || [],
+      pain_points: selectedCompany.target_audience?.pain_points || []
+    }
 
-      // Target audience as string (raw) and object (normalized)
-      const targetAudienceStr: string = typeof selectedCompany.target_audience === 'string'
-        ? selectedCompany.target_audience
-        : (selectedCompany.target_audience?.demographics || '')
-      const targetAudienceObj: { demographics: string; interests: string[]; pain_points: string[] } = {
-        demographics: selectedCompany.target_audience?.demographics || targetAudienceStr || '',
-        interests: selectedCompany.target_audience?.interests || [],
-        pain_points: selectedCompany.target_audience?.pain_points || []
-      }
+    const additionalInfo: string = selectedCompany.additional_information || (selectedCompany as any).additionalInfo || ''
+    const createdAt: string = selectedCompany.created_at || (selectedCompany as any).createdAt || ''
+    const imageGuidelines: string = (selectedCompany as any).imageGuidelines || ''
+    // Create platforms array using fixed 8-slot index mapping
+    const ORDER = ['twitter', 'linkedin', 'newsletter', 'facebook', 'instagram', 'youtube', 'tiktok', 'blog'] as const
+    const platformsPayload = ORDER.map(p => selectedPlatforms.includes(p) ? p : '')
 
-      const additionalInfo: string = selectedCompany.additional_information || (selectedCompany as any).additionalInfo || ''
-      const createdAt: string = selectedCompany.created_at || (selectedCompany as any).createdAt || ''
-      const imageGuidelines: string = (selectedCompany as any).imageGuidelines || ''
-      // Create platforms array using fixed 8-slot index mapping
-      const ORDER = ['twitter', 'linkedin', 'newsletter', 'facebook', 'instagram', 'youtube', 'tiktok', 'blog'] as const
-      const platformsPayload = ORDER.map(p => selectedPlatforms.includes(p) ? p : '')
+    // Prepare comprehensive brand data payload
+    const comprehensiveBrandData = {
+      // Basic brand information
+      id: selectedCompany.id,
+      name: brandName,
+      website,
 
-      // Prepare comprehensive brand data payload
-      const comprehensiveBrandData = {
-        // Basic brand information
-        id: selectedCompany.id,
-        name: brandName,
-        website,
+      // Brand voice and tone
+      brandTone: tone,
+      keyOffer: style,
+      brandVoice: {
+        tone,
+        style,
+        keywords
+      },
 
-        // Brand voice and tone
-        brandTone: tone,
-        keyOffer: style,
-        brandVoice: {
-          tone,
-          style,
-          keywords
-        },
+      // Target audience information
+      targetAudience: targetAudienceStr,
+      target_audience: targetAudienceObj,
 
-        // Target audience information
-        targetAudience: targetAudienceStr,
-        target_audience: targetAudienceObj,
+      // Additional information
+      additionalInfo,
+      imageGuidelines,
 
-        // Additional information
-        additionalInfo,
-        imageGuidelines,
+      // Metadata
+      createdAt
+    }
 
-        // Metadata
-        createdAt
-      }
-
-      const webhookPayload = {
-        identifier: 'generateAngles',
-        operation: 'create_strategy_angles',
-        // Core identifiers used for CRUD
-        company_id: selectedCompany.id,
-        meta: {
-          user_id: userId,
-          source: 'app',
-          ts: new Date().toISOString(),
-        },
+    const webhookPayload = {
+      identifier: 'generateAngles',
+      operation: 'create_strategy_angles',
+      // Core identifiers used for CRUD
+      company_id: selectedCompany.id,
+      meta: {
         user_id: userId,
-        brand: comprehensiveBrandData,
-        platforms: platformsPayload,
-        // Additional context for the AI
-        context: {
-          requestType: 'content_strategy_generation',
-          timestamp: new Date().toISOString(),
-          platformCount: selectedPlatforms.length,
-          brandHasWebsite: !!website,
-          brandHasAdditionalInfo: !!additionalInfo,
-          brandHasImageGuidelines: !!imageGuidelines,
-        },
-      }
+        source: 'app',
+        ts: new Date().toISOString(),
+      },
+      user_id: userId,
+      brand: comprehensiveBrandData,
+      platforms: platformsPayload,
+      // Additional context for the AI
+      context: {
+        requestType: 'content_strategy_generation',
+        timestamp: new Date().toISOString(),
+        platformCount: selectedPlatforms.length,
+        brandHasWebsite: !!website,
+        brandHasAdditionalInfo: !!additionalInfo,
+        brandHasImageGuidelines: !!imageGuidelines,
+      },
+    }
 
-      const response = await postToN8n('generateAngles', webhookPayload)
+    const response = await postToN8n('generateAngles', webhookPayload)
 
-      if (!response.ok) {
-        throw new Error('Failed to generate content strategy')
-      }
+    if (!response.ok) {
+      throw new Error('Failed to generate content strategy')
+    }
 
-      // Read response as text first to handle empty or malformed JSON
-      const responseText = await response.text()
+    // Read response as text first to handle empty or malformed JSON
+    const responseText = await response.text()
 
-      let result
-      if (!responseText.trim()) {
-        // Handle empty response
-        result = {}
-      } else {
-        try {
-          // Attempt to parse as JSON
-          result = JSON.parse(responseText)
-        } catch (parseError) {
-          console.error('Failed to parse JSON response:', parseError)
-          console.log('Raw response:', responseText)
-          // Treat malformed JSON as plain text content
-          result = {
-            content: {
-              title: 'Generated Content Strategy',
-              body: responseText
-            }
+    let result
+    if (!responseText.trim()) {
+      // Handle empty response
+      result = {}
+    } else {
+      try {
+        // Attempt to parse as JSON
+        result = JSON.parse(responseText)
+      } catch (parseError) {
+        console.error('Failed to parse JSON response:', parseError)
+        console.log('Raw response:', responseText)
+        // Treat malformed JSON as plain text content
+        result = {
+          content: {
+            title: 'Generated Content Strategy',
+            body: responseText
           }
         }
       }
-
-      console.log('Content strategy generation result:', result)
-
-      console.log('Strategy generation and save completed successfully')
-      push({ title: 'Generated', message: 'Content strategy created', variant: 'success' })
-      onStrategyGenerated?.()
-      onClose()
-
-    } catch (error) {
-      console.error('Error generating content strategy:', error)
-      console.error('Full error details:', error)
-      push({ title: 'Generation failed', message: 'Try again.', variant: 'error' })
-    } finally {
-      setIsGenerating(false)
     }
+
+    console.log('Content strategy generation result:', result)
+
+    console.log('Strategy generation and save completed successfully')
+    push({ title: 'Generated', message: 'Content strategy created', variant: 'success' })
+    onStrategyGenerated?.()
+    onClose()
+  })
+  const { push } = useToast()
+
+  const togglePlatform = (platformId: string) => {
+    setSelectedPlatforms(prev =>
+      prev.includes(platformId)
+        ? prev.filter(id => id !== platformId)
+        : [...prev, platformId]
+    )
   }
+
+  const handleGenerateStrategy = () => { void runGenerate() }
 
   const handleClose = () => {
     setSelectedPlatforms([])
     setSelectedCompany(null)
-    setIsGenerating(false)
     onClose()
   }
 
