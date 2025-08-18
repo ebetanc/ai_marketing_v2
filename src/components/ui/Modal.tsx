@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { cn } from '../../lib/utils'
+import { AnimatePresence, MotionConfig, motion, useReducedMotion } from 'framer-motion'
 
 // Simple modal stack to ensure only the top-most modal handles ESC/overlay
 const modalStack: HTMLElement[] = []
@@ -28,6 +29,10 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
     const [overlayEl, setOverlayEl] = useState<HTMLDivElement | null>(null)
     const [dialogEl, setDialogEl] = useState<HTMLDivElement | null>(null)
     const previouslyFocused = useRef<Element | null>(null)
+    const prefersReducedMotion = useReducedMotion()
+    // Keep modal mounted during exit animation to avoid early cleanup (scroll lock, aria-hidden, focus restore)
+    const [present, setPresent] = useState<boolean>(isOpen)
+    useEffect(() => { if (isOpen) setPresent(true) }, [isOpen])
     // Keep latest onClose without retriggering effects
     const onCloseRef = useRef(onClose)
     useEffect(() => {
@@ -35,7 +40,7 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
     }, [onClose])
     useEffect(() => {
         // Wait until dialog and overlay refs exist before applying modal behaviors
-        if (!isOpen || !dialogEl || !overlayEl) return
+        if (!present || !dialogEl || !overlayEl) return
         previouslyFocused.current = document.activeElement
 
         // Lock body scroll with global reference count
@@ -157,9 +162,9 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
             const prev = previouslyFocused.current as HTMLElement | null
             prev?.focus?.()
         }
-    }, [isOpen, dismissible, dialogEl, overlayEl])
-
-    if (!isOpen) return null
+    }, [present, dismissible, dialogEl, overlayEl])
+    // Unmount the portal only after exit animation completes
+    if (!present) return null
 
     const onOverlayClick = (e: React.MouseEvent) => {
         if (!dismissible) return
@@ -178,30 +183,46 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
     const defaultClasses = `bg-white rounded-card shadow-2xl ${sizeClass}`
     const appliedClasses = className ? `${className} ${baseClasses}` : `${defaultClasses} ${baseClasses}`
 
-    const modalUI = (
-        <div
-            ref={(el) => { setOverlayEl(el) }}
-            onMouseDown={onOverlayClick}
-            role="presentation"
-            // Use very high z-index to stay above app chrome; attach via portal to body so it always spans viewport
-            className={backdropClassName || 'fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-[9999]'}
-        >
-            <div
-                ref={(el) => { setDialogEl(el) }}
-                role={role}
-                aria-modal="true"
-                aria-labelledby={labelledById}
-                aria-describedby={describedById}
-                id={id}
-                tabIndex={-1}
-                className={appliedClasses}
+    return createPortal(
+        <MotionConfig reducedMotion="user">
+            <AnimatePresence
+                mode="wait"
+                initial={true}
+                onExitComplete={() => setPresent(false)}
             >
-                {children}
-            </div>
-        </div>
+                {isOpen && (
+                    <motion.div
+                        ref={(el) => { setOverlayEl(el) }}
+                        onMouseDown={onOverlayClick}
+                        role="presentation"
+                        className={backdropClassName || 'fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-[9999]'}
+                        initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0 }}
+                        transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.15, ease: 'easeOut' }}
+                    >
+                        <motion.div
+                            ref={(el) => { setDialogEl(el) }}
+                            role={role}
+                            aria-modal="true"
+                            aria-labelledby={labelledById}
+                            aria-describedby={describedById}
+                            id={id}
+                            tabIndex={-1}
+                            className={appliedClasses}
+                            initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 8, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 8, scale: 0.98 }}
+                            transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.15, ease: 'easeOut' }}
+                        >
+                            {children}
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </MotionConfig>,
+        document.body
     )
-
-    return createPortal(modalUI, document.body)
 }
 
 // Modal subcomponents for consistent layout and semantics

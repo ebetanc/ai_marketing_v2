@@ -171,7 +171,8 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
     }
   })
 
-  if (!isOpen || !content) return null
+  // Keep component mounted; Modal handles visibility and exit animations
+  if (!content) return null
 
   // Helper function to parse and extract angles from content
   const extractAngles = (content: ModalContent) => {

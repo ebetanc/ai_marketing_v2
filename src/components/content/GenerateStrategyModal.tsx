@@ -190,7 +190,7 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
     onClose()
   }
 
-  if (!isOpen) return null
+  // Keep component mounted; Modal handles visibility and exit animations
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} labelledById="generate-strategy-title" size="md">

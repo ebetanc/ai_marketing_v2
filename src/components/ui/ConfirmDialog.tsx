@@ -26,8 +26,6 @@ export function ConfirmDialog({
   variant = 'danger',
   loading = false
 }: ConfirmDialogProps) {
-  if (!isOpen) return null
-
   const titleId = 'confirm-dialog-title'
   const descId = 'confirm-dialog-description'
 

@@ -40,7 +40,8 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
   const [confirmOpen, setConfirmOpen] = React.useState(false)
   const { push } = useToast()
 
-  if (!isOpen || !company) return null
+  // Keep component mounted; Modal handles visibility and exit animations
+  if (!company) return null
 
   const handleDelete = () => { void runDelete() }
 

@@ -235,7 +235,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
     onClose()
   }
 
-  if (!isOpen) return null
+  // Keep component mounted; Modal handles visibility and exit animations
 
   const titleId = 'create-brand-title'
   const missingMap: Record<string, string> = {
