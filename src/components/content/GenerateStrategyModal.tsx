@@ -182,8 +182,8 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
   if (!isOpen) return null
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} labelledById="generate-strategy-title">
-      <div className="w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+    <Modal isOpen={isOpen} onClose={handleClose} labelledById="generate-strategy-title" size="md">
+      <div className="w-full max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center space-x-4">
@@ -200,7 +200,7 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
 
         {/* Brand Info */}
         {selectedCompany && (
-          <div className="px-6 py-4 border-b border-gray-100">
+          <div className="p-6 border-b border-gray-100">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-brand-100 rounded-xl flex items-center justify-center">
                 <span className="text-brand-600 font-semibold text-sm">
@@ -208,7 +208,7 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
                 </span>
               </div>
               <div>
-                <h3 id="generate-strategy-title" className="font-medium text-gray-900">{selectedCompany.brand_name || selectedCompany.name || 'Brand'}</h3>
+                <h3 className="font-medium text-gray-900">{selectedCompany.brand_name || selectedCompany.name || 'Brand'}</h3>
                 <p className="text-sm text-gray-500">{selectedCompany.website || ''}</p>
               </div>
             </div>
@@ -221,7 +221,7 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
             <Sparkles className="h-8 w-8 text-white" />
           </div>
 
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">Generate content strategy</h2>
+          <h2 id="generate-strategy-title" className="text-2xl font-bold text-gray-900 mb-3">Generate content strategy</h2>
           <p className="text-gray-600 mb-6">Create AI angles for your selected brand.</p>
 
           <div className="mb-6">

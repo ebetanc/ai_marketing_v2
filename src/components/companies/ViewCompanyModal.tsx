@@ -47,8 +47,8 @@ export function ViewCompanyModal({ isOpen, onClose, company, onDelete }: ViewCom
   const titleId = 'view-company-title'
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} labelledById={titleId}>
-      <div className="w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+    <Modal isOpen={isOpen} onClose={onClose} labelledById={titleId} size="md">
+      <div className="w-full max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center space-x-3">

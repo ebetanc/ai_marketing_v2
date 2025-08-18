@@ -350,8 +350,8 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
 
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} labelledById={titleId}>
-      <div className="w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+    <Modal isOpen={isOpen} onClose={onClose} labelledById={titleId} size="lg">
+      <div className="w-full max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center space-x-3">

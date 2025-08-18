@@ -3,7 +3,6 @@ import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { Textarea } from '../ui/Textarea'
 import { X, ArrowLeft, ArrowRight, Sparkles, Globe } from 'lucide-react'
-import { cn } from '../../lib/utils'
 import { supabase, type TablesInsert } from '../../lib/supabase'
 import { Modal } from '../ui/Modal'
 import { useToast } from '../ui/Toast'
@@ -205,32 +204,10 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center space-x-4">
-            <IconButton onClick={handleClose} aria-label="Back" variant="ghost">
+            <IconButton onClick={() => (currentStep === 2 ? handlePrevious() : handleClose())} aria-label="Back" variant="ghost">
               <ArrowLeft className="h-5 w-5 text-gray-600" />
             </IconButton>
             <div className="text-sm text-gray-500">Back</div>
-
-            {/* Step Indicators */}
-            <div className="flex items-center space-x-3 ml-8">
-              <div className={cn(
-                "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
-                currentStep === 1
-                  ? "bg-gray-900 text-white"
-                  : "bg-gray-200 text-gray-600"
-              )}>
-                1
-              </div>
-              <div className="w-8 h-0.5 bg-gray-200"></div>
-              <div className={cn(
-                "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
-                currentStep === 2
-                  ? "bg-gray-900 text-white"
-                  : "bg-gray-200 text-gray-600"
-              )}>
-                2
-              </div>
-              <div id={titleId} className="ml-3 text-gray-600 font-medium">Add company</div>
-            </div>
           </div>
 
           <IconButton onClick={handleClose} aria-label="Close dialog" variant="ghost">
@@ -239,7 +216,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
         </div>
 
         {/* Content */}
-        <div className="flex-1 min-h-0 p-8 overflow-y-auto">
+        <div className="flex-1 min-h-0 p-6 overflow-y-auto">
           {currentStep === 1 ? (
             <div className="space-y-6">
               <div>

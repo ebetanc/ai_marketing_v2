@@ -1,5 +1,8 @@
 import React, { useEffect, useRef } from 'react'
 
+// Simple modal stack to ensure only the top-most modal handles ESC/overlay
+const modalStack: HTMLElement[] = []
+
 type ModalProps = {
     isOpen: boolean
     onClose: () => void
@@ -11,10 +14,11 @@ type ModalProps = {
     backdropClassName?: string
     id?: string
     dismissible?: boolean // when false, disable overlay and ESC close
+    size?: 'sm' | 'md' | 'lg' | 'xl'
 }
 
 // Accessible modal with focus trap, ESC/overlay close, and body scroll lock
-export function Modal({ isOpen, onClose, children, labelledById, describedById, role = 'dialog', className, backdropClassName, id, dismissible = true }: ModalProps) {
+export function Modal({ isOpen, onClose, children, labelledById, describedById, role = 'dialog', className, backdropClassName, id, dismissible = true, size = 'md' }: ModalProps) {
     const overlayRef = useRef<HTMLDivElement | null>(null)
     const dialogRef = useRef<HTMLDivElement | null>(null)
     const previouslyFocused = useRef<Element | null>(null)
@@ -32,9 +36,15 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
         const originalOverflow = document.body.style.overflow
         document.body.style.overflow = 'hidden'
 
+        // Register in modal stack
+        const currentDialog = dialogRef.current || undefined
+        if (currentDialog) {
+            modalStack.push(currentDialog)
+        }
+
         // Focus management: prefer form fields and don't steal focus if user already focused inside
         const focusFirst = () => {
-            const dialog = dialogRef.current
+            const dialog = currentDialog
             if (!dialog) return
 
             // If the user has already focused something inside the dialog (e.g. clicked an input), don't override
@@ -51,15 +61,18 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
             target.focus({ preventScroll: true } as any)
         }
         // Slight delay to ensure rendered; guarded to avoid overriding user focus
-        const id = window.setTimeout(focusFirst, 0)
+        const timeoutId = window.setTimeout(focusFirst, 0)
 
         const handleKeyDown = (e: KeyboardEvent) => {
+            // Only the top-most modal should react to ESC/Tab trapping
+            const top = modalStack[modalStack.length - 1]
+            if (!top || top !== currentDialog) return
             if (e.key === 'Escape') {
                 e.stopPropagation()
                 if (dismissible) onCloseRef.current?.()
             } else if (e.key === 'Tab') {
                 // Trap focus
-                const dialog = dialogRef.current
+                const dialog = currentDialog
                 if (!dialog) return
                 const focusable = Array.from(
                     dialog.querySelectorAll<HTMLElement>(
@@ -86,9 +99,14 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
         document.addEventListener('keydown', handleKeyDown, true)
 
         return () => {
-            window.clearTimeout(id)
+            window.clearTimeout(timeoutId)
             document.removeEventListener('keydown', handleKeyDown, true)
             document.body.style.overflow = originalOverflow
+            // Unregister from modal stack
+            if (currentDialog) {
+                const idx = modalStack.lastIndexOf(currentDialog)
+                if (idx !== -1) modalStack.splice(idx, 1)
+            }
             // Restore focus
             const prev = previouslyFocused.current as HTMLElement | null
             prev?.focus?.()
@@ -99,14 +117,18 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
 
     const onOverlayClick = (e: React.MouseEvent) => {
         if (!dismissible) return
-        if (e.target === overlayRef.current) {
+        // Only top-most modal should close on overlay click
+        const top = modalStack[modalStack.length - 1]
+        const currentDialog = dialogRef.current || undefined
+        if (e.target === overlayRef.current && top === currentDialog) {
             onClose()
         }
     }
 
     // Base layout is always a vertical flex with constrained height so inner content can fill and scroll
+    const sizeClass = size === 'sm' ? 'max-w-md' : size === 'lg' ? 'max-w-4xl' : size === 'xl' ? 'max-w-5xl' : 'max-w-2xl'
     const baseClasses = 'overflow-hidden flex flex-col w-full max-h-[90vh]'
-    const defaultClasses = 'bg-white rounded-card shadow-2xl max-w-2xl'
+    const defaultClasses = `bg-white rounded-card shadow-2xl ${sizeClass}`
     const appliedClasses = className ? `${className} ${baseClasses}` : `${defaultClasses} ${baseClasses}`
 
     return (
