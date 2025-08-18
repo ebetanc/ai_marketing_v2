@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'
 import { Input } from '../components/ui/Input'
 import { Button } from '../components/ui/Button'
 import { useAsyncCallback } from '../hooks/useAsync'
+import { z } from 'zod'
 
 export default function Login() {
     useDocumentTitle('Sign in — AI Marketing')
@@ -19,13 +20,16 @@ export default function Login() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [message, setMessage] = useState<string | null>(null)
-    const [error, setError] = useState<string | null>(null)
+    const [formError, setFormError] = useState<string | null>(null)
+    const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({})
     const minPasswordLength = 6
 
+    const LoginSchema = z.object({
+        email: z.string().trim().email('Enter a valid email address'),
+        password: z.string().min(minPasswordLength, `Use at least ${minPasswordLength} characters.`)
+    })
+
     const { call: signUp, loading: signingUp, error: signUpError, reset: resetSignUp } = useAsyncCallback(async () => {
-        if (password.length < minPasswordLength) {
-            throw new Error(`Use at least ${minPasswordLength} characters.`)
-        }
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
@@ -70,6 +74,8 @@ export default function Login() {
                         placeholder="you@example.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
+                        error={fieldErrors.email}
+                        autoComplete="email"
                         required
                     />
                     <Input
@@ -78,6 +84,8 @@ export default function Login() {
                         placeholder="••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
+                        error={fieldErrors.password}
+                        autoComplete="current-password"
                         required
                     />
                     {/* No confirm password to keep sign up quick */}
@@ -85,16 +93,23 @@ export default function Login() {
                         <Button
                             type="button"
                             onClick={async () => {
-                                setMessage(null); setError(null); resetSignIn();
+                                setMessage(null); setFormError(null); setFieldErrors({}); resetSignIn();
+                                // Validate form
+                                const parsed = LoginSchema.safeParse({ email, password })
+                                if (!parsed.success) {
+                                    const fe = parsed.error.flatten().fieldErrors
+                                    setFieldErrors({ email: fe.email?.[0], password: fe.password?.[0] })
+                                    return
+                                }
                                 const res = await signIn()
                                 if (res && 'error' in res && res.error) {
                                     const msg = res.error.message || 'Sign in failed.'
                                     if (/confirm/i.test(msg) && /email/i.test(msg)) {
-                                        setError('Email not confirmed. Check your inbox or resend below.')
+                                        setFormError('Email not confirmed. Check your inbox or resend below.')
                                     } else if (/invalid/i.test(msg) && /credentials|login/i.test(msg)) {
-                                        setError('Invalid email or password.')
+                                        setFormError('Invalid email or password.')
                                     } else {
-                                        setError(msg)
+                                        setFormError(msg)
                                     }
                                 }
                             }}
@@ -107,10 +122,16 @@ export default function Login() {
                             type="button"
                             variant="outline"
                             onClick={async () => {
-                                setMessage(null); setError(null); resetSignUp();
+                                setMessage(null); setFormError(null); setFieldErrors({}); resetSignUp();
+                                const parsed = LoginSchema.safeParse({ email, password })
+                                if (!parsed.success) {
+                                    const fe = parsed.error.flatten().fieldErrors
+                                    setFieldErrors({ email: fe.email?.[0], password: fe.password?.[0] })
+                                    return
+                                }
                                 const res = await signUp()
                                 if (res && 'error' in res && res.error) {
-                                    setError(res.error.message || 'Sign up failed.')
+                                    setFormError(res.error.message || 'Sign up failed.')
                                 }
                             }}
                             loading={signingUp}
@@ -125,10 +146,10 @@ export default function Login() {
                 </div>
 
                 {message && <div className="text-sm text-green-600">{message}</div>}
-                {(error || signInError || signUpError) && (
+                {(formError || signInError || signUpError) && (
                     <div className="space-y-2">
-                        <div className="text-sm text-red-600">{error || signInError?.message || signUpError?.message}</div>
-                        {(/not\s*confirmed/i.test(error || signInError?.message || '') || /resend/i.test(error || '')) && (
+                        <div className="text-sm text-red-600">{formError || signInError?.message || signUpError?.message}</div>
+                        {(/not\s*confirmed/i.test(formError || signInError?.message || '') || /resend/i.test(formError || '')) && (
                             <div>
                                 <ResendConfirmation email={email} redirectTo={redirectTo} onDone={(ok) => setMessage(ok ? 'Confirmation email sent.' : null)} />
                             </div>

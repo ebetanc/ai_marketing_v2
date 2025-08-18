@@ -5,12 +5,14 @@ import { supabase } from '../lib/supabase'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useNavigate } from 'react-router-dom'
 import { useAsyncCallback } from '../hooks/useAsync'
+import { z } from 'zod'
 
 export default function ResetPassword() {
     useDocumentTitle('Reset password — AI Marketing')
     const [password, setPassword] = useState('')
     const [message, setMessage] = useState<string | null>(null)
     const [error, setError] = useState<string | null>(null)
+    const [fieldError, setFieldError] = useState<string | undefined>(undefined)
     const minPasswordLength = 6
     const navigate = useNavigate()
 
@@ -36,9 +38,6 @@ export default function ResetPassword() {
     }, [])
 
     const { call: updatePassword, loading, reset } = useAsyncCallback(async () => {
-        if (password.length < minPasswordLength) {
-            throw new Error(`Use at least ${minPasswordLength} characters.`)
-        }
         const { error } = await supabase.auth.updateUser({ password })
         if (error) throw error
         setMessage('Password updated. Redirecting to login…')
@@ -50,6 +49,12 @@ export default function ResetPassword() {
         setMessage(null)
         setError(null)
         reset()
+        setFieldError(undefined)
+        const parsed = z.string().min(minPasswordLength, `Use at least ${minPasswordLength} characters.`).safeParse(password)
+        if (!parsed.success) {
+            setFieldError(parsed.error.issues?.[0]?.message || `Use at least ${minPasswordLength} characters.`)
+            return
+        }
         const res = await updatePassword()
         if (res && 'error' in res && res.error) {
             setError(res.error.message || 'Couldn’t update password.')
@@ -75,6 +80,7 @@ export default function ResetPassword() {
                         placeholder="••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
+                        error={fieldError}
                         required
                         disabled={!hasRecoverySession}
                     />

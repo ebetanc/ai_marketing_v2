@@ -10,6 +10,7 @@ import { IconButton } from '../ui/IconButton'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { postToN8n } from '../../lib/n8n'
 import { useAsyncCallback } from '../../hooks/useAsync'
+import { z } from 'zod'
 
 interface CreateBrandModalProps {
   isOpen: boolean
@@ -30,6 +31,23 @@ interface BrandFormData {
 
 export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }: CreateBrandModalProps) {
   const [currentStep, setCurrentStep] = useState(1)
+  const [errors, setErrors] = useState<{ name?: string; targetAudience?: string; brandTone?: string; keyOffer?: string; website?: string }>({})
+
+  // Zod schema for basic validation. Website is optional but must be a URL if provided.
+  const BrandSchema = z.object({
+    name: z.string().trim().min(1, 'Company name is required'),
+    website: z
+      .string()
+      .trim()
+      .optional()
+      .transform((v) => (v && v.length > 0 ? v : undefined))
+      .pipe(z.string().url('Enter a valid URL (e.g. https://example.com)').optional()),
+    additionalInfo: z.string().optional(),
+    targetAudience: z.string().trim().min(1, 'Target audience is required'),
+    brandTone: z.string().trim().min(1, 'Brand tone is required'),
+    keyOffer: z.string().trim().min(1, 'Key offer is required'),
+    imageGuidelines: z.string().optional()
+  })
   const { call: runAutofill, loading: autofillLoading } = useAsyncCallback(async () => {
     if (!formData.website) {
       push({ title: 'Missing URL', message: 'Enter a website URL.', variant: 'warning' })
@@ -158,18 +176,52 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
   const handleAutofill = () => { void runAutofill() }
 
   const handleNext = () => {
-    if (currentStep === 1 && !formData.name) {
-      push({ title: 'Missing name', message: 'Enter a brand name.', variant: 'warning' })
-      return
+    if (currentStep === 1) {
+      // Validate just the fields from step 1
+      const partial = {
+        name: formData.name,
+        website: formData.website,
+        additionalInfo: formData.additionalInfo,
+        targetAudience: 'placeholder',
+        brandTone: 'placeholder',
+        keyOffer: 'placeholder',
+        imageGuidelines: ''
+      }
+      const result = BrandSchema.safeParse(partial)
+      const e: typeof errors = {}
+      if (!result.success) {
+        const issues = result.error.flatten().fieldErrors
+        if (issues.name?.[0]) e.name = issues.name[0]
+        if (issues.website?.[0]) e.website = issues.website[0]
+      }
+      setErrors(e)
+      if (Object.keys(e).length > 0) return
+      setCurrentStep(2)
     }
-    setCurrentStep(2)
   }
 
   const handlePrevious = () => {
     setCurrentStep(1)
   }
 
-  const handleSubmit = (e: React.FormEvent) => { void runSubmit(e) }
+  const handleSubmit = (e: React.FormEvent) => {
+    // Validate full payload
+    const result = BrandSchema.safeParse(formData)
+    if (!result.success) {
+      const issues = result.error.flatten().fieldErrors
+      const eState: typeof errors = {
+        name: issues.name?.[0],
+        website: issues.website?.[0],
+        targetAudience: issues.targetAudience?.[0],
+        brandTone: issues.brandTone?.[0],
+        keyOffer: issues.keyOffer?.[0]
+      }
+      setErrors(eState)
+      e.preventDefault()
+      return
+    }
+    void runSubmit(e)
+  }
 
   const resetForm = () => {
     setFormData({
@@ -229,6 +281,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
                   placeholder="Brand name"
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  error={errors.name}
                   required
                 />
 
@@ -286,6 +339,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
                   value={formData.targetAudience}
                   onChange={(e) => setFormData(prev => ({ ...prev, targetAudience: e.target.value }))}
                   rows={3}
+                  error={errors.targetAudience}
                   required
                 />
 
@@ -295,6 +349,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
                   value={formData.brandTone}
                   onChange={(e) => setFormData(prev => ({ ...prev, brandTone: e.target.value }))}
                   rows={3}
+                  error={errors.brandTone}
                   required
                 />
 
@@ -304,6 +359,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
                   value={formData.keyOffer}
                   onChange={(e) => setFormData(prev => ({ ...prev, keyOffer: e.target.value }))}
                   rows={3}
+                  error={errors.keyOffer}
                   required
                 />
 

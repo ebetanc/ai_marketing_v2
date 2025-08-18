@@ -4,11 +4,13 @@ import { Button } from '../components/ui/Button'
 import { supabase } from '../lib/supabase'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useAsyncCallback } from '../hooks/useAsync'
+import { z } from 'zod'
 
 export default function ForgotPassword() {
     useDocumentTitle('Forgot password — AI Marketing')
     const [email, setEmail] = useState('')
     const [message, setMessage] = useState<string | null>(null)
+    const [fieldError, setFieldError] = useState<string | undefined>(undefined)
     const { call: sendReset, loading, error, reset } = useAsyncCallback(async () => {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
             redirectTo: `${siteUrl}/reset-password`,
@@ -22,7 +24,13 @@ export default function ForgotPassword() {
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setMessage(null)
+        setFieldError(undefined)
         reset()
+        const parsed = z.string().trim().email('Enter a valid email address').safeParse(email)
+        if (!parsed.success) {
+            setFieldError(parsed.error.issues?.[0]?.message || 'Enter a valid email')
+            return
+        }
         await sendReset()
     }
 
@@ -40,6 +48,8 @@ export default function ForgotPassword() {
                         placeholder="you@example.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
+                        error={fieldError}
+                        autoComplete="email"
                         required
                     />
                     <Button type="submit" loading={loading} className="w-full">Send link</Button>

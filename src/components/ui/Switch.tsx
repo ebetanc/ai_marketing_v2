@@ -17,6 +17,19 @@ export function Switch({ checked, onCheckedChange, disabled = false, ...rest }: 
       aria-disabled={disabled || undefined}
       disabled={disabled}
       onClick={() => onCheckedChange(!checked)}
+      onKeyDown={(e) => {
+        if (disabled) return
+        if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault()
+          onCheckedChange(!checked)
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault()
+          if (checked) onCheckedChange(false)
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault()
+          if (!checked) onCheckedChange(true)
+        }
+      }}
       {...rest}
       className={cn(
         'relative inline-flex h-6 w-11 items-center rounded-full motion-safe:transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white',

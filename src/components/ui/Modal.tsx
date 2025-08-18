@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 // Simple modal stack to ensure only the top-most modal handles ESC/overlay
@@ -22,13 +22,15 @@ type ModalProps = {
 export function Modal({ isOpen, onClose, children, labelledById, describedById, role = 'dialog', className, backdropClassName, id, dismissible = true, size = 'md' }: ModalProps) {
     const overlayRef = useRef<HTMLDivElement | null>(null)
     const dialogRef = useRef<HTMLDivElement | null>(null)
+    const [overlayEl, setOverlayEl] = useState<HTMLDivElement | null>(null)
+    const [dialogEl, setDialogEl] = useState<HTMLDivElement | null>(null)
     const previouslyFocused = useRef<Element | null>(null)
+    const appRootsRef = useRef<HTMLElement[]>([])
     // Keep latest onClose without retriggering effects
     const onCloseRef = useRef(onClose)
     useEffect(() => {
         onCloseRef.current = onClose
     }, [onClose])
-
     useEffect(() => {
         if (!isOpen) return
         previouslyFocused.current = document.activeElement
@@ -37,13 +39,39 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
         const originalOverflow = document.body.style.overflow
         document.body.style.overflow = 'hidden'
 
-        // Register in modal stack
-        const currentDialog = dialogRef.current || undefined
+        // Register in modal stack using stable element references
+        const currentDialog = dialogEl || undefined
+        const currentOverlay = overlayEl || undefined
         if (currentDialog) {
             modalStack.push(currentDialog)
         }
 
+        // Hide background from assistive tech and disable interaction (where supported)
+        // Consider all immediate children of body except the overlay/dialog we portal into
+        const bodyChildren = Array.from(document.body.children) as HTMLElement[]
+        const appRoots = bodyChildren.filter((el) => el !== currentOverlay)
+        appRootsRef.current = appRoots
+        appRoots.forEach((el) => {
+            el.setAttribute('aria-hidden', 'true')
+            // inert is not supported in all browsers; use where available to disable focus/interaction
+            try { (el as any).inert = true } catch { /* no-op */ }
+        })
+
         // Focus management: prefer form fields and don't steal focus if user already focused inside
+        const isVisible = (el: HTMLElement) => {
+            const style = window.getComputedStyle(el)
+            if (style.visibility === 'hidden' || style.display === 'none') return false
+            if (!el.offsetParent && style.position !== 'fixed') return false
+            return true
+        }
+
+        const getFocusable = (root: HTMLElement) =>
+            Array.from(
+                root.querySelectorAll<HTMLElement>(
+                    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+                )
+            ).filter(el => !el.hasAttribute('disabled') && isVisible(el))
+
         const focusFirst = () => {
             const dialog = currentDialog
             if (!dialog) return
@@ -54,9 +82,7 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
 
             // Prefer explicit autofocus markers or form controls
             const preferred = dialog.querySelector<HTMLElement>('[autofocus], [data-autofocus], input, textarea, select')
-            const focusable = Array.from(
-                dialog.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
-            ).filter(el => !el.hasAttribute('disabled'))
+            const focusable = getFocusable(dialog)
 
             const target = preferred || focusable[0] || dialog
             target.focus({ preventScroll: true } as any)
@@ -75,11 +101,7 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
                 // Trap focus
                 const dialog = currentDialog
                 if (!dialog) return
-                const focusable = Array.from(
-                    dialog.querySelectorAll<HTMLElement>(
-                        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-                    )
-                ).filter(el => !el.hasAttribute('disabled'))
+                const focusable = getFocusable(dialog)
                 if (focusable.length === 0) return
                 const first = focusable[0]
                 const last = focusable[focusable.length - 1]
@@ -104,15 +126,21 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
             document.removeEventListener('keydown', handleKeyDown, true)
             document.body.style.overflow = originalOverflow
             // Unregister from modal stack
-            if (currentDialog) {
-                const idx = modalStack.lastIndexOf(currentDialog)
+            const dialogNode = currentDialog
+            if (dialogNode) {
+                const idx = modalStack.lastIndexOf(dialogNode)
                 if (idx !== -1) modalStack.splice(idx, 1)
             }
+            // Restore background interactivity and a11y exposure
+            appRootsRef.current.forEach((el) => {
+                el.removeAttribute('aria-hidden')
+                try { (el as any).inert = false } catch { /* no-op */ }
+            })
             // Restore focus
             const prev = previouslyFocused.current as HTMLElement | null
             prev?.focus?.()
         }
-    }, [isOpen, dismissible])
+    }, [isOpen, dismissible, dialogEl, overlayEl])
 
     if (!isOpen) return null
 
@@ -120,8 +148,9 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
         if (!dismissible) return
         // Only top-most modal should close on overlay click
         const top = modalStack[modalStack.length - 1]
-        const currentDialog = dialogRef.current || undefined
-        if (e.target === overlayRef.current && top === currentDialog) {
+        const currentDialog = dialogEl || undefined
+        const currentOverlay = overlayEl || undefined
+        if (e.target === currentOverlay && top === currentDialog) {
             onClose()
         }
     }
@@ -134,14 +163,14 @@ export function Modal({ isOpen, onClose, children, labelledById, describedById, 
 
     const modalUI = (
         <div
-            ref={overlayRef}
+            ref={(el) => { overlayRef.current = el; setOverlayEl(el) }}
             onMouseDown={onOverlayClick}
             role="presentation"
             // Use very high z-index to stay above app chrome; attach via portal to body so it always spans viewport
             className={backdropClassName || 'fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-[9999]'}
         >
             <div
-                ref={dialogRef}
+                ref={(el) => { dialogRef.current = el; setDialogEl(el) }}
                 role={role}
                 aria-modal="true"
                 aria-labelledby={labelledById}

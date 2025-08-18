@@ -8,6 +8,7 @@ import { useAuth } from '../lib/auth'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useNavigate } from 'react-router-dom'
 import { useAsyncCallback } from '../hooks/useAsync'
+import { z } from 'zod'
 
 export function Account() {
     useDocumentTitle('Account — AI Marketing')
@@ -24,12 +25,14 @@ export function Account() {
     // Email
     const [email, setEmail] = useState<string>('')
     const [emailSaving, setEmailSaving] = useState(false)
+    const [emailError, setEmailError] = useState<string | undefined>(undefined)
 
     // Password
     const [currentPassword, setCurrentPassword] = useState('')
     const [newPassword, setNewPassword] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
     const [pwdSaving, setPwdSaving] = useState(false)
+    const [pwdErrors, setPwdErrors] = useState<{ currentPassword?: string; newPassword?: string; confirmPassword?: string }>({})
 
     useEffect(() => {
         const meta = (user?.user_metadata || {}) as any
@@ -56,33 +59,45 @@ export function Account() {
     const { call: saveEmailCall, loading: emailLoading } = useAsyncCallback(async () => {
         if (!canSave) return
         const next = email.trim()
-        if (!next) {
-            push({ title: 'Invalid email', message: 'Email can’t be empty.', variant: 'warning' })
+        const EmailSchema = z.string().trim().email('Enter a valid email address.')
+        const parsed = EmailSchema.safeParse(next)
+        if (!parsed.success) {
+            setEmailError(parsed.error.issues[0]?.message || 'Invalid email')
+            push({ title: 'Fix errors', message: 'Check the email field.', variant: 'warning' })
             return
         }
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(next)) {
-            push({ title: 'Invalid email', message: 'Enter a valid email address.', variant: 'warning' })
-            return
-        }
+        setEmailError(undefined)
         if (!isSupabaseConfigured) {
             push({ title: 'Demo mode', message: 'Supabase is not configured; email change won’t persist.', variant: 'warning' })
             return
         }
-        const { error } = await supabase.auth.updateUser({ email: next })
+        const { error } = await supabase.auth.updateUser({ email: parsed.data })
         if (error) throw error
         push({ title: 'Check your email', message: 'We sent a confirmation link.', variant: 'info' })
     })
 
     const { call: savePasswordCall, loading: pwdLoading } = useAsyncCallback(async () => {
         if (!canSave) return
-        if (newPassword.length < 8) {
-            push({ title: 'Weak password', message: 'Use at least 8 characters.', variant: 'warning' })
+        const PasswordSchema = z.object({
+            currentPassword: z.string().optional(),
+            newPassword: z.string().min(8, 'Use at least 8 characters.'),
+            confirmPassword: z.string()
+        }).refine((data) => data.newPassword === data.confirmPassword, {
+            message: 'Passwords don’t match.',
+            path: ['confirmPassword']
+        })
+        const parsed = PasswordSchema.safeParse({ currentPassword, newPassword, confirmPassword })
+        if (!parsed.success) {
+            const issues = parsed.error.flatten().fieldErrors
+            setPwdErrors({
+                currentPassword: issues.currentPassword?.[0],
+                newPassword: issues.newPassword?.[0],
+                confirmPassword: issues.confirmPassword?.[0],
+            })
+            push({ title: 'Fix errors', message: 'Check the password fields.', variant: 'warning' })
             return
         }
-        if (newPassword !== confirmPassword) {
-            push({ title: 'Mismatch', message: 'Passwords don’t match.', variant: 'warning' })
-            return
-        }
+        setPwdErrors({})
         if (!isSupabaseConfigured) {
             push({ title: 'Demo mode', message: 'Supabase is not configured; password change won’t persist.', variant: 'warning' })
             return
@@ -90,11 +105,12 @@ export function Account() {
         if (currentPassword && user?.email) {
             const { error: reauthError } = await supabase.auth.signInWithPassword({ email: user.email, password: currentPassword })
             if (reauthError) {
+                setPwdErrors(prev => ({ ...prev, currentPassword: 'Invalid current password.' }))
                 push({ title: 'Invalid current password', message: 'Check your current password.', variant: 'error' })
                 return
             }
         }
-        const { error } = await supabase.auth.updateUser({ password: newPassword })
+        const { error } = await supabase.auth.updateUser({ password: parsed.data.newPassword })
         if (error) throw error
         setCurrentPassword('')
         setNewPassword('')
@@ -152,7 +168,7 @@ export function Account() {
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
-                            <Input label="Email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+                            <Input label="Email" type="email" placeholder="you@example.com" value={email} onChange={(e) => { setEmail(e.target.value); setEmailError(undefined) }} error={emailError} />
                             <div className="flex justify-end">
                                 <Button onClick={() => { setEmailSaving(true); saveEmailCall()?.finally(() => setEmailSaving(false)) }} loading={emailSaving || emailLoading} disabled={!canSave}>Update email</Button>
                             </div>
@@ -167,10 +183,10 @@ export function Account() {
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
-                            <Input label="Current password (optional)" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} autoComplete="current-password" />
+                            <Input label="Current password (optional)" type="password" value={currentPassword} onChange={(e) => { setCurrentPassword(e.target.value); setPwdErrors(prev => ({ ...prev, currentPassword: undefined })) }} autoComplete="current-password" error={pwdErrors.currentPassword} />
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <Input label="New password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} autoComplete="new-password" />
-                                <Input label="Confirm new password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} autoComplete="new-password" />
+                                <Input label="New password" type="password" value={newPassword} onChange={(e) => { setNewPassword(e.target.value); setPwdErrors(prev => ({ ...prev, newPassword: undefined })) }} autoComplete="new-password" error={pwdErrors.newPassword} />
+                                <Input label="Confirm new password" type="password" value={confirmPassword} onChange={(e) => { setConfirmPassword(e.target.value); setPwdErrors(prev => ({ ...prev, confirmPassword: undefined })) }} autoComplete="new-password" error={pwdErrors.confirmPassword} />
                             </div>
                             <div className="flex justify-end">
                                 <Button onClick={() => { setPwdSaving(true); savePasswordCall()?.finally(() => setPwdSaving(false)) }} loading={pwdSaving || pwdLoading} disabled={!canSave}>Update password</Button>

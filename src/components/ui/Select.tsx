@@ -5,12 +5,18 @@ import { ChevronDown } from 'lucide-react'
 interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label?: string
   error?: string
+  description?: string
+  placeholder?: string
   options: { value: string; label: string }[]
 }
 
-export function Select({ className, label, error, options, id, onKeyDown, onKeyUp, ...props }: SelectProps) {
+export function Select({ className, label, error, description, placeholder, options, id, onKeyDown, onKeyUp, ...props }: SelectProps) {
   const autoId = React.useId()
   const selectId = id ?? autoId
+  const describedIds = [
+    error ? `${selectId}-error` : undefined,
+    description ? `${selectId}-desc` : undefined,
+  ].filter(Boolean).join(' ') || undefined
   return (
     <div className="space-y-1">
       {label && (
@@ -19,6 +25,7 @@ export function Select({ className, label, error, options, id, onKeyDown, onKeyU
           className={cn('block text-sm font-medium', (props.disabled || (props as any).readOnly) ? 'text-gray-500' : 'text-gray-700')}
         >
           {label}
+          {props.required && <span aria-hidden className="text-red-600 ml-0.5">*</span>}
         </label>
       )}
       <div className="relative">
@@ -31,7 +38,8 @@ export function Select({ className, label, error, options, id, onKeyDown, onKeyU
           )}
           id={selectId}
           aria-invalid={Boolean(error) || undefined}
-          aria-describedby={error ? `${selectId}-error` : undefined}
+          aria-describedby={describedIds}
+          aria-required={props.required || undefined}
           {...props}
           onKeyDown={(e) => {
             onKeyDown?.(e)
@@ -42,6 +50,11 @@ export function Select({ className, label, error, options, id, onKeyDown, onKeyU
           // Ensure comfortable tap target height
           style={{ minHeight: 44 }}
         >
+          {placeholder && (
+            <option value="" disabled={props.required} hidden={!!props.value}>
+              {placeholder}
+            </option>
+          )}
           {options.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
@@ -50,6 +63,9 @@ export function Select({ className, label, error, options, id, onKeyDown, onKeyU
         </select>
         <ChevronDown aria-hidden className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
       </div>
+      {description && !error && (
+        <p id={`${selectId}-desc`} className="text-xs text-gray-500">{description}</p>
+      )}
       {error && (
         <p id={`${selectId}-error`} className="text-sm text-red-600">{error}</p>
       )}

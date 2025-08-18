@@ -53,50 +53,61 @@ interface ViewContentModalProps {
 }
 
 import { supabase } from '../../lib/supabase'
-// Helper function to format markdown-like text
+// Helper: safely format a subset of markdown-like text without using innerHTML
 const formatContentBody = (content: string) => {
   if (!content) return content
+
+  const renderBoldSegments = (text: string) => {
+    // Split on **bold** markers and render <strong> nodes safely
+    const parts = text.split(/(\*\*[^*]+\*\*)/g)
+    return parts.map((part, i) => {
+      const isBold = part.startsWith('**') && part.endsWith('**') && part.length > 4
+      if (isBold) {
+        const inner = part.slice(2, -2)
+        return <strong key={i}>{inner}</strong>
+      }
+      return <React.Fragment key={i}>{part}</React.Fragment>
+    })
+  }
 
   return content
     .split('\n')
     .map((line, index) => {
+      const trimmed = line.trim()
+
       // Main headers (# )
-      if (line.startsWith('# ')) {
+      if (trimmed.startsWith('# ')) {
         return (
           <h3 key={index} className="text-lg font-bold text-gray-900 mb-2 mt-4 first:mt-0">
-            {line.substring(2)}
+            {trimmed.substring(2)}
           </h3>
         )
       }
 
       // Sub headers (## )
-      if (line.startsWith('## ')) {
+      if (trimmed.startsWith('## ')) {
         return (
           <h4 key={index} className="text-base font-semibold text-gray-800 mb-2 mt-3 first:mt-0">
-            {line.substring(3)}
+            {trimmed.substring(3)}
           </h4>
         )
       }
 
       // Horizontal rules (---)
-      if (line.trim() === '---') {
+      if (trimmed === '---') {
         return <hr key={index} className="my-3 border-gray-200" />
       }
 
       // Empty lines
-      if (line.trim() === '') {
+      if (trimmed === '') {
         return <div key={index} className="h-2" />
       }
 
-      // Regular paragraphs with bold text formatting
-      const formattedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-
+      // Regular paragraphs with safe bold formatting
       return (
-        <p
-          key={index}
-          className="text-sm text-gray-700 mb-2 leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: formattedLine }}
-        />
+        <p key={index} className="text-sm text-gray-700 mb-2 leading-relaxed">
+          {renderBoldSegments(line)}
+        </p>
       )
     })
 }

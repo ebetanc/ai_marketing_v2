@@ -4,11 +4,16 @@ import { cn } from '../../lib/utils'
 interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string
   error?: string
+  description?: string
 }
 
-export function Textarea({ className, label, error, id, onKeyDown, onKeyUp, ...props }: TextareaProps) {
+export function Textarea({ className, label, error, description, id, onKeyDown, onKeyUp, ...props }: TextareaProps) {
   const autoId = React.useId()
   const textareaId = id ?? autoId
+  const describedIds = [
+    error ? `${textareaId}-error` : undefined,
+    description ? `${textareaId}-desc` : undefined,
+  ].filter(Boolean).join(' ') || undefined
   return (
     <div className="space-y-1">
       {label && (
@@ -31,7 +36,8 @@ export function Textarea({ className, label, error, id, onKeyDown, onKeyUp, ...p
         )}
         id={textareaId}
         aria-invalid={Boolean(error) || undefined}
-        aria-describedby={error ? `${textareaId}-error` : undefined}
+        aria-describedby={describedIds}
+        aria-required={props.required || undefined}
         style={{ minHeight: 88 }}
         {...props}
         onKeyDown={(e) => {
@@ -41,6 +47,9 @@ export function Textarea({ className, label, error, id, onKeyDown, onKeyUp, ...p
           onKeyUp?.(e)
         }}
       />
+      {description && !error && (
+        <p id={`${textareaId}-desc`} className="text-xs text-gray-500">{description}</p>
+      )}
       {error && (
         <p id={`${textareaId}-error`} className="text-sm text-red-600">{error}</p>
       )}

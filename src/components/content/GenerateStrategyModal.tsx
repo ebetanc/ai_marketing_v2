@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { Button } from '../ui/Button'
 import { ArrowLeft, X, Sparkles } from 'lucide-react'
 import { cn } from '../../lib/utils'
@@ -8,6 +8,7 @@ import { IconButton } from '../ui/IconButton'
 import { supabase } from '../../lib/supabase'
 import { postToN8n } from '../../lib/n8n'
 import { useAsyncCallback } from '../../hooks/useAsync'
+import { z } from 'zod'
 
 interface GenerateStrategyModalProps {
   isOpen: boolean
@@ -30,16 +31,24 @@ const platforms = [
 export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGenerated }: GenerateStrategyModalProps) {
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([])
   const [selectedCompany, setSelectedCompany] = useState<any>(null)
+  const companyListRef = useRef<HTMLDivElement | null>(null)
+  const [errors, setErrors] = useState<{ company?: string; platforms?: string }>({})
   const { call: runGenerate, loading: isGenerating } = useAsyncCallback(async () => {
-    if (!selectedCompany) {
-      push({ title: 'Missing company', message: 'Please select a company', variant: 'warning' })
+    const Schema = z.object({
+      companyId: z.string().min(1, 'Select a company.'),
+      platforms: z.array(z.string()).min(1, 'Select at least one platform.')
+    })
+    const parsed = Schema.safeParse({ companyId: selectedCompany?.id ?? '', platforms: selectedPlatforms })
+    if (!parsed.success) {
+      const fieldErrors = parsed.error.flatten().fieldErrors
+      setErrors({
+        company: fieldErrors.companyId?.[0],
+        platforms: fieldErrors.platforms?.[0]
+      })
+      push({ title: 'Fix errors', message: 'Complete the required selections.', variant: 'warning' })
       return
     }
-
-    if (selectedPlatforms.length === 0) {
-      push({ title: 'Missing platforms', message: 'Select at least one platform', variant: 'warning' })
-      return
-    }
+    setErrors({})
 
     // Identify current user to pass ownership for backend CRUD
     const { data: sessionData } = await supabase.auth.getSession()
@@ -169,6 +178,7 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
         ? prev.filter(id => id !== platformId)
         : [...prev, platformId]
     )
+    setErrors(prev => ({ ...prev, platforms: undefined }))
   }
 
   const handleGenerateStrategy = () => { void runGenerate() }
@@ -176,6 +186,7 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
   const handleClose = () => {
     setSelectedPlatforms([])
     setSelectedCompany(null)
+    setErrors({})
     onClose()
   }
 
@@ -225,55 +236,114 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
           <p className="text-gray-600 mb-6">Create AI angles for your selected brand.</p>
 
           <div className="mb-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Select company</h3>
-            <div className="space-y-2">
-              {companies.map((company) => (
-                <button
-                  key={company.id}
-                  onClick={() => setSelectedCompany(company)}
-                  className={cn(
-                    'w-full p-3 rounded-xl border-2 transition-all duration-200 text-left',
-                    selectedCompany?.id === company.id
-                      ? 'border-brand-500 bg-brand-50'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                  )}
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-brand-100 rounded-lg flex items-center justify-center">
-                      <span className="text-brand-600 font-semibold text-xs">
-                        {(company.brand_name || company.name || 'B').charAt(0)}
-                      </span>
+            <h3 className="text-lg font-medium text-gray-900 mb-1">Select company</h3>
+            <p id="company-helper" className="text-xs text-gray-500 mb-3">Pick which brand to generate a strategy for.</p>
+            <div
+              ref={companyListRef}
+              role="radiogroup"
+              aria-labelledby="company-helper"
+              aria-invalid={errors.company ? true : undefined}
+              aria-errormessage={errors.company ? 'company-error' : undefined}
+              className="space-y-2"
+            >
+              {companies.map((company, index) => {
+                const isSelected = selectedCompany?.id === company.id
+                const isFirst = index === 0
+                const tabIndex = isSelected || (!selectedCompany && isFirst) ? 0 : -1
+                return (
+                  <button
+                    key={company.id}
+                    role="radio"
+                    aria-checked={isSelected}
+                    tabIndex={tabIndex}
+                    onClick={() => { setSelectedCompany(company); setErrors(prev => ({ ...prev, company: undefined })) }}
+                    onKeyDown={(e) => {
+                      const container = companyListRef.current
+                      if (!container) return
+                      const items = Array.from(container.querySelectorAll<HTMLButtonElement>('button[role="radio"]'))
+                      const currentIndex = items.indexOf(e.currentTarget)
+                      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+                        e.preventDefault()
+                        const next = items[(currentIndex + 1) % items.length]
+                        next?.focus()
+                      } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                        e.preventDefault()
+                        const prev = items[(currentIndex - 1 + items.length) % items.length]
+                        prev?.focus()
+                      } else if (e.key === ' ' || e.key === 'Enter') {
+                        // Space/Enter should select
+                        e.preventDefault()
+                        setSelectedCompany(company)
+                        setErrors(prev => ({ ...prev, company: undefined }))
+                      }
+                    }}
+                    className={cn(
+                      'w-full p-3 rounded-xl border-2 transition-all duration-200 text-left',
+                      isSelected
+                        ? 'border-brand-500 bg-brand-50'
+                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    )}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-brand-100 rounded-lg flex items-center justify-center">
+                        <span className="text-brand-600 font-semibold text-xs">
+                          {(company.brand_name || company.name || 'B').charAt(0)}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{company.brand_name || company.name}</p>
+                        {company.website && (
+                          <p className="text-xs text-gray-500">{company.website}</p>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{company.brand_name || company.name}</p>
-                      {company.website && (
-                        <p className="text-xs text-gray-500">{company.website}</p>
-                      )}
-                    </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                )
+              })}
+              {errors.company && (
+                <div id="company-error" className="text-sm text-red-600 mt-2">{errors.company}</div>
+              )}
             </div>
           </div>
 
           <div className="mb-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Select platforms</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {platforms.map((platform) => (
-                <button
-                  key={platform.id}
-                  onClick={() => togglePlatform(platform.id)}
-                  className={cn(
-                    'p-3 rounded-xl border-2 transition-all duration-200 text-sm font-medium',
-                    selectedPlatforms.includes(platform.id)
-                      ? `${platform.color} text-white border-transparent shadow-md`
-                      : 'bg-gray-50 text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-100'
-                  )}
-                >
-                  {platform.name}
-                </button>
-              ))}
+            <h3 className="text-lg font-medium text-gray-900 mb-1">Select platforms</h3>
+            <p id="platforms-helper" className="text-xs text-gray-500 mb-3">Choose where to publish content.</p>
+            <div
+              role="group"
+              aria-labelledby="platforms-helper"
+              aria-invalid={errors.platforms ? true : undefined}
+              aria-errormessage={errors.platforms ? 'platforms-error' : undefined}
+              className="grid grid-cols-2 gap-3"
+            >
+              {platforms.map((platform) => {
+                const active = selectedPlatforms.includes(platform.id)
+                return (
+                  <button
+                    key={platform.id}
+                    aria-pressed={active}
+                    onClick={() => togglePlatform(platform.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === ' ') {
+                        e.preventDefault()
+                        togglePlatform(platform.id)
+                      }
+                    }}
+                    className={cn(
+                      'p-3 rounded-xl border-2 transition-all duration-200 text-sm font-medium',
+                      active
+                        ? `${platform.color} text-white border-transparent shadow-md`
+                        : 'bg-gray-50 text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-100'
+                    )}
+                  >
+                    {platform.name}
+                  </button>
+                )
+              })}
             </div>
+            {errors.platforms && (
+              <div id="platforms-error" className="text-sm text-red-600 mt-2">{errors.platforms}</div>
+            )}
           </div>
 
           <Button

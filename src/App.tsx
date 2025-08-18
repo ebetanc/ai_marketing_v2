@@ -22,7 +22,7 @@ import { Account } from './pages/Account'
 function App() {
   return (
     <Router>
-      <ToastProvider>
+      <ToastProvider allowActions={false} maxVisible={3} dedupeWindowMs={3000}>
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />

@@ -4,16 +4,22 @@ import { cn } from '../../lib/utils'
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string
   error?: string
+  description?: string
 }
 
-export function Input({ className, label, error, id, onKeyDown, onKeyUp, ...props }: InputProps) {
+export function Input({ className, label, error, description, id, onKeyDown, onKeyUp, ...props }: InputProps) {
   const autoId = React.useId()
   const inputId = id ?? autoId
+  const describedIds = [
+    error ? `${inputId}-error` : undefined,
+    description ? `${inputId}-desc` : undefined,
+  ].filter(Boolean).join(' ') || undefined
   return (
     <div className="space-y-1">
       {label && (
         <label htmlFor={inputId} className={cn("block text-sm font-medium", (props.disabled || props.readOnly) ? 'text-gray-500' : 'text-gray-700')}>
           {label}
+          {props.required && <span aria-hidden className="text-red-600 ml-0.5">*</span>}
         </label>
       )}
       <input
@@ -25,7 +31,8 @@ export function Input({ className, label, error, id, onKeyDown, onKeyUp, ...prop
         )}
         id={inputId}
         aria-invalid={Boolean(error) || undefined}
-        aria-describedby={error ? `${inputId}-error` : undefined}
+        aria-describedby={describedIds}
+        aria-required={props.required || undefined}
         style={{ minHeight: 44 }}
         {...props}
         onKeyDown={(e) => {
@@ -35,6 +42,9 @@ export function Input({ className, label, error, id, onKeyDown, onKeyUp, ...prop
           onKeyUp?.(e)
         }}
       />
+      {description && !error && (
+        <p id={`${inputId}-desc`} className="text-xs text-gray-500">{description}</p>
+      )}
       {error && (
         <p id={`${inputId}-error`} className="text-sm text-red-600">{error}</p>
       )}

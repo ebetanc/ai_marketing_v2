@@ -26,6 +26,7 @@ import { Skeleton } from '../components/ui/Skeleton';
 import { useToast } from '../components/ui/Toast';
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useAsyncCallback } from '../hooks/useAsync'
+import { z } from 'zod'
 
 // Helper: Extract topics from an idea row
 const extractTopicsFromIdea = (idea: any): { number: number; topic: string; description: string; image_prompt: string }[] => {
@@ -68,6 +69,7 @@ export function Ideas() {
     description: '',
     image_prompt: ''
   })
+  const [editErrors, setEditErrors] = useState<{ topic?: string; description?: string; image_prompt?: string }>({})
   const [saving, setSaving] = useState(false)
   const [generatingContent, setGeneratingContent] = useState(false)
   const [viewIdeaSetModal, setViewIdeaSetModal] = useState<{
@@ -190,10 +192,28 @@ export function Ideas() {
     const descriptionColumn = columns[baseColumnIndex + 1] || `description${topicNumber}`
     const imagePromptColumn = columns[baseColumnIndex + 2] || `image_prompt${topicNumber}`
 
+    // Validate edit form
+    const EditSchema = z.object({
+      topic: z.string().trim().min(1, 'Topic is required.'),
+      description: z.string().trim().optional(),
+      image_prompt: z.string().trim().optional(),
+    })
+    const parsed = EditSchema.safeParse(editForm)
+    if (!parsed.success) {
+      const issues = parsed.error.flatten().fieldErrors
+      setEditErrors({
+        topic: issues.topic?.[0],
+        description: issues.description?.[0],
+        image_prompt: issues.image_prompt?.[0],
+      })
+      push({ title: 'Fix errors', message: 'Complete the required fields.', variant: 'warning' })
+      return
+    }
+
     const updateData = {
-      [topicColumn]: editForm.topic,
-      [descriptionColumn]: editForm.description,
-      [imagePromptColumn]: editForm.image_prompt
+      [topicColumn]: parsed.data.topic,
+      [descriptionColumn]: parsed.data.description || '',
+      [imagePromptColumn]: parsed.data.image_prompt || ''
     }
 
     console.log('=== SAVE TOPIC OPERATION DEBUG ===')
@@ -282,6 +302,7 @@ export function Ideas() {
       ...prev,
       [field]: value
     }))
+    setEditErrors(prev => ({ ...prev, [field]: undefined }))
   }
 
   const handleCloseViewModal = () => {
@@ -638,14 +659,21 @@ export function Ideas() {
                 </CardHeader>
                 <CardContent>
                   {viewIdeaModal.isEditing ? (
-                    <input
-                      type="text"
-                      value={editForm.topic}
-                      onChange={(e) => handleFormChange('topic', e.target.value)}
-                      aria-label="Topic"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus:border-transparent"
-                      placeholder="Enter topic..."
-                    />
+                    <>
+                      <input
+                        type="text"
+                        value={editForm.topic}
+                        onChange={(e) => handleFormChange('topic', e.target.value)}
+                        aria-label="Topic"
+                        aria-invalid={editErrors.topic ? true : undefined}
+                        aria-errormessage={editErrors.topic ? 'edit-topic-error' : undefined}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus:border-transparent"
+                        placeholder="Enter topic..."
+                      />
+                      {editErrors.topic && (
+                        <p id="edit-topic-error" className="mt-2 text-sm text-red-600">{editErrors.topic}</p>
+                      )}
+                    </>
                   ) : (
                     <p className="text-gray-700 leading-relaxed">
                       {viewIdeaModal.topic?.topic || 'No topic specified'}
@@ -664,14 +692,21 @@ export function Ideas() {
                 </CardHeader>
                 <CardContent>
                   {viewIdeaModal.isEditing ? (
-                    <textarea
-                      value={editForm.description}
-                      onChange={(e) => handleFormChange('description', e.target.value)}
-                      rows={4}
-                      aria-label="Description"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus:border-transparent resize-none"
-                      placeholder="Enter description..."
-                    />
+                    <>
+                      <textarea
+                        value={editForm.description}
+                        onChange={(e) => handleFormChange('description', e.target.value)}
+                        rows={4}
+                        aria-label="Description"
+                        aria-invalid={editErrors.description ? true : undefined}
+                        aria-errormessage={editErrors.description ? 'edit-description-error' : undefined}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus:border-transparent resize-none"
+                        placeholder="Enter description..."
+                      />
+                      {editErrors.description && (
+                        <p id="edit-description-error" className="mt-2 text-sm text-red-600">{editErrors.description}</p>
+                      )}
+                    </>
                   ) : (
                     <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
                       {viewIdeaModal.topic?.description || 'No description available'}
@@ -691,14 +726,21 @@ export function Ideas() {
                   </CardHeader>
                   <CardContent>
                     {viewIdeaModal.isEditing ? (
-                      <textarea
-                        value={editForm.image_prompt}
-                        onChange={(e) => handleFormChange('image_prompt', e.target.value)}
-                        rows={3}
-                        aria-label="Image prompt"
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus:border-transparent resize-none"
-                        placeholder="Enter image prompt..."
-                      />
+                      <>
+                        <textarea
+                          value={editForm.image_prompt}
+                          onChange={(e) => handleFormChange('image_prompt', e.target.value)}
+                          rows={3}
+                          aria-label="Image prompt"
+                          aria-invalid={editErrors.image_prompt ? true : undefined}
+                          aria-errormessage={editErrors.image_prompt ? 'edit-imageprompt-error' : undefined}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus:border-transparent resize-none"
+                          placeholder="Enter image prompt..."
+                        />
+                        {editErrors.image_prompt && (
+                          <p id="edit-imageprompt-error" className="mt-2 text-sm text-red-600">{editErrors.image_prompt}</p>
+                        )}
+                      </>
                     ) : (
                       <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
                         {viewIdeaModal.topic.image_prompt}
