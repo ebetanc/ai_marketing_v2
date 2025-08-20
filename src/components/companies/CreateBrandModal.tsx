@@ -559,7 +559,6 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
                     type="submit"
                     loading={submitLoading}
                     size="lg"
-                    className="bg-gray-900 hover:bg-gray-800"
                     disabled={
                       !formData.name.trim() ||
                       !formData.targetAudience.trim() ||

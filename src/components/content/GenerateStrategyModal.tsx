@@ -1,14 +1,14 @@
-import React, { useRef, useState } from 'react'
-import { Button } from '../ui/Button'
-import { ArrowLeft, X, Sparkles } from 'lucide-react'
-import { cn } from '../../lib/utils'
-import { useToast } from '../ui/Toast'
-import { Modal, ModalBody, ModalHeader, ModalTitle } from '../ui/Modal'
-import { IconButton } from '../ui/IconButton'
-import { supabase } from '../../lib/supabase'
-import { postToN8n } from '../../lib/n8n'
-import { useAsyncCallback } from '../../hooks/useAsync'
+import { ArrowLeft, Sparkles, X } from 'lucide-react'
+import { useRef, useState } from 'react'
 import { z } from 'zod'
+import { useAsyncCallback } from '../../hooks/useAsync'
+import { postToN8n } from '../../lib/n8n'
+import { supabase } from '../../lib/supabase'
+import { cn } from '../../lib/utils'
+import { Button } from '../ui/Button'
+import { IconButton } from '../ui/IconButton'
+import { Modal, ModalBody, ModalHeader, ModalTitle } from '../ui/Modal'
+import { useToast } from '../ui/Toast'
 
 interface GenerateStrategyModalProps {
   isOpen: boolean
@@ -182,7 +182,14 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
     setErrors(prev => ({ ...prev, platforms: undefined }))
   }
 
-  const handleGenerateStrategy = () => { void runGenerate() }
+  const handleGenerateStrategy = () => {
+    void (async () => {
+      const res = await runGenerate()
+      if (res?.error) {
+        push({ title: 'Generation failed', message: res.error.message || 'Unable to create strategy.', variant: 'error' })
+      }
+    })()
+  }
 
   const handleClose = () => {
     setSelectedPlatforms([])
