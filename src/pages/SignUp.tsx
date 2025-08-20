@@ -87,6 +87,7 @@ export default function SignUp() {
                         <legend className="block text-sm font-medium text-gray-700 mb-2">Role</legend>
                         <div className="grid gap-3">
                             <label
+                                htmlFor="role-call-center"
                                 className={
                                     `block w-full rounded-xl border p-4 transition shadow-sm cursor-pointer ` +
                                     (role === 'call_center'
@@ -97,14 +98,16 @@ export default function SignUp() {
                                 <input
                                     type="radio"
                                     name="role"
+                                    id="role-call-center"
                                     value="call_center"
                                     checked={role === 'call_center'}
                                     onChange={() => setRole('call_center')}
                                     className="sr-only"
+                                    aria-labelledby="role-call-center-label"
                                 />
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <div className="font-medium text-gray-900">Call Center</div>
+                                        <div id="role-call-center-label" className="font-medium text-gray-900">Call Center</div>
                                         <div className="text-xs text-gray-500">For teams creating and managing leads/calls.</div>
                                     </div>
                                     <div

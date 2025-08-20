@@ -35,7 +35,8 @@ export function GenerateStrategyModal({ isOpen, onClose, companies, onStrategyGe
   const [errors, setErrors] = useState<{ company?: string; platforms?: string }>({})
   const { call: runGenerate, loading: isGenerating } = useAsyncCallback(async () => {
     const Schema = z.object({
-      companyId: z.string().min(1, 'Select a company.'),
+      // Accept either string or number IDs (Supabase uses numeric ids)
+      companyId: z.union([z.string().min(1, 'Select a company.'), z.number()]),
       platforms: z.array(z.string()).min(1, 'Select at least one platform.')
     })
     const parsed = Schema.safeParse({ companyId: selectedCompany?.id ?? '', platforms: selectedPlatforms })

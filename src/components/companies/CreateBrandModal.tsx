@@ -1,16 +1,16 @@
+import { ArrowLeft, ArrowRight, Globe, Sparkles, X } from 'lucide-react'
 import React, { useState } from 'react'
-import { Button } from '../ui/Button'
-import { Input } from '../ui/Input'
-import { Textarea } from '../ui/Textarea'
-import { X, ArrowLeft, ArrowRight, Sparkles, Globe } from 'lucide-react'
-import { supabase, type TablesInsert } from '../../lib/supabase'
-import { Modal, ModalBody, ModalHeader, ModalTitle } from '../ui/Modal'
-import { useToast } from '../ui/Toast'
-import { IconButton } from '../ui/IconButton'
-import { ConfirmDialog } from '../ui/ConfirmDialog'
-import { postToN8n } from '../../lib/n8n'
-import { useAsyncCallback } from '../../hooks/useAsync'
 import { z } from 'zod'
+import { useAsyncCallback } from '../../hooks/useAsync'
+import { postToN8n } from '../../lib/n8n'
+import { supabase, type TablesInsert } from '../../lib/supabase'
+import { Button } from '../ui/Button'
+import { ConfirmDialog } from '../ui/ConfirmDialog'
+import { IconButton } from '../ui/IconButton'
+import { Input } from '../ui/Input'
+import { Modal, ModalBody, ModalHeader, ModalTitle } from '../ui/Modal'
+import { Textarea } from '../ui/Textarea'
+import { useToast } from '../ui/Toast'
 
 interface CreateBrandModalProps {
   isOpen: boolean
@@ -47,77 +47,179 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
     keyOffer: z.string().trim().min(1, 'Key offer is required'),
     imageGuidelines: z.string().optional()
   })
+  // Helpers
+  const normalizeWebsite = (raw?: string) => {
+    const w = (raw || '').trim()
+    if (!w) return ''
+    return /^https?:\/\//i.test(w) ? w : `https://${w}`
+  }
+  const getUserId = async () => (await supabase.auth.getSession()).data.session?.user.id || null
+  const sleep = (ms: number) => new Promise(res => setTimeout(res, ms))
+
   const { call: runAutofill, loading: autofillLoading } = useAsyncCallback(async () => {
     if (!formData.website) {
       push({ title: 'Missing URL', message: 'Enter a website URL.', variant: 'warning' })
       return
     }
 
-    console.log('=== AUTOFILL WEBHOOK REQUEST ===')
-    console.log('Sending autofill request for website:', formData.website)
+    // Normalize website to include protocol to help downstream crawlers
+    const normalizedWebsite = normalizeWebsite(formData.website)
 
-    const response = await postToN8n('autofill', {
-      operation: 'company_autofill',
-      website: formData.website,
-      brandName: formData.name,
-      additionalInfo: formData.additionalInfo,
-      meta: {
-        user_id: (await supabase.auth.getSession()).data.session?.user.id || null,
-        source: 'app',
-        ts: new Date().toISOString(),
-      },
-    })
+    console.log('=== AUTOFILL WEBHOOK REQUEST ===')
+    console.log('Sending autofill request for website:', normalizedWebsite)
+
+    let response: Response
+    try {
+      response = await postToN8n('autofill', {
+        operation: 'company_autofill',
+        website: normalizedWebsite,
+        brandName: formData.name,
+        additionalInfo: formData.additionalInfo,
+        meta: {
+          user_id: (await supabase.auth.getSession()).data.session?.user.id || null,
+          source: 'app',
+          ts: new Date().toISOString(),
+        },
+      })
+    } catch (err) {
+      console.error('Autofill network error:', err)
+      push({ title: 'Autofill failed', message: 'Network error contacting analyzer.', variant: 'error' })
+      return
+    }
 
     console.log('Autofill webhook response status:', response.status)
     console.log('Autofill webhook response headers:', Object.fromEntries(response.headers.entries()))
 
     if (!response.ok) {
-      throw new Error(`Webhook request failed with status: ${response.status}`)
+      // Try fallback from Supabase if server didn't return body but may have saved data
+      console.warn('Autofill server returned non-OK. Trying DB fallback...')
+      const filled = await tryDbFallback(normalizedWebsite)
+      if (!filled) push({ title: 'Autofill failed', message: `Server error ${response.status}.`, variant: 'error' })
+      return
     }
 
     const responseText = await response.text()
     console.log('Raw autofill webhook response:', responseText)
 
     if (!responseText) {
-      throw new Error('Empty server response')
+      console.warn('Empty server response. Trying DB fallback...')
+      const filled = await tryDbFallback(normalizedWebsite)
+      if (!filled) push({ title: 'Autofill failed', message: 'Empty server response.', variant: 'error' })
+      return
     }
 
-    let data
+    let data: any
     try {
       data = JSON.parse(responseText)
       console.log('Parsed autofill webhook response:', data)
     } catch (parseError) {
       console.error('Failed to parse JSON response:', parseError)
       console.error('Raw response text:', responseText)
-      throw new Error('Invalid server response')
+      console.warn('Trying DB fallback...')
+      const filled = await tryDbFallback(normalizedWebsite)
+      if (!filled) push({ title: 'Autofill failed', message: 'Invalid server response.', variant: 'error' })
+      return
+    }
+
+    // Support multiple shapes and key styles (camelCase, snake_case, nested under output/data)
+    const payload = data?.output ?? data?.data ?? data
+    const getVal = (obj: any, keys: string[]) => {
+      for (const k of keys) {
+        if (obj && typeof obj[k] !== 'undefined' && obj[k] !== null && String(obj[k]).trim() !== '') return obj[k]
+      }
+      return undefined
     }
 
     console.log('=== UPDATING FORM DATA ===')
-    console.log('Target Audience from webhook:', data.targetAudience)
-    console.log('Brand Tone from webhook:', data.brandTone)
-    console.log('Key Offer from webhook:', data.keyOffer)
+    const ta = getVal(payload, ['targetAudience', 'target_audience'])
+    const bt = getVal(payload, ['brandTone', 'brand_tone'])
+    const ko = getVal(payload, ['keyOffer', 'key_offer'])
 
     const stripQuotes = (s: unknown) => {
-      const str = String(s).trim()
-      if (!str) return str
+      const str = String(s ?? '').trim()
+      if (!str) return ''
       const firstCode = str.charCodeAt(0)
       const lastCode = str.charCodeAt(str.length - 1)
-      // 34 is the double-quote character (") and 39 is the single-quote character (')
       const isDouble = firstCode === 34 && lastCode === 34
       const isSingle = firstCode === 39 && lastCode === 39
       if (isDouble || isSingle) return str.slice(1, -1)
       return str
     }
+
+    const updates: Partial<BrandFormData> = {}
+    if (typeof ta !== 'undefined') updates.targetAudience = stripQuotes(ta)
+    if (typeof bt !== 'undefined') updates.brandTone = stripQuotes(bt)
+    if (typeof ko !== 'undefined') updates.keyOffer = stripQuotes(ko)
+
+    if (Object.keys(updates).length === 0) {
+      console.warn('Autofill returned no usable fields:', payload)
+      const filled = await tryDbFallback(normalizedWebsite)
+      if (!filled) push({ title: 'No suggestions', message: 'No details found for this site.', variant: 'warning' })
+      return
+    }
+
     setFormData(prev => ({
       ...prev,
-      targetAudience: data.targetAudience ? stripQuotes(data.targetAudience) : prev.targetAudience,
-      brandTone: data.brandTone ? stripQuotes(data.brandTone) : prev.brandTone,
-      keyOffer: data.keyOffer ? stripQuotes(data.keyOffer) : prev.keyOffer
+      ...updates,
     }))
 
     console.log('Form data updated successfully')
     push({ title: 'Analyzed', message: 'Updated from website.', variant: 'success' })
   })
+
+  // Poll Supabase for company created by n8n and use it to fill brand fields (no n8n changes required)
+  const tryDbFallback = async (normalizedWebsite: string) => {
+    try {
+      const userId = await getUserId()
+      if (!userId) return false
+      // Try up to 3 times in case n8n is still writing
+      for (let attempt = 0; attempt < 3; attempt++) {
+        let query = supabase
+          .from('companies')
+          .select('id, brand_name, website, target_audience, brand_tone, key_offer')
+          .eq('owner_id', userId)
+          .eq('brand_name', formData.name)
+          .order('created_at', { ascending: false })
+          .limit(1)
+
+        if (normalizedWebsite) {
+          query = query.eq('website', normalizedWebsite)
+        } else {
+          // Look for null website if user didn't provide one
+          query = (query as any).is('website', null)
+        }
+
+        const { data, error } = await query
+        if (error) {
+          console.warn('DB fallback query error:', error)
+          return false
+        }
+
+        const row = data?.[0]
+        const ta = row?.target_audience?.toString().trim()
+        const bt = row?.brand_tone?.toString().trim()
+        const ko = row?.key_offer?.toString().trim()
+
+        if (row && (ta || bt || ko)) {
+          setFormData(prev => ({
+            ...prev,
+            targetAudience: ta || prev.targetAudience,
+            brandTone: bt || prev.brandTone,
+            keyOffer: ko || prev.keyOffer,
+          }))
+          push({ title: 'Analyzed', message: 'Updated from database.', variant: 'success' })
+          return true
+        }
+
+        // Wait a bit and retry
+        await sleep(800)
+      }
+      return false
+    } catch (e) {
+      console.warn('DB fallback error:', e)
+      return false
+    }
+  }
   const { call: runSubmit, loading: submitLoading } = useAsyncCallback(async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
     if (!formData.name || !formData.targetAudience || !formData.brandTone || !formData.keyOffer) {
@@ -126,9 +228,7 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
     }
 
     // Ensure website conforms to DB URL check (must start with http/https)
-    const normalizedWebsite = formData.website && formData.website.trim().length > 0
-      ? (/^https?:\/\//i.test(formData.website.trim()) ? formData.website.trim() : `https://${formData.website.trim()}`)
-      : ''
+    const normalizedWebsite = normalizeWebsite(formData.website)
 
     const brandData: TablesInsert<'companies'> = {
       brand_name: formData.name,
@@ -141,19 +241,58 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
 
     console.log('Creating company in Supabase:', brandData)
 
-    const { data, error } = await supabase
-      .from('companies')
-      .insert([brandData])
-      .select()
+    // If n8n already created a company during Autofill, update it instead of inserting a duplicate
+    const userId = await getUserId()
+    let existingId: number | null = null
+    if (userId) {
+      try {
+        let q = supabase
+          .from('companies')
+          .select('id')
+          .eq('owner_id', userId)
+          .eq('brand_name', formData.name)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
 
-    if (error) {
-      console.error('Supabase error:', error)
-      push({ title: 'Create failed', message: `${error.message}`, variant: 'error' })
+        if (normalizedWebsite) {
+          q = q.eq('website', normalizedWebsite) as any
+        } else {
+          q = (q as any).is('website', null)
+        }
+
+        const { data: ex, error: exErr } = await q
+        if (!exErr && ex?.id) existingId = ex.id
+      } catch (err) {
+        console.warn('Existing company check failed:', err)
+      }
+    }
+
+    const action: 'insert' | 'update' = existingId ? 'update' : 'insert'
+    let dbError: any = null
+    if (action === 'update' && existingId) {
+      const { error } = await supabase
+        .from('companies')
+        .update(brandData)
+        .eq('id', existingId)
+        .select()
+      dbError = error
+    } else {
+      const { error } = await supabase
+        .from('companies')
+        .insert([brandData])
+        .select()
+      dbError = error
+    }
+
+    if (dbError) {
+      console.error('Supabase error:', dbError)
+      push({ title: action === 'update' ? 'Update failed' : 'Create failed', message: `${dbError.message}`, variant: 'error' })
       return
     }
 
-    console.log('Company created successfully:', data)
-    push({ title: 'Created', message: 'Company added.', variant: 'success' })
+    console.log(`Company ${action}d successfully`)
+    push({ title: action === 'update' ? 'Updated' : 'Created', message: action === 'update' ? 'Company updated.' : 'Company added.', variant: 'success' })
 
     // Reset form and close modal
     resetForm()

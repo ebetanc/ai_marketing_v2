@@ -836,7 +836,7 @@ export function Ideas() {
 
             {/* Content */}
             <div className="flex-1 p-6 overflow-y-auto min-h-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {viewIdeaSetModal.topics.map((topic) => (
                   <Card
                     key={topic.number}
@@ -874,7 +874,7 @@ export function Ideas() {
 
                       {/* View indicator */}
                       <div className="pt-1">
-                        <div className="text-xs text-brand-600 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="text-xs text-brand-600 font-medium">
                           Click to view →
                         </div>
                       </div>
