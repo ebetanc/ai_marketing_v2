@@ -45,33 +45,63 @@ export function Sidebar() {
   const location = useLocation()
   const [displayName, setDisplayName] = React.useState<string>('')
   const [userRole, setUserRole] = React.useState<'admin' | 'marketing' | 'real_estate' | null>(null)
+  const [hasProfile, setHasProfile] = React.useState<boolean | null>(null) // null = unknown/loading
 
   React.useEffect(() => {
     // Fetch current auth user to replace demo label
     let mounted = true
-    supabase.auth.getUser().then((result: { data?: { user?: any } }) => {
-      if (!mounted) return
-      const user = result?.data?.user
-      const name = (user?.user_metadata as any)?.name || user?.email || 'User'
-      setDisplayName(name)
-      const role = (user?.user_metadata as any)?.role as string | undefined
-      if (role === 'admin' || role === 'marketing' || role === 'real_estate') {
-        setUserRole(role)
-      } else {
-        setUserRole('marketing') // default
-      }
-    }).catch(() => {
-      if (!mounted) return
-      setDisplayName('User')
-      setUserRole('marketing')
-    })
+      ; (async () => {
+        try {
+          const result = await supabase.auth.getUser()
+          if (!mounted) return
+          const user = result?.data?.user
+          const name = (user?.user_metadata as any)?.name || user?.email || 'User'
+          setDisplayName(name)
+
+          if (user) {
+            // Attempt to load profile row. If none exists, we'll show all nav groups.
+            const { data: profile, error: profileError } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', user.id)
+              .single()
+            if (!mounted) return
+
+            if (profile && !profileError) {
+              setHasProfile(true)
+              const dbRole = profile.role as string | undefined
+              if (dbRole === 'admin' || dbRole === 'marketing' || dbRole === 'real_estate') {
+                setUserRole(dbRole)
+              } else {
+                // Fallback if role is something else (e.g., call_center/user) -> keep prior behavior defaulting to marketing
+                setUserRole('marketing')
+              }
+            } else {
+              // No profile row found (or not accessible) -> treat as "no profile attached" scenario
+              setHasProfile(false)
+              setUserRole(null) // We'll override visibility logic when hasProfile === false
+            }
+          } else {
+            setHasProfile(false)
+            setUserRole(null)
+          }
+        } catch (_e) {
+          if (!mounted) return
+          setDisplayName('User')
+          setHasProfile(false)
+          setUserRole(null)
+        }
+      })()
     return () => { mounted = false }
   }, [])
 
-  // Compute visibility based on role (admin sees everything)
+  // Compute visibility:
+  // If the user has NO profile (hasProfile === false) we show ALL nav groups.
+  // Otherwise we respect role-based visibility (admin sees everything, marketing hides real estate, real_estate hides tools).
   const role = userRole || 'marketing'
-  const showTools = role === 'admin' || role === 'marketing'
-  const showRealEstate = role === 'admin' || role === 'real_estate'
+  const showAll = hasProfile === false
+  const showTools = showAll || role === 'admin' || role === 'marketing'
+  const showRealEstate = showAll || role === 'admin' || role === 'real_estate'
 
   return (
     <div className="flex w-full lg:w-64 flex-col bg-white border-r border-gray-200 lg:sticky lg:top-0 lg:h-screen">
