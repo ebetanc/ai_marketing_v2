@@ -71,14 +71,29 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
     let response: Response
     try {
       response = await postToN8n('autofill', {
+        // Operation identifier (current contract)
         operation: 'company_autofill',
+        // Primary inputs (legacy contract fields still referenced in some n8n nodes)
         website: normalizedWebsite,
         brandName: formData.name,
         additionalInfo: formData.additionalInfo,
+        // New unified brand object (newer contract expects body.brand.* for cross-operation reuse)
+        brand: {
+          name: formData.name,
+          website: normalizedWebsite,
+          additionalInfo: formData.additionalInfo,
+          // Provide any existing (possibly empty) values so downstream chains can choose to skip missing ones
+          targetAudience: formData.targetAudience || undefined,
+          brandTone: formData.brandTone || undefined,
+          keyOffer: formData.keyOffer || undefined,
+          imageGuidelines: formData.imageGuidelines || undefined,
+        },
+        // Meta for observability/debugging
         meta: {
           user_id: (await supabase.auth.getSession()).data.session?.user.id || null,
           source: 'app',
           ts: new Date().toISOString(),
+          contract: 'dual-v1+brand-object', // trace which shape we sent
         },
       })
     } catch (err) {
@@ -115,10 +130,48 @@ export function CreateBrandModal({ isOpen, onClose, onSubmit, refetchCompanies }
     } catch (parseError) {
       console.error('Failed to parse JSON response:', parseError)
       console.error('Raw response text:', responseText)
-      console.warn('Trying DB fallback...')
-      const filled = await tryDbFallback(normalizedWebsite)
-      if (!filled) push({ title: 'Autofill failed', message: 'Invalid server response.', variant: 'error' })
-      return
+      // Attempt salvage parsing (handle common invalid JSON like unquoted string values)
+      const salvage = () => {
+        try {
+          // Only attempt if it looks like an object with our keys
+          if (!/targetAudience|brandTone|keyOffer/.test(responseText)) return null
+          const pick = (key: string) => {
+            const re = new RegExp('"' + key + '"\\s*:\\s*([^\n,}]+)', 'i')
+            const m = responseText.match(re)
+            if (!m) return undefined
+            let raw = m[1].trim()
+            // Remove trailing comma if captured (regex avoids but be safe)
+            raw = raw.replace(/,$/, '').trim()
+            // If already quoted JSON-like string, strip outer quotes then re-escape
+            if ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))) {
+              raw = raw.slice(1, -1)
+            }
+            // Collapse internal newlines
+            raw = raw.replace(/\r?\n+/g, ' ').trim()
+            return raw
+          }
+          const ta = pick('targetAudience')
+          const bt = pick('brandTone')
+            || pick('brand_tone')
+          const ko = pick('keyOffer')
+            || pick('key_offer')
+          if (!ta && !bt && !ko) return null
+          return { output: { targetAudience: ta, brandTone: bt, keyOffer: ko } }
+        } catch (e) {
+          console.warn('Salvage parsing failed:', e)
+          return null
+        }
+      }
+      const salvaged = salvage()
+      if (salvaged) {
+        console.log('Salvaged autofill payload from invalid JSON:', salvaged)
+        data = salvaged
+      } else {
+        console.warn('Trying DB fallback...')
+        const filled = await tryDbFallback(normalizedWebsite)
+        if (!filled) push({ title: 'Autofill failed', message: 'Invalid server response.', variant: 'error' })
+        return
+      }
     }
 
     // Support multiple shapes and key styles (camelCase, snake_case, nested under output/data)
