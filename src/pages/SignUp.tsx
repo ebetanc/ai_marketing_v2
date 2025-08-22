@@ -19,7 +19,7 @@ export default function SignUp() {
 
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
-    const [role, setRole] = useState<'call_center'>('call_center')
+    const [role, setRole] = useState<'marketing' | 'real_estate'>('marketing')
     const [message, setMessage] = useState<string | null>(null)
     const [formError, setFormError] = useState<string | null>(null)
     const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({})
@@ -86,43 +86,53 @@ export default function SignUp() {
                     <fieldset>
                         <legend className="block text-sm font-medium text-gray-700 mb-2">Role</legend>
                         <div className="grid gap-3">
+                            {/* Marketing role */}
                             <label
-                                htmlFor="role-call-center"
-                                className={
-                                    `block w-full rounded-xl border p-4 transition shadow-sm cursor-pointer ` +
-                                    (role === 'call_center'
-                                        ? 'border-brand-500 ring-2 ring-brand-200 bg-brand-50'
-                                        : 'border-gray-200 hover:border-gray-300 bg-white')
-                                }
+                                htmlFor="role-marketing"
+                                className={`block w-full rounded-xl border p-4 transition shadow-sm cursor-pointer ${role === 'marketing' ? 'border-brand-500 ring-2 ring-brand-200 bg-brand-50' : 'border-gray-200 hover:border-gray-300 bg-white'}`}
                             >
                                 <input
                                     type="radio"
                                     name="role"
-                                    id="role-call-center"
-                                    value="call_center"
-                                    checked={role === 'call_center'}
-                                    onChange={() => setRole('call_center')}
+                                    id="role-marketing"
+                                    value="marketing"
+                                    checked={role === 'marketing'}
+                                    onChange={() => setRole('marketing')}
                                     className="sr-only"
-                                    aria-labelledby="role-call-center-label"
+                                    aria-labelledby="role-marketing-label"
                                 />
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <div id="role-call-center-label" className="font-medium text-gray-900">Call Center</div>
-                                        <div className="text-xs text-gray-500">For teams creating and managing leads/calls.</div>
+                                        <div id="role-marketing-label" className="font-medium text-gray-900">Marketing</div>
+                                        <div className="text-xs text-gray-500">General marketing teams & creators.</div>
                                     </div>
-                                    <div
-                                        className={
-                                            `h-5 w-5 rounded-full border flex items-center justify-center ` +
-                                            (role === 'call_center' ? 'border-brand-500' : 'border-gray-300')
-                                        }
-                                        aria-hidden
-                                    >
-                                        <span
-                                            className={
-                                                `h-2.5 w-2.5 rounded-full ` +
-                                                (role === 'call_center' ? 'bg-brand-500' : 'bg-transparent')
-                                            }
-                                        />
+                                    <div className={`h-5 w-5 rounded-full border flex items-center justify-center ${role === 'marketing' ? 'border-brand-500' : 'border-gray-300'}`} aria-hidden>
+                                        <span className={`h-2.5 w-2.5 rounded-full ${role === 'marketing' ? 'bg-brand-500' : 'bg-transparent'}`} />
+                                    </div>
+                                </div>
+                            </label>
+                            {/* Real Estate role */}
+                            <label
+                                htmlFor="role-real-estate"
+                                className={`block w-full rounded-xl border p-4 transition shadow-sm cursor-pointer ${role === 'real_estate' ? 'border-brand-500 ring-2 ring-brand-200 bg-brand-50' : 'border-gray-200 hover:border-gray-300 bg-white'}`}
+                            >
+                                <input
+                                    type="radio"
+                                    name="role"
+                                    id="role-real-estate"
+                                    value="real_estate"
+                                    checked={role === 'real_estate'}
+                                    onChange={() => setRole('real_estate')}
+                                    className="sr-only"
+                                    aria-labelledby="role-real-estate-label"
+                                />
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <div id="role-real-estate-label" className="font-medium text-gray-900">Real Estate</div>
+                                        <div className="text-xs text-gray-500">Content & strategy for real estate niche.</div>
+                                    </div>
+                                    <div className={`h-5 w-5 rounded-full border flex items-center justify-center ${role === 'real_estate' ? 'border-brand-500' : 'border-gray-300'}`} aria-hidden>
+                                        <span className={`h-2.5 w-2.5 rounded-full ${role === 'real_estate' ? 'bg-brand-500' : 'bg-transparent'}`} />
                                     </div>
                                 </div>
                             </label>
