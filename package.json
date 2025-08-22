@@ -22,7 +22,8 @@
     "db:reset:local": "npx supabase db reset --local",
     "prepare": "npx husky",
     "db:push:local": "npx supabase db push --local",
-    "db:push:prod": "npx supabase db push"
+    "db:push:prod": "npx supabase db push",
+    "db:push:all": "npx supabase db push --local && npx supabase db push"
   },
   "dependencies": {
     "@fontsource/geist-mono": "^5.2.6",

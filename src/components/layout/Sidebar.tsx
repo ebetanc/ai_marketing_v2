@@ -15,7 +15,7 @@ import {
   Search,
 } from 'lucide-react'
 
-// Navigation sections to visually group related items
+// Navigation sections (order matters for grouped rendering)
 const primaryNav = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
 ]
@@ -27,18 +27,24 @@ const contentWorkflowNav = [
   { name: 'Content', href: '/content', icon: FileText },
 ]
 
+// Tools (hidden for real_estate mode)
 const toolsNav = [
   { name: 'Campaigns', href: '/campaigns', icon: Megaphone },
   { name: 'YouTube → SEO Blog', href: '/youtube-seo', icon: Youtube },
   { name: 'Trend Blog', href: '/trend-blog', icon: TrendingUp },
   { name: 'Semantic SEO', href: '/semantic-seo', icon: Network },
   { name: 'Keyword Research', href: '/keyword-research', icon: Search },
+]
+
+// Real Estate (hidden for marketing mode)
+const realEstateNav = [
   { name: 'Real Estate Content', href: '/real-estate-content', icon: Building2 },
 ]
 
 export function Sidebar() {
   const location = useLocation()
   const [displayName, setDisplayName] = React.useState<string>('')
+  const [userRole, setUserRole] = React.useState<'admin' | 'marketing' | 'real_estate' | null>(null)
 
   React.useEffect(() => {
     // Fetch current auth user to replace demo label
@@ -48,12 +54,24 @@ export function Sidebar() {
       const user = result?.data?.user
       const name = (user?.user_metadata as any)?.name || user?.email || 'User'
       setDisplayName(name)
+      const role = (user?.user_metadata as any)?.role as string | undefined
+      if (role === 'admin' || role === 'marketing' || role === 'real_estate') {
+        setUserRole(role)
+      } else {
+        setUserRole('marketing') // default
+      }
     }).catch(() => {
       if (!mounted) return
       setDisplayName('User')
+      setUserRole('marketing')
     })
     return () => { mounted = false }
   }, [])
+
+  // Compute visibility based on role (admin sees everything)
+  const role = userRole || 'marketing'
+  const showTools = role === 'admin' || role === 'marketing'
+  const showRealEstate = role === 'admin' || role === 'real_estate'
 
   return (
     <div className="flex w-full lg:w-64 flex-col bg-white border-r border-gray-200 lg:sticky lg:top-0 lg:h-screen">
@@ -131,37 +149,73 @@ export function Sidebar() {
           </div>
         </div>
 
-        {/* Tools */}
-        <div>
-          <p className="px-2 sm:px-3 mb-2 text-[10px] sm:text-xs font-semibold tracking-wider text-gray-500 uppercase">Tools</p>
-          <div className="space-y-1">
-            {toolsNav.map((item) => {
-              const isActive = location.pathname.startsWith(item.href)
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={cn(
-                    'group flex items-center px-2 sm:px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500',
-                    isActive
-                      ? 'bg-brand-50 text-brand-700 border border-brand-200'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  )}
-                  aria-current={isActive ? 'page' : undefined}
-                >
-                  <item.icon
+        {/* Tools (marketing & admin) */}
+        {showTools && (
+          <div>
+            <p className="px-2 sm:px-3 mb-2 text-[10px] sm:text-xs font-semibold tracking-wider text-gray-500 uppercase">Tools</p>
+            <div className="space-y-1">
+              {toolsNav.map((item) => {
+                const isActive = location.pathname.startsWith(item.href)
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.href}
                     className={cn(
-                      'mr-2 sm:mr-3 h-5 w-5 transition-colors',
-                      isActive ? 'text-brand-600' : 'text-gray-400 group-hover:text-gray-600'
+                      'group flex items-center px-2 sm:px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500',
+                      isActive
+                        ? 'bg-brand-50 text-brand-700 border border-brand-200'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     )}
-                    aria-hidden
-                  />
-                  <span className="hidden sm:inline">{item.name}</span>
-                </Link>
-              )
-            })}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    <item.icon
+                      className={cn(
+                        'mr-2 sm:mr-3 h-5 w-5 transition-colors',
+                        isActive ? 'text-brand-600' : 'text-gray-400 group-hover:text-gray-600'
+                      )}
+                      aria-hidden
+                    />
+                    <span className="hidden sm:inline">{item.name}</span>
+                  </Link>
+                )
+              })}
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Real Estate (real_estate & admin) */}
+        {showRealEstate && (
+          <div>
+            <p className="px-2 sm:px-3 mb-2 text-[10px] sm:text-xs font-semibold tracking-wider text-gray-500 uppercase">Real Estate</p>
+            <div className="space-y-1">
+              {realEstateNav.map((item) => {
+                const isActive = location.pathname.startsWith(item.href)
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className={cn(
+                      'group flex items-center px-2 sm:px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500',
+                      isActive
+                        ? 'bg-brand-50 text-brand-700 border border-brand-200'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    )}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    <item.icon
+                      className={cn(
+                        'mr-2 sm:mr-3 h-5 w-5 transition-colors',
+                        isActive ? 'text-brand-600' : 'text-gray-400 group-hover:text-gray-600'
+                      )}
+                      aria-hidden
+                    />
+                    <span className="hidden sm:inline">{item.name}</span>
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </nav>
 
       <div className="border-t border-gray-200 p-2 sm:p-4">

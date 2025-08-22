@@ -1,0 +1,4 @@
+-- NO-OP PLACEHOLDER MIGRATION
+-- This file intentionally left inert after consolidation with 20250822123000_backfill_missing_profiles.sql.
+-- Keeping the filename avoids reusing the timestamp and preserves history for environments where it may have been generated.
+-- Do not remove unless certain it was never applied anywhere.
