@@ -1,22 +1,23 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { Card, CardContent, CardHeader } from '../components/ui/Card'
-import { Button } from '../components/ui/Button'
-import { Select } from '../components/ui/Select'
-import { Badge } from '../components/ui/Badge'
-import { ConfirmDialog } from '../components/ui/ConfirmDialog'
-import { ViewContentModal } from '../components/content/ViewContentModal'
-import { supabase, type Tables } from '../lib/supabase'
-import { FileText, Eye, CheckCircle, Clock, Search, Trash2, RefreshCw, Calendar, HelpCircle, Share2 } from 'lucide-react'
-import { IconButton } from '../components/ui/IconButton'
-import { formatDate, truncateText } from '../lib/utils'
-import { useToast } from '../components/ui/Toast'
-import { Skeleton } from '../components/ui/Skeleton'
-import { ListSkeleton } from '../components/ui/ListSkeleton'
-import { useDocumentTitle } from '../hooks/useDocumentTitle'
-import { useAsyncCallback } from '../hooks/useAsync'
+import { FileText, HelpCircle, RefreshCw, Search, ChevronDown, ChevronRight } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { ViewContentModal } from '../components/content/ViewContentModal'
+import ContentListItem from '../components/content/ContentListItem'
 import { PageHeader } from '../components/layout/PageHeader'
+import { Badge } from '../components/ui/Badge'
+import { Button } from '../components/ui/Button'
+import { Card, CardContent, CardHeader } from '../components/ui/Card'
+import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { EmptyState } from '../components/ui/EmptyState'
+// removed IconButton usage after refactor
+import { ListSkeleton } from '../components/ui/ListSkeleton'
+import { Select } from '../components/ui/Select'
+import { Skeleton } from '../components/ui/Skeleton'
+import { useToast } from '../components/ui/Toast'
+import { useAsyncCallback } from '../hooks/useAsync'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { supabase, type Tables } from '../lib/supabase'
+import { truncateText } from '../lib/utils'
 // (reserved) formatting helpers for future rich rendering of content bodies
 // Helper function to extract and format content from JSON (reserved)
 const _extractContentBody = (content: any) => {
@@ -81,41 +82,7 @@ const _extractContentBody = (content: any) => {
 }
 
 // Helper function to extract content type/topic
-const extractContentTopic = (content: any) => {
-  let parsedContent = null
-  try {
-    if (typeof content.body === 'string' && (content.body.startsWith('[') || content.body.startsWith('{'))) {
-      parsedContent = JSON.parse(content.body)
-    }
-  } catch (_e) {
-    // If parsing fails, return null
-  }
-
-  if (parsedContent) {
-    if (Array.isArray(parsedContent) && parsedContent.length > 0) {
-      const firstContent = parsedContent[0]
-      if (firstContent.topic) {
-        return firstContent.topic
-      }
-      if (firstContent.title) {
-        return firstContent.title
-      }
-      if (firstContent.subject) {
-        return firstContent.subject
-      }
-    }
-
-    if (parsedContent.topic) {
-      return parsedContent.topic
-    }
-
-    if (parsedContent.title) {
-      return parsedContent.title
-    }
-  }
-
-  return null
-}
+// extractContentTopic moved into list item rendering logic; legacy helper removed
 
 export function Content() {
   useDocumentTitle('Content — AI Marketing')
@@ -454,30 +421,9 @@ export function Content() {
     }))
   ]
 
-  const getStatusBadge = (status: string) => {
-    return status === 'approved' ? (
-      <Badge variant="success">
-        <CheckCircle className="h-3 w-3 mr-1" />
-        Approved
-      </Badge>
-    ) : (
-      <Badge variant="warning">
-        <Clock className="h-3 w-3 mr-1" />
-        Draft
-      </Badge>
-    )
-  }
+  // status badge logic handled in ContentListItem
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'blog_post': return '📝'
-      case 'social_post': return '📱'
-      case 'ad_copy': return '📢'
-      case 'email': return '📧'
-      case 'generated_content': return '🤖'
-      default: return '📄'
-    }
-  }
+  // moved type icon & status logic into ContentListItem for cleaner page file
   // Copy link action handler
   const { call: copyLinkCall } = useAsyncCallback(async (content: any) => {
     const params = new URLSearchParams(location.search)
@@ -514,6 +460,10 @@ export function Content() {
     // Refocus the search box for quick typing
     setTimeout(() => searchInputRef.current?.focus(), 0)
   }
+
+  // Collapsible groups state
+  const [collapsedBrands, setCollapsedBrands] = useState<Record<string, boolean>>({})
+  const toggleBrand = (brand: string) => setCollapsedBrands(prev => ({ ...prev, [brand]: !prev[brand] }))
 
   return (
     <div className="space-y-6">
@@ -568,9 +518,9 @@ export function Content() {
 
       {/* Filters */}
       <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4 items-center">
-            <div className="relative flex-1">
+        <CardContent className="p-4 space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="md:col-span-2 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
@@ -585,55 +535,49 @@ export function Content() {
                   navigate({ search: params.toString() }, { replace: true })
                 }}
                 aria-label="Search content"
-                className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus:border-brand-500"
-                style={{ minHeight: 44 }}
+                className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm"
               />
             </div>
-
-            <div className="flex gap-3 items-center">
-              <Select
-                options={brandOptions}
-                value={brandFilter}
-                onChange={(e) => {
-                  const v = e.target.value
-                  setBrandFilter(v)
-                  const params = new URLSearchParams(location.search)
-                  if (v) params.set('brand', v); else params.delete('brand')
-                  navigate({ search: params.toString() }, { replace: true })
-                }}
-              />
-
-              <Select
-                options={typeOptions}
-                value={filterType}
-                onChange={(e) => {
-                  const v = e.target.value as typeof filterType
-                  setFilterType(v)
-                  const params = new URLSearchParams(location.search)
-                  if (v && v !== 'all') params.set('type', v); else params.delete('type')
-                  navigate({ search: params.toString() }, { replace: true })
-                }}
-              />
-
-              <Select
-                options={statusOptions}
-                value={filterStatus}
-                onChange={(e) => {
-                  const v = e.target.value as typeof filterStatus
-                  setFilterStatus(v)
-                  const params = new URLSearchParams(location.search)
-                  if (v && v !== 'all') params.set('status', v); else params.delete('status')
-                  navigate({ search: params.toString() }, { replace: true })
-                }}
-              />
-
-              {isFiltersActive && (
-                <Button variant="outline" size="sm" onClick={clearFilters}>
-                  Clear filters
-                </Button>
-              )}
-            </div>
+            <Select
+              options={brandOptions}
+              value={brandFilter}
+              onChange={(e) => {
+                const v = e.target.value
+                setBrandFilter(v)
+                const params = new URLSearchParams(location.search)
+                if (v) params.set('brand', v); else params.delete('brand')
+                navigate({ search: params.toString() }, { replace: true })
+              }}
+            />
+            <Select
+              options={typeOptions}
+              value={filterType}
+              onChange={(e) => {
+                const v = e.target.value as typeof filterType
+                setFilterType(v)
+                const params = new URLSearchParams(location.search)
+                if (v && v !== 'all') params.set('type', v); else params.delete('type')
+                navigate({ search: params.toString() }, { replace: true })
+              }}
+            />
+            <Select
+              options={statusOptions}
+              value={filterStatus}
+              onChange={(e) => {
+                const v = e.target.value as typeof filterStatus
+                setFilterStatus(v)
+                const params = new URLSearchParams(location.search)
+                if (v && v !== 'all') params.set('status', v); else params.delete('status')
+                navigate({ search: params.toString() }, { replace: true })
+              }}
+            />
           </div>
+          {isFiltersActive && (
+            <div className="flex justify-between items-center text-xs text-gray-500">
+              <span className="truncate">{filteredContent.length} result{filteredContent.length === 1 ? '' : 's'}</span>
+              <Button variant="outline" size="xs" onClick={clearFilters}>Clear filters</Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -661,7 +605,7 @@ export function Content() {
 
       {/* Content by Company */}
       {!loading && !error && filteredContent.length > 0 && (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {(() => {
             const grouped = filteredContent.reduce((acc, content) => {
               const brandName = content.brand_name || 'Unknown Brand'
@@ -669,165 +613,62 @@ export function Content() {
               acc[brandName].push(content)
               return acc
             }, {} as Record<string, typeof filteredContent>)
-
             const entries = Object.entries(grouped) as [string, typeof filteredContent][]
 
             return entries.map(([brandName, brandContent]) => {
               const totalContent = brandContent.length
               const approvedContent = brandContent.filter((c: any) => c.status === 'approved').length
-
+              const collapsed = collapsedBrands[brandName]
               return (
-                <div key={brandName} className="w-full max-w-full p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-                  {/* Company Header */}
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-500 rounded-xl flex items-center justify-center">
-                        <FileText className="h-6 w-6 text-white" />
+                <div key={brandName} className="border border-gray-200 rounded-lg bg-white">
+                  <button
+                    className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500 rounded-t-lg"
+                    onClick={() => toggleBrand(brandName)}
+                    aria-expanded={!collapsed}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-md bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center text-white text-sm font-semibold">
+                        {brandName.slice(0, 2).toUpperCase()}
                       </div>
                       <div>
-                        <h5 className="text-xl font-semibold text-gray-900">
-                          {brandName}
-                        </h5>
-                        <p className="text-sm text-gray-500">{totalContent} pieces • {approvedContent} approved</p>
+                        <h3 className="font-semibold text-gray-900 leading-tight">{brandName}</h3>
+                        <p className="text-xs text-gray-500">{approvedContent}/{totalContent} approved</p>
                       </div>
                     </div>
-                    <Badge variant="primary" className="text-sm px-3 py-1">
-                      {totalContent} Pieces
-                    </Badge>
-                  </div>
-
-                  <p className="text-sm font-normal text-gray-500 mb-4">Click a piece to view and approve.</p>
-
-                  {/* Content List */}
-                  <ul className="space-y-3">
-                    {brandContent.map((content: any) => {
-                      const contentTopic = extractContentTopic(content)
-
-                      return (
-                        <li key={content.id}>
-                          <div
-                            className={`flex items-center justify-between p-4 text-base font-bold text-gray-900 rounded-lg bg-gray-50 hover:bg-gray-100 group focus-within:bg-gray-100 hover:shadow transition-all duration-200 ${content.post ? 'opacity-50 pointer-events-none bg-gray-200' : ''}`}
-                            role={!content.post ? 'button' : undefined}
-                            tabIndex={!content.post ? 0 : -1}
-                            onClick={() => !content.post && handleViewContent(content)}
-                            onKeyDown={(e) => {
-                              if (content.post) return
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault()
-                                handleViewContent(content)
+                    <div className="flex items-center gap-3">
+                      <Badge variant="primary" className="text-xs">{totalContent} piece{totalContent === 1 ? '' : 's'}</Badge>
+                      {collapsed ? <ChevronRight className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
+                    </div>
+                  </button>
+                  {!collapsed && (
+                    <div className="px-4 pb-4">
+                      <ul className="space-y-3 mt-2">
+                        {brandContent.map((content: any) => (
+                          <ContentListItem
+                            key={content.id}
+                            content={content}
+                            approvingId={approvingId}
+                            onApprove={async (c) => {
+                              setApprovingId(c.id)
+                              // optimistic
+                              setGeneratedContent(prev => prev.map(p => p.id === c.id ? { ...p, status: 'approved' } : p))
+                              const res = await approveCall(c.id)
+                              if (res && 'error' in res && res.error) {
+                                setGeneratedContent(prev => prev.map(p => p.id === c.id ? { ...p, status: 'draft' } : p))
                               }
+                              setApprovingId(null)
                             }}
-                            aria-label={!content.post ? `View details for ${content.title}` : undefined}
-                          >
-                            <div className="flex items-center space-x-4">
-                              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-500 rounded-lg flex items-center justify-center">
-                                <span className="text-white text-lg">{getTypeIcon(content.type)}</span>
-                              </div>
-
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-3 mb-2">
-                                  <span className="font-semibold text-gray-900">
-                                    {content.title}
-                                  </span>
-                                  {getStatusBadge(content.status)}
-                                  {content.status !== 'approved' && (
-                                    <Button
-                                      variant="outline"
-                                      size="xs"
-                                      onClick={async (e) => {
-                                        e.stopPropagation()
-                                        setApprovingId(content.id)
-                                        // Optimistic update
-                                        setGeneratedContent(prev => prev.map(c => c.id === content.id ? { ...c, status: 'approved' } : c))
-                                        const res = await approveCall(content.id)
-                                        if (res && 'error' in res && res.error) {
-                                          // Revert on error
-                                          setGeneratedContent(prev => prev.map(c => c.id === content.id ? { ...c, status: 'draft' } : c))
-                                        }
-                                        setApprovingId(null)
-                                      }}
-                                      loading={approvingId === content.id}
-                                      disabled={approvingId === content.id}
-                                      className="ml-2"
-                                    >
-                                      Approve
-                                    </Button>
-                                  )}
-                                  {content.post && (
-                                    <Badge variant="success" className="text-xs">
-                                      Posted
-                                    </Badge>
-                                  )}
-                                  <Badge variant="secondary" className="text-xs">
-                                    {content.platform || content.type?.replace('_', ' ')}
-                                  </Badge>
-                                  {content.strategy_id && (
-                                    <Badge variant="secondary" className="text-xs">
-                                      Strategy #{content.strategy_id}
-                                    </Badge>
-                                  )}
-                                </div>
-
-                                <div className="flex items-center space-x-4 text-sm text-gray-600">
-                                  <span className="flex items-center">
-                                    <Calendar className="h-3 w-3 mr-1" />
-                                    {formatDate(content.created_at)}
-                                  </span>
-                                  <span>{content.metadata?.word_count || 0} words</span>
-                                  {contentTopic && (
-                                    <span className="text-brand-600">Topic: {truncateText(contentTopic, 30)}</span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center space-x-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={(e) => { e.stopPropagation(); void copyLinkCall(content) }}
-                                aria-label={`Copy link for content ${content.id}`}
-                                title="Copy link"
-                                className="transition-opacity"
-                              >
-                                <Share2 className="h-4 w-4" />
-                                Copy link
-                              </Button>
-                              <IconButton
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleDeleteClick(content)
-                                }}
-                                variant="danger"
-                                aria-label={`Delete content ${content.id}`}
-                                title="Delete content"
-                                className=""
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </IconButton>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleViewContent(content)}
-                                className="transition-opacity"
-                              >
-                                <Eye className="h-4 w-4" />
-                                View Details
-                              </Button>
-                            </div>
-                          </div>
-                        </li>
-                      )
-                    })}
-                  </ul>
-
-                  {/* Footer note (non-interactive until docs link is available) */}
-                  <div className="mt-4 pt-4 border-t border-gray-100">
-                    <p role="note" className="inline-flex items-center text-xs font-normal text-gray-500 cursor-default">
-                      <HelpCircle aria-hidden className="w-3 h-3 me-2" />
-                      How content generation works
-                    </p>
-                  </div>
+                            onView={handleViewContent}
+                            onDelete={handleDeleteClick}
+                            onCopyLink={async (c) => { await copyLinkCall(c) }}
+                          />
+                        ))}
+                      </ul>
+                      <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500 flex items-center gap-1">
+                        <HelpCircle className="h-3 w-3" /> How content generation works
+                      </div>
+                    </div>
+                  )}
                 </div>
               )
             })

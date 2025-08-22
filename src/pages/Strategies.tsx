@@ -4,8 +4,9 @@ import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
 import { GenerateStrategyModal } from '../components/content/GenerateStrategyModal'
 import { supabase, type Tables } from '../lib/supabase'
-import { FileText, Building2, Eye, RefreshCw, Calendar, Target, Zap, Plus, HelpCircle, X, Lightbulb } from 'lucide-react'
+import { FileText, Building2, RefreshCw, Target, Zap, Plus, HelpCircle, X, Lightbulb, ChevronDown, ChevronRight, Search } from 'lucide-react'
 import { formatDate } from '../lib/utils'
+import StrategyListItem from '../components/strategies/StrategyListItem'
 import { IconButton } from '../components/ui/IconButton'
 import { Modal } from '../components/ui/Modal'
 import { Skeleton } from '../components/ui/Skeleton'
@@ -34,6 +35,8 @@ export function Strategies() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [generatingIdeas, setGeneratingIdeas] = useState<number | null>(null)
+  const [collapsedCompanies, setCollapsedCompanies] = useState<Record<number, boolean>>({})
+  const [search, setSearch] = useState('')
   const [showGenerateModal, setShowGenerateModal] = useState(false)
   const [viewModal, setViewModal] = useState<{
     isOpen: boolean
@@ -145,18 +148,12 @@ export function Strategies() {
 
   const getPlatformBadges = (platforms: string | null) => {
     if (!platforms) return []
-
     try {
-      // Try to parse as JSON array first
       const parsed = JSON.parse(platforms)
-      if (Array.isArray(parsed)) {
-        return parsed.filter(p => p && p.trim())
-      }
+      if (Array.isArray(parsed)) return parsed.filter(p => p && p.trim())
     } catch {
-      // If not JSON, split by comma
       return platforms.split(',').map(p => p.trim()).filter(p => p)
     }
-
     return []
   }
 
@@ -488,98 +485,72 @@ export function Strategies() {
 
       {/* Companies with Strategies */}
       {companiesWithStrategies.length > 0 ? (
-        <div className="space-y-6">
-          {companiesWithStrategies.map((company) => (
-            <div key={company.id} className="w-full max-w-full p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-              {/* Company Header */}
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center">
-                    <Building2 className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <h5 className="text-xl font-semibold text-gray-900">
-                      {company.brand_name}
-                    </h5>
-                    <p className="text-sm text-gray-500">
-                      {company.strategies.length} content strateg{company.strategies.length === 1 ? 'y' : 'ies'} available
-                    </p>
-                  </div>
-                </div>
-                <Badge variant="primary" className="text-sm px-3 py-1">
-                  {company.strategies.length} Strategies
-                </Badge>
-              </div>
-
-              <p className="text-sm font-normal text-gray-500 mb-4">Pick a strategy to generate ideas.</p>
-
-              {/* Strategies List */}
-              <ul className="space-y-3">
-                {company.strategies.map((strategy) => {
-                  const angleCount = countAngles(strategy)
-                  const platformBadges = getPlatformBadges(strategy.platforms)
-
-                  return (
-                    <li key={strategy.id}>
-                      <div className="flex items-center justify-between p-4 text-base font-bold text-gray-900 rounded-lg bg-gray-50 hover:bg-gray-100 group hover:shadow transition-all duration-200">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
-                            <FileText className="h-5 w-5 text-white" />
-                          </div>
-
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-3 mb-2">
-                              <span className="font-semibold text-gray-900">
-                                Strategy #{strategy.id}
-                              </span>
-                              {angleCount > 0 && (
-                                <Badge variant="success" className="text-xs">
-                                  {angleCount} Angles
-                                </Badge>
-                              )}
-                            </div>
-
-                            <div className="flex items-center space-x-4 text-sm text-gray-600">
-                              <span className="flex items-center">
-                                <Calendar className="h-3 w-3 mr-1" />
-                                {formatDate(strategy.created_at)}
-                              </span>
-
-                              {platformBadges.length > 0 && (
-                                <div className="flex items-center space-x-1">
-                                  <Target className="h-3 w-3" />
-                                  <span>{platformBadges.join(', ')}</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
+        <>
+          <div className="relative mb-2 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search company or platform"
+              aria-label="Search strategies by company or platform"
+              className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm"
+            />
+          </div>
+          <div className="space-y-4">
+            {companiesWithStrategies
+              .filter(c => {
+                if (!search) return true
+                const matchName = c.brand_name.toLowerCase().includes(search.toLowerCase())
+                const matchPlatform = c.strategies.some(s => getPlatformBadges(s.platforms).some(p => p.toLowerCase().includes(search.toLowerCase())))
+                return matchName || matchPlatform
+              })
+              .map((company) => {
+                const collapsed = collapsedCompanies[company.id]
+                return (
+                  <div key={company.id} className="border border-gray-200 rounded-lg bg-white">
+                    <button
+                      onClick={() => setCollapsedCompanies(prev => ({ ...prev, [company.id]: !prev[company.id] }))}
+                      className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      aria-expanded={!collapsed}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-teal-500 rounded-md flex items-center justify-center text-white text-sm font-semibold">
+                          {company.brand_name.slice(0, 2).toUpperCase()}
                         </div>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewStrategy(strategy, company)}
-                          className="transition-opacity"
-                        >
-                          <Eye className="h-4 w-4" />
-                          View details
-                        </Button>
+                        <div>
+                          <h3 className="font-semibold text-gray-900 leading-tight">{company.brand_name}</h3>
+                          <p className="text-xs text-gray-500">{company.strategies.length} strateg{company.strategies.length === 1 ? 'y' : 'ies'}</p>
+                        </div>
                       </div>
-                    </li>
-                  )
-                })}
-              </ul>
-
-              {/* Footer note (non-interactive until docs link is available) */}
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <p role="note" className="inline-flex items-center text-xs font-normal text-gray-500 cursor-default">
-                  <HelpCircle aria-hidden className="w-3 h-3 me-2" />
-                  How strategies work
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
+                      <div className="flex items-center gap-3">
+                        <Badge variant="primary" className="text-xs">{company.strategies.length} strateg{company.strategies.length === 1 ? 'y' : 'ies'}</Badge>
+                        {collapsed ? <ChevronRight className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
+                      </div>
+                    </button>
+                    {!collapsed && (
+                      <div className="px-4 pb-4">
+                        <ul className="space-y-3 mt-2">
+                          {company.strategies.map(strategy => (
+                            <StrategyListItem
+                              key={strategy.id}
+                              strategy={strategy}
+                              angleCount={countAngles(strategy)}
+                              platforms={getPlatformBadges(strategy.platforms)}
+                              onView={(s) => handleViewStrategy(s, company)}
+                            />
+                          ))}
+                        </ul>
+                        <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500 flex items-center gap-1">
+                          <HelpCircle className="h-3 w-3" /> How strategies work
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+          </div>
+        </>
       ) : (
         /* Empty State */
         <EmptyState

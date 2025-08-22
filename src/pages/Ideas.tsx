@@ -1,19 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { postToN8n } from '../lib/n8n'
-import {
-  Building2,
-  Calendar,
-  Eye,
-  // CheckCircle,
-  // Clock,
-  FileText,
-  Lightbulb,
-  // Zap,
-  RefreshCw,
-  Target,
-  X,
-  HelpCircle
-} from 'lucide-react';
+import { FileText, Lightbulb, RefreshCw, Target, X, HelpCircle, ChevronDown, ChevronRight, Search } from 'lucide-react';
 import { useCallback } from 'react';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
@@ -22,6 +9,7 @@ import { Modal } from '../components/ui/Modal';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { supabase, type Tables } from '../lib/supabase';
 import { formatDate, truncateText } from '../lib/utils';
+import IdeaSetListItem from '../components/ideas/IdeaSetListItem'
 import { Skeleton } from '../components/ui/Skeleton';
 import { useToast } from '../components/ui/Toast';
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
@@ -54,6 +42,8 @@ export function Ideas() {
   type Topic = { number: number; topic: string; description: string; image_prompt: string }
 
   const [ideas, setIdeas] = useState<IdeaJoined[]>([])
+  const [collapsedBrands, setCollapsedBrands] = useState<Record<string, boolean>>({})
+  const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [viewIdeaModal, setViewIdeaModal] = useState<{
@@ -601,13 +591,24 @@ export function Ideas() {
 
   // Group ideas by brand name (from joined company)
   const ideasByBrand = useMemo(() => {
-    return ideas.reduce((acc, idea) => {
+    const filtered = search
+      ? ideas.filter(i => {
+        const topics = extractTopicsFromIdea(i)
+        return (
+          topics.some(t => t.topic.toLowerCase().includes(search.toLowerCase())) ||
+          (i.company?.brand_name || '').toLowerCase().includes(search.toLowerCase())
+        )
+      })
+      : ideas
+    return filtered.reduce((acc, idea) => {
       const brandName = idea.company?.brand_name || 'Unknown Brand'
       if (!acc[brandName]) acc[brandName] = [] as IdeaJoined[]
       acc[brandName].push(idea)
       return acc
     }, {} as Record<string, IdeaJoined[]>)
-  }, [ideas])
+  }, [ideas, search])
+
+  const toggleBrand = (brand: string) => setCollapsedBrands(prev => ({ ...prev, [brand]: !prev[brand] }))
 
   return (
     <div className="space-y-6">
@@ -920,109 +921,63 @@ export function Ideas() {
         />
       )}
 
-      {/* Ideas by Brand */}
+      {/* Search & Ideas by Brand */}
       {!loading && !error && ideas.length > 0 && (
-        <div className="space-y-8">
-          {(Object.entries(ideasByBrand ?? {}) as [string, IdeaJoined[]][]).map(([brandName, brandIdeas]) => {
-            const totalTopics = brandIdeas.reduce((sum, idea) => sum + extractTopicsFromIdea(idea).length, 0)
+        <>
+          <div className="relative mb-2 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search topics or brand"
+              aria-label="Search ideas by topic or brand"
+              className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm"
+            />
+          </div>
+          <div className="space-y-4">
+            {(Object.entries(ideasByBrand ?? {}) as [string, IdeaJoined[]][]).map(([brandName, brandIdeas]) => {
+              const totalTopics = brandIdeas.reduce((sum, idea) => sum + extractTopicsFromIdea(idea).length, 0)
+              const collapsed = collapsedBrands[brandName]
 
-            return (
-              <div key={brandName} className="w-full max-w-full p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-                {/* Brand Header */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center">
-                      <Building2 className="h-6 w-6 text-white" />
+              return (
+                <div key={brandName} className="border border-gray-200 rounded-lg bg-white">
+                  <button
+                    onClick={() => toggleBrand(brandName)}
+                    className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    aria-expanded={!collapsed}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-teal-500 rounded-md flex items-center justify-center text-white text-sm font-semibold">
+                        {brandName.slice(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900 leading-tight">{brandName}</h3>
+                        <p className="text-xs text-gray-500">{brandIdeas.length} set{brandIdeas.length === 1 ? '' : 's'} • {totalTopics} topics</p>
+                      </div>
                     </div>
-                    <div>
-                      <h5 className="text-xl font-semibold text-gray-900">
-                        {brandName}
-                      </h5>
-                      <p className="text-sm text-gray-500">
-                        {brandIdeas.length} idea set{brandIdeas.length === 1 ? '' : 's'} • {totalTopics} topics
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <Badge variant="primary" className="text-xs">{brandIdeas.length} set{brandIdeas.length === 1 ? '' : 's'}</Badge>
+                      {collapsed ? <ChevronRight className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
                     </div>
-                  </div>
-                  <Badge variant="primary" className="text-sm px-3 py-1">
-                    {brandIdeas.length} Sets
-                  </Badge>
+                  </button>
+                  {!collapsed && (
+                    <div className="px-4 pb-4">
+                      <ul className="space-y-3 mt-2">
+                        {brandIdeas.map(idea => (
+                          <IdeaSetListItem key={idea.id} idea={idea} topics={extractTopicsFromIdea(idea)} onView={handleViewIdeaSet} />
+                        ))}
+                      </ul>
+                      <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500 flex items-center gap-1">
+                        <HelpCircle className="h-3 w-3" /> How ideas work
+                      </div>
+                    </div>
+                  )}
                 </div>
-
-                <p className="text-sm font-normal text-gray-500 mb-4">
-                  Click an idea set to view topics and generate content.
-                </p>
-
-                {/* Ideas List */}
-                <ul className="space-y-3">
-                  {brandIdeas.map((idea) => {
-                    const topics = extractTopicsFromIdea(idea)
-
-                    return (
-                      <li key={idea.id}>
-                        <div className="flex items-center justify-between p-4 text-base font-bold text-gray-900 rounded-lg bg-gray-50 hover:bg-gray-100 group hover:shadow transition-all duration-200">
-                          <div className="flex items-center space-x-4">
-                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-                              <Lightbulb className="h-5 w-5 text-white" />
-                            </div>
-
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-3 mb-2">
-                                <span className="font-semibold text-gray-900">
-                                  Idea set #{idea.id}
-                                </span>
-                                {topics.length > 0 && (
-                                  <Badge variant="success" className="text-xs">
-                                    {topics.length} Topics
-                                  </Badge>
-                                )}
-                                {idea.strategy_id && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    Strategy #{idea.strategy_id}
-                                  </Badge>
-                                )}
-                                {idea.angle_number && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    Angle {idea.angle_number}
-                                  </Badge>
-                                )}
-                              </div>
-
-                              <div className="flex items-center space-x-4 text-sm text-gray-600">
-                                <span className="flex items-center">
-                                  <Calendar className="h-3 w-3 mr-1" />
-                                  {formatDate(idea.created_at)}
-                                </span>
-                                <span>{topics.length} content topics ready</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewIdeaSet(idea)}
-                            className="transition-opacity"
-                          >
-                            <Eye className="h-4 w-4" />
-                            View topics
-                          </Button>
-                        </div>
-                      </li>
-                    )
-                  })}
-                </ul>
-
-                {/* Footer note (non-interactive until docs link is available) */}
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <p role="note" className="inline-flex items-center text-xs font-normal text-gray-500 cursor-default">
-                    <HelpCircle aria-hidden className="w-3 h-3 me-2" />
-                    How ideas work
-                  </p>
-                </div>
-              </div>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
+        </>
       )}
       {/* Empty State */}
       {!loading && !error && ideas.length === 0 && (

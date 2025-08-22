@@ -1,16 +1,17 @@
 import React, { useCallback, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
+import { Card, CardContent, CardHeader } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { CreateBrandModal } from '../components/companies/CreateBrandModal'
 import { ViewCompanyModal } from '../components/companies/ViewCompanyModal'
 import { useCompanies } from '../hooks/useCompanies'
-import { Plus, Building2, Calendar, Eye, Target, RefreshCw, Database, FileText } from 'lucide-react'
-import { formatDate, truncateText } from '../lib/utils'
+import { Plus, Building2, RefreshCw, Database, Search } from 'lucide-react'
+// removed truncateText usage after refactor
 import { useToast } from '../components/ui/Toast'
 import { Skeleton } from '../components/ui/Skeleton'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { PageHeader } from '../components/layout/PageHeader'
 import { EmptyState } from '../components/ui/EmptyState'
+import CompanyListItem from '../components/companies/CompanyListItem'
 import { ErrorState } from '../components/ui/ErrorState'
 
 export function Companies() {
@@ -23,6 +24,7 @@ export function Companies() {
   })
   const { push } = useToast()
   const companies = hookCompanies
+  const [search, setSearch] = useState('')
 
   const fetchCompaniesFromSupabase = useCallback(async (showToast = false) => {
     refetch()
@@ -150,87 +152,26 @@ export function Companies() {
         />
       )}
 
-      {/* Companies Table */}
+      {/* Companies List */}
       {!loading && !error && companies.length > 0 && (
-        <div className="space-y-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-            {companies.map((company) => (
-              <Card key={company.id} className="border-l-4 border-l-brand-500 shadow-sm hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start space-x-3 flex-1">
-                      <div className="w-10 h-10 bg-brand-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Building2 className="h-5 w-5 text-brand-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <CardTitle className="text-xl font-bold leading-tight">{company.brand_name || company.name}</CardTitle>
-                        <div className="flex items-center space-x-2 text-xs text-gray-500 mt-1">
-                          <span className="flex items-center">
-                            <Calendar className="h-3 w-3 mr-1" />
-                            {formatDate(company.created_at)}
-                          </span>
-                          {company.website && (
-                            <span className="text-brand-600 truncate">
-                              {company.website.replace(/^https?:\/\//, '')}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="space-y-3">
-                    {/* Company Summary */}
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <p className="text-xs text-gray-700 leading-relaxed">
-                        {company.brand_tone
-                          ? truncateText(company.brand_tone, 150)
-                          : company.brand_voice?.tone
-                            ? truncateText(company.brand_voice.tone, 150)
-                            : 'No brand description available'}
-                      </p>
-                    </div>
-
-                    {/* Quick Info */}
-                    <div className="flex flex-wrap gap-1">
-                      {company.target_audience && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-brand-100 text-brand-800">
-                          <Target className="h-2.5 w-2.5 mr-1" />
-                          Target Audience Defined
-                        </span>
-                      )}
-                      {(company.key_offer || company.brand_voice?.style) && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          <Building2 className="h-2.5 w-2.5 mr-1" />
-                          Key Offer Defined
-                        </span>
-                      )}
-                      {company.additional_information && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                          <FileText className="h-2.5 w-2.5 mr-1" />
-                          Additional info
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="pt-2 flex justify-end">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleViewClick(company)}
-                        className="text-xs"
-                      >
-                        <Eye className="h-3 w-3 mr-1" />
-                        View details
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+        <>
+          <div className="relative mb-2 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search companies"
+              aria-label="Search companies"
+              className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm"
+            />
           </div>
-        </div>
+          <ul className="space-y-3">
+            {companies.filter(c => !search || (c.brand_name || c.name || '').toLowerCase().includes(search.toLowerCase())).map(company => (
+              <CompanyListItem key={company.id} company={company} onView={handleViewClick} />
+            ))}
+          </ul>
+        </>
       )}
 
       {/* Empty State */}

@@ -249,9 +249,9 @@
       "parameters": {
         "model": {
           "__rl": true,
-          "value": "gpt-4.1-mini",
+          "value": "gpt-5-mini",
           "mode": "list",
-          "cachedResultName": "gpt-4.1-mini"
+          "cachedResultName": "gpt-5-mini"
         },
         "options": {}
       },
@@ -1002,12 +1002,16 @@
     },
     {
       "parameters": {
-        "tableId": "twitter_content",
+        "tableId": "content",
         "fieldsUi": {
           "fieldValues": [
             {
               "fieldId": "idea_id",
-              "fieldValue": "={{ $('Switch Content').item.json.body.topic.idea.id }}"
+              "fieldValue": "={{ $('Webhook').item.json.body.idea_id }}"
+            },
+            {
+              "fieldId": "platform",
+              "fieldValue": "={{ $('Switch Content').item.json.body.platforms[0] }}"
             },
             {
               "fieldId": "content_body",
@@ -1033,7 +1037,7 @@
     },
     {
       "parameters": {
-        "tableId": "linkedin_content",
+        "tableId": "content",
         "fieldsUi": {
           "fieldValues": [
             {
@@ -1397,7 +1401,7 @@
               "fieldValue": "={{ $json.ideas[3].topic }}"
             },
             {
-              "fieldId": "topic4",
+              "fieldId": "idea_description4",
               "fieldValue": "={{ $json.ideas[3].description }}"
             },
             {
@@ -1896,7 +1900,7 @@
     },
     {
       "parameters": {
-        "tableId": "newsletter_content",
+        "tableId": "content",
         "fieldsUi": {
           "fieldValues": [
             {
@@ -1905,7 +1909,11 @@
             },
             {
               "fieldId": "content_body",
-              "fieldValue": "={{ $json.output }}"
+              "fieldValue": "={{ $json.text }}"
+            },
+            {
+              "fieldId": "platform",
+              "fieldValue": "={{ $('Webhook').item.json.body.aiContext.platforms[3] }}"
             }
           ]
         }
@@ -2150,7 +2158,7 @@
                 "combinator": "and"
               },
               "renameOutput": true,
-              "outputKey": "blogs"
+              "outputKey": "blog"
             }
           ]
         },
@@ -2357,7 +2365,7 @@
                   {
                     "id": "6de198de-b21f-42e0-97d8-b3d5b9b117ec",
                     "leftValue": "={{ $('Webhook').item.json.body.platforms[7] }}",
-                    "rightValue": "blogs",
+                    "rightValue": "blog",
                     "operator": {
                       "type": "string",
                       "operation": "equals",
@@ -2368,7 +2376,7 @@
                 "combinator": "and"
               },
               "renameOutput": true,
-              "outputKey": "blogs"
+              "outputKey": "blog"
             }
           ]
         },
@@ -2575,7 +2583,7 @@
                   {
                     "id": "ed76daeb-fac3-4e00-9674-11262d0ff612",
                     "leftValue": "={{ $('Webhook').item.json.body.platforms[7] }}",
-                    "rightValue": "blogs",
+                    "rightValue": "blog",
                     "operator": {
                       "type": "string",
                       "operation": "equals",
@@ -2586,7 +2594,7 @@
                 "combinator": "and"
               },
               "renameOutput": true,
-              "outputKey": "blogs"
+              "outputKey": "blog"
             }
           ]
         },
@@ -2605,7 +2613,7 @@
     },
     {
       "parameters": {
-        "tableId": "newsletter_content",
+        "tableId": "content",
         "fieldsUi": {
           "fieldValues": [
             {
@@ -2614,7 +2622,11 @@
             },
             {
               "fieldId": "content_body",
-              "fieldValue": "={{ $json.output }}"
+              "fieldValue": "={{ $json.text }}"
+            },
+            {
+              "fieldId": "platform",
+              "fieldValue": "={{ $('Webhook').item.json.body.aiContext.platforms[4] }}"
             }
           ]
         }
@@ -2698,7 +2710,7 @@
     },
     {
       "parameters": {
-        "tableId": "newsletter_content",
+        "tableId": "content",
         "fieldsUi": {
           "fieldValues": [
             {
@@ -2707,7 +2719,11 @@
             },
             {
               "fieldId": "content_body",
-              "fieldValue": "={{ $json.output }}"
+              "fieldValue": "={{ $json.text }}"
+            },
+            {
+              "fieldId": "platform",
+              "fieldValue": "={{ $('Webhook').item.json.body.aiContext.platforms[7] }}"
             }
           ]
         }
@@ -2959,45 +2975,174 @@
         }
       }
     ],
+    "Facebook Content Generator": [
+      {
+        "json": {
+          "text": "Staring at a scattered desktop and endless sticky notes felt like a daily battle—until I discovered a game-changing transformation. \n\nI remember the chaos vividly: crumpled study schedules, mismatched class notes, and a constant scramble to find that one crucial piece of info. It wasn’t just overwhelming; it was draining my energy and creativity. Then, I experimented with an all-in-one approach that reimagined my study space. \n\nUsing Notion, everything transformed. Before was a jumble of disconnected documents, but after? A sleek, unified dashboard that brought together my notes, projects, and deadlines into one intuitive workspace. The difference was like night and day. Instead of wasting hours searching for details, I spent time mastering my subjects and even collaborating with classmates more effectively. \n\nThis transformation wasn’t just about organization—it was about reclaiming control over my learning and academic journey. The ability to customize every detail meant I could tailor my study environment exactly how I wanted it. Even my study breaks felt productive, as I could quickly update logs, review progress, or share tips with a community of learners who were on the same path.\n\nImagine your study routine evolving from scattered chaos to a harmonious board that adapts to every class, project, and idea. What would it feel like to have a space where everything aligns perfectly, giving you back those precious hours for creativity and connection? \n\nThis isn’t a magic trick—it’s the power of a workspace that grows and evolves with you. If you're a student or educator tired of digital clutter, consider this your invitation to transform your chaos into clarity. \n\nSave this post for when you need that push, and share it with someone who craves a breakthrough in study organization. \n\nWhat’s your vision for a clutter-free study space?"
+        }
+      }
+    ],
+    "Add Twitter content": [
+      {
+        "json": {
+          "id": 2,
+          "created_at": "2025-08-20T19:27:44.498939+00:00",
+          "idea_id": 12,
+          "platform": "twitter",
+          "content_body": "1/🧵 Ever felt overwhelmed by disorganized study notes? Check out this before & after transformation that turned chaos into clarity.  \n2/🧵 Before: A jumble of scattered files, endless folders, and lost ideas. Time wasted hunting down info instead of learning.  \n3/🧵 After: A unified, custom workspace where class projects, study notes, and resources live side-by-side—effortless and intuitive.  \n4/🧵 The secret? A simple tweak using tailored study templates and organized routines that brought order to the madness.  \n5/🧵 For students and educators alike: transforming your digital chaos is easier than you think. Imagine the boost when everything clicks into place.  \n6/🧵 Save & share if you're ready for your own transformation. What’s your biggest digital clutter challenge? Drop your story below.",
+          "status": "draft",
+          "post": false
+        }
+      }
+    ],
     "Webhook": [
       {
         "json": {
           "headers": {
             "host": "n8n.srv856940.hstgr.cloud",
-            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
-            "content-length": "251",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0",
+            "content-length": "18860",
             "accept": "*/*",
             "accept-encoding": "gzip, deflate, br, zstd",
-            "accept-language": "en-US,en;q=0.9,es;q=0.8,fr-FR;q=0.7,fr;q=0.6",
+            "accept-language": "en-US,en;q=0.9,es;q=0.8,es-ES;q=0.7,de;q=0.6",
             "content-type": "application/json",
-            "origin": "https://zp1v56uxy8rdx5ypatb0ockcb9tr6a-oci3--5173--96435430.local-credentialless.webcontainer-api.io",
+            "dnt": "1",
+            "origin": "http://localhost:5173",
             "priority": "u=1, i",
-            "referer": "https://zp1v56uxy8rdx5ypatb0ockcb9tr6a-oci3--5173--96435430.local-credentialless.webcontainer-api.io/",
-            "sec-ch-ua": "\"Not;A=Brand\";v=\"99\", \"Google Chrome\";v=\"139\", \"Chromium\";v=\"139\"",
+            "referer": "http://localhost:5173/",
+            "sec-ch-ua": "\"Not;A=Brand\";v=\"99\", \"Microsoft Edge\";v=\"139\", \"Chromium\";v=\"139\"",
             "sec-ch-ua-mobile": "?0",
-            "sec-ch-ua-platform": "\"macOS\"",
+            "sec-ch-ua-platform": "\"Windows\"",
             "sec-fetch-dest": "empty",
             "sec-fetch-mode": "cors",
             "sec-fetch-site": "cross-site",
+            "x-client": "ai_marketing_v2",
+            "x-env": "production",
             "x-forwarded-for": "172.18.0.1",
             "x-forwarded-host": "n8n.srv856940.hstgr.cloud",
             "x-forwarded-port": "443",
             "x-forwarded-proto": "https",
-            "x-forwarded-server": "03ad1356e5a3",
-            "x-real-ip": "172.18.0.1"
+            "x-forwarded-server": "1e777b048e49",
+            "x-real-ip": "172.18.0.1",
+            "x-request-id": "8a6ec4a4-2e96-42f5-830d-061200ea7b59"
           },
           "params": {},
           "query": {},
           "body": {
-            "identifier": "autofill",
-            "operation": "company_autofill",
-            "website": "https://www.airbnb.fr/",
-            "brandName": "Airbnb",
-            "additionalInfo": "Rent of houses",
+            "identifier": "generateContent",
+            "operation": "generate_content_from_idea",
             "meta": {
-              "user_id": "a28483ef-f236-468e-b114-3b2527076b20",
+              "user_id": "ab5396ef-3200-42fc-afee-edd6cf45829f",
               "source": "app",
-              "ts": "2025-08-17T19:09:01.113Z"
+              "ts": "2025-08-22T18:57:05.778Z"
+            },
+            "user_id": "ab5396ef-3200-42fc-afee-edd6cf45829f",
+            "company_id": 15,
+            "strategy_id": 24,
+            "idea_id": 14,
+            "topic": {
+              "topicNumber": 5,
+              "topic": "Mini-Drama: Journey to Success",
+              "description": "Begin with a dramatic hook that sets up a mini-story of conflict and resolution. Narrate a brief tale where the key offer plays a subtle role in overcoming obstacles, keeping the tone authentic and engaging.",
+              "image_prompt": "Cinematic lighting with close-up shots, soft dramatic background score.",
+              "idea": {
+                "id": 14,
+                "brand": "Brioche",
+                "strategy_id": 24,
+                "angle_number": 1,
+                "created_at": "2025-08-22T18:51:39.792795+00:00"
+              }
+            },
+            "platforms": [
+              "",
+              "",
+              "",
+              "",
+              "instagram",
+              "",
+              "tiktok",
+              ""
+            ],
+            "brand": {
+              "id": 15,
+              "name": "Brioche",
+              "additionalInfo": "",
+              "targetAudience": "Brioche primarily targets small to medium-sized business owners, solopreneurs, freelancers, and creative professionals who seek an effortless and elegant way to communicate with their customers and audience through messaging apps. These users often operate solo or in small teams without extensive marketing resources. Their pain points include managing communication channels, engaging customers effectively, and delivering personalized messages without technical complexity or high costs. They aspire to automate their messaging workflows seamlessly while maintaining a warm, human touch that fosters customer loyalty and boosts engagement. Decision-making criteria center on ease of use, integration capabilities, affordability, and the ability to enhance direct customer relationships via popular messaging platforms like WhatsApp and Instagram. This audience consumes content primarily via digital channels such as blogs, social media, tech and marketing forums, and video tutorials, preferring clear, straightforward language that emphasizes benefits and practical results rather than technical jargon.",
+              "brandTone": "Brioche's brand voice is warm, approachable, and clear, blending a conversational and encouraging tone with authoritative clarity. It strikes a balance between professional reliability and friendly accessibility, avoiding overly formal or technical language to welcome users of all levels of digital literacy. The communication style leverages emotional triggers related to relief from communication overload, empowerment through simplicity, and confidence in driving business success. Storytelling often revolves around small business growth, customer connection, and time-saving automation, positioning Brioche as a caring ally rather than a distant corporate solution. This approachable yet expert voice differentiates Brioche from typical impersonal SaaS brands by emphasizing humanity and genuine customer relationships within automated messaging.",
+              "keyOffer": "Brioche offers a lightweight, no-code messaging automation platform designed to empower entrepreneurs and small businesses to engage customers through their preferred messaging apps effortlessly. The core offer is the ability to create customizable, automated conversational flows that foster real-time, personalized interactions without needing complex technical skills. The transformation promised is shifting from chaotic, manual customer messaging to streamlined, automated dialogue that feels authentic and responsive—bolstering engagement, retention, and sales. Beneath the surface, Brioche also delivers time savings, improved brand experience, and scalable communication that grows with the business. Their unique advantage is their focus on popular chat platforms with easy-to-use tools that integrate conversation automation without disrupting natural human connection, which differentiates them from generic bulk messaging or traditional CRM systems.",
+              "website": "https://www.thebrioche.app/"
+            },
+            "brandDetails": {
+              "id": 15,
+              "name": "Brioche"
+            },
+            "data": {
+              "brandData": {
+                "id": 15,
+                "name": "Brioche",
+                "keyOffer": "Brioche offers a lightweight, no-code messaging automation platform designed to empower entrepreneurs and small businesses to engage customers through their preferred messaging apps effortlessly. The core offer is the ability to create customizable, automated conversational flows that foster real-time, personalized interactions without needing complex technical skills. The transformation promised is shifting from chaotic, manual customer messaging to streamlined, automated dialogue that feels authentic and responsive—bolstering engagement, retention, and sales. Beneath the surface, Brioche also delivers time savings, improved brand experience, and scalable communication that grows with the business. Their unique advantage is their focus on popular chat platforms with easy-to-use tools that integrate conversation automation without disrupting natural human connection, which differentiates them from generic bulk messaging or traditional CRM systems."
+              }
+            },
+            "companyDetails": {
+              "id": 15,
+              "created_at": "2025-08-20T18:51:39.830363+00:00",
+              "brand_name": "Brioche",
+              "website": "https://www.thebrioche.app/",
+              "additional_information": "",
+              "target_audience": "Brioche primarily targets small to medium-sized business owners, solopreneurs, freelancers, and creative professionals who seek an effortless and elegant way to communicate with their customers and audience through messaging apps. These users often operate solo or in small teams without extensive marketing resources. Their pain points include managing communication channels, engaging customers effectively, and delivering personalized messages without technical complexity or high costs. They aspire to automate their messaging workflows seamlessly while maintaining a warm, human touch that fosters customer loyalty and boosts engagement. Decision-making criteria center on ease of use, integration capabilities, affordability, and the ability to enhance direct customer relationships via popular messaging platforms like WhatsApp and Instagram. This audience consumes content primarily via digital channels such as blogs, social media, tech and marketing forums, and video tutorials, preferring clear, straightforward language that emphasizes benefits and practical results rather than technical jargon.",
+              "brand_tone": "Brioche's brand voice is warm, approachable, and clear, blending a conversational and encouraging tone with authoritative clarity. It strikes a balance between professional reliability and friendly accessibility, avoiding overly formal or technical language to welcome users of all levels of digital literacy. The communication style leverages emotional triggers related to relief from communication overload, empowerment through simplicity, and confidence in driving business success. Storytelling often revolves around small business growth, customer connection, and time-saving automation, positioning Brioche as a caring ally rather than a distant corporate solution. This approachable yet expert voice differentiates Brioche from typical impersonal SaaS brands by emphasizing humanity and genuine customer relationships within automated messaging.",
+              "key_offer": "Brioche offers a lightweight, no-code messaging automation platform designed to empower entrepreneurs and small businesses to engage customers through their preferred messaging apps effortlessly. The core offer is the ability to create customizable, automated conversational flows that foster real-time, personalized interactions without needing complex technical skills. The transformation promised is shifting from chaotic, manual customer messaging to streamlined, automated dialogue that feels authentic and responsive—bolstering engagement, retention, and sales. Beneath the surface, Brioche also delivers time savings, improved brand experience, and scalable communication that grows with the business. Their unique advantage is their focus on popular chat platforms with easy-to-use tools that integrate conversation automation without disrupting natural human connection, which differentiates them from generic bulk messaging or traditional CRM systems.",
+              "owner_id": "ab5396ef-3200-42fc-afee-edd6cf45829f",
+              "name": "Brioche",
+              "brandTone": "Brioche's brand voice is warm, approachable, and clear, blending a conversational and encouraging tone with authoritative clarity. It strikes a balance between professional reliability and friendly accessibility, avoiding overly formal or technical language to welcome users of all levels of digital literacy. The communication style leverages emotional triggers related to relief from communication overload, empowerment through simplicity, and confidence in driving business success. Storytelling often revolves around small business growth, customer connection, and time-saving automation, positioning Brioche as a caring ally rather than a distant corporate solution. This approachable yet expert voice differentiates Brioche from typical impersonal SaaS brands by emphasizing humanity and genuine customer relationships within automated messaging.",
+              "keyOffer": "Brioche offers a lightweight, no-code messaging automation platform designed to empower entrepreneurs and small businesses to engage customers through their preferred messaging apps effortlessly. The core offer is the ability to create customizable, automated conversational flows that foster real-time, personalized interactions without needing complex technical skills. The transformation promised is shifting from chaotic, manual customer messaging to streamlined, automated dialogue that feels authentic and responsive—bolstering engagement, retention, and sales. Beneath the surface, Brioche also delivers time savings, improved brand experience, and scalable communication that grows with the business. Their unique advantage is their focus on popular chat platforms with easy-to-use tools that integrate conversation automation without disrupting natural human connection, which differentiates them from generic bulk messaging or traditional CRM systems.",
+              "targetAudience": "Brioche primarily targets small to medium-sized business owners, solopreneurs, freelancers, and creative professionals who seek an effortless and elegant way to communicate with their customers and audience through messaging apps. These users often operate solo or in small teams without extensive marketing resources. Their pain points include managing communication channels, engaging customers effectively, and delivering personalized messages without technical complexity or high costs. They aspire to automate their messaging workflows seamlessly while maintaining a warm, human touch that fosters customer loyalty and boosts engagement. Decision-making criteria center on ease of use, integration capabilities, affordability, and the ability to enhance direct customer relationships via popular messaging platforms like WhatsApp and Instagram. This audience consumes content primarily via digital channels such as blogs, social media, tech and marketing forums, and video tutorials, preferring clear, straightforward language that emphasizes benefits and practical results rather than technical jargon.",
+              "additionalInfo": ""
+            },
+            "angleDetails": {
+              "number": 1,
+              "header": "Engaging Small Business Owners with Automation Tips",
+              "description": "**Content Pillars**: 1. Automation Tips 2. Customer Engagement 3. Pain Point Solutions 4. Success Stories  \n\n**Video Formats**:  \n- Hook-first video scripts: \"Feeling overwhelmed with customer messages? Let’s simplify that!\"  \n- Storytelling sequences: \"Meet Jane, a freelancer who boosted her sales using Brioche. Here’s her story...\"  \n- Trend adaptations: Incorporate trending audio to explain automation concepts (e.g., using popular quotes or remixing a viral trend)  \n- Live stream concepts: Q&A sessions where viewers ask about automating their messaging  \n- UGC/react/duet formats: Encourage users to share their success while using Brioche  \n\n**Posting Plan**:  \n- Daily frequency: 5 posts/week  \n- Best posting times: Weekdays around 10 AM and 6 PM  \n- Trend vs evergreen content ratio: 70% trend-based, 30% evergreen  \n\n**Growth Tactics**:  \n- Trending sound usage: Incorporate trending sounds to boost discoverability  \n- Comment interaction: Respond to comments promptly and pin insightful ones  \n- Collabs with micro-influencers: Partner with small business influencers to share thoughts on communication simplification  \n- Hashtag targeting: Use niche and trending hashtags like #SmallBusinessTips #Automation  \n\n**Voice Guidelines**: Keep it warm and accessible, using humor and relatable anecdotes.  \n\n**Weekly Content Calendar**:  \n- Monday: Hook + CTA: \"Let’s simplify your messaging! Comment below if you need help!\"  \n- Tuesday: Pain Point Solution video about confusion in communications  \n- Wednesday: Storytelling about a successful Brioche user  \n- Thursday: Live Q&A session focused on messaging automation strategies  \n- Friday: Trend adaptation linking automation to daily challenges  \n\n**Metrics**: Track views, watch time %, shares, saves, follower growth, and profile visits.",
+              "objective": "This strategy aims to build a community of engaged small business owners who trust Brioche for automation solutions and boost conversions through relatable content and genuine connection.",
+              "tonality": "Brioche's brand voice is warm, approachable, and clear, blending a conversational and encouraging tone with authoritative clarity. It strikes a balance between professional reliability and friendly accessibility, avoiding overly formal or technical language to welcome users of all levels of digital literacy. The communication style leverages emotional triggers related to relief from communication overload, empowerment through simplicity, and confidence in driving business success. Storytelling often revolves around small business growth, customer connection, and time-saving automation, positioning Brioche as a caring ally rather than a distant corporate solution. This approachable yet expert voice differentiates Brioche from typical impersonal SaaS brands by emphasizing humanity and genuine customer relationships within automated messaging."
+            },
+            "strategyContext": {
+              "id": 24,
+              "brand": "Brioche",
+              "name": "Brioche",
+              "description": "No strategy description available",
+              "platforms": "[\"\",\"\",\"\",\"\",\"instagram\",\"\",\"tiktok\",\"\"]",
+              "created_at": "2025-08-20T18:57:08.539576+00:00",
+              "totalAngles": 4
+            },
+            "aiContext": {
+              "strategyName": "Brioche",
+              "strategyDescription": "No strategy description available",
+              "tonality": "Brioche's brand voice is warm, approachable, and clear, blending a conversational and encouraging tone with authoritative clarity. It strikes a balance between professional reliability and friendly accessibility, avoiding overly formal or technical language to welcome users of all levels of digital literacy. The communication style leverages emotional triggers related to relief from communication overload, empowerment through simplicity, and confidence in driving business success. Storytelling often revolves around small business growth, customer connection, and time-saving automation, positioning Brioche as a caring ally rather than a distant corporate solution. This approachable yet expert voice differentiates Brioche from typical impersonal SaaS brands by emphasizing humanity and genuine customer relationships within automated messaging.",
+              "objective": "This strategy aims to build a community of engaged small business owners who trust Brioche for automation solutions and boost conversions through relatable content and genuine connection.",
+              "keyOffer": "Brioche offers a lightweight, no-code messaging automation platform designed to empower entrepreneurs and small businesses to engage customers through their preferred messaging apps effortlessly. The core offer is the ability to create customizable, automated conversational flows that foster real-time, personalized interactions without needing complex technical skills. The transformation promised is shifting from chaotic, manual customer messaging to streamlined, automated dialogue that feels authentic and responsive—bolstering engagement, retention, and sales. Beneath the surface, Brioche also delivers time savings, improved brand experience, and scalable communication that grows with the business. Their unique advantage is their focus on popular chat platforms with easy-to-use tools that integrate conversation automation without disrupting natural human connection, which differentiates them from generic bulk messaging or traditional CRM systems.",
+              "brandTone": "Brioche's brand voice is warm, approachable, and clear, blending a conversational and encouraging tone with authoritative clarity. It strikes a balance between professional reliability and friendly accessibility, avoiding overly formal or technical language to welcome users of all levels of digital literacy. The communication style leverages emotional triggers related to relief from communication overload, empowerment through simplicity, and confidence in driving business success. Storytelling often revolves around small business growth, customer connection, and time-saving automation, positioning Brioche as a caring ally rather than a distant corporate solution. This approachable yet expert voice differentiates Brioche from typical impersonal SaaS brands by emphasizing humanity and genuine customer relationships within automated messaging.",
+              "targetAudience": "Brioche primarily targets small to medium-sized business owners, solopreneurs, freelancers, and creative professionals who seek an effortless and elegant way to communicate with their customers and audience through messaging apps. These users often operate solo or in small teams without extensive marketing resources. Their pain points include managing communication channels, engaging customers effectively, and delivering personalized messages without technical complexity or high costs. They aspire to automate their messaging workflows seamlessly while maintaining a warm, human touch that fosters customer loyalty and boosts engagement. Decision-making criteria center on ease of use, integration capabilities, affordability, and the ability to enhance direct customer relationships via popular messaging platforms like WhatsApp and Instagram. This audience consumes content primarily via digital channels such as blogs, social media, tech and marketing forums, and video tutorials, preferring clear, straightforward language that emphasizes benefits and practical results rather than technical jargon.",
+              "platforms": [
+                "",
+                "",
+                "",
+                "",
+                "instagram",
+                "",
+                "tiktok",
+                ""
+              ],
+              "contentType": "idea_to_content_generation"
+            },
+            "context": {
+              "requestType": "generate_content_from_idea",
+              "timestamp": "2025-08-22T18:57:05.778Z",
+              "hasCompanyDetails": true,
+              "hasAngleDetails": true,
+              "hasStrategyContext": true,
+              "ideaSetId": 14,
+              "topicNumber": 5
             }
           },
           "webhookUrl": "https://n8n.srv856940.hstgr.cloud/webhook/content-saas",
@@ -4059,7 +4204,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "71ff3e1c-856b-444f-a3de-998373c40e95",
+  "versionId": "17def5fd-3c3a-472b-a78f-7c798cfc1dc2",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "fe9d3a12f258c7c25e0241bdac4abdc1d2d4cbca003a5fd500ebff17b6038d7a"
