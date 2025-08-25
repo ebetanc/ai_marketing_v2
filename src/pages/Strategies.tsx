@@ -493,11 +493,11 @@ export function Strategies() {
                 </div>
               </div>
 
-              {/* Content Angles Grid */}
+              {/* Substrategies Grid */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <Target className="h-5 w-5 mr-2 text-purple-600" />
-                  Content angles ({countAngles(viewModal.strategy)})
+                  Substrategies ({countAngles(viewModal.strategy)})
                   {loadingIdeaAngles && (
                     <span className="ml-3 text-xs text-gray-500">Loading existing ideas…</span>
                   )}
@@ -534,9 +534,8 @@ export function Strategies() {
                               </div>
                             ) : (
                               <>
-                                <h4 className="text-xl font-bold text-gray-900 group-hover:text-brand-700 transition-colors flex items-center gap-2">
+                                <h4 className="text-xl font-bold text-gray-900 group-hover:text-brand-700 transition-colors">
                                   {angle.header}
-                                  <span className="text-xs font-normal text-gray-400">{isAngleExpanded(angle.number) ? '−' : '+'}</span>
                                 </h4>
                                 <p className="text-sm text-gray-500">Click to {isAngleExpanded(angle.number) ? 'collapse' : 'expand'}</p>
                               </>

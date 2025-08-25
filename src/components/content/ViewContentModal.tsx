@@ -293,7 +293,7 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
     const isExpanded = expandedAngles[index]
 
     // Get angle title/header
-    const angleTitle = (angle as any).header || (angle as any).title || (angle as any).topic || `Content Angle ${index + 1}`
+    const angleTitle = (angle as any).header || (angle as any).title || (angle as any).topic || `Substrategy ${index + 1}`
 
     // Get main content preview
     const getPreviewContent = () => {
@@ -472,7 +472,7 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center text-lg">
                   <Target className="h-5 w-5 mr-2 text-purple-600" />
-                  Content angles ({angles.length})
+                  Substrategies ({angles.length})
                 </CardTitle>
                 <div className="flex space-x-2">
                   <Button
