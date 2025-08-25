@@ -31,6 +31,7 @@ export function RealEstateContent() {
   useDocumentTitle('Real estate — AI Marketing')
   const [showUrlModal, setShowUrlModal] = useState(false)
   const [url, setUrl] = useState('')
+  const [isDragging, setIsDragging] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [realEstateData, setRealEstateData] = useState<RealEstateContent[]>([])
   const [loading, setLoading] = useState(true)
@@ -166,6 +167,56 @@ export function RealEstateContent() {
     setIsGenerating(false)
   }
 
+  // --- Drag & Drop URL Support ---
+  const extractFirstUrl = (text: string): string | null => {
+    if (!text) return null
+    // Basic URL regex (protocol optional)
+    const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/i
+    const match = text.match(urlRegex)
+    return match ? match[0] : null
+  }
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    setIsDragging(true)
+  }
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    if (!isDragging) setIsDragging(true)
+  }
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    // Only reset if leaving the drop area (relatedTarget null may indicate leaving window)
+    if ((e.target as HTMLElement).id === 'realestate-dropzone') {
+      setIsDragging(false)
+    }
+  }
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    setIsDragging(false)
+    try {
+      const dt = e.dataTransfer
+      let droppedText = ''
+      // Prioritize text/uri-list
+      if (dt.getData('text/uri-list')) {
+        droppedText = dt.getData('text/uri-list')
+      } else if (dt.getData('text/plain')) {
+        droppedText = dt.getData('text/plain')
+      }
+      // If files present, try reading first small text file (synchronously reading not possible; skip for now)
+      const first = extractFirstUrl(droppedText)
+      if (first) {
+        setUrl(first)
+        push({ title: 'URL captured', message: 'Dropped URL ready to generate.', variant: 'success' })
+      } else {
+        push({ title: 'No URL found', message: 'Drop a valid URL (starting with http/https).', variant: 'warning' })
+      }
+    } catch (err) {
+      console.error('Drop handling failed', err)
+      push({ title: 'Drop failed', message: 'Could not read dropped data.', variant: 'error' })
+    }
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -207,13 +258,35 @@ export function RealEstateContent() {
 
         {/* Content */}
         <div className="flex-1 min-h-0 p-6 space-y-4 overflow-y-auto">
-          <Input
-            label="Property URL"
-            placeholder="https://example.com/property-listing"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            disabled={isGenerating}
-          />
+          <div
+            id="realestate-dropzone"
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`relative border-2 rounded-xl p-4 transition-colors ${isDragging ? 'border-brand-500 bg-brand-50' : 'border-dashed border-gray-300'}`}
+            aria-label="Drag and drop a URL here or use the input field"
+            role="group"
+            tabIndex={0}
+          >
+            <div className="space-y-3">
+              <Input
+                label="Property URL"
+                placeholder="https://example.com/property-listing"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                disabled={isGenerating}
+              />
+              <div className="text-xs text-gray-500">
+                <strong>Drag & Drop:</strong> Drop a link from another tab or app. We’ll grab the first URL we find.
+              </div>
+            </div>
+            {isDragging && (
+              <div className="absolute inset-0 rounded-xl bg-brand-500/10 backdrop-blur-sm flex items-center justify-center pointer-events-none">
+                <span className="text-sm font-medium text-brand-700">Release to capture URL</span>
+              </div>
+            )}
+          </div>
 
           <div className="bg-brand-50 rounded-lg p-3 border border-brand-200">
             <p className="text-sm text-brand-800">

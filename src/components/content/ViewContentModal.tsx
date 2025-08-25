@@ -1,8 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card'
-import { X, FileText, Calendar, User, Target, Zap, ChevronDown, ChevronUp, Eye, Clipboard, Share2 } from 'lucide-react'
+import { X, FileText, Calendar, User, Target, Zap, ChevronDown, ChevronUp, Eye, ChevronLeft, ChevronRight, Clock } from 'lucide-react'
 import { formatDate } from '../../lib/utils'
 import { Modal, ModalHeader, ModalBody, ModalFooter, ModalTitle } from '../ui/Modal'
 import { IconButton } from '../ui/IconButton'
@@ -48,8 +48,7 @@ interface ViewContentModalProps {
   content: ModalContent
   strategyId?: string | number
   onPosted?: (updated: ModalContent) => void
-  deepLink?: string
-  onApproved?: (updated: ModalContent) => void
+  onUpdated?: (updated: ModalContent) => void
 }
 
 import { supabase } from '../../lib/supabase'
@@ -112,8 +111,25 @@ const formatContentBody = (content: string) => {
     })
 }
 
-export function ViewContentModal({ isOpen, onClose, content, strategyId, onPosted, deepLink, onApproved }: ViewContentModalProps) {
+export function ViewContentModal({ isOpen, onClose, content, strategyId, onPosted, onUpdated }: ViewContentModalProps) {
   const [expandedAngles, setExpandedAngles] = useState<{ [key: number]: boolean }>({})
+  const [isEditing, setIsEditing] = useState(false)
+  const [editTitle, setEditTitle] = useState(content?.title || '')
+  const [editBody, setEditBody] = useState(content?.body_text || content?.body || '')
+  const [saving, setSaving] = useState(false)
+  // Scheduling state (mock client-side only)
+  const [showScheduler, setShowScheduler] = useState(false)
+  const [scheduledAt, setScheduledAt] = useState<Date | null>(null)
+  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date())
+  const [timeHour, setTimeHour] = useState('09')
+  const [timeMinute, setTimeMinute] = useState('00')
+  // Re-hydrate edit form when content changes if not actively editing
+  useEffect(() => {
+    if (!isEditing) {
+      setEditTitle(content?.title || '')
+      setEditBody(content?.body_text || content?.body || '')
+    }
+  }, [content?.id, content?.title, content?.body, content?.body_text, isEditing])
   const { call: runPost, loading: posting } = useAsyncCallback(async () => {
     if (!content?.id || !content?.source) return
     console.log('Posting content:', content.id, 'from table:', content.source)
@@ -133,43 +149,11 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
     onPosted?.({ ...content, post: true })
     onClose()
   })
-  const { call: runApprove, loading: approving } = useAsyncCallback(async () => {
-    if (!content?.id || !content?.source) return
-    const { error } = await supabase
-      .from(content.source)
-      .update({ status: 'approved' })
-      .eq('id', content.id)
-
-    if (error) {
-      push({ message: `Failed to approve: ${error.message}`, variant: 'error' })
-      return
-    }
-    push({ message: 'Content approved', variant: 'success' })
-    onApproved?.({ ...content, status: 'approved' })
-  })
+  // Approval flow removed
   const { push } = useToast()
 
   // Clipboard and share actions as hooks (must be before any early return)
-  const { call: copyToClipboard, loading: copyingGeneric } = useAsyncCallback(async (text: string, successMsg: string) => {
-    await navigator.clipboard.writeText(text)
-    push({ message: successMsg, variant: 'success' })
-  })
-  const { call: shareCall, loading: sharing } = useAsyncCallback(async () => {
-    const shareData = {
-      title: content.title || 'Content',
-      text: content.title || undefined,
-      url: deepLink || undefined
-    } as any
-    if ((navigator as any).share) {
-      await (navigator as any).share(shareData)
-    } else {
-      if (deepLink) {
-        await copyToClipboard(deepLink, 'Link copied')
-      } else {
-        await copyToClipboard(content.title || 'Untitled', 'Title copied')
-      }
-    }
-  })
+  // Removed copy/share actions
 
   // Keep component mounted; Modal handles visibility and exit animations
   if (!content) return null
@@ -235,7 +219,44 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
 
   const handlePost = () => { void runPost() }
 
-  const handleApprove = () => { void runApprove() }
+  // const handleApprove removed
+
+  const handleStartEdit = () => {
+    setIsEditing(true)
+    setEditTitle(content.title || '')
+    setEditBody(content.body_text || content.body || '')
+  }
+  const handleCancelEdit = () => {
+    setIsEditing(false)
+    setEditTitle(content.title || '')
+    setEditBody(content.body_text || content.body || '')
+  }
+  const handleSaveEdit = async () => {
+    if (!content?.id || !content?.source) return
+    setSaving(true)
+    try {
+      const update: Record<string, any> = {
+        title: editTitle.trim() || null,
+        content_body: editBody.trim() || null,
+        body_text: editBody.trim() || null
+      }
+      const { error } = await supabase
+        .from(content.source)
+        .update(update)
+        .eq('id', content.id)
+        .select()
+        .single()
+      if (error) throw error
+      const updated: ModalContent = { ...content, ...update }
+      onUpdated?.(updated)
+      setIsEditing(false)
+    } catch (e) {
+      console.error('Failed to save content edits', e)
+      push({ message: e instanceof Error ? e.message : 'Save failed', variant: 'error' })
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const renderAngleProperty = (key: string, value: unknown) => {
     if (!value) return null
@@ -348,16 +369,7 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
 
   const titleId = 'view-content-title'
 
-  const handleCopyTitle = () => { void copyToClipboard(content.title || 'Untitled', 'Title copied') }
-
-  const handleCopyBody = () => {
-    const text = String(content.body_text || content.body || '')
-    if (!text) {
-      push({ message: 'No body to copy', variant: 'warning' })
-      return
-    }
-    void copyToClipboard(text, 'Content copied')
-  }
+  // Copy/share handlers removed
 
 
 
@@ -369,10 +381,35 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
             <FileText className="h-6 w-6 text-white" />
           </div>
           <div>
-            <ModalTitle id={titleId}>{content.title}</ModalTitle>
-            <p className="text-sm text-gray-500">
-              {content.brand_name || 'Unknown brand'} • {content.type?.replace('_', ' ') || 'Content'}
-            </p>
+            {isEditing ? (
+              <div className="space-y-2">
+                <input
+                  id="content-title-input"
+                  aria-label="Content title"
+                  value={editTitle}
+                  onChange={e => setEditTitle(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  placeholder="Title"
+                />
+                <p className="text-xs text-gray-500">Editing title</p>
+              </div>
+            ) : (
+              <>
+                <ModalTitle id={titleId}>{content.title}</ModalTitle>
+                <p className="text-sm text-gray-500 flex flex-wrap items-center gap-2">
+                  <span>{content.brand_name || 'Unknown brand'}</span>
+                  {content.platform && (
+                    <Badge variant="secondary" className="text-xs">{content.platform}</Badge>
+                  )}
+                  {content.type && content.platform && content.type?.replace('_', ' ').toLowerCase() !== content.platform.toLowerCase() && (
+                    <Badge variant="secondary" className="text-xs">{content.type?.replace('_', ' ')}</Badge>
+                  )}
+                  {!content.platform && content.type && (
+                    <Badge variant="secondary" className="text-xs">{content.type?.replace('_', ' ')}</Badge>
+                  )}
+                </p>
+              </>
+            )}
           </div>
         </div>
         <IconButton onClick={onClose} aria-label="Close dialog" variant="ghost">
@@ -392,23 +429,21 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <p className="text-sm font-medium text-gray-900">Status</p>
-                <Badge variant={content.status === 'approved' ? 'success' : 'warning'}>
-                  {content.status || 'draft'}
-                </Badge>
+                {/* Status removed */}
+                <p className="text-sm font-medium text-gray-900">Created</p>
+                <p className="text-gray-700 flex items-center">
+                  <Calendar className="h-4 w-4 mr-1 text-gray-400" />
+                  {formatDate(content.created_at)}
+                </p>
               </div>
-
               <div>
                 <p className="text-sm font-medium text-gray-900">Type</p>
                 <p className="text-gray-700 capitalize">{content.type?.replace('_', ' ') || 'Content'}</p>
               </div>
 
               <div>
-                <p className="text-sm font-medium text-gray-900">Created</p>
-                <p className="text-gray-700 flex items-center">
-                  <Calendar className="h-4 w-4 mr-1 text-gray-400" />
-                  {formatDate(content.created_at)}
-                </p>
+                <p className="text-sm font-medium text-gray-900">Platform</p>
+                <p className="text-gray-700">{content.platform || '—'}</p>
               </div>
 
               {typeof (content.metadata as any)?.word_count === 'number' && (
@@ -473,11 +508,26 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto">
-                <div className="text-sm">
-                  {formatContentBody(content.body_text || content.body || 'No content')}
+              {isEditing ? (
+                <div className="space-y-3">
+                  <textarea
+                    id="content-body-input"
+                    aria-label="Content body"
+                    value={editBody}
+                    onChange={e => setEditBody(e.target.value)}
+                    rows={14}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 resize-y"
+                    placeholder="Content body markdown/text"
+                  />
+                  <p className="text-xs text-gray-500">Editing content body</p>
                 </div>
-              </div>
+              ) : (
+                <div className="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto">
+                  <div className="text-sm">
+                    {formatContentBody(content.body_text || content.body || 'No content')}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
@@ -502,47 +552,193 @@ export function ViewContentModal({ isOpen, onClose, content, strategyId, onPoste
         )}
       </ModalBody>
 
-      <ModalFooter className="justify-between">
-        <div className="flex space-x-2">
-          <Button variant="outline" size="sm" onClick={handleCopyTitle}>
-            <Clipboard className="h-4 w-4 mr-2" />
-            Copy title
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleCopyBody}>
-            <Clipboard className="h-4 w-4 mr-2" />
-            Copy body
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => deepLink ? void copyToClipboard(deepLink, 'Link copied') : push({ message: 'No link available', variant: 'warning' })} disabled={copyingGeneric}>
-            <Share2 className="h-4 w-4 mr-2" />
-            Copy link
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => void shareCall()} disabled={sharing}>
-            <Share2 className="h-4 w-4 mr-2" />
-            Share
-          </Button>
-        </div>
-        <div className="flex space-x-3">
-          {content.status !== 'approved' && (
-            <Button
-              variant="outline"
-              onClick={handleApprove}
-              loading={approving}
-              disabled={approving}
-            >
-              {approving ? 'Approving…' : 'Approve'}
-            </Button>
-          )}
-          <Button
-            onClick={handlePost}
-            loading={posting}
-            disabled={posting}
-            variant="primary"
+      <ModalFooter className="justify-end relative">
+        {/* Scheduler popover */}
+        {showScheduler && (
+          <div
+            className="absolute bottom-full mb-3 right-0 w-80 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-20 animate-in fade-in slide-in-from-bottom-2"
+            role="dialog"
+            aria-label="Schedule content"
           >
-            {posting ? 'Posting…' : 'Post'}
-          </Button>
-          <Button variant="outline" onClick={onClose} disabled={posting}>
-            Close
-          </Button>
+            <div className="flex items-center justify-between mb-2">
+              <button
+                type="button"
+                className="p-1 rounded hover:bg-gray-100"
+                aria-label="Previous month"
+                onClick={() => setCalendarMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <p className="text-sm font-medium">
+                {calendarMonth.toLocaleString(undefined, { month: 'long', year: 'numeric' })}
+              </p>
+              <button
+                type="button"
+                className="p-1 rounded hover:bg-gray-100"
+                aria-label="Next month"
+                onClick={() => setCalendarMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+            {/* Calendar grid */}
+            {(() => {
+              const firstDay = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1)
+              const startWeekday = firstDay.getDay() // 0=Sun
+              const daysInMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0).getDate()
+              const cells: (Date | null)[] = []
+              for (let i = 0; i < startWeekday; i++) cells.push(null)
+              for (let d = 1; d <= daysInMonth; d++) {
+                cells.push(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), d))
+              }
+              const selectedSameDay = (d: Date) => scheduledAt && d.getFullYear() === scheduledAt.getFullYear() && d.getMonth() === scheduledAt.getMonth() && d.getDate() === scheduledAt.getDate()
+              return (
+                <div className="grid grid-cols-7 gap-1 mb-3 text-center">
+                  {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => (
+                    <div key={d} className="text-[10px] uppercase tracking-wide text-gray-500 font-medium py-1">{d}</div>
+                  ))}
+                  {cells.map((d, i) => {
+                    if (!d) return <div key={i} />
+                    const isSelectedDay = selectedSameDay(d)
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => {
+                          // preserve chosen time when changing day
+                          const base = new Date(d)
+                          base.setHours(parseInt(timeHour, 10), parseInt(timeMinute, 10), 0, 0)
+                          setScheduledAt(base)
+                        }}
+                        className={`text-sm h-8 w-8 flex items-center justify-center rounded-md hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-500 transition ${isSelectedDay ? 'bg-brand-600 text-white hover:bg-brand-600' : 'text-gray-700'}`}
+                        aria-pressed={isSelectedDay ? true : false}
+                        aria-label={d.toDateString()}
+                      >
+                        {d.getDate()}
+                      </button>
+                    )
+                  })}
+                </div>
+              )
+            })()}
+            {/* Time selectors */}
+            <div className="flex items-end space-x-2 mb-3">
+              <div className="flex-1">
+                <label className="block text-xs font-medium text-gray-600 mb-1">Hour</label>
+                <select
+                  className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  value={timeHour}
+                  onChange={e => {
+                    setTimeHour(e.target.value)
+                    setScheduledAt(prev => {
+                      if (!prev) return prev
+                      const next = new Date(prev)
+                      next.setHours(parseInt(e.target.value, 10))
+                      return next
+                    })
+                  }}
+                >
+                  {Array.from({ length: 24 }, (_, h) => String(h).padStart(2, '0')).map(h => (
+                    <option key={h} value={h}>{h}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="block text-xs font-medium text-gray-600 mb-1">Minute</label>
+                <select
+                  className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  value={timeMinute}
+                  onChange={e => {
+                    setTimeMinute(e.target.value)
+                    setScheduledAt(prev => {
+                      if (!prev) return prev
+                      const next = new Date(prev)
+                      next.setMinutes(parseInt(e.target.value, 10))
+                      return next
+                    })
+                  }}
+                >
+                  {Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0')).map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-between items-center gap-2">
+              <div className="text-[11px] text-gray-500 flex-1">
+                {scheduledAt ? `Scheduled: ${scheduledAt.toLocaleString()}` : 'Pick a day & time'}
+              </div>
+              <div className="flex space-x-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setScheduledAt(null)
+                    push({ message: 'Schedule cleared', variant: 'info' })
+                  }}
+                  disabled={!scheduledAt}
+                >
+                  Clear
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    // If day not picked yet, pick today
+                    let dt = scheduledAt
+                    if (!dt) {
+                      dt = new Date()
+                      dt.setHours(parseInt(timeHour, 10), parseInt(timeMinute, 10), 0, 0)
+                      setScheduledAt(dt)
+                    }
+                    push({ message: `Scheduled for ${dt!.toLocaleString()}`, variant: 'success' })
+                    setShowScheduler(false)
+                  }}
+                >
+                  Set
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+        <div className="flex space-x-3 items-center">
+          {isEditing ? (
+            <>
+              <Button variant="outline" size="sm" onClick={handleCancelEdit} disabled={saving}>Cancel</Button>
+              <Button size="sm" onClick={() => { void handleSaveEdit() }} loading={saving} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" size="sm" onClick={handleStartEdit}>Edit</Button>
+              <Button
+                variant={scheduledAt ? 'secondary' : 'outline'}
+                size="sm"
+                onClick={() => setShowScheduler(s => !s)}
+                aria-haspopup="dialog"
+                aria-expanded={showScheduler}
+              >
+                <Calendar className="h-3 w-3 mr-1" />
+                {scheduledAt ? 'Reschedule' : 'Schedule'}
+              </Button>
+              {scheduledAt && (
+                <span className="text-xs text-gray-600 flex items-center space-x-1">
+                  <Clock className="h-3 w-3" />
+                  <span>{scheduledAt.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                </span>
+              )}
+              <Button
+                size="sm"
+                onClick={handlePost}
+                loading={posting}
+                disabled={posting}
+                variant="primary"
+              >
+                {posting ? 'Posting…' : 'Post'}
+              </Button>
+              <Button variant="outline" size="sm" onClick={onClose} disabled={posting}>
+                Close
+              </Button>
+            </>
+          )}
         </div>
       </ModalFooter>
     </Modal>

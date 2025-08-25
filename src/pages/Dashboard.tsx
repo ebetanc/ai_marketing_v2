@@ -10,7 +10,6 @@ import {
   Users,
   Target,
   Clock,
-  CheckCircle,
   Eye
 } from 'lucide-react'
 import { useCompanies } from '../hooks/useCompanies'
@@ -68,10 +67,7 @@ export function Dashboard() {
     return t >= prevWindowStart && t < currentWindowStart
   })
 
-  const approvedCurrent = contentCurrent.filter(c => c.status === 'approved')
-  const approvedPrev = contentPrev.filter(c => c.status === 'approved')
-  const draftCurrent = contentCurrent.filter(c => c.status === 'draft')
-  const draftPrev = contentPrev.filter(c => c.status === 'draft')
+  // Approval metrics removed
 
   const pct = (curr: number, prev: number) => {
     if (prev <= 0) return '+0%'
@@ -96,16 +92,9 @@ export function Dashboard() {
       icon: FileText
     },
     {
-      title: 'Approved Content',
-      value: contentPieces.filter(c => c.status === 'approved').length,
-      change: pct(approvedCurrent.length, approvedPrev.length),
-      changeType: 'positive' as const,
-      icon: CheckCircle
-    },
-    {
-      title: 'Draft Content',
-      value: contentPieces.filter(c => c.status === 'draft').length,
-      change: pct(draftCurrent.length, draftPrev.length),
+      title: 'Generated Content',
+      value: contentPieces.length,
+      change: pct(contentCurrent.length, contentPrev.length),
       changeType: 'positive' as const,
       icon: Target
     }
@@ -115,11 +104,10 @@ export function Dashboard() {
     // Derive recent activity from latest content pieces
     const items = contentPieces.slice(0, 6).map((c) => ({
       id: c.id,
-      type: c.status === 'approved' ? 'content_approved' : 'content_generated',
+      type: 'content_generated',
       title: `${c.platform ?? 'Content'}: ${c.title || 'Untitled'}`,
       description: (c.body || '').slice(0, 100),
       time: c.created_at,
-      status: c.status,
     }))
     return items
   }, [contentPieces])
@@ -221,11 +209,6 @@ export function Dashboard() {
                           <FileText className="h-4 w-4 text-brand-600" />
                         </div>
                       )}
-                      {activity.type === 'content_approved' && (
-                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                        </div>
-                      )}
                       {activity.type === 'company_added' && (
                         <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
                           <Users className="h-4 w-4 text-teal-600" />
@@ -238,12 +221,7 @@ export function Dashboard() {
                       <div className="flex items-center mt-1 space-x-2">
                         <Clock className="h-3 w-3 text-gray-400" />
                         <span className="text-xs text-gray-500">{formatTime(activity.time)}</span>
-                        <Badge
-                          variant={activity.status === 'approved' ? 'success' : activity.status === 'draft' ? 'warning' : 'secondary'}
-                          className="text-xs"
-                        >
-                          {activity.status}
-                        </Badge>
+                        {/* Status badge removed */}
                       </div>
                     </div>
                   </div>

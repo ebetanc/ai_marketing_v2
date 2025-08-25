@@ -113,7 +113,7 @@ export function Content() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const paramsAtInit = new URLSearchParams(location.search)
-  const [filterStatus, setFilterStatus] = useState<'all' | 'draft' | 'approved'>((paramsAtInit.get('status') as any) || 'all')
+  // Status filter removed
   const [filterType, setFilterType] = useState<'all' | string>(paramsAtInit.get('type') || 'all')
   const [brandFilter, setBrandFilter] = useState<string>(paramsAtInit.get('brand') || '')
   const [searchQuery, setSearchQuery] = useState(initialQ)
@@ -122,7 +122,7 @@ export function Content() {
     content: null,
     strategyId: undefined
   })
-  const [approvingId, setApprovingId] = useState<number | null>(null)
+  // approvingId removed
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean
     content: any
@@ -133,10 +133,7 @@ export function Content() {
     loading: false
   })
   // Approve action handler
-  const { call: approveCall } = useAsyncCallback(async (id: number) => {
-    const { error } = await supabase.from('content').update({ status: 'approved' }).eq('id', id)
-    if (error) throw error
-  })
+  // approveCall removed
   const { push } = useToast()
   const searchInputRef = useRef<HTMLInputElement | null>(null)
   const lastFocusRef = useRef<HTMLElement | null>(null)
@@ -243,12 +240,12 @@ export function Content() {
   useEffect(() => {
     const url = new URLSearchParams(location.search)
     const q = url.get('q') || ''
-    const status = (url.get('status') as 'all' | 'draft' | 'approved' | null) || 'all'
+    // status param removed
     const type = url.get('type') || 'all'
     const brand = url.get('brand') || ''
 
     setSearchQuery(prev => (prev === q ? prev : q))
-    setFilterStatus(prev => (prev === status ? prev : status))
+    // setFilterStatus removed
     setFilterType(prev => (prev === type ? prev : type))
     setBrandFilter(prev => (prev === brand ? prev : brand))
   }, [location.search])
@@ -357,7 +354,7 @@ export function Content() {
   }))
 
   const filteredContent = allContent.filter(content => {
-    const matchesStatus = filterStatus === 'all' || content.status === filterStatus
+    const matchesStatus = true
     const matchesType = filterType === 'all' || content.type === filterType
     const matchesBrand = !brandFilter || String(content.company_id) === brandFilter
     const matchesSearch = !searchQuery ||
@@ -398,11 +395,7 @@ export function Content() {
     }, 0)
   }
 
-  const statusOptions = [
-    { value: 'all', label: 'All Status' },
-    { value: 'draft', label: 'Draft' },
-    { value: 'approved', label: 'Approved' }
-  ]
+  // approval-related status options fully removed
 
   const typeOptions = [
     { value: 'all', label: 'All Types' },
@@ -441,14 +434,14 @@ export function Content() {
 
   const isFiltersActive = (
     (searchQuery && searchQuery.length > 0) ||
-    (filterStatus && filterStatus !== 'all') ||
+    // status filter removed
     (filterType && filterType !== 'all') ||
     (brandFilter && brandFilter !== '')
   )
 
   const clearFilters = () => {
     setSearchQuery('')
-    setFilterStatus('all')
+    // status reset removed
     setFilterType('all')
     setBrandFilter('')
     const params = new URLSearchParams(location.search)
@@ -487,20 +480,14 @@ export function Content() {
         onPosted={(updated) => {
           setGeneratedContent(prev => prev.map(c => c.id === updated.id ? { ...c, post: true } : c))
         }}
-        onApproved={(updated) => {
-          setGeneratedContent(prev => prev.map(c => c.id === updated.id ? { ...c, status: 'approved' } : c))
-          // Also reflect inside the open modal immediately
+
+        onUpdated={(updated) => {
+          setGeneratedContent(prev => prev.map(c => c.id === updated.id ? { ...c, ...updated } : c))
           setViewContentModal(prev => prev.isOpen && prev.content?.id === updated.id
-            ? { ...prev, content: { ...prev.content, status: 'approved' } }
+            ? { ...prev, content: { ...prev.content, ...updated } }
             : prev
           )
         }}
-        deepLink={(() => {
-          const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin
-          const params = new URLSearchParams(location.search)
-          const open = params.get('open')
-          return open ? `${siteUrl}/content?${params.toString()}` : undefined
-        })()}
       />
 
       {/* Delete Confirmation Dialog */}
@@ -560,17 +547,7 @@ export function Content() {
                 navigate({ search: params.toString() }, { replace: true })
               }}
             />
-            <Select
-              options={statusOptions}
-              value={filterStatus}
-              onChange={(e) => {
-                const v = e.target.value as typeof filterStatus
-                setFilterStatus(v)
-                const params = new URLSearchParams(location.search)
-                if (v && v !== 'all') params.set('status', v); else params.delete('status')
-                navigate({ search: params.toString() }, { replace: true })
-              }}
-            />
+            {/* Status filter removed */}
           </div>
           {isFiltersActive && (
             <div className="flex justify-between items-center text-xs text-gray-500">
@@ -617,7 +594,7 @@ export function Content() {
 
             return entries.map(([brandName, brandContent]) => {
               const totalContent = brandContent.length
-              const approvedContent = brandContent.filter((c: any) => c.status === 'approved').length
+              // approval-related metrics removed
               const collapsed = collapsedBrands[brandName]
               return (
                 <div key={brandName} className="border border-gray-200 rounded-lg bg-white">
@@ -632,7 +609,7 @@ export function Content() {
                       </div>
                       <div>
                         <h3 className="font-semibold text-gray-900 leading-tight">{brandName}</h3>
-                        <p className="text-xs text-gray-500">{approvedContent}/{totalContent} approved</p>
+                        {/* Approved count removed */}
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -647,17 +624,6 @@ export function Content() {
                           <ContentListItem
                             key={content.id}
                             content={content}
-                            approvingId={approvingId}
-                            onApprove={async (c) => {
-                              setApprovingId(c.id)
-                              // optimistic
-                              setGeneratedContent(prev => prev.map(p => p.id === c.id ? { ...p, status: 'approved' } : p))
-                              const res = await approveCall(c.id)
-                              if (res && 'error' in res && res.error) {
-                                setGeneratedContent(prev => prev.map(p => p.id === c.id ? { ...p, status: 'draft' } : p))
-                              }
-                              setApprovingId(null)
-                            }}
                             onView={handleViewContent}
                             onDelete={handleDeleteClick}
                             onCopyLink={async (c) => { await copyLinkCall(c) }}

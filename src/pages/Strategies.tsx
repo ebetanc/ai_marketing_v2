@@ -47,6 +47,20 @@ export function Strategies() {
     strategy: null,
     company: null
   })
+  // Angles that already have ideas generated for the currently viewed strategy
+  const [existingIdeaAngles, setExistingIdeaAngles] = useState<number[]>([])
+  const [loadingIdeaAngles, setLoadingIdeaAngles] = useState(false)
+  // Angle editing state
+  const [editingAngle, setEditingAngle] = useState<number | null>(null)
+  const [angleForm, setAngleForm] = useState({
+    header: '',
+    description: '',
+    objective: '',
+    tonality: ''
+  })
+  const [angleErrors, setAngleErrors] = useState<{ header?: string }>({})
+  const [savingAngle, setSavingAngle] = useState(false)
+  const [expandedAngles, setExpandedAngles] = useState<Record<number, boolean>>({})
 
   useEffect(() => {
     fetchStrategies()
@@ -164,6 +178,28 @@ export function Strategies() {
       strategy,
       company
     })
+    // Load existing idea sets for this strategy to prevent duplicates
+    setExistingIdeaAngles([])
+    setLoadingIdeaAngles(true)
+    void (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('ideas')
+          .select('angle_number')
+          .eq('strategy_id', strategy.id)
+        if (error) {
+          console.warn('Unable to fetch existing ideas for strategy', strategy.id, error)
+          return
+        }
+        const usedAngles: number[] = (data || [])
+          .map((r: { angle_number: number | null }) => r.angle_number)
+          .filter((n: number | null): n is number => typeof n === 'number' && n !== null)
+        const uniqueSorted = Array.from(new Set<number>(usedAngles)).sort((a: number, b: number) => a - b)
+        setExistingIdeaAngles(uniqueSorted)
+      } finally {
+        setLoadingIdeaAngles(false)
+      }
+    })()
   }
 
   const handleCloseModal = () => {
@@ -172,6 +208,9 @@ export function Strategies() {
       strategy: null,
       company: null
     })
+    setExistingIdeaAngles([])
+    setLoadingIdeaAngles(false)
+    setEditingAngle(null)
   }
 
   const { call: runGenerateIdeas } = useAsyncCallback(async (angle: any) => {
@@ -226,8 +265,13 @@ export function Strategies() {
   const handleGenerateIdeas = async (angle: any) => {
     if (!viewModal.strategy || !viewModal.company) return
     setGeneratingIdeas(angle.number)
-    await runGenerateIdeas(angle)
-    setGeneratingIdeas(null)
+    try {
+      await runGenerateIdeas(angle)
+      // Optimistically mark this angle as generated to block re-generation
+      setExistingIdeaAngles(prev => prev.includes(angle.number) ? prev : [...prev, angle.number].sort((a, b) => a - b))
+    } finally {
+      setGeneratingIdeas(null)
+    }
   }
 
   const handleGenerateStrategy = () => {
@@ -268,6 +312,60 @@ export function Strategies() {
     }
     return angles
   }
+
+  const beginEditAngle = (angle: { number: number; header: string; description: string; objective: string; tonality: string }) => {
+    setEditingAngle(angle.number)
+    setAngleForm({
+      header: angle.header,
+      description: angle.description,
+      objective: angle.objective,
+      tonality: angle.tonality
+    })
+    setAngleErrors({})
+  }
+
+  const cancelEditAngle = () => {
+    setEditingAngle(null)
+    setAngleErrors({})
+  }
+
+  const saveAngle = async () => {
+    if (!viewModal.strategy || editingAngle == null) return
+    if (!angleForm.header.trim()) {
+      setAngleErrors({ header: 'Header is required.' })
+      return
+    }
+    setSavingAngle(true)
+    try {
+      const update: Record<string, any> = {
+        [`angle${editingAngle}_header`]: angleForm.header.trim(),
+        [`angle${editingAngle}_description`]: angleForm.description.trim(),
+        [`angle${editingAngle}_objective`]: angleForm.objective.trim(),
+        [`angle${editingAngle}_tonality`]: angleForm.tonality.trim()
+      }
+      const { error } = await supabase
+        .from('strategies')
+        .update(update)
+        .eq('id', viewModal.strategy.id)
+      if (error) throw error
+      // Optimistically update local strategy in modal
+      setViewModal(prev => prev.strategy ? ({
+        ...prev,
+        strategy: { ...prev.strategy, ...update }
+      }) : prev)
+      setEditingAngle(null)
+    } catch (e) {
+      console.error('Failed to save angle', e)
+      setAngleErrors({ header: e instanceof Error ? e.message : 'Save failed' })
+    } finally {
+      setSavingAngle(false)
+    }
+  }
+
+  const toggleAngle = (num: number) => {
+    setExpandedAngles(prev => ({ ...prev, [num]: !prev[num] }))
+  }
+  const isAngleExpanded = (num: number) => !!expandedAngles[num]
 
   if (loading) {
     return (
@@ -400,12 +498,20 @@ export function Strategies() {
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <Target className="h-5 w-5 mr-2 text-purple-600" />
                   Content angles ({countAngles(viewModal.strategy)})
+                  {loadingIdeaAngles && (
+                    <span className="ml-3 text-xs text-gray-500">Loading existing ideas…</span>
+                  )}
                 </h3>
                 <div className="space-y-4">
                   {getAnglesFromStrategy(viewModal.strategy).map((angle, index) => (
                     <div
                       key={index}
                       className="group bg-white border-2 border-gray-200 rounded-xl p-6 hover:border-brand-300 hover:shadow-lg transition-all duration-200 cursor-pointer"
+                      onClick={() => { if (editingAngle !== angle.number) toggleAngle(angle.number) }}
+                      role="button"
+                      tabIndex={0}
+                      aria-expanded={isAngleExpanded(angle.number)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (editingAngle !== angle.number) toggleAngle(angle.number) } }}
                     >
                       {/* Angle Header */}
                       <div className="flex items-center justify-between mb-4">
@@ -414,57 +520,151 @@ export function Strategies() {
                             <span className="text-white font-bold text-lg">{angle.number}</span>
                           </div>
                           <div>
-                            <h4 className="text-xl font-bold text-gray-900 group-hover:text-brand-700 transition-colors">
-                              {angle.header}
-                            </h4>
-                            <p className="text-sm text-gray-500">Click to expand</p>
+                            {editingAngle === angle.number ? (
+                              <div className="space-y-2">
+                                <input
+                                  type="text"
+                                  value={angleForm.header}
+                                  onChange={e => { setAngleForm(f => ({ ...f, header: e.target.value })); setAngleErrors({}) }}
+                                  aria-label="Angle header"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500"
+                                  placeholder="Angle header"
+                                />
+                                {angleErrors.header && <p className="text-xs text-red-600">{angleErrors.header}</p>}
+                              </div>
+                            ) : (
+                              <>
+                                <h4 className="text-xl font-bold text-gray-900 group-hover:text-brand-700 transition-colors flex items-center gap-2">
+                                  {angle.header}
+                                  <span className="text-xs font-normal text-gray-400">{isAngleExpanded(angle.number) ? '−' : '+'}</span>
+                                </h4>
+                                <p className="text-sm text-gray-500">Click to {isAngleExpanded(angle.number) ? 'collapse' : 'expand'}</p>
+                              </>
+                            )}
                           </div>
                         </div>
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleGenerateIdeas(angle)
-                          }}
-                          loading={generatingIdeas === angle.number}
-                          disabled={generatingIdeas !== null}
-                          variant="primary"
-                          className="transition-opacity duration-200"
-                        >
-                          <Lightbulb className="h-4 w-4" />
-                          {generatingIdeas === angle.number ? 'Generating…' : 'Generate ideas'}
-                        </Button>
+                        {editingAngle === angle.number ? (
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => cancelEditAngle()}
+                              disabled={savingAngle}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => { void saveAngle() }}
+                              loading={savingAngle}
+                              disabled={savingAngle}
+                            >
+                              {savingAngle ? 'Saving…' : 'Save'}
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => { e.stopPropagation(); beginEditAngle(angle) }}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleGenerateIdeas(angle)
+                              }}
+                              loading={generatingIdeas === angle.number}
+                              disabled={generatingIdeas !== null || existingIdeaAngles.includes(angle.number)}
+                              variant={existingIdeaAngles.includes(angle.number) ? 'outline' : 'primary'}
+                              className="transition-opacity duration-200"
+                            >
+                              <Lightbulb className="h-4 w-4" />
+                              {existingIdeaAngles.includes(angle.number)
+                                ? 'Ideas generated'
+                                : generatingIdeas === angle.number
+                                  ? 'Generating…'
+                                  : 'Generate ideas'}
+                            </Button>
+                          </div>
+                        )}
                       </div>
 
                       {/* Angle Details */}
                       <div className="space-y-4">
-                        {angle.description && (
-                          <div className="bg-brand-50 rounded-lg p-4 border-l-4 border-brand-400">
-                            <div className="flex items-center mb-2">
-                              <FileText className="h-4 w-4 text-brand-600 mr-2" />
-                              <h5 className="font-semibold text-brand-900">Description</h5>
+                        {editingAngle === angle.number ? (
+                          <div className="space-y-4">
+                            <div>
+                              <label htmlFor={`angle-${angle.number}-description`} className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+                              <textarea
+                                value={angleForm.description}
+                                onChange={e => setAngleForm(f => ({ ...f, description: e.target.value }))}
+                                rows={3}
+                                id={`angle-${angle.number}-description`}
+                                aria-label="Angle description"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+                                placeholder="Angle description"
+                              />
                             </div>
-                            <p className="text-brand-800 leading-relaxed">{angle.description}</p>
-                          </div>
-                        )}
-
-                        {angle.objective && (
-                          <div className="bg-green-50 rounded-lg p-4 border-l-4 border-green-400">
-                            <div className="flex items-center mb-2">
-                              <Target className="h-4 w-4 text-green-600 mr-2" />
-                              <h5 className="font-semibold text-green-900">Objective</h5>
+                            <div>
+                              <label htmlFor={`angle-${angle.number}-objective`} className="block text-xs font-medium text-gray-600 mb-1">Objective</label>
+                              <textarea
+                                value={angleForm.objective}
+                                onChange={e => setAngleForm(f => ({ ...f, objective: e.target.value }))}
+                                rows={2}
+                                id={`angle-${angle.number}-objective`}
+                                aria-label="Angle objective"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+                                placeholder="Angle objective"
+                              />
                             </div>
-                            <p className="text-green-800 leading-relaxed">{angle.objective}</p>
-                          </div>
-                        )}
-
-                        {angle.tonality && (
-                          <div className="bg-purple-50 rounded-lg p-4 border-l-4 border-purple-400">
-                            <div className="flex items-center mb-2">
-                              <Zap className="h-4 w-4 text-purple-600 mr-2" />
-                              <h5 className="font-semibold text-purple-900">Tonality</h5>
+                            <div>
+                              <label htmlFor={`angle-${angle.number}-tonality`} className="block text-xs font-medium text-gray-600 mb-1">Tonality</label>
+                              <input
+                                type="text"
+                                value={angleForm.tonality}
+                                onChange={e => setAngleForm(f => ({ ...f, tonality: e.target.value }))}
+                                id={`angle-${angle.number}-tonality`}
+                                aria-label="Angle tonality"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500"
+                                placeholder="Tone / style"
+                              />
                             </div>
-                            <p className="text-purple-800 leading-relaxed">{angle.tonality}</p>
                           </div>
+                        ) : (
+                          isAngleExpanded(angle.number) && (
+                            <>
+                              {angle.description && (
+                                <div className="bg-brand-50 rounded-lg p-4 border-l-4 border-brand-400">
+                                  <div className="flex items-center mb-2">
+                                    <FileText className="h-4 w-4 text-brand-600 mr-2" />
+                                    <h5 className="font-semibold text-brand-900">Description</h5>
+                                  </div>
+                                  <p className="text-brand-800 leading-relaxed">{angle.description}</p>
+                                </div>
+                              )}
+                              {angle.objective && (
+                                <div className="bg-green-50 rounded-lg p-4 border-l-4 border-green-400">
+                                  <div className="flex items-center mb-2">
+                                    <Target className="h-4 w-4 text-green-600 mr-2" />
+                                    <h5 className="font-semibold text-green-900">Objective</h5>
+                                  </div>
+                                  <p className="text-green-800 leading-relaxed">{angle.objective}</p>
+                                </div>
+                              )}
+                              {angle.tonality && (
+                                <div className="bg-purple-50 rounded-lg p-4 border-l-4 border-purple-400">
+                                  <div className="flex items-center mb-2">
+                                    <Zap className="h-4 w-4 text-purple-600 mr-2" />
+                                    <h5 className="font-semibold text-purple-900">Tonality</h5>
+                                  </div>
+                                  <p className="text-purple-800 leading-relaxed">{angle.tonality}</p>
+                                </div>
+                              )}
+                            </>
+                          )
                         )}
                       </div>
                     </div>

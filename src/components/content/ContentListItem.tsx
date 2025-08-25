@@ -1,32 +1,16 @@
-import { Calendar, CheckCircle, Clock, Eye, Share2, Trash2 } from 'lucide-react'
+import { Calendar, Eye, Share2, Trash2 } from 'lucide-react'
 import { Badge } from '../ui/Badge'
-import { Button } from '../ui/Button'
 import { IconButton } from '../ui/IconButton'
 import { formatDate, truncateText } from '../../lib/utils'
-import { useAsyncCallback } from '../../hooks/useAsync'
-import { useToast } from '../ui/Toast'
-import { useCallback } from 'react'
 
 interface ContentListItemProps {
     content: any
-    approvingId: number | null
-    onApprove: (content: any) => Promise<void>
     onView: (content: any) => void
     onDelete: (content: any) => void
     onCopyLink: (content: any) => Promise<void>
 }
 
-const statusBadge = (status: string) => (
-    status === 'approved' ? (
-        <Badge variant="success" className="flex items-center gap-1">
-            <CheckCircle className="h-3 w-3" /> Approved
-        </Badge>
-    ) : (
-        <Badge variant="warning" className="flex items-center gap-1">
-            <Clock className="h-3 w-3" /> Draft
-        </Badge>
-    )
-)
+// Approval flow removed – no status badge
 
 const typeEmoji = (type: string) => {
     switch (type) {
@@ -39,17 +23,8 @@ const typeEmoji = (type: string) => {
     }
 }
 
-export function ContentListItem({ content, approvingId, onApprove, onView, onDelete, onCopyLink }: ContentListItemProps) {
-    const { push } = useToast()
-    const { call: approveCall } = useAsyncCallback(async () => { await onApprove(content) })
-
-    const handleApprove = useCallback(async (e: React.MouseEvent) => {
-        e.stopPropagation()
-        const res = await approveCall()
-        if (res && 'error' in res && res.error) {
-            push({ title: 'Approve failed', message: 'Could not approve content', variant: 'error' })
-        }
-    }, [approveCall, push])
+export function ContentListItem({ content, onView, onDelete, onCopyLink }: ContentListItemProps) {
+    // Approval flow removed
 
     return (
         <li>
@@ -70,11 +45,25 @@ export function ContentListItem({ content, approvingId, onApprove, onView, onDel
                 <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                         <span className="font-medium text-gray-900 truncate max-w-[22ch]" title={content.title}>{content.title}</span>
-                        {statusBadge(content.status)}
+                        {/* Status badge removed */}
                         {content.post && (
                             <Badge variant="success" className="text-xs">Posted</Badge>
                         )}
-                        <Badge variant="secondary" className="text-xs">{content.platform || content.type?.replace('_', ' ')}</Badge>
+                        {(() => {
+                            const typeLabel = content.type?.replace('_', ' ')
+                            const platformLabel = content.platform
+                            if (platformLabel && typeLabel && platformLabel.toLowerCase() !== typeLabel.toLowerCase()) {
+                                return (
+                                    <>
+                                        <Badge variant="secondary" className="text-xs">{platformLabel}</Badge>
+                                        <Badge variant="secondary" className="text-xs">{typeLabel}</Badge>
+                                    </>
+                                )
+                            }
+                            return (
+                                <Badge variant="secondary" className="text-xs">{platformLabel || typeLabel}</Badge>
+                            )
+                        })()}
                         {content.strategy_id && (
                             <Badge variant="secondary" className="text-xs">Strategy #{content.strategy_id}</Badge>
                         )}
@@ -89,15 +78,7 @@ export function ContentListItem({ content, approvingId, onApprove, onView, onDel
                     </div>
                 </div>
                 <div className="flex flex-col gap-2 items-end ml-2">
-                    {content.status !== 'approved' && (
-                        <Button
-                            variant="outline"
-                            size="xs"
-                            onClick={handleApprove}
-                            loading={approvingId === content.id}
-                            disabled={approvingId === content.id}
-                        >Approve</Button>
-                    )}
+                    {/* Approve button removed */}
                     <div className="flex gap-1">
                         <IconButton
                             aria-label="Copy link"

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { postToN8n } from '../lib/n8n'
-import { FileText, Lightbulb, RefreshCw, Target, X, HelpCircle, ChevronDown, ChevronRight, Search } from 'lucide-react';
+import { FileText, Lightbulb, RefreshCw, Target, X, HelpCircle, ChevronDown, ChevronRight, Search, Trash2 } from 'lucide-react';
 import { useCallback } from 'react';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
@@ -18,6 +18,7 @@ import { z } from 'zod'
 import { PageHeader } from '../components/layout/PageHeader'
 import { ErrorState } from '../components/ui/ErrorState'
 import { EmptyState } from '../components/ui/EmptyState'
+import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 
 // Helper: Extract topics from an idea row
 const extractTopicsFromIdea = (idea: any): { number: number; topic: string; description: string; image_prompt: string }[] => {
@@ -51,11 +52,15 @@ export function Ideas() {
     idea: IdeaJoined | null
     topic: Topic | null
     isEditing: boolean
+    hasGeneratedContent: boolean
+    checkingGenerated?: boolean
   }>({
     isOpen: false,
     idea: null,
     topic: null,
-    isEditing: false
+    isEditing: false,
+    hasGeneratedContent: false,
+    checkingGenerated: false
   })
   const [editForm, setEditForm] = useState({
     topic: '',
@@ -74,6 +79,12 @@ export function Ideas() {
     idea: null,
     topics: []
   })
+  const [deleteDialog, setDeleteDialog] = useState<{ isOpen: boolean; idea: IdeaJoined | null; loading: boolean }>({
+    isOpen: false,
+    idea: null,
+    loading: false
+  })
+  const [deleteTopicDialog, setDeleteTopicDialog] = useState<{ isOpen: boolean; loading: boolean }>({ isOpen: false, loading: false })
   const { push } = useToast()
 
   // initial load handled in the effect after fetchIdeas definition
@@ -154,13 +165,17 @@ export function Ideas() {
   }, [fetchIdeas])
 
   const handleEditToggle = () => {
-    setViewIdeaModal(prev => ({
-      ...prev,
-      isEditing: !prev.isEditing
-    }))
-
-    // Reset form when canceling edit
-    if (viewIdeaModal.isEditing) {
+    const entering = !viewIdeaModal.isEditing
+    setViewIdeaModal(prev => ({ ...prev, isEditing: entering }))
+    if (entering) {
+      // Hydrate form with current topic values
+      setEditForm({
+        topic: viewIdeaModal.topic?.topic || '',
+        description: viewIdeaModal.topic?.description || '',
+        image_prompt: viewIdeaModal.topic?.image_prompt || ''
+      })
+    } else {
+      // Leaving edit mode (cancel) restore values from topic
       setEditForm({
         topic: viewIdeaModal.topic?.topic || '',
         description: viewIdeaModal.topic?.description || '',
@@ -282,6 +297,58 @@ export function Ideas() {
     })
   }
 
+  const openDeleteDialog = (idea: IdeaJoined) => {
+    setDeleteDialog({ isOpen: true, idea, loading: false })
+  }
+
+  const { call: runDeleteIdea } = useAsyncCallback(async () => {
+    if (!deleteDialog.idea) return
+    const id = deleteDialog.idea.id
+    const { error } = await supabase
+      .from('ideas')
+      .delete()
+      .eq('id', id)
+    if (error) throw error
+    // remove from local state
+    setIdeas(prev => prev.filter(i => i.id !== id))
+    // close modals referencing this idea
+    setViewIdeaSetModal(prev => prev.idea?.id === id ? { isOpen: false, idea: null, topics: [] } : prev)
+    setViewIdeaModal(prev => prev.idea?.id === id ? { isOpen: false, idea: null, topic: null, isEditing: false, hasGeneratedContent: false } : prev)
+    push({ title: 'Deleted', message: 'Idea set removed', variant: 'success' })
+    setDeleteDialog({ isOpen: false, idea: null, loading: false })
+  })
+
+  const confirmDeleteIdea = () => { void runDeleteIdea() }
+  const cancelDeleteIdea = () => setDeleteDialog({ isOpen: false, idea: null, loading: false })
+
+  // Delete individual topic (soft delete by nulling its columns)
+  const { call: runDeleteTopic } = useAsyncCallback(async () => {
+    if (!viewIdeaModal.idea || !viewIdeaModal.topic) return
+    const topicNumber = viewIdeaModal.topic.number
+    const columns = Object.keys(viewIdeaModal.idea).sort()
+    const baseColumnIndex = 8 + (topicNumber - 1) * 3
+    const topicColumn = columns[baseColumnIndex] || `topic${topicNumber}`
+    const descriptionColumn = columns[baseColumnIndex + 1] || `idea_description${topicNumber}`
+    const imagePromptColumn = columns[baseColumnIndex + 2] || `image_prompt${topicNumber}`
+    const updateData: Record<string, any> = {
+      [topicColumn]: null,
+      [descriptionColumn]: null,
+      [imagePromptColumn]: null
+    }
+    const { error } = await supabase
+      .from('ideas')
+      .update(updateData)
+      .eq('id', viewIdeaModal.idea.id)
+    if (error) throw error
+    setIdeas(prev => prev.map(i => i.id === viewIdeaModal.idea!.id ? { ...i, ...updateData } : i))
+    setViewIdeaSetModal(prev => prev.idea?.id === viewIdeaModal.idea!.id ? { ...prev, topics: extractTopicsFromIdea({ ...prev.idea, ...updateData }) } : prev)
+    setViewIdeaModal(prev => ({ ...prev, isOpen: false, topic: null, isEditing: false }))
+    push({ title: 'Deleted', message: 'Idea removed from set', variant: 'success' })
+    setDeleteTopicDialog({ isOpen: false, loading: false })
+  })
+  const confirmDeleteTopic = () => { setDeleteTopicDialog(d => ({ ...d, loading: true })); void runDeleteTopic() }
+  const cancelDeleteTopic = () => setDeleteTopicDialog({ isOpen: false, loading: false })
+
   const handleCloseIdeaSetModal = () => {
     setViewIdeaSetModal({
       isOpen: false,
@@ -303,7 +370,33 @@ export function Ideas() {
   }
 
   const handleViewTopic = (idea: IdeaJoined, topic: Topic) => {
-    setViewIdeaModal({ isOpen: true, idea, topic, isEditing: false })
+    setViewIdeaModal({ isOpen: true, idea, topic, isEditing: false, hasGeneratedContent: false, checkingGenerated: true })
+    // Hydrate edit form immediately so entering edit shows existing values
+    setEditForm({
+      topic: topic.topic || '',
+      description: topic.description || '',
+      image_prompt: topic.image_prompt || ''
+    })
+    // Check for previously generated content for this idea/topic
+    void (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('content')
+          .select('id, content_body, idea_id')
+          .eq('idea_id', idea.id)
+        if (error) throw error
+        const topicLower = (topic.topic || '').toLowerCase()
+        const match = (data || []).some((row: any) => (row as any).content_body?.toLowerCase().includes(topicLower))
+        setViewIdeaModal(prev => prev.idea?.id === idea.id && prev.topic?.number === topic.number
+          ? { ...prev, hasGeneratedContent: match, checkingGenerated: false }
+          : prev)
+      } catch (e) {
+        console.warn('Failed to check generated content:', e)
+        setViewIdeaModal(prev => prev.idea?.id === idea.id && prev.topic?.number === topic.number
+          ? { ...prev, checkingGenerated: false }
+          : prev)
+      }
+    })()
   }
 
   const { call: generateContentCall } = useAsyncCallback(async () => {
@@ -585,6 +678,8 @@ export function Ideas() {
       push({ title: 'Generation failed', message: `${error instanceof Error ? error.message : 'Unknown error'}`, variant: 'error' })
     } finally {
       setGeneratingContent(false)
+      // On success, optimistically flag as generated
+      setViewIdeaModal(prev => ({ ...prev, hasGeneratedContent: true }))
     }
   }
 
@@ -642,14 +737,26 @@ export function Ideas() {
                 </div>
               </div>
 
-              <IconButton
-                onClick={handleCloseViewModal}
-                variant="ghost"
-                aria-label="Close dialog"
-                disabled={saving}
-              >
-                <X className="h-5 w-5 text-gray-400" />
-              </IconButton>
+              <div className="flex items-center gap-2">
+                {!viewIdeaModal.isEditing && viewIdeaModal.topic && (
+                  <IconButton
+                    aria-label="Delete idea"
+                    variant="danger"
+                    onClick={() => setDeleteTopicDialog({ isOpen: true, loading: false })}
+                    disabled={saving || generatingContent}
+                  >
+                    <Trash2 className="h-5 w-5" />
+                  </IconButton>
+                )}
+                <IconButton
+                  onClick={handleCloseViewModal}
+                  variant="ghost"
+                  aria-label="Close dialog"
+                  disabled={saving}
+                >
+                  <X className="h-5 w-5 text-gray-400" />
+                </IconButton>
+              </div>
             </div>
 
             {/* Content */}
@@ -787,10 +894,16 @@ export function Ideas() {
                     <Button
                       onClick={handleGenerateContent}
                       loading={generatingContent}
-                      disabled={generatingContent}
-                      className="bg-purple-600 hover:bg-purple-700"
+                      disabled={generatingContent || viewIdeaModal.hasGeneratedContent || viewIdeaModal.checkingGenerated}
+                      className="bg-purple-600 hover:bg-purple-700 disabled:opacity-60"
                     >
-                      {generatingContent ? 'Generating…' : 'Generate content'}
+                      {generatingContent
+                        ? 'Generating…'
+                        : viewIdeaModal.checkingGenerated
+                          ? 'Checking…'
+                          : viewIdeaModal.hasGeneratedContent
+                            ? 'Content generated'
+                            : 'Generate content'}
                     </Button>
                     <Button
                       variant="outline"
@@ -825,14 +938,22 @@ export function Ideas() {
                   </p>
                 </div>
               </div>
-
-              <IconButton
-                onClick={handleCloseIdeaSetModal}
-                variant="ghost"
-                aria-label="Close dialog"
-              >
-                <X className="h-5 w-5 text-gray-400" />
-              </IconButton>
+              <div className="flex items-center gap-2">
+                <IconButton
+                  aria-label="Delete idea set"
+                  variant="danger"
+                  onClick={() => { if (viewIdeaSetModal.idea) openDeleteDialog(viewIdeaSetModal.idea) }}
+                >
+                  <Trash2 className="h-5 w-5" />
+                </IconButton>
+                <IconButton
+                  onClick={handleCloseIdeaSetModal}
+                  variant="ghost"
+                  aria-label="Close dialog"
+                >
+                  <X className="h-5 w-5 text-gray-400" />
+                </IconButton>
+              </div>
             </div>
 
             {/* Content */}
@@ -887,6 +1008,32 @@ export function Ideas() {
           </div>
         </Modal>
       )}
+
+      {/* Delete Idea Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={deleteDialog.isOpen}
+        onClose={cancelDeleteIdea}
+        onConfirm={confirmDeleteIdea}
+        title="Delete idea set"
+        message={`Delete idea set #${deleteDialog.idea?.id}? This removes all its topics and cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        loading={deleteDialog.loading}
+      />
+
+      {/* Delete Individual Topic Dialog */}
+      <ConfirmDialog
+        isOpen={deleteTopicDialog.isOpen}
+        onClose={cancelDeleteTopic}
+        onConfirm={confirmDeleteTopic}
+        title="Delete idea"
+        message={viewIdeaModal.topic ? `Delete "${viewIdeaModal.topic.topic}" from this set? This cannot be undone.` : 'Delete this idea?'}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        loading={deleteTopicDialog.loading}
+      />
 
       {/* Loading State */}
       {loading && (
@@ -965,7 +1112,7 @@ export function Ideas() {
                     <div className="px-4 pb-4">
                       <ul className="space-y-3 mt-2">
                         {brandIdeas.map(idea => (
-                          <IdeaSetListItem key={idea.id} idea={idea} topics={extractTopicsFromIdea(idea)} onView={handleViewIdeaSet} />
+                          <IdeaSetListItem key={idea.id} idea={idea} topics={extractTopicsFromIdea(idea)} onView={handleViewIdeaSet} onDelete={openDeleteDialog} />
                         ))}
                       </ul>
                       <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500 flex items-center gap-1">
