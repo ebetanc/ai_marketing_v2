@@ -513,13 +513,13 @@ export function Strategies() {
                       aria-expanded={isAngleExpanded(angle.number)}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (editingAngle !== angle.number) toggleAngle(angle.number) } }}
                     >
-                      {/* Angle Header */}
-                      <div className="flex items-center justify-between mb-4">
+                      {/* Angle Header (buttons moved below title) */}
+                      <div className="mb-4">
                         <div className="flex items-center space-x-4">
                           <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
                             <span className="text-white font-bold text-lg">{angle.number}</span>
                           </div>
-                          <div>
+                          <div className="flex-1">
                             {editingAngle === angle.number ? (
                               <div className="space-y-2">
                                 <input
@@ -542,53 +542,55 @@ export function Strategies() {
                             )}
                           </div>
                         </div>
-                        {editingAngle === angle.number ? (
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => cancelEditAngle()}
-                              disabled={savingAngle}
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              size="sm"
-                              onClick={() => { void saveAngle() }}
-                              loading={savingAngle}
-                              disabled={savingAngle}
-                            >
-                              {savingAngle ? 'Saving…' : 'Save'}
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={(e) => { e.stopPropagation(); beginEditAngle(angle) }}
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleGenerateIdeas(angle)
-                              }}
-                              loading={generatingIdeas === angle.number}
-                              disabled={generatingIdeas !== null || existingIdeaAngles.includes(angle.number)}
-                              variant={existingIdeaAngles.includes(angle.number) ? 'outline' : 'primary'}
-                              className="transition-opacity duration-200"
-                            >
-                              <Lightbulb className="h-4 w-4" />
-                              {existingIdeaAngles.includes(angle.number)
-                                ? 'Ideas generated'
-                                : generatingIdeas === angle.number
-                                  ? 'Generating…'
-                                  : 'Generate ideas'}
-                            </Button>
-                          </div>
-                        )}
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {editingAngle === angle.number ? (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => { e.stopPropagation(); cancelEditAngle() }}
+                                disabled={savingAngle}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={(e) => { e.stopPropagation(); void saveAngle() }}
+                                loading={savingAngle}
+                                disabled={savingAngle}
+                              >
+                                {savingAngle ? 'Saving…' : 'Save'}
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => { e.stopPropagation(); beginEditAngle(angle) }}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleGenerateIdeas(angle)
+                                }}
+                                loading={generatingIdeas === angle.number}
+                                disabled={generatingIdeas !== null || existingIdeaAngles.includes(angle.number)}
+                                variant={existingIdeaAngles.includes(angle.number) ? 'outline' : 'primary'}
+                                className="transition-opacity duration-200"
+                              >
+                                <Lightbulb className="h-4 w-4" />
+                                {existingIdeaAngles.includes(angle.number)
+                                  ? 'Ideas generated'
+                                  : generatingIdeas === angle.number
+                                    ? 'Generating…'
+                                    : 'Generate ideas'}
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </div>
 
                       {/* Angle Details */}
