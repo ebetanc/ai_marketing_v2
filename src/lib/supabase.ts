@@ -1,54 +1,104 @@
-import { createClient } from '@supabase/supabase-js'
-import type { Database } from './database.types'
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "./database.types";
 export type {
   Tables,
   TablesInsert,
   TablesUpdate,
   Enums,
   CompositeTypes,
-} from './database.types'
+} from "./database.types";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Export a flag to let the app know whether Supabase is configured
-export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
 // Provide a safe fallback stub so the app doesn't crash if env vars are missing
 const supabaseStub: any = {
   auth: {
     async getSession() {
-      return { data: { session: null }, error: null }
+      return { data: { session: null }, error: null };
     },
     async getUser() {
-      return { data: { user: null }, error: null }
+      return { data: { user: null }, error: null };
     },
     onAuthStateChange(_cb: any) {
-      return { data: { subscription: { unsubscribe() { /* noop */ } } } }
+      return {
+        data: {
+          subscription: {
+            unsubscribe() {
+              /* noop */
+            },
+          },
+        },
+      };
     },
     async signInWithOtp() {
-      return { data: null, error: { message: 'Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.' } }
+      return {
+        data: null,
+        error: {
+          message:
+            "Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
+        },
+      };
     },
     async signInWithPassword() {
-      return { data: null, error: { message: 'Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.' } }
+      return {
+        data: null,
+        error: {
+          message:
+            "Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
+        },
+      };
     },
     async signUp() {
-      return { data: null, error: { message: 'Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.' } }
+      return {
+        data: null,
+        error: {
+          message:
+            "Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
+        },
+      };
     },
     async signInWithOAuth() {
-      return { data: null, error: { message: 'Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.' } }
+      return {
+        data: null,
+        error: {
+          message:
+            "Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
+        },
+      };
     },
     async resetPasswordForEmail() {
-      return { data: null, error: { message: 'Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.' } }
+      return {
+        data: null,
+        error: {
+          message:
+            "Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
+        },
+      };
     },
     async updateUser() {
-      return { data: null, error: { message: 'Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.' } }
+      return {
+        data: null,
+        error: {
+          message:
+            "Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
+        },
+      };
     },
     async resend() {
-      return { data: null, error: { message: 'Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.' } }
+      return {
+        data: null,
+        error: {
+          message:
+            "Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
+        },
+      };
     },
     async signOut() {
-      return { error: null }
+      return { error: null };
     },
   },
   from() {
@@ -58,35 +108,51 @@ const supabaseStub: any = {
     const chain: any = {
       data: [],
       error: null,
-      select() { return chain },
-      order() { return chain },
-      eq() { return chain },
-      limit() { return chain },
-      range() { return chain },
-      single() { return chain },
-      maybeSingle() { return chain },
+      select() {
+        return chain;
+      },
+      order() {
+        return chain;
+      },
+      eq() {
+        return chain;
+      },
+      limit() {
+        return chain;
+      },
+      range() {
+        return chain;
+      },
+      single() {
+        return chain;
+      },
+      maybeSingle() {
+        return chain;
+      },
       insert() {
-        chain.data = null
-        chain.error = { message: 'DB disabled (Supabase not configured).' }
-        return chain
+        chain.data = null;
+        chain.error = { message: "DB disabled (Supabase not configured)." };
+        return chain;
       },
       update() {
-        chain.data = null
-        chain.error = { message: 'DB disabled (Supabase not configured).' }
-        return chain
+        chain.data = null;
+        chain.error = { message: "DB disabled (Supabase not configured)." };
+        return chain;
       },
       delete() {
-        chain.data = null
-        chain.error = { message: 'DB disabled (Supabase not configured).' }
-        return chain
+        chain.data = null;
+        chain.error = { message: "DB disabled (Supabase not configured)." };
+        return chain;
       },
-    }
-    return chain
+    };
+    return chain;
   },
-}
+};
 
 if (!isSupabaseConfigured) {
-  console.warn('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file. Running with a read-only stub (no auth, empty data).')
+  console.warn(
+    "Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file. Running with a read-only stub (no auth, empty data).",
+  );
 }
 
 export const supabase = isSupabaseConfigured
@@ -97,4 +163,4 @@ export const supabase = isSupabaseConfigured
         detectSessionInUrl: true,
       },
     })
-  : (supabaseStub as any)
+  : (supabaseStub as any);

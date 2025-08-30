@@ -1,468 +1,605 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { postToN8n } from '../lib/n8n'
-import { FileText, Lightbulb, RefreshCw, Target, X, HelpCircle, ChevronDown, ChevronRight, Search, Trash2 } from 'lucide-react';
-import { useCallback } from 'react';
-import { Badge } from '../components/ui/Badge';
-import { Button } from '../components/ui/Button';
-import { IconButton } from '../components/ui/IconButton';
-import { Modal } from '../components/ui/Modal';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { supabase, type Tables } from '../lib/supabase';
-import { formatDate, truncateText } from '../lib/utils';
-import IdeaSetListItem from '../components/ideas/IdeaSetListItem'
-import { Skeleton } from '../components/ui/Skeleton';
-import { useToast } from '../components/ui/Toast';
-import { useDocumentTitle } from '../hooks/useDocumentTitle'
-import { useAsyncCallback } from '../hooks/useAsync'
-import { z } from 'zod'
-import { PageHeader } from '../components/layout/PageHeader'
-import { ErrorState } from '../components/ui/ErrorState'
-import { EmptyState } from '../components/ui/EmptyState'
-import { ConfirmDialog } from '../components/ui/ConfirmDialog'
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { postToN8n } from "../lib/n8n";
+import {
+  FileText,
+  Lightbulb,
+  RefreshCw,
+  Target,
+  X,
+  HelpCircle,
+  ChevronDown,
+  ChevronRight,
+  Search,
+  Trash2,
+} from "lucide-react";
+import { useCallback } from "react";
+import { Badge } from "../components/ui/Badge";
+import { Button } from "../components/ui/Button";
+import { IconButton } from "../components/ui/IconButton";
+import { Modal } from "../components/ui/Modal";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/Card";
+import { supabase, type Tables } from "../lib/supabase";
+import { formatDate, truncateText } from "../lib/utils";
+import IdeaSetListItem from "../components/ideas/IdeaSetListItem";
+import { Skeleton } from "../components/ui/Skeleton";
+import { useToast } from "../components/ui/Toast";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import { useAsyncCallback } from "../hooks/useAsync";
+import { z } from "zod";
+import { PageHeader } from "../components/layout/PageHeader";
+import { ErrorState } from "../components/ui/ErrorState";
+import { EmptyState } from "../components/ui/EmptyState";
+import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 
 // Helper: Extract topics from an idea row
-const extractTopicsFromIdea = (idea: any): { number: number; topic: string; description: string; image_prompt: string }[] => {
-  const topics: { number: number; topic: string; description: string; image_prompt: string }[] = []
+const extractTopicsFromIdea = (
+  idea: any,
+): {
+  number: number;
+  topic: string;
+  description: string;
+  image_prompt: string;
+}[] => {
+  const topics: {
+    number: number;
+    topic: string;
+    description: string;
+    image_prompt: string;
+  }[] = [];
   for (let i = 1; i <= 10; i++) {
-    const topic = idea?.[`topic${i}`]
-    const description = idea?.[`idea_description${i}`] ?? idea?.[`description${i}`]
-    const image_prompt = idea?.[`image_prompt${i}`]
+    const topic = idea?.[`topic${i}`];
+    const description =
+      idea?.[`idea_description${i}`] ?? idea?.[`description${i}`];
+    const image_prompt = idea?.[`image_prompt${i}`];
     if (topic && String(topic).trim()) {
-      topics.push({ number: i, topic: String(topic), description: String(description || ''), image_prompt: String(image_prompt || '') })
+      topics.push({
+        number: i,
+        topic: String(topic),
+        description: String(description || ""),
+        image_prompt: String(image_prompt || ""),
+      });
     }
   }
-  return topics
-}
+  return topics;
+};
 
 export function Ideas() {
-  useDocumentTitle('Ideas — AI Marketing')
-  type CompanyRow = Tables<'companies'>
-  type StrategyRow = Tables<'strategies'>
-  type IdeaRow = Tables<'ideas'>
-  type IdeaJoined = IdeaRow & { company?: CompanyRow; strategy?: StrategyRow }
-  type Topic = { number: number; topic: string; description: string; image_prompt: string }
+  useDocumentTitle("Ideas — AI Marketing");
+  type CompanyRow = Tables<"companies">;
+  type StrategyRow = Tables<"strategies">;
+  type IdeaRow = Tables<"ideas">;
+  type IdeaJoined = IdeaRow & { company?: CompanyRow; strategy?: StrategyRow };
+  type Topic = {
+    number: number;
+    topic: string;
+    description: string;
+    image_prompt: string;
+  };
 
-  const [ideas, setIdeas] = useState<IdeaJoined[]>([])
-  const [collapsedBrands, setCollapsedBrands] = useState<Record<string, boolean>>({})
-  const [search, setSearch] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [ideas, setIdeas] = useState<IdeaJoined[]>([]);
+  const [collapsedBrands, setCollapsedBrands] = useState<
+    Record<string, boolean>
+  >({});
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [viewIdeaModal, setViewIdeaModal] = useState<{
-    isOpen: boolean
-    idea: IdeaJoined | null
-    topic: Topic | null
-    isEditing: boolean
-    hasGeneratedContent: boolean
-    checkingGenerated?: boolean
+    isOpen: boolean;
+    idea: IdeaJoined | null;
+    topic: Topic | null;
+    isEditing: boolean;
+    hasGeneratedContent: boolean;
+    checkingGenerated?: boolean;
   }>({
     isOpen: false,
     idea: null,
     topic: null,
     isEditing: false,
     hasGeneratedContent: false,
-    checkingGenerated: false
-  })
+    checkingGenerated: false,
+  });
   const [editForm, setEditForm] = useState({
-    topic: '',
-    description: '',
-    image_prompt: ''
-  })
-  const [editErrors, setEditErrors] = useState<{ topic?: string; description?: string; image_prompt?: string }>({})
-  const [saving, setSaving] = useState(false)
-  const [generatingContent, setGeneratingContent] = useState(false)
+    topic: "",
+    description: "",
+    image_prompt: "",
+  });
+  const [editErrors, setEditErrors] = useState<{
+    topic?: string;
+    description?: string;
+    image_prompt?: string;
+  }>({});
+  const [saving, setSaving] = useState(false);
+  const [generatingContent, setGeneratingContent] = useState(false);
   const [viewIdeaSetModal, setViewIdeaSetModal] = useState<{
-    isOpen: boolean
-    idea: IdeaJoined | null
-    topics: Topic[]
+    isOpen: boolean;
+    idea: IdeaJoined | null;
+    topics: Topic[];
   }>({
     isOpen: false,
     idea: null,
-    topics: []
-  })
-  const [deleteDialog, setDeleteDialog] = useState<{ isOpen: boolean; idea: IdeaJoined | null; loading: boolean }>({
+    topics: [],
+  });
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean;
+    idea: IdeaJoined | null;
+    loading: boolean;
+  }>({
     isOpen: false,
     idea: null,
-    loading: false
-  })
-  const [deleteTopicDialog, setDeleteTopicDialog] = useState<{ isOpen: boolean; loading: boolean }>({ isOpen: false, loading: false })
-  const { push } = useToast()
+    loading: false,
+  });
+  const [deleteTopicDialog, setDeleteTopicDialog] = useState<{
+    isOpen: boolean;
+    loading: boolean;
+  }>({ isOpen: false, loading: false });
+  const { push } = useToast();
 
   // initial load handled in the effect after fetchIdeas definition
 
-  const fetchIdeas = useCallback(async (showToast = false) => {
-    try {
-      setLoading(true)
-      setError(null)
-      console.log('Fetching ideas from Supabase...')
-
-
-      let data: IdeaJoined[] | null = null
-      let error: unknown = null
+  const fetchIdeas = useCallback(
+    async (showToast = false) => {
       try {
-        const res = await supabase
-          .from('ideas')
-          .select(`
+        setLoading(true);
+        setError(null);
+        console.log("Fetching ideas from Supabase...");
+
+        let data: IdeaJoined[] | null = null;
+        let error: unknown = null;
+        try {
+          const res = await supabase
+            .from("ideas")
+            .select(
+              `
             *,
             strategy:strategies (*),
             company:companies (*)
-          `)
-          .order('created_at', { ascending: false })
-        data = (res.data as unknown as IdeaJoined[] | null)
-        error = res.error
-      } catch (e) {
-        console.warn('Relational select failed, falling back to basic select. Error:', e)
-      }
-      if (!data || error) {
-        const res2 = await supabase
-          .from('ideas')
-          .select('*')
-          .order('created_at', { ascending: false })
-        data = (res2.data as unknown as IdeaRow[] | null) as unknown as IdeaJoined[] | null
-        error = res2.error
-      }
-
-      console.log('=== SUPABASE IDEAS DEBUG ===')
-      console.log('Raw Supabase response:', { data, error })
-      console.log('Data array length:', data?.length)
-      console.log('First idea object:', data?.[0])
-      console.log('All idea objects:', data)
-      console.log('Available columns in first idea:', data?.[0] ? Object.keys(data[0]) : 'No data')
-
-      if (error) {
-        console.error('Error fetching ideas from Supabase:', error)
-        setError(error instanceof Error ? error.message : 'Failed to fetch ideas')
-        setIdeas([])
-        if (showToast) {
-          push({ title: 'Refresh failed', message: 'Could not update ideas', variant: 'error' })
+          `,
+            )
+            .order("created_at", { ascending: false });
+          data = res.data as unknown as IdeaJoined[] | null;
+          error = res.error;
+        } catch (e) {
+          console.warn(
+            "Relational select failed, falling back to basic select. Error:",
+            e,
+          );
         }
-      } else {
-        console.log('Ideas fetched successfully:', data?.length || 0, 'records')
-        console.log('Setting ideas state with:', data)
-        setIdeas(data || [])
-        if (showToast) {
-          push({ title: 'Refreshed', message: 'Ideas updated', variant: 'success' })
+        if (!data || error) {
+          const res2 = await supabase
+            .from("ideas")
+            .select("*")
+            .order("created_at", { ascending: false });
+          data = res2.data as unknown as IdeaRow[] | null as unknown as
+            | IdeaJoined[]
+            | null;
+          error = res2.error;
         }
+
+        console.log("=== SUPABASE IDEAS DEBUG ===");
+        console.log("Raw Supabase response:", { data, error });
+        console.log("Data array length:", data?.length);
+        console.log("First idea object:", data?.[0]);
+        console.log("All idea objects:", data);
+        console.log(
+          "Available columns in first idea:",
+          data?.[0] ? Object.keys(data[0]) : "No data",
+        );
+
+        if (error) {
+          console.error("Error fetching ideas from Supabase:", error);
+          setError(
+            error instanceof Error ? error.message : "Failed to fetch ideas",
+          );
+          setIdeas([]);
+          if (showToast) {
+            push({
+              title: "Refresh failed",
+              message: "Could not update ideas",
+              variant: "error",
+            });
+          }
+        } else {
+          console.log(
+            "Ideas fetched successfully:",
+            data?.length || 0,
+            "records",
+          );
+          console.log("Setting ideas state with:", data);
+          setIdeas(data || []);
+          if (showToast) {
+            push({
+              title: "Refreshed",
+              message: "Ideas updated",
+              variant: "success",
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching ideas from Supabase:", err);
+        setError(err instanceof Error ? err.message : "Failed to fetch ideas");
+        setIdeas([]);
+        if (showToast) {
+          push({
+            title: "Refresh failed",
+            message: "Could not update ideas",
+            variant: "error",
+          });
+        }
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('Error fetching ideas from Supabase:', err)
-      setError(err instanceof Error ? err.message : 'Failed to fetch ideas')
-      setIdeas([])
-      if (showToast) {
-        push({ title: 'Refresh failed', message: 'Could not update ideas', variant: 'error' })
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [push])
+    },
+    [push],
+  );
 
   // Ensure we only auto-fetch once per mount (guards against StrictMode double-effect and callback identity changes)
-  const didFetchRef = useRef(false)
+  const didFetchRef = useRef(false);
   useEffect(() => {
-    if (didFetchRef.current) return
-    didFetchRef.current = true
+    if (didFetchRef.current) return;
+    didFetchRef.current = true;
     // Fire and forget; internal loading state handles UI
-    void fetchIdeas(false)
-  }, [fetchIdeas])
+    void fetchIdeas(false);
+  }, [fetchIdeas]);
 
   const handleEditToggle = () => {
-    const entering = !viewIdeaModal.isEditing
-    setViewIdeaModal(prev => ({ ...prev, isEditing: entering }))
+    const entering = !viewIdeaModal.isEditing;
+    setViewIdeaModal((prev) => ({ ...prev, isEditing: entering }));
     if (entering) {
       // Hydrate form with current topic values
       setEditForm({
-        topic: viewIdeaModal.topic?.topic || '',
-        description: viewIdeaModal.topic?.description || '',
-        image_prompt: viewIdeaModal.topic?.image_prompt || ''
-      })
+        topic: viewIdeaModal.topic?.topic || "",
+        description: viewIdeaModal.topic?.description || "",
+        image_prompt: viewIdeaModal.topic?.image_prompt || "",
+      });
     } else {
       // Leaving edit mode (cancel) restore values from topic
       setEditForm({
-        topic: viewIdeaModal.topic?.topic || '',
-        description: viewIdeaModal.topic?.description || '',
-        image_prompt: viewIdeaModal.topic?.image_prompt || ''
-      })
+        topic: viewIdeaModal.topic?.topic || "",
+        description: viewIdeaModal.topic?.description || "",
+        image_prompt: viewIdeaModal.topic?.image_prompt || "",
+      });
     }
-  }
+  };
 
   const { call: saveChangesCall } = useAsyncCallback(async () => {
-    if (!viewIdeaModal.idea || !viewIdeaModal.topic) return
-    const topicNumber = viewIdeaModal.topic.number
+    if (!viewIdeaModal.idea || !viewIdeaModal.topic) return;
+    const topicNumber = viewIdeaModal.topic.number;
 
+    const baseColumnIndex = 8 + (topicNumber - 1) * 3; // 9 for topic 1, 12 for topic 2, etc.
 
+    const columns = Object.keys(viewIdeaModal.idea).sort();
 
-    const baseColumnIndex = 8 + (topicNumber - 1) * 3 // 9 for topic 1, 12 for topic 2, etc.
-
-
-    const columns = Object.keys(viewIdeaModal.idea).sort()
-
-
-    const topicColumn = columns[baseColumnIndex] || `topic${topicNumber}`
-    const descriptionColumn = columns[baseColumnIndex + 1] || `description${topicNumber}`
-    const imagePromptColumn = columns[baseColumnIndex + 2] || `image_prompt${topicNumber}`
+    const topicColumn = columns[baseColumnIndex] || `topic${topicNumber}`;
+    const descriptionColumn =
+      columns[baseColumnIndex + 1] || `description${topicNumber}`;
+    const imagePromptColumn =
+      columns[baseColumnIndex + 2] || `image_prompt${topicNumber}`;
 
     // Validate edit form
     const EditSchema = z.object({
-      topic: z.string().trim().min(1, 'Topic is required.'),
+      topic: z.string().trim().min(1, "Topic is required."),
       description: z.string().trim().optional(),
       image_prompt: z.string().trim().optional(),
-    })
-    const parsed = EditSchema.safeParse(editForm)
+    });
+    const parsed = EditSchema.safeParse(editForm);
     if (!parsed.success) {
-      const issues = parsed.error.flatten().fieldErrors
+      const issues = parsed.error.flatten().fieldErrors;
       setEditErrors({
         topic: issues.topic?.[0],
         description: issues.description?.[0],
         image_prompt: issues.image_prompt?.[0],
-      })
-      push({ title: 'Fix errors', message: 'Complete the required fields.', variant: 'warning' })
-      return
+      });
+      push({
+        title: "Fix errors",
+        message: "Complete the required fields.",
+        variant: "warning",
+      });
+      return;
     }
 
     const updateData = {
       [topicColumn]: parsed.data.topic,
-      [descriptionColumn]: parsed.data.description || '',
-      [imagePromptColumn]: parsed.data.image_prompt || ''
-    }
+      [descriptionColumn]: parsed.data.description || "",
+      [imagePromptColumn]: parsed.data.image_prompt || "",
+    };
 
-    console.log('=== SAVE TOPIC OPERATION DEBUG ===')
-    console.log('Idea ID:', viewIdeaModal.idea.id)
-    console.log('Topic Number:', topicNumber)
-    console.log('Column mappings:', {
+    console.log("=== SAVE TOPIC OPERATION DEBUG ===");
+    console.log("Idea ID:", viewIdeaModal.idea.id);
+    console.log("Topic Number:", topicNumber);
+    console.log("Column mappings:", {
       topicColumn,
       descriptionColumn,
-      imagePromptColumn
-    })
-    console.log('Update Data:', updateData)
+      imagePromptColumn,
+    });
+    console.log("Update Data:", updateData);
 
     const { error } = await supabase
-      .from('ideas')
+      .from("ideas")
       .update(updateData)
-      .eq('id', viewIdeaModal.idea.id)
+      .eq("id", viewIdeaModal.idea.id);
 
-    console.log('Supabase Update Response Error:', error)
+    console.log("Supabase Update Response Error:", error);
 
-    if (error) throw error
+    if (error) throw error;
 
-    console.log('Topic updated successfully')
+    console.log("Topic updated successfully");
 
-
-    setIdeas(prev => prev.map(idea => {
-      if (idea.id === viewIdeaModal.idea!.id) {
-        return { ...idea, ...updateData }
-      }
-      return idea
-    }))
-
+    setIdeas((prev) =>
+      prev.map((idea) => {
+        if (idea.id === viewIdeaModal.idea!.id) {
+          return { ...idea, ...updateData };
+        }
+        return idea;
+      }),
+    );
 
     const updatedTopic = {
       ...viewIdeaModal.topic,
       topic: editForm.topic,
       description: editForm.description,
-      image_prompt: editForm.image_prompt
-    }
+      image_prompt: editForm.image_prompt,
+    };
 
-    setViewIdeaModal(prev => ({
+    setViewIdeaModal((prev) => ({
       ...prev,
       topic: updatedTopic,
-      isEditing: false
-    }))
+      isEditing: false,
+    }));
 
+    await fetchIdeas();
 
-    await fetchIdeas()
-
-    push({ title: 'Saved', message: 'Changes updated', variant: 'success' })
-  })
+    push({ title: "Saved", message: "Changes updated", variant: "success" });
+  });
 
   const handleSaveChanges = async () => {
-    setSaving(true)
+    setSaving(true);
     try {
-      const res = await saveChangesCall()
-      if (res && 'error' in res && res.error) {
-        throw res.error
+      const res = await saveChangesCall();
+      if (res && "error" in res && res.error) {
+        throw res.error;
       }
     } catch (error) {
-      console.error('Error saving changes:', error)
-      push({ title: 'Save failed', message: `${error instanceof Error ? error.message : 'Unknown error'}`, variant: 'error' })
+      console.error("Error saving changes:", error);
+      push({
+        title: "Save failed",
+        message: `${error instanceof Error ? error.message : "Unknown error"}`,
+        variant: "error",
+      });
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   const handleViewIdeaSet = (idea: IdeaJoined) => {
-    const topics = extractTopicsFromIdea(idea)
+    const topics = extractTopicsFromIdea(idea);
     setViewIdeaSetModal({
       isOpen: true,
       idea,
-      topics
-    })
-  }
+      topics,
+    });
+  };
 
   const openDeleteDialog = (idea: IdeaJoined) => {
-    setDeleteDialog({ isOpen: true, idea, loading: false })
-  }
+    setDeleteDialog({ isOpen: true, idea, loading: false });
+  };
 
   const { call: runDeleteIdea } = useAsyncCallback(async () => {
-    if (!deleteDialog.idea) return
-    const id = deleteDialog.idea.id
-    const { error } = await supabase
-      .from('ideas')
-      .delete()
-      .eq('id', id)
-    if (error) throw error
+    if (!deleteDialog.idea) return;
+    const id = deleteDialog.idea.id;
+    const { error } = await supabase.from("ideas").delete().eq("id", id);
+    if (error) throw error;
     // remove from local state
-    setIdeas(prev => prev.filter(i => i.id !== id))
+    setIdeas((prev) => prev.filter((i) => i.id !== id));
     // close modals referencing this idea
-    setViewIdeaSetModal(prev => prev.idea?.id === id ? { isOpen: false, idea: null, topics: [] } : prev)
-    setViewIdeaModal(prev => prev.idea?.id === id ? { isOpen: false, idea: null, topic: null, isEditing: false, hasGeneratedContent: false } : prev)
-    push({ title: 'Deleted', message: 'Idea set removed', variant: 'success' })
-    setDeleteDialog({ isOpen: false, idea: null, loading: false })
-  })
+    setViewIdeaSetModal((prev) =>
+      prev.idea?.id === id ? { isOpen: false, idea: null, topics: [] } : prev,
+    );
+    setViewIdeaModal((prev) =>
+      prev.idea?.id === id
+        ? {
+            isOpen: false,
+            idea: null,
+            topic: null,
+            isEditing: false,
+            hasGeneratedContent: false,
+          }
+        : prev,
+    );
+    push({ title: "Deleted", message: "Idea set removed", variant: "success" });
+    setDeleteDialog({ isOpen: false, idea: null, loading: false });
+  });
 
-  const confirmDeleteIdea = () => { void runDeleteIdea() }
-  const cancelDeleteIdea = () => setDeleteDialog({ isOpen: false, idea: null, loading: false })
+  const confirmDeleteIdea = () => {
+    void runDeleteIdea();
+  };
+  const cancelDeleteIdea = () =>
+    setDeleteDialog({ isOpen: false, idea: null, loading: false });
 
   // Delete individual topic (soft delete by nulling its columns)
   const { call: runDeleteTopic } = useAsyncCallback(async () => {
-    if (!viewIdeaModal.idea || !viewIdeaModal.topic) return
-    const topicNumber = viewIdeaModal.topic.number
-    const columns = Object.keys(viewIdeaModal.idea).sort()
-    const baseColumnIndex = 8 + (topicNumber - 1) * 3
-    const topicColumn = columns[baseColumnIndex] || `topic${topicNumber}`
-    const descriptionColumn = columns[baseColumnIndex + 1] || `idea_description${topicNumber}`
-    const imagePromptColumn = columns[baseColumnIndex + 2] || `image_prompt${topicNumber}`
+    if (!viewIdeaModal.idea || !viewIdeaModal.topic) return;
+    const topicNumber = viewIdeaModal.topic.number;
+    const columns = Object.keys(viewIdeaModal.idea).sort();
+    const baseColumnIndex = 8 + (topicNumber - 1) * 3;
+    const topicColumn = columns[baseColumnIndex] || `topic${topicNumber}`;
+    const descriptionColumn =
+      columns[baseColumnIndex + 1] || `idea_description${topicNumber}`;
+    const imagePromptColumn =
+      columns[baseColumnIndex + 2] || `image_prompt${topicNumber}`;
     const updateData: Record<string, any> = {
       [topicColumn]: null,
       [descriptionColumn]: null,
-      [imagePromptColumn]: null
-    }
+      [imagePromptColumn]: null,
+    };
     const { error } = await supabase
-      .from('ideas')
+      .from("ideas")
       .update(updateData)
-      .eq('id', viewIdeaModal.idea.id)
-    if (error) throw error
-    setIdeas(prev => prev.map(i => i.id === viewIdeaModal.idea!.id ? { ...i, ...updateData } : i))
-    setViewIdeaSetModal(prev => prev.idea?.id === viewIdeaModal.idea!.id ? { ...prev, topics: extractTopicsFromIdea({ ...prev.idea, ...updateData }) } : prev)
-    setViewIdeaModal(prev => ({ ...prev, isOpen: false, topic: null, isEditing: false }))
-    push({ title: 'Deleted', message: 'Idea removed from set', variant: 'success' })
-    setDeleteTopicDialog({ isOpen: false, loading: false })
-  })
-  const confirmDeleteTopic = () => { setDeleteTopicDialog(d => ({ ...d, loading: true })); void runDeleteTopic() }
-  const cancelDeleteTopic = () => setDeleteTopicDialog({ isOpen: false, loading: false })
+      .eq("id", viewIdeaModal.idea.id);
+    if (error) throw error;
+    setIdeas((prev) =>
+      prev.map((i) =>
+        i.id === viewIdeaModal.idea!.id ? { ...i, ...updateData } : i,
+      ),
+    );
+    setViewIdeaSetModal((prev) =>
+      prev.idea?.id === viewIdeaModal.idea!.id
+        ? {
+            ...prev,
+            topics: extractTopicsFromIdea({ ...prev.idea, ...updateData }),
+          }
+        : prev,
+    );
+    setViewIdeaModal((prev) => ({
+      ...prev,
+      isOpen: false,
+      topic: null,
+      isEditing: false,
+    }));
+    push({
+      title: "Deleted",
+      message: "Idea removed from set",
+      variant: "success",
+    });
+    setDeleteTopicDialog({ isOpen: false, loading: false });
+  });
+  const confirmDeleteTopic = () => {
+    setDeleteTopicDialog((d) => ({ ...d, loading: true }));
+    void runDeleteTopic();
+  };
+  const cancelDeleteTopic = () =>
+    setDeleteTopicDialog({ isOpen: false, loading: false });
 
   const handleCloseIdeaSetModal = () => {
     setViewIdeaSetModal({
       isOpen: false,
       idea: null,
-      topics: []
-    })
-  }
+      topics: [],
+    });
+  };
 
   const handleFormChange = (field: string, value: string) => {
-    setEditForm(prev => ({
+    setEditForm((prev) => ({
       ...prev,
-      [field]: value
-    }))
-    setEditErrors(prev => ({ ...prev, [field]: undefined }))
-  }
+      [field]: value,
+    }));
+    setEditErrors((prev) => ({ ...prev, [field]: undefined }));
+  };
 
   const handleCloseViewModal = () => {
-    setViewIdeaModal(prev => ({ ...prev, isOpen: false }))
-  }
+    setViewIdeaModal((prev) => ({ ...prev, isOpen: false }));
+  };
 
   const handleViewTopic = (idea: IdeaJoined, topic: Topic) => {
-    setViewIdeaModal({ isOpen: true, idea, topic, isEditing: false, hasGeneratedContent: false, checkingGenerated: true })
+    setViewIdeaModal({
+      isOpen: true,
+      idea,
+      topic,
+      isEditing: false,
+      hasGeneratedContent: false,
+      checkingGenerated: true,
+    });
     // Hydrate edit form immediately so entering edit shows existing values
     setEditForm({
-      topic: topic.topic || '',
-      description: topic.description || '',
-      image_prompt: topic.image_prompt || ''
-    })
+      topic: topic.topic || "",
+      description: topic.description || "",
+      image_prompt: topic.image_prompt || "",
+    });
     // Check for previously generated content for this idea/topic
     void (async () => {
       try {
         const { data, error } = await supabase
-          .from('content')
-          .select('id, content_body, idea_id')
-          .eq('idea_id', idea.id)
-        if (error) throw error
-        const topicLower = (topic.topic || '').toLowerCase()
-        const match = (data || []).some((row: any) => (row as any).content_body?.toLowerCase().includes(topicLower))
-        setViewIdeaModal(prev => prev.idea?.id === idea.id && prev.topic?.number === topic.number
-          ? { ...prev, hasGeneratedContent: match, checkingGenerated: false }
-          : prev)
+          .from("content")
+          .select("id, content_body, idea_id")
+          .eq("idea_id", idea.id);
+        if (error) throw error;
+        const topicLower = (topic.topic || "").toLowerCase();
+        const match = (data || []).some((row: any) =>
+          (row as any).content_body?.toLowerCase().includes(topicLower),
+        );
+        setViewIdeaModal((prev) =>
+          prev.idea?.id === idea.id && prev.topic?.number === topic.number
+            ? { ...prev, hasGeneratedContent: match, checkingGenerated: false }
+            : prev,
+        );
       } catch (e) {
-        console.warn('Failed to check generated content:', e)
-        setViewIdeaModal(prev => prev.idea?.id === idea.id && prev.topic?.number === topic.number
-          ? { ...prev, checkingGenerated: false }
-          : prev)
+        console.warn("Failed to check generated content:", e);
+        setViewIdeaModal((prev) =>
+          prev.idea?.id === idea.id && prev.topic?.number === topic.number
+            ? { ...prev, checkingGenerated: false }
+            : prev,
+        );
       }
-    })()
-  }
+    })();
+  };
 
   const { call: generateContentCall } = useAsyncCallback(async () => {
-    if (!viewIdeaModal.idea || !viewIdeaModal.topic) return
+    if (!viewIdeaModal.idea || !viewIdeaModal.topic) return;
 
-    console.log('=== FETCHING COMPANY DETAILS ===')
-    console.log('Idea company_id:', viewIdeaModal.idea.company_id)
+    console.log("=== FETCHING COMPANY DETAILS ===");
+    console.log("Idea company_id:", viewIdeaModal.idea.company_id);
 
-    let companyData: CompanyRow | null = null
-    let companyError: unknown = null
+    let companyData: CompanyRow | null = null;
+    let companyError: unknown = null;
     if (viewIdeaModal.idea.company_id) {
       const res = await supabase
-        .from('companies')
-        .select('*')
-        .eq('id', viewIdeaModal.idea.company_id)
-        .single()
-      companyData = res.data as CompanyRow | null
-      companyError = res.error
+        .from("companies")
+        .select("*")
+        .eq("id", viewIdeaModal.idea.company_id)
+        .single();
+      companyData = res.data as CompanyRow | null;
+      companyError = res.error;
     }
 
     if (companyError) {
-      console.error('Error fetching company details:', companyError)
-      console.log('Continuing without company details...')
+      console.error("Error fetching company details:", companyError);
+      console.log("Continuing without company details...");
     }
 
-    console.log('Company data fetched:', companyData)
+    console.log("Company data fetched:", companyData);
 
+    console.log("=== FETCHING STRATEGY AND ANGLE DETAILS ===");
+    console.log("Strategy ID:", viewIdeaModal.idea.strategy_id);
+    console.log("Angle Number:", viewIdeaModal.idea.angle_number);
 
-    console.log('=== FETCHING STRATEGY AND ANGLE DETAILS ===')
-    console.log('Strategy ID:', viewIdeaModal.idea.strategy_id)
-    console.log('Angle Number:', viewIdeaModal.idea.angle_number)
-
-    let strategyData: StrategyRow | null = null
+    let strategyData: StrategyRow | null = null;
     let angleDetails: {
-      number: number
-      header: string
-      description: string
-      objective: string
-      tonality: string
-    } | null = null
+      number: number;
+      header: string;
+      description: string;
+      objective: string;
+      tonality: string;
+    } | null = null;
 
     if (viewIdeaModal.idea.strategy_id && viewIdeaModal.idea.angle_number) {
       const { data: strategy, error: strategyError } = await supabase
-        .from('strategies')
-        .select('*')
-        .eq('id', viewIdeaModal.idea.strategy_id)
-        .single()
+        .from("strategies")
+        .select("*")
+        .eq("id", viewIdeaModal.idea.strategy_id)
+        .single();
 
       if (strategyError) {
-        console.error('Error fetching strategy details:', strategyError)
-        console.log('Continuing without strategy details...')
+        console.error("Error fetching strategy details:", strategyError);
+        console.log("Continuing without strategy details...");
       } else {
-        strategyData = strategy as StrategyRow
+        strategyData = strategy as StrategyRow;
 
-
-        const angleNumber = viewIdeaModal.idea.angle_number
+        const angleNumber = viewIdeaModal.idea.angle_number;
         angleDetails = {
           number: angleNumber,
-          header: (strategy as any)[`angle${angleNumber}_header`] || '',
-          description: (strategy as any)[`angle${angleNumber}_description`] || '',
-          objective: (strategy as any)[`angle${angleNumber}_objective`] || '',
-          tonality: (strategy as any)[`angle${angleNumber}_tonality`] || ''
-        }
+          header: (strategy as any)[`angle${angleNumber}_header`] || "",
+          description:
+            (strategy as any)[`angle${angleNumber}_description`] || "",
+          objective: (strategy as any)[`angle${angleNumber}_objective`] || "",
+          tonality: (strategy as any)[`angle${angleNumber}_tonality`] || "",
+        };
 
-        console.log('Strategy data fetched:', strategyData)
-        console.log('Angle details extracted:', angleDetails)
+        console.log("Strategy data fetched:", strategyData);
+        console.log("Angle details extracted:", angleDetails);
       }
     }
 
@@ -473,53 +610,74 @@ export function Ideas() {
       image_prompt: viewIdeaModal.topic.image_prompt,
       idea: {
         id: viewIdeaModal.idea.id,
-        brand: companyData?.brand_name || viewIdeaModal.idea.company?.brand_name || 'Unknown Brand',
+        brand:
+          companyData?.brand_name ||
+          viewIdeaModal.idea.company?.brand_name ||
+          "Unknown Brand",
         strategy_id: viewIdeaModal.idea.strategy_id,
         angle_number: viewIdeaModal.idea.angle_number,
-        created_at: viewIdeaModal.idea.created_at
-      }
-    }
+        created_at: viewIdeaModal.idea.created_at,
+      },
+    };
 
     // Derive normalized-first fields from companyData for consistent payloads
-    const brandName: string = companyData?.brand_name || viewIdeaModal.idea.company?.brand_name || 'Unknown Brand'
-    const website: string = companyData?.website || ''
-    const tone: string = companyData?.brand_tone || ''
-    const style: string = companyData?.key_offer || ''
-    const targetAudienceStr: string = companyData?.target_audience || ''
-    const additionalInfo: string = companyData?.additional_information || ''
+    const brandName: string =
+      companyData?.brand_name ||
+      viewIdeaModal.idea.company?.brand_name ||
+      "Unknown Brand";
+    const website: string = companyData?.website || "";
+    const tone: string = companyData?.brand_tone || "";
+    const style: string = companyData?.key_offer || "";
+    const targetAudienceStr: string = companyData?.target_audience || "";
+    const additionalInfo: string = companyData?.additional_information || "";
 
-    const { data: genSession } = await supabase.auth.getSession()
-    const userId = genSession.session?.user.id || null
+    const { data: genSession } = await supabase.auth.getSession();
+    const userId = genSession.session?.user.id || null;
 
     // Normalize platforms from strategy or use a sensible default. n8n Switch expects
     // string items at fixed indices (platforms[0]..platforms[7]).
-    const normalizePlatforms = (platforms: string | null | undefined): string[] => {
-      if (!platforms) return []
+    const normalizePlatforms = (
+      platforms: string | null | undefined,
+    ): string[] => {
+      if (!platforms) return [];
       try {
-        const parsed = JSON.parse(platforms)
-        if (Array.isArray(parsed)) return parsed
-      } catch {/* not JSON */ }
-      return String(platforms).split(',')
-        .map(s => s.trim())
-        .filter(Boolean)
-    }
+        const parsed = JSON.parse(platforms);
+        if (Array.isArray(parsed)) return parsed;
+      } catch {
+        /* not JSON */
+      }
+      return String(platforms)
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    };
 
-    const normalizedPlatforms = normalizePlatforms(strategyData?.platforms || null)
-      .map(p => p.toLowerCase())
+    const normalizedPlatforms = normalizePlatforms(
+      strategyData?.platforms || null,
+    ).map((p) => p.toLowerCase());
     // Fixed platform order to reserve indexes consistently
-    const PLATFORM_ORDER = ['twitter', 'linkedin', 'newsletter', 'facebook', 'instagram', 'youtube', 'tiktok', 'blog']
-    const platformsSlotted: string[] = PLATFORM_ORDER.map(() => '')
-    normalizedPlatforms.forEach(p => {
-      const idx = PLATFORM_ORDER.indexOf(p)
-      if (idx !== -1) platformsSlotted[idx] = p
-    })
+    const PLATFORM_ORDER = [
+      "twitter",
+      "linkedin",
+      "newsletter",
+      "facebook",
+      "instagram",
+      "youtube",
+      "tiktok",
+      "blog",
+    ];
+    const platformsSlotted: string[] = PLATFORM_ORDER.map(() => "");
+    normalizedPlatforms.forEach((p) => {
+      const idx = PLATFORM_ORDER.indexOf(p);
+      if (idx !== -1) platformsSlotted[idx] = p;
+    });
 
     const webhookPayload = {
-      identifier: 'generateContent',
-      operation: 'generate_content_from_idea',
+      identifier: "generateContent",
+      operation: "generate_content_from_idea",
       meta: {
         user_id: userId,
-        source: 'app',
+        source: "app",
         ts: new Date().toISOString(),
       },
       user_id: userId,
@@ -551,61 +709,65 @@ export function Ideas() {
           keyOffer: style,
         },
       },
-      companyDetails: companyData ? {
-        ...companyData,
-        name: brandName,
-        brandTone: tone,
-        keyOffer: style,
-        targetAudience: targetAudienceStr,
-        additionalInfo,
-        website,
-      } : null,
+      companyDetails: companyData
+        ? {
+            ...companyData,
+            name: brandName,
+            brandTone: tone,
+            keyOffer: style,
+            targetAudience: targetAudienceStr,
+            additionalInfo,
+            website,
+          }
+        : null,
       // SPECIFIC ANGLE DETAILS THAT GENERATED THIS IDEA
       angleDetails: angleDetails,
       // FULL STRATEGY CONTEXT
-      strategyContext: strategyData ? {
-        id: strategyData.id,
-        brand: brandName,
-        name: brandName,
-        description: 'No strategy description available',
-        platforms: strategyData.platforms,
-        created_at: strategyData.created_at,
-        totalAngles: (() => {
-          let count = 0
-          for (let i = 1; i <= 10; i++) {
-            if ((strategyData as any)[`angle${i}_header`]) count++
+      strategyContext: strategyData
+        ? {
+            id: strategyData.id,
+            brand: brandName,
+            name: brandName,
+            description: "No strategy description available",
+            platforms: strategyData.platforms,
+            created_at: strategyData.created_at,
+            totalAngles: (() => {
+              let count = 0;
+              for (let i = 1; i <= 10; i++) {
+                if ((strategyData as any)[`angle${i}_header`]) count++;
+              }
+              return count;
+            })(),
           }
-          return count
-        })()
-      } : null,
+        : null,
       // REQUIRED FIELDS FOR AI AGENT CONTEXT
       aiContext: {
         strategyName: brandName,
-        strategyDescription: 'No strategy description available',
-        tonality: angleDetails?.tonality || 'No tonality specified',
-        objective: angleDetails?.objective || 'No objective specified',
-        keyOffer: style || 'No key offer specified',
-        brandTone: tone || 'No brand tone specified',
-        targetAudience: targetAudienceStr || 'No target audience specified',
+        strategyDescription: "No strategy description available",
+        tonality: angleDetails?.tonality || "No tonality specified",
+        objective: angleDetails?.objective || "No objective specified",
+        keyOffer: style || "No key offer specified",
+        brandTone: tone || "No brand tone specified",
+        targetAudience: targetAudienceStr || "No target audience specified",
         platforms: platformsSlotted,
-        contentType: 'idea_to_content_generation'
+        contentType: "idea_to_content_generation",
       },
       context: {
-        requestType: 'generate_content_from_idea',
+        requestType: "generate_content_from_idea",
         timestamp: new Date().toISOString(),
         hasCompanyDetails: !!companyData,
         hasAngleDetails: !!angleDetails,
         hasStrategyContext: !!strategyData,
         ideaSetId: viewIdeaModal.idea.id,
-        topicNumber: viewIdeaModal.topic.number
-      }
-    }
+        topicNumber: viewIdeaModal.topic.number,
+      },
+    };
 
-    console.log('=== ENHANCED GENERATE CONTENT WEBHOOK ===')
-    console.log('Sending payload:', webhookPayload)
-    console.log('Company details included:', !!companyData)
-    console.log('Angle details included:', !!angleDetails)
-    console.log('Strategy context included:', !!strategyData)
+    console.log("=== ENHANCED GENERATE CONTENT WEBHOOK ===");
+    console.log("Sending payload:", webhookPayload);
+    console.log("Company details included:", !!companyData);
+    console.log("Angle details included:", !!angleDetails);
+    console.log("Strategy context included:", !!strategyData);
 
     // WEBHOOK SENDING DISABLED FOR ANALYSIS
     // const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
@@ -637,73 +799,91 @@ export function Ideas() {
 
     // console.log('Webhook response:', result)
 
-    console.log('=== FINAL WEBHOOK PAYLOAD FOR ANALYSIS ===')
-    console.log(JSON.stringify(webhookPayload, null, 2))
+    console.log("=== FINAL WEBHOOK PAYLOAD FOR ANALYSIS ===");
+    console.log(JSON.stringify(webhookPayload, null, 2));
 
-    console.log('=== MAKING WEBHOOK REQUEST ===')
-    const response = await postToN8n('generateContent', webhookPayload)
+    console.log("=== MAKING WEBHOOK REQUEST ===");
+    const response = await postToN8n("generateContent", webhookPayload);
 
-    console.log('Webhook response status:', response.status)
-    console.log('Webhook response headers:', Object.fromEntries(response.headers.entries()))
+    console.log("Webhook response status:", response.status);
+    console.log(
+      "Webhook response headers:",
+      Object.fromEntries(response.headers.entries()),
+    );
 
     if (!response.ok) {
-      throw new Error(`Webhook failed with status: ${response.status}`)
+      throw new Error(`Webhook failed with status: ${response.status}`);
     }
 
-    const responseText = await response.text()
-    console.log('Raw webhook response:', responseText)
+    const responseText = await response.text();
+    console.log("Raw webhook response:", responseText);
 
-    let result
+    let result;
     try {
-      result = JSON.parse(responseText)
+      result = JSON.parse(responseText);
     } catch (parseError) {
-      console.error('Failed to parse JSON response:', parseError)
-      console.error('Raw response text:', responseText)
+      console.error("Failed to parse JSON response:", parseError);
+      console.error("Raw response text:", responseText);
       // If JSON parsing fails, treat as success if status is ok
-      result = { message: 'Content generation started' }
+      result = { message: "Content generation started" };
     }
 
-    console.log('Webhook response:', result)
-    push({ title: 'Generation started', message: 'Check Content page soon', variant: 'success' })
-  })
+    console.log("Webhook response:", result);
+    push({
+      title: "Generation started",
+      message: "Check Content page soon",
+      variant: "success",
+    });
+  });
 
   const handleGenerateContent = async () => {
-    if (!viewIdeaModal.idea || !viewIdeaModal.topic) return
-    setGeneratingContent(true)
+    if (!viewIdeaModal.idea || !viewIdeaModal.topic) return;
+    setGeneratingContent(true);
     try {
-      const res = await generateContentCall()
-      if (res && 'error' in res && res.error) throw res.error
+      const res = await generateContentCall();
+      if (res && "error" in res && res.error) throw res.error;
     } catch (error) {
-      console.error('Error generating content:', error)
-      push({ title: 'Generation failed', message: `${error instanceof Error ? error.message : 'Unknown error'}`, variant: 'error' })
+      console.error("Error generating content:", error);
+      push({
+        title: "Generation failed",
+        message: `${error instanceof Error ? error.message : "Unknown error"}`,
+        variant: "error",
+      });
     } finally {
-      setGeneratingContent(false)
+      setGeneratingContent(false);
       // On success, optimistically flag as generated
-      setViewIdeaModal(prev => ({ ...prev, hasGeneratedContent: true }))
+      setViewIdeaModal((prev) => ({ ...prev, hasGeneratedContent: true }));
     }
-  }
-
+  };
 
   // Group ideas by brand name (from joined company)
   const ideasByBrand = useMemo(() => {
     const filtered = search
-      ? ideas.filter(i => {
-        const topics = extractTopicsFromIdea(i)
-        return (
-          topics.some(t => t.topic.toLowerCase().includes(search.toLowerCase())) ||
-          (i.company?.brand_name || '').toLowerCase().includes(search.toLowerCase())
-        )
-      })
-      : ideas
-    return filtered.reduce((acc, idea) => {
-      const brandName = idea.company?.brand_name || 'Unknown Brand'
-      if (!acc[brandName]) acc[brandName] = [] as IdeaJoined[]
-      acc[brandName].push(idea)
-      return acc
-    }, {} as Record<string, IdeaJoined[]>)
-  }, [ideas, search])
+      ? ideas.filter((i) => {
+          const topics = extractTopicsFromIdea(i);
+          return (
+            topics.some((t) =>
+              t.topic.toLowerCase().includes(search.toLowerCase()),
+            ) ||
+            (i.company?.brand_name || "")
+              .toLowerCase()
+              .includes(search.toLowerCase())
+          );
+        })
+      : ideas;
+    return filtered.reduce(
+      (acc, idea) => {
+        const brandName = idea.company?.brand_name || "Unknown Brand";
+        if (!acc[brandName]) acc[brandName] = [] as IdeaJoined[];
+        acc[brandName].push(idea);
+        return acc;
+      },
+      {} as Record<string, IdeaJoined[]>,
+    );
+  }, [ideas, search]);
 
-  const toggleBrand = (brand: string) => setCollapsedBrands(prev => ({ ...prev, [brand]: !prev[brand] }))
+  const toggleBrand = (brand: string) =>
+    setCollapsedBrands((prev) => ({ ...prev, [brand]: !prev[brand] }));
 
   return (
     <div className="space-y-6">
@@ -711,17 +891,25 @@ export function Ideas() {
         title="Ideas"
         description="AI ideas by brand."
         icon={<Lightbulb className="h-5 w-5" />}
-        actions={(
-          <Button onClick={() => fetchIdeas(true)} loading={loading} disabled={loading}>
+        actions={
+          <Button
+            onClick={() => fetchIdeas(true)}
+            loading={loading}
+            disabled={loading}
+          >
             <RefreshCw className="h-4 w-4" />
             Refresh
           </Button>
-        )}
+        }
       />
 
       {/* View Idea Modal */}
       {viewIdeaModal.isOpen && (
-        <Modal isOpen={viewIdeaModal.isOpen} onClose={handleCloseViewModal} labelledById="view-idea-title">
+        <Modal
+          isOpen={viewIdeaModal.isOpen}
+          onClose={handleCloseViewModal}
+          labelledById="view-idea-title"
+        >
           <div className="w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
@@ -730,10 +918,18 @@ export function Ideas() {
                   <Lightbulb className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h2 id="view-idea-title" className="text-xl font-bold text-gray-900">
-                    {viewIdeaModal.isEditing ? 'Edit topic' : (viewIdeaModal.topic?.topic || `Topic ${viewIdeaModal.topic?.number}`)}
+                  <h2
+                    id="view-idea-title"
+                    className="text-xl font-bold text-gray-900"
+                  >
+                    {viewIdeaModal.isEditing
+                      ? "Edit topic"
+                      : viewIdeaModal.topic?.topic ||
+                        `Topic ${viewIdeaModal.topic?.number}`}
                   </h2>
-                  <p className="text-sm text-gray-500">{viewIdeaModal.idea?.company?.brand_name || 'Unknown Brand'}</p>
+                  <p className="text-sm text-gray-500">
+                    {viewIdeaModal.idea?.company?.brand_name || "Unknown Brand"}
+                  </p>
                 </div>
               </div>
 
@@ -742,7 +938,9 @@ export function Ideas() {
                   <IconButton
                     aria-label="Delete idea"
                     variant="danger"
-                    onClick={() => setDeleteTopicDialog({ isOpen: true, loading: false })}
+                    onClick={() =>
+                      setDeleteTopicDialog({ isOpen: true, loading: false })
+                    }
                     disabled={saving || generatingContent}
                   >
                     <Trash2 className="h-5 w-5" />
@@ -775,20 +973,29 @@ export function Ideas() {
                       <input
                         type="text"
                         value={editForm.topic}
-                        onChange={(e) => handleFormChange('topic', e.target.value)}
+                        onChange={(e) =>
+                          handleFormChange("topic", e.target.value)
+                        }
                         aria-label="Topic"
                         aria-invalid={editErrors.topic ? true : undefined}
-                        aria-errormessage={editErrors.topic ? 'edit-topic-error' : undefined}
+                        aria-errormessage={
+                          editErrors.topic ? "edit-topic-error" : undefined
+                        }
                         className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus:border-transparent"
                         placeholder="Enter topic..."
                       />
                       {editErrors.topic && (
-                        <p id="edit-topic-error" className="mt-2 text-sm text-red-600">{editErrors.topic}</p>
+                        <p
+                          id="edit-topic-error"
+                          className="mt-2 text-sm text-red-600"
+                        >
+                          {editErrors.topic}
+                        </p>
                       )}
                     </>
                   ) : (
                     <p className="text-gray-700 leading-relaxed">
-                      {viewIdeaModal.topic?.topic || 'No topic specified'}
+                      {viewIdeaModal.topic?.topic || "No topic specified"}
                     </p>
                   )}
                 </CardContent>
@@ -807,60 +1014,87 @@ export function Ideas() {
                     <>
                       <textarea
                         value={editForm.description}
-                        onChange={(e) => handleFormChange('description', e.target.value)}
+                        onChange={(e) =>
+                          handleFormChange("description", e.target.value)
+                        }
                         rows={4}
                         aria-label="Description"
                         aria-invalid={editErrors.description ? true : undefined}
-                        aria-errormessage={editErrors.description ? 'edit-description-error' : undefined}
+                        aria-errormessage={
+                          editErrors.description
+                            ? "edit-description-error"
+                            : undefined
+                        }
                         className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus:border-transparent resize-none"
                         placeholder="Enter description..."
                       />
                       {editErrors.description && (
-                        <p id="edit-description-error" className="mt-2 text-sm text-red-600">{editErrors.description}</p>
+                        <p
+                          id="edit-description-error"
+                          className="mt-2 text-sm text-red-600"
+                        >
+                          {editErrors.description}
+                        </p>
                       )}
                     </>
                   ) : (
                     <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                      {viewIdeaModal.topic?.description || 'No description available'}
+                      {viewIdeaModal.topic?.description ||
+                        "No description available"}
                     </p>
                   )}
                 </CardContent>
               </Card>
 
               {/* Image Prompt */}
-              {viewIdeaModal.topic?.image_prompt && viewIdeaModal.topic.image_prompt !== 'No image prompt provided' && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">
-                      <Target className="h-5 w-5 text-purple-600" />
-                      Image Prompt
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {viewIdeaModal.isEditing ? (
-                      <>
-                        <textarea
-                          value={editForm.image_prompt}
-                          onChange={(e) => handleFormChange('image_prompt', e.target.value)}
-                          rows={3}
-                          aria-label="Image prompt"
-                          aria-invalid={editErrors.image_prompt ? true : undefined}
-                          aria-errormessage={editErrors.image_prompt ? 'edit-imageprompt-error' : undefined}
-                          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus:border-transparent resize-none"
-                          placeholder="Enter image prompt..."
-                        />
-                        {editErrors.image_prompt && (
-                          <p id="edit-imageprompt-error" className="mt-2 text-sm text-red-600">{editErrors.image_prompt}</p>
-                        )}
-                      </>
-                    ) : (
-                      <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                        {viewIdeaModal.topic.image_prompt}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
+              {viewIdeaModal.topic?.image_prompt &&
+                viewIdeaModal.topic.image_prompt !==
+                  "No image prompt provided" && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">
+                        <Target className="h-5 w-5 text-purple-600" />
+                        Image Prompt
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {viewIdeaModal.isEditing ? (
+                        <>
+                          <textarea
+                            value={editForm.image_prompt}
+                            onChange={(e) =>
+                              handleFormChange("image_prompt", e.target.value)
+                            }
+                            rows={3}
+                            aria-label="Image prompt"
+                            aria-invalid={
+                              editErrors.image_prompt ? true : undefined
+                            }
+                            aria-errormessage={
+                              editErrors.image_prompt
+                                ? "edit-imageprompt-error"
+                                : undefined
+                            }
+                            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus:border-transparent resize-none"
+                            placeholder="Enter image prompt..."
+                          />
+                          {editErrors.image_prompt && (
+                            <p
+                              id="edit-imageprompt-error"
+                              className="mt-2 text-sm text-red-600"
+                            >
+                              {editErrors.image_prompt}
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                          {viewIdeaModal.topic.image_prompt}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
             </div>
 
             {/* Footer */}
@@ -880,35 +1114,33 @@ export function Ideas() {
                       loading={saving}
                       disabled={saving}
                     >
-                      {saving ? 'Saving…' : 'Save changes'}
+                      {saving ? "Saving…" : "Save changes"}
                     </Button>
                   </>
                 ) : (
                   <>
-                    <Button
-                      variant="outline"
-                      onClick={handleEditToggle}
-                    >
+                    <Button variant="outline" onClick={handleEditToggle}>
                       Edit
                     </Button>
                     <Button
                       onClick={handleGenerateContent}
                       loading={generatingContent}
-                      disabled={generatingContent || viewIdeaModal.hasGeneratedContent || viewIdeaModal.checkingGenerated}
+                      disabled={
+                        generatingContent ||
+                        viewIdeaModal.hasGeneratedContent ||
+                        viewIdeaModal.checkingGenerated
+                      }
                       className="bg-purple-600 hover:bg-purple-700 disabled:opacity-60"
                     >
                       {generatingContent
-                        ? 'Generating…'
+                        ? "Generating…"
                         : viewIdeaModal.checkingGenerated
-                          ? 'Checking…'
+                          ? "Checking…"
                           : viewIdeaModal.hasGeneratedContent
-                            ? 'Content generated'
-                            : 'Generate content'}
+                            ? "Content generated"
+                            : "Generate content"}
                     </Button>
-                    <Button
-                      variant="outline"
-                      onClick={handleCloseViewModal}
-                    >
+                    <Button variant="outline" onClick={handleCloseViewModal}>
                       Close
                     </Button>
                   </>
@@ -921,7 +1153,11 @@ export function Ideas() {
 
       {/* View Idea Set Modal */}
       {viewIdeaSetModal.isOpen && (
-        <Modal isOpen={viewIdeaSetModal.isOpen} onClose={handleCloseIdeaSetModal} labelledById="view-idea-set-title">
+        <Modal
+          isOpen={viewIdeaSetModal.isOpen}
+          onClose={handleCloseIdeaSetModal}
+          labelledById="view-idea-set-title"
+        >
           <div className="w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
@@ -930,11 +1166,19 @@ export function Ideas() {
                   <Lightbulb className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h2 id="view-idea-set-title" className="text-xl font-bold text-gray-900">
-                    Idea set #{viewIdeaSetModal.idea?.id} — {viewIdeaSetModal.idea?.company?.brand_name || 'Unknown Brand'}
+                  <h2
+                    id="view-idea-set-title"
+                    className="text-xl font-bold text-gray-900"
+                  >
+                    Idea set #{viewIdeaSetModal.idea?.id} —{" "}
+                    {viewIdeaSetModal.idea?.company?.brand_name ||
+                      "Unknown Brand"}
                   </h2>
                   <p className="text-sm text-gray-500">
-                    {viewIdeaSetModal.topics.length} ideas • Created {viewIdeaSetModal.idea?.created_at ? formatDate(viewIdeaSetModal.idea.created_at) : 'Unknown'}
+                    {viewIdeaSetModal.topics.length} ideas • Created{" "}
+                    {viewIdeaSetModal.idea?.created_at
+                      ? formatDate(viewIdeaSetModal.idea.created_at)
+                      : "Unknown"}
                   </p>
                 </div>
               </div>
@@ -942,7 +1186,10 @@ export function Ideas() {
                 <IconButton
                   aria-label="Delete idea set"
                   variant="danger"
-                  onClick={() => { if (viewIdeaSetModal.idea) openDeleteDialog(viewIdeaSetModal.idea) }}
+                  onClick={() => {
+                    if (viewIdeaSetModal.idea)
+                      openDeleteDialog(viewIdeaSetModal.idea);
+                  }}
                 >
                   <Trash2 className="h-5 w-5" />
                 </IconButton>
@@ -963,7 +1210,9 @@ export function Ideas() {
                   <Card
                     key={topic.number}
                     className="bg-white border border-gray-200 hover:shadow-lg hover:border-brand-300 transition-all duration-200 group cursor-pointer"
-                    onClick={() => handleViewTopic(viewIdeaSetModal.idea!, topic)}
+                    onClick={() =>
+                      handleViewTopic(viewIdeaSetModal.idea!, topic)
+                    }
                   >
                     <CardHeader className="pb-2">
                       <div className="flex items-center space-x-2">
@@ -985,14 +1234,17 @@ export function Ideas() {
                       </div>
 
                       {/* Image Prompt */}
-                      {topic.image_prompt && topic.image_prompt !== 'No image prompt provided' && (
-                        <div>
-                          <p className="text-xs font-medium text-purple-700 mb-1">Image:</p>
-                          <p className="text-xs text-purple-600 line-clamp-3 bg-purple-50 p-2 rounded-lg">
-                            {truncateText(topic.image_prompt, 80)}
-                          </p>
-                        </div>
-                      )}
+                      {topic.image_prompt &&
+                        topic.image_prompt !== "No image prompt provided" && (
+                          <div>
+                            <p className="text-xs font-medium text-purple-700 mb-1">
+                              Image:
+                            </p>
+                            <p className="text-xs text-purple-600 line-clamp-3 bg-purple-50 p-2 rounded-lg">
+                              {truncateText(topic.image_prompt, 80)}
+                            </p>
+                          </div>
+                        )}
 
                       {/* View indicator */}
                       <div className="pt-1">
@@ -1028,7 +1280,11 @@ export function Ideas() {
         onClose={cancelDeleteTopic}
         onConfirm={confirmDeleteTopic}
         title="Delete idea"
-        message={viewIdeaModal.topic ? `Delete "${viewIdeaModal.topic.topic}" from this set? This cannot be undone.` : 'Delete this idea?'}
+        message={
+          viewIdeaModal.topic
+            ? `Delete "${viewIdeaModal.topic.topic}" from this set? This cannot be undone.`
+            : "Delete this idea?"
+        }
         confirmText="Delete"
         cancelText="Cancel"
         variant="danger"
@@ -1064,7 +1320,16 @@ export function Ideas() {
           icon={<Lightbulb className="h-12 w-12 text-red-500" />}
           title="Error Loading Ideas"
           error={error}
-          retry={<Button onClick={() => fetchIdeas(true)} variant="outline" loading={loading} disabled={loading}>Try Again</Button>}
+          retry={
+            <Button
+              onClick={() => fetchIdeas(true)}
+              variant="outline"
+              loading={loading}
+              disabled={loading}
+            >
+              Try Again
+            </Button>
+          }
         />
       )}
 
@@ -1076,19 +1341,27 @@ export function Ideas() {
             <input
               type="text"
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Search topics or brand"
               aria-label="Search ideas by topic or brand"
               className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm"
             />
           </div>
           <div className="space-y-4">
-            {(Object.entries(ideasByBrand ?? {}) as [string, IdeaJoined[]][]).map(([brandName, brandIdeas]) => {
-              const totalTopics = brandIdeas.reduce((sum, idea) => sum + extractTopicsFromIdea(idea).length, 0)
-              const collapsed = collapsedBrands[brandName]
+            {(
+              Object.entries(ideasByBrand ?? {}) as [string, IdeaJoined[]][]
+            ).map(([brandName, brandIdeas]) => {
+              const totalTopics = brandIdeas.reduce(
+                (sum, idea) => sum + extractTopicsFromIdea(idea).length,
+                0,
+              );
+              const collapsed = collapsedBrands[brandName];
 
               return (
-                <div key={brandName} className="border border-gray-200 rounded-lg bg-white">
+                <div
+                  key={brandName}
+                  className="border border-gray-200 rounded-lg bg-white"
+                >
                   <button
                     onClick={() => toggleBrand(brandName)}
                     className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -1099,20 +1372,39 @@ export function Ideas() {
                         {brandName.slice(0, 2).toUpperCase()}
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900 leading-tight">{brandName}</h3>
-                        <p className="text-xs text-gray-500">{brandIdeas.length} set{brandIdeas.length === 1 ? '' : 's'} • {totalTopics} topics</p>
+                        <h3 className="font-semibold text-gray-900 leading-tight">
+                          {brandName}
+                        </h3>
+                        <p className="text-xs text-gray-500">
+                          {brandIdeas.length} set
+                          {brandIdeas.length === 1 ? "" : "s"} • {totalTopics}{" "}
+                          topics
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Badge variant="primary" className="text-xs">{brandIdeas.length} set{brandIdeas.length === 1 ? '' : 's'}</Badge>
-                      {collapsed ? <ChevronRight className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
+                      <Badge variant="primary" className="text-xs">
+                        {brandIdeas.length} set
+                        {brandIdeas.length === 1 ? "" : "s"}
+                      </Badge>
+                      {collapsed ? (
+                        <ChevronRight className="h-4 w-4 text-gray-500" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-gray-500" />
+                      )}
                     </div>
                   </button>
                   {!collapsed && (
                     <div className="px-4 pb-4">
                       <ul className="space-y-3 mt-2">
-                        {brandIdeas.map(idea => (
-                          <IdeaSetListItem key={idea.id} idea={idea} topics={extractTopicsFromIdea(idea)} onView={handleViewIdeaSet} onDelete={openDeleteDialog} />
+                        {brandIdeas.map((idea) => (
+                          <IdeaSetListItem
+                            key={idea.id}
+                            idea={idea}
+                            topics={extractTopicsFromIdea(idea)}
+                            onView={handleViewIdeaSet}
+                            onDelete={openDeleteDialog}
+                          />
                         ))}
                       </ul>
                       <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500 flex items-center gap-1">
@@ -1121,7 +1413,7 @@ export function Ideas() {
                     </div>
                   )}
                 </div>
-              )
+              );
             })}
           </div>
         </>
@@ -1133,9 +1425,14 @@ export function Ideas() {
           title="No ideas"
           message="No ideas yet."
           variant="brand"
-          actions={<Button onClick={() => fetchIdeas(true)}><RefreshCw className="h-4 w-4" />Refresh</Button>}
+          actions={
+            <Button onClick={() => fetchIdeas(true)}>
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </Button>
+          }
         />
       )}
     </div>
-  )
+  );
 }

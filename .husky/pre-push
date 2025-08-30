@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+# Husky pre-push hook: build the project before allowing push.
+# Prevent pushing code that fails to build (type errors, etc.).
+
+echo "[pre-push] Running production build (npm run build)..."
+if ! npm run build --silent; then
+  echo "[pre-push] Build failed. Push aborted." >&2
+  exit 1
+fi
+
+echo "[pre-push] Build succeeded. Proceeding with push."
+exit 0

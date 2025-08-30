@@ -1,38 +1,45 @@
-import React from 'react'
-import { Sidebar } from './Sidebar'
-import { TopBar } from './TopBar'
-import { useLocation, useOutlet } from 'react-router-dom'
-import { Modal } from '../ui/Modal'
-import { AnimatePresence, MotionConfig, motion, useReducedMotion } from 'framer-motion'
+import React from "react";
+import { Sidebar } from "./Sidebar";
+import { TopBar } from "./TopBar";
+import { useLocation, useOutlet } from "react-router-dom";
+import { Modal } from "../ui/Modal";
+import {
+  AnimatePresence,
+  MotionConfig,
+  motion,
+  useReducedMotion,
+} from "framer-motion";
 
 export function Layout() {
-  const [mobileOpen, setMobileOpen] = React.useState(false)
-  const mobileDialogId = 'mobile-sidebar-dialog'
-  const location = useLocation()
-  const prefersReducedMotion = useReducedMotion()
-  const mainRef = React.useRef<HTMLDivElement>(null)
-  const outlet = useOutlet()
-  const [displayOutlet, setDisplayOutlet] = React.useState<React.ReactNode>(outlet)
-  const [displayKey, setDisplayKey] = React.useState(location.key)
-  const [pendingOutlet, setPendingOutlet] = React.useState<React.ReactNode | null>(null)
-  const [pendingKey, setPendingKey] = React.useState<string | null>(null)
-  const [isExiting, setIsExiting] = React.useState(false)
+  const [mobileOpen, setMobileOpen] = React.useState(false);
+  const mobileDialogId = "mobile-sidebar-dialog";
+  const location = useLocation();
+  const prefersReducedMotion = useReducedMotion();
+  const mainRef = React.useRef<HTMLDivElement>(null);
+  const outlet = useOutlet();
+  const [displayOutlet, setDisplayOutlet] =
+    React.useState<React.ReactNode>(outlet);
+  const [displayKey, setDisplayKey] = React.useState(location.key);
+  const [pendingOutlet, setPendingOutlet] =
+    React.useState<React.ReactNode | null>(null);
+  const [pendingKey, setPendingKey] = React.useState<string | null>(null);
+  const [isExiting, setIsExiting] = React.useState(false);
 
   // Scroll the main content to top on route change
   React.useEffect(() => {
     if (mainRef.current) {
-      mainRef.current.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+      mainRef.current.scrollTo({ top: 0, left: 0, behavior: "auto" });
     }
-  }, [location.pathname])
+  }, [location.pathname]);
 
   // Queue the new outlet and trigger exit when the route changes
   React.useEffect(() => {
     if (location.key !== displayKey && !isExiting) {
-      setPendingOutlet(outlet)
-      setPendingKey(location.key)
-      setIsExiting(true)
+      setPendingOutlet(outlet);
+      setPendingKey(location.key);
+      setIsExiting(true);
     }
-  }, [location.key, displayKey, outlet, isExiting])
+  }, [location.key, displayKey, outlet, isExiting]);
 
   return (
     <div className="relative min-h-screen flex flex-col lg:flex-row bg-gray-50">
@@ -58,7 +65,9 @@ export function Layout() {
         className="relative h-full w-72 max-w-[80%] bg-white border-r border-gray-200 shadow-xl outline-none"
       >
         {/* Hidden accessible title for the dialog */}
-        <h2 id="mobile-nav-title" className="sr-only">Mobile navigation</h2>
+        <h2 id="mobile-nav-title" className="sr-only">
+          Mobile navigation
+        </h2>
         <Sidebar />
       </Modal>
 
@@ -66,8 +75,8 @@ export function Layout() {
         <TopBar
           onMenuClick={() => setMobileOpen(true)}
           menuButtonProps={{
-            'aria-controls': mobileDialogId,
-            'aria-expanded': mobileOpen,
+            "aria-controls": mobileDialogId,
+            "aria-expanded": mobileOpen,
           }}
         />
         <main
@@ -78,30 +87,42 @@ export function Layout() {
           ref={mainRef}
         >
           <MotionConfig reducedMotion="user">
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: "relative" }}>
               <AnimatePresence
                 mode="wait"
                 initial={false}
                 onExitComplete={() => {
-                  if (pendingOutlet) setDisplayOutlet(pendingOutlet)
-                  if (pendingKey) setDisplayKey(pendingKey)
-                  setPendingOutlet(null)
-                  setPendingKey(null)
-                  setIsExiting(false)
+                  if (pendingOutlet) setDisplayOutlet(pendingOutlet);
+                  if (pendingKey) setDisplayKey(pendingKey);
+                  setPendingOutlet(null);
+                  setPendingKey(null);
+                  setIsExiting(false);
                 }}
               >
                 {!isExiting && displayOutlet && (
                   <motion.div
                     key={displayKey}
-                    initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 12 }}
-                    animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
-                    exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: -12 }}
+                    initial={
+                      prefersReducedMotion
+                        ? { opacity: 1 }
+                        : { opacity: 0, y: 12 }
+                    }
+                    animate={
+                      prefersReducedMotion
+                        ? { opacity: 1 }
+                        : { opacity: 1, y: 0 }
+                    }
+                    exit={
+                      prefersReducedMotion
+                        ? { opacity: 1 }
+                        : { opacity: 0, y: -12 }
+                    }
                     transition={
                       prefersReducedMotion
                         ? { duration: 0 }
-                        : { duration: 0.15, ease: 'easeOut' }
+                        : { duration: 0.15, ease: "easeOut" }
                     }
-                    style={{ position: 'absolute', inset: 0, width: '100%' }}
+                    style={{ position: "absolute", inset: 0, width: "100%" }}
                   >
                     {displayOutlet}
                   </motion.div>
@@ -112,5 +133,5 @@ export function Layout() {
         </main>
       </div>
     </div>
-  )
+  );
 }

@@ -1,57 +1,67 @@
-import React, { useCallback, useState } from 'react'
-import { Card, CardContent, CardHeader } from '../components/ui/Card'
-import { Button } from '../components/ui/Button'
-import { CreateBrandModal } from '../components/companies/CreateBrandModal'
-import { ViewCompanyModal } from '../components/companies/ViewCompanyModal'
-import { useCompanies } from '../hooks/useCompanies'
-import { Plus, Building2, RefreshCw, Database, Search } from 'lucide-react'
+import React, { useCallback, useState } from "react";
+import { Card, CardContent, CardHeader } from "../components/ui/Card";
+import { Button } from "../components/ui/Button";
+import { CreateBrandModal } from "../components/companies/CreateBrandModal";
+import { ViewCompanyModal } from "../components/companies/ViewCompanyModal";
+import { useCompanies } from "../hooks/useCompanies";
+import { Plus, Building2, RefreshCw, Database, Search } from "lucide-react";
 // removed truncateText usage after refactor
-import { useToast } from '../components/ui/Toast'
-import { Skeleton } from '../components/ui/Skeleton'
-import { useDocumentTitle } from '../hooks/useDocumentTitle'
-import { PageHeader } from '../components/layout/PageHeader'
-import { EmptyState } from '../components/ui/EmptyState'
-import CompanyListItem from '../components/companies/CompanyListItem'
-import { ErrorState } from '../components/ui/ErrorState'
+import { useToast } from "../components/ui/Toast";
+import { Skeleton } from "../components/ui/Skeleton";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import { PageHeader } from "../components/layout/PageHeader";
+import { EmptyState } from "../components/ui/EmptyState";
+import CompanyListItem from "../components/companies/CompanyListItem";
+import { ErrorState } from "../components/ui/ErrorState";
 
 export function Companies() {
-  useDocumentTitle('Companies — AI Marketing')
-  const { companies: hookCompanies, loading, error, refetch } = useCompanies()
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [viewCompanyModal, setViewCompanyModal] = useState<{ isOpen: boolean; company: any | null }>({
+  useDocumentTitle("Companies — AI Marketing");
+  const { companies: hookCompanies, loading, error, refetch } = useCompanies();
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [viewCompanyModal, setViewCompanyModal] = useState<{
+    isOpen: boolean;
+    company: any | null;
+  }>({
     isOpen: false,
-    company: null
-  })
-  const { push } = useToast()
-  const companies = hookCompanies
-  const [search, setSearch] = useState('')
+    company: null,
+  });
+  const { push } = useToast();
+  const companies = hookCompanies;
+  const [search, setSearch] = useState("");
 
-  const fetchCompaniesFromSupabase = useCallback(async (showToast = false) => {
-    refetch()
-    if (showToast) {
-      push({ title: 'Refreshed', message: 'Companies updated', variant: 'success' })
-    }
-  }, [refetch, push])
+  const fetchCompaniesFromSupabase = useCallback(
+    async (showToast = false) => {
+      refetch();
+      if (showToast) {
+        push({
+          title: "Refreshed",
+          message: "Companies updated",
+          variant: "success",
+        });
+      }
+    },
+    [refetch, push],
+  );
 
   const handleCreateBrand = async () => {
-    setShowCreateModal(false)
+    setShowCreateModal(false);
     // Refresh companies list after creation
-    await fetchCompaniesFromSupabase()
-  }
+    await fetchCompaniesFromSupabase();
+  };
 
   const handleViewClick = (company: any) => {
     setViewCompanyModal({
       isOpen: true,
-      company
-    })
-  }
+      company,
+    });
+  };
 
   const handleCloseViewModal = () => {
     setViewCompanyModal({
       isOpen: false,
-      company: null
-    })
-  }
+      company: null,
+    });
+  };
 
   // const handleDeleteClick = (company: any) => {
   //   setDeleteDialog({
@@ -79,9 +89,13 @@ export function Companies() {
         title="Companies"
         description="Manage brands and profiles."
         icon={<Building2 className="h-5 w-5" />}
-        actions={(
+        actions={
           <>
-            <Button onClick={() => fetchCompaniesFromSupabase(true)} loading={loading} variant="outline">
+            <Button
+              onClick={() => fetchCompaniesFromSupabase(true)}
+              loading={loading}
+              variant="outline"
+            >
               <RefreshCw className="h-4 w-4" />
               Refresh
             </Button>
@@ -90,7 +104,7 @@ export function Companies() {
               Add company
             </Button>
           </>
-        )}
+        }
       />
 
       {/* Create Brand Modal */}
@@ -144,11 +158,16 @@ export function Companies() {
           icon={<Database className="h-12 w-12 text-red-500" />}
           title="Error loading companies"
           error={error}
-          retry={(
-            <Button onClick={() => fetchCompaniesFromSupabase(true)} variant="outline" loading={loading} disabled={loading}>
+          retry={
+            <Button
+              onClick={() => fetchCompaniesFromSupabase(true)}
+              variant="outline"
+              loading={loading}
+              disabled={loading}
+            >
               Try Again
             </Button>
-          )}
+          }
         />
       )}
 
@@ -160,16 +179,28 @@ export function Companies() {
             <input
               type="text"
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Search companies"
               aria-label="Search companies"
               className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm"
             />
           </div>
           <ul className="space-y-3">
-            {companies.filter(c => !search || (c.brand_name || c.name || '').toLowerCase().includes(search.toLowerCase())).map(company => (
-              <CompanyListItem key={company.id} company={company} onView={handleViewClick} />
-            ))}
+            {companies
+              .filter(
+                (c) =>
+                  !search ||
+                  (c.brand_name || c.name || "")
+                    .toLowerCase()
+                    .includes(search.toLowerCase()),
+              )
+              .map((company) => (
+                <CompanyListItem
+                  key={company.id}
+                  company={company}
+                  onView={handleViewClick}
+                />
+              ))}
           </ul>
         </>
       )}
@@ -181,14 +212,14 @@ export function Companies() {
           title="No companies"
           message="No companies yet."
           variant="brand"
-          actions={(
+          actions={
             <Button onClick={() => setShowCreateModal(true)}>
               <Plus className="h-4 w-4" />
               Add company
             </Button>
-          )}
+          }
         />
       )}
     </div>
-  )
+  );
 }

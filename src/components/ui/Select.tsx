@@ -1,40 +1,64 @@
-import React from 'react'
-import { cn } from '../../lib/utils'
-import { ChevronDown } from 'lucide-react'
+import React from "react";
+import { cn } from "../../lib/utils";
+import { ChevronDown } from "lucide-react";
 
 interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
-  label?: string
-  error?: string
-  description?: string
-  placeholder?: string
-  options: { value: string; label: string }[]
+  label?: string;
+  error?: string;
+  description?: string;
+  placeholder?: string;
+  options: { value: string; label: string }[];
 }
 
-export function Select({ className, label, error, description, placeholder, options, id, onKeyDown, onKeyUp, ...props }: SelectProps) {
-  const autoId = React.useId()
-  const selectId = id ?? autoId
-  const describedIds = [
-    error ? `${selectId}-error` : undefined,
-    description ? `${selectId}-desc` : undefined,
-  ].filter(Boolean).join(' ') || undefined
+export function Select({
+  className,
+  label,
+  error,
+  description,
+  placeholder,
+  options,
+  id,
+  onKeyDown,
+  onKeyUp,
+  ...props
+}: SelectProps) {
+  const autoId = React.useId();
+  const selectId = id ?? autoId;
+  const describedIds =
+    [
+      error ? `${selectId}-error` : undefined,
+      description ? `${selectId}-desc` : undefined,
+    ]
+      .filter(Boolean)
+      .join(" ") || undefined;
   return (
     <div className="space-y-1">
       {label && (
         <label
           htmlFor={selectId}
-          className={cn('block text-sm font-medium', (props.disabled || (props as any).readOnly) ? 'text-gray-500' : 'text-gray-700')}
+          className={cn(
+            "block text-sm font-medium",
+            props.disabled || (props as any).readOnly
+              ? "text-gray-500"
+              : "text-gray-700",
+          )}
         >
           {label}
-          {props.required && <span aria-hidden className="text-red-600 ml-0.5">*</span>}
+          {props.required && (
+            <span aria-hidden className="text-red-600 ml-0.5">
+              *
+            </span>
+          )}
         </label>
       )}
       <div className="relative">
         <select
           className={cn(
-            'block w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-gray-900 motion-safe:transition-colors focus:border-brand-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-200 appearance-none bg-white',
-            (props.disabled || (props as any).readOnly) && 'bg-gray-50 text-gray-500 cursor-not-allowed',
-            error && 'border-red-300 focus:border-red-500',
-            className
+            "block w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-gray-900 motion-safe:transition-colors focus:border-brand-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-200 appearance-none bg-white",
+            (props.disabled || (props as any).readOnly) &&
+              "bg-gray-50 text-gray-500 cursor-not-allowed",
+            error && "border-red-300 focus:border-red-500",
+            className,
           )}
           id={selectId}
           aria-invalid={Boolean(error) || undefined}
@@ -42,10 +66,10 @@ export function Select({ className, label, error, description, placeholder, opti
           aria-required={props.required || undefined}
           {...props}
           onKeyDown={(e) => {
-            onKeyDown?.(e)
+            onKeyDown?.(e);
           }}
           onKeyUp={(e) => {
-            onKeyUp?.(e)
+            onKeyUp?.(e);
           }}
           // Ensure comfortable tap target height
           style={{ minHeight: 44 }}
@@ -61,14 +85,21 @@ export function Select({ className, label, error, description, placeholder, opti
             </option>
           ))}
         </select>
-        <ChevronDown aria-hidden className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+        <ChevronDown
+          aria-hidden
+          className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none"
+        />
       </div>
       {description && !error && (
-        <p id={`${selectId}-desc`} className="text-xs text-gray-500">{description}</p>
+        <p id={`${selectId}-desc`} className="text-xs text-gray-500">
+          {description}
+        </p>
       )}
       {error && (
-        <p id={`${selectId}-error`} className="text-sm text-red-600">{error}</p>
+        <p id={`${selectId}-error`} className="text-sm text-red-600">
+          {error}
+        </p>
       )}
     </div>
-  )
+  );
 }

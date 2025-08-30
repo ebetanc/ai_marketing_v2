@@ -10,10 +10,7 @@
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [
-        -816,
-        1104
-      ],
+      "position": [-816, 1104],
       "id": "efa7792b-548b-40da-b88f-86984636f211",
       "name": "Webhook",
       "webhookId": "7575bd2a-465e-475e-bd33-11708a3d7d10"
@@ -127,10 +124,7 @@
       },
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
-      "position": [
-        -528,
-        1072
-      ],
+      "position": [-528, 1072],
       "id": "8ee9f5aa-9a83-455d-86c0-442fdd7cc9af",
       "name": "Switch"
     },
@@ -156,10 +150,7 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        80,
-        224
-      ],
+      "position": [80, 224],
       "id": "5c480006-5992-4cf4-b09f-a81789e06902",
       "name": "HTTP Request12",
       "alwaysOutputData": false,
@@ -187,10 +178,7 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        240,
-        224
-      ],
+      "position": [240, 224],
       "id": "dad69f5f-b47c-4a19-8161-73d761d39378",
       "name": "HTTP Request13",
       "credentials": {
@@ -214,10 +202,7 @@
       },
       "type": "n8n-nodes-base.markdown",
       "typeVersion": 1,
-      "position": [
-        448,
-        80
-      ],
+      "position": [448, 80],
       "id": "ead2a610-cd3e-442e-b560-25b069e8a2c0",
       "name": "Markdown1",
       "onError": "continueErrorOutput"
@@ -238,10 +223,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
-      "position": [
-        672,
-        64
-      ],
+      "position": [672, 64],
       "id": "3b635142-e53e-4547-96a8-45fe9dae809f",
       "name": "Basic LLM Chain"
     },
@@ -257,10 +239,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
-      "position": [
-        560,
-        240
-      ],
+      "position": [560, 240],
       "id": "be3e51d7-8621-4ad2-9ab0-20254e6fbff3",
       "name": "OpenAI Chat Model",
       "credentials": {
@@ -277,10 +256,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.2,
-      "position": [
-        944,
-        240
-      ],
+      "position": [944, 240],
       "id": "8dcf2b52-88be-4c53-8aba-62889bf7f2cf",
       "name": "Structured Output Parser"
     },
@@ -292,10 +268,7 @@
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
-      "position": [
-        1488,
-        64
-      ],
+      "position": [1488, 64],
       "id": "638f3c9b-8411-4c89-9584-2ce59a6e8ca2",
       "name": "Respond to Webhook"
     },
@@ -327,10 +300,7 @@
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [
-        1024,
-        64
-      ],
+      "position": [1024, 64],
       "id": "d02d5766-f415-461f-9802-04bd08808c36",
       "name": "Edit Fields"
     },
@@ -346,10 +316,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
-      "position": [
-        208,
-        1200
-      ],
+      "position": [208, 1200],
       "id": "9e5c6daa-8e7b-4c72-b777-a08f2429b726",
       "name": "OpenAI Chat Model1",
       "credentials": {
@@ -375,10 +342,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
-      "position": [
-        528,
-        624
-      ],
+      "position": [528, 624],
       "id": "641d4029-57a2-4cb1-955a-02dbd929370f",
       "name": "LinkedIn Stratergy Angles",
       "retryOnFail": true
@@ -399,10 +363,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
-      "position": [
-        528,
-        464
-      ],
+      "position": [528, 464],
       "id": "ca07eb27-e4e4-423b-aff5-23af91405751",
       "name": "Twitter Stratergy Angles",
       "retryOnFail": true
@@ -414,10 +375,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.2,
-      "position": [
-        912,
-        960
-      ],
+      "position": [912, 960],
       "id": "c1bc815d-94f9-46f0-9398-9840baf8b579",
       "name": "Structured Output Parser1"
     },
@@ -437,10 +395,7 @@
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [
-        1472,
-        912
-      ],
+      "position": [1472, 912],
       "id": "c40f80e2-cbf1-47b7-baa0-e8403339f174",
       "name": "Edit Fields1"
     },
@@ -451,10 +406,7 @@
       },
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
-      "position": [
-        1616,
-        912
-      ],
+      "position": [1616, 912],
       "id": "06cad4f5-5285-4f5f-88d6-088e430fd5de",
       "name": "Split Out1"
     },
@@ -504,10 +456,7 @@
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [
-        1744,
-        912
-      ],
+      "position": [1744, 912],
       "id": "86ac12a2-578c-4204-9fef-8950ab3ce59c",
       "name": "Edit Fields2"
     },
@@ -519,10 +468,7 @@
       },
       "type": "n8n-nodes-base.aggregate",
       "typeVersion": 1,
-      "position": [
-        1888,
-        912
-      ],
+      "position": [1888, 912],
       "id": "7b6c26f5-8b1b-4f6a-90b3-d8b07da86e95",
       "name": "Aggregate"
     },
@@ -536,10 +482,7 @@
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
-      "position": [
-        2320,
-        912
-      ],
+      "position": [2320, 912],
       "id": "f437cf70-3324-4063-b0a1-456954ccbadb",
       "name": "Respond to Webhook1"
     },
@@ -559,10 +502,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
-      "position": [
-        528,
-        752
-      ],
+      "position": [528, 752],
       "id": "092505e7-9f97-4594-9c83-79ba35ac2a54",
       "name": "Newsletter Stratergy Angles",
       "retryOnFail": true
@@ -574,10 +514,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.2,
-      "position": [
-        1328,
-        2640
-      ],
+      "position": [1328, 2640],
       "id": "7471aeae-e3f0-48f9-8825-5be2d5e0cb35",
       "name": "Structured Output Parser2"
     },
@@ -593,10 +530,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
-      "position": [
-        224,
-        2480
-      ],
+      "position": [224, 2480],
       "id": "8e3d7634-6045-4832-a31f-8ea26d7a6b1c",
       "name": "OpenAI Chat Model2",
       "credentials": {
@@ -622,10 +556,7 @@
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [
-        1584,
-        2224
-      ],
+      "position": [1584, 2224],
       "id": "14ac3abe-af52-4a36-ab9a-20ddd5066585",
       "name": "Edit Fields3"
     },
@@ -636,10 +567,7 @@
       },
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
-      "position": [
-        1728,
-        2224
-      ],
+      "position": [1728, 2224],
       "id": "a5e12f11-6b2e-40f9-93d1-48bfb2995c36",
       "name": "Split Out2"
     },
@@ -683,10 +611,7 @@
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [
-        1872,
-        2224
-      ],
+      "position": [1872, 2224],
       "id": "b1267ed6-e5ae-4daf-9578-209eb4c70f12",
       "name": "Edit Fields4"
     },
@@ -698,10 +623,7 @@
       },
       "type": "n8n-nodes-base.aggregate",
       "typeVersion": 1,
-      "position": [
-        2016,
-        2224
-      ],
+      "position": [2016, 2224],
       "id": "c652cd88-99c4-48d7-a6cf-da6bd9de7340",
       "name": "Aggregate1"
     },
@@ -712,10 +634,7 @@
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
-      "position": [
-        2368,
-        2224
-      ],
+      "position": [2368, 2224],
       "id": "dfc5f4cd-863c-4f14-b8ac-b8b296fc92ec",
       "name": "Respond to Webhook2"
     },
@@ -735,10 +654,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
-      "position": [
-        560,
-        2096
-      ],
+      "position": [560, 2096],
       "id": "d850807b-f1af-4b6d-b1a0-98370257023d",
       "name": "LinkedIn Idea Generator"
     },
@@ -758,10 +674,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
-      "position": [
-        560,
-        1968
-      ],
+      "position": [560, 1968],
       "id": "119e50d4-5b1f-426e-aea4-4ab238fa11a5",
       "name": "Twitter Idea Generator"
     },
@@ -772,10 +685,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.2,
-      "position": [
-        976,
-        3840
-      ],
+      "position": [976, 3840],
       "id": "9213d1ef-5a97-487c-aaf7-f6d48eb6472e",
       "name": "Structured Output Parser3"
     },
@@ -791,10 +701,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
-      "position": [
-        80,
-        4128
-      ],
+      "position": [80, 4128],
       "id": "74aef2db-f1a2-421b-b4d5-43d9aa5f62ff",
       "name": "OpenAI Chat Model3",
       "credentials": {
@@ -819,10 +726,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
-      "position": [
-        624,
-        3456
-      ],
+      "position": [624, 3456],
       "id": "a4307811-ce01-4d7f-93a3-3dc9bc0de977",
       "name": "Twitter Content Generator"
     },
@@ -841,10 +745,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
-      "position": [
-        624,
-        3632
-      ],
+      "position": [624, 3632],
       "id": "10c679d9-efb2-45fe-99af-422e7b3e575f",
       "name": "LinkedIn Content Generator"
     },
@@ -864,10 +765,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
-      "position": [
-        624,
-        3760
-      ],
+      "position": [624, 3760],
       "id": "4302adb6-761d-45fe-9bd7-e9eb0e3cd11d",
       "name": "Newsletter Content Generator"
     },
@@ -887,10 +785,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
-      "position": [
-        560,
-        2240
-      ],
+      "position": [560, 2240],
       "id": "8917bf68-d1e4-473d-996c-c021d46bfb23",
       "name": "Newsletter Idea Generator"
     },
@@ -901,10 +796,7 @@
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
-      "position": [
-        2272,
-        3920
-      ],
+      "position": [2272, 3920],
       "id": "41d59377-bb34-4b07-ab1d-f9d05d22cc47",
       "name": "Respond to Webhook3"
     },
@@ -916,10 +808,7 @@
         "color": 2
       },
       "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        0,
-        0
-      ],
+      "position": [0, 0],
       "typeVersion": 1,
       "id": "d528eead-3928-4104-a4c6-436986b18c4c",
       "name": "Sticky Note"
@@ -932,10 +821,7 @@
         "color": 5
       },
       "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        -16,
-        448
-      ],
+      "position": [-16, 448],
       "typeVersion": 1,
       "id": "02e57035-15ec-4a75-bf76-59a616141fd6",
       "name": "Sticky Note1"
@@ -948,10 +834,7 @@
         "color": 6
       },
       "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        -16,
-        1952
-      ],
+      "position": [-16, 1952],
       "typeVersion": 1,
       "id": "61c86034-411d-49cc-9918-4863265a838d",
       "name": "Sticky Note2"
@@ -964,10 +847,7 @@
         "color": 3
       },
       "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        96,
-        3408
-      ],
+      "position": [96, 3408],
       "typeVersion": 1,
       "id": "4c406933-5ef9-4f47-9035-4f0a2eda6c7c",
       "name": "Sticky Note3"
@@ -979,10 +859,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.2,
-      "position": [
-        912,
-        512
-      ],
+      "position": [912, 512],
       "id": "2cac47d7-67e7-40d7-9dc8-26a68c419b02",
       "name": "Structured Output Parser4"
     },
@@ -993,10 +870,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.2,
-      "position": [
-        912,
-        768
-      ],
+      "position": [912, 768],
       "id": "01d83295-2762-43bc-99c4-375c0cee6fea",
       "name": "Structured Output Parser5"
     },
@@ -1022,10 +896,7 @@
       },
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [
-        1296,
-        3456
-      ],
+      "position": [1296, 3456],
       "id": "96c01e9c-fe00-468f-bec3-4a420013e4f3",
       "name": "Add Twitter content",
       "credentials": {
@@ -1053,10 +924,7 @@
       },
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [
-        1296,
-        3632
-      ],
+      "position": [1296, 3632],
       "id": "2eaf20bc-d70b-43eb-a689-bdba23e28715",
       "name": "Add Linkedin content",
       "credentials": {
@@ -1084,10 +952,7 @@
       },
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [
-        1296,
-        3792
-      ],
+      "position": [1296, 3792],
       "id": "de02a90b-424f-4344-920a-c3a5ae4dd4e4",
       "name": "Add Newsletter content",
       "credentials": {
@@ -1135,10 +1000,7 @@
       },
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [
-        1232,
-        64
-      ],
+      "position": [1232, 64],
       "id": "32f53355-7c76-47c6-a4f1-490eecbad14e",
       "name": "Create Company",
       "credentials": {
@@ -1326,10 +1188,7 @@
       },
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [
-        2080,
-        912
-      ],
+      "position": [2080, 912],
       "id": "31bd4757-3658-4642-a146-7ea7b2aa5c98",
       "name": "Create Strategies",
       "credentials": {
@@ -1493,10 +1352,7 @@
       },
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [
-        2192,
-        2224
-      ],
+      "position": [2192, 2224],
       "id": "c0bd6d2a-9788-4e5c-b050-3adae7128d8e",
       "name": "Create Ideas",
       "credentials": {
@@ -1513,10 +1369,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.2,
-      "position": [
-        1056,
-        1040
-      ],
+      "position": [1056, 1040],
       "id": "cc6009e4-201d-41cd-b2ac-5faf5e93db4f",
       "name": "Structured Output Parser6"
     },
@@ -1536,10 +1389,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
-      "position": [
-        528,
-        896
-      ],
+      "position": [528, 896],
       "id": "cc071ffc-d56e-4db2-a06b-b752118ed995",
       "name": "Facebook Strategy Angles",
       "retryOnFail": true
@@ -1560,10 +1410,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
-      "position": [
-        528,
-        1184
-      ],
+      "position": [528, 1184],
       "id": "e20e9760-d11a-47d7-a0e7-fccfef5615e5",
       "name": "Youtube Strategy Angles",
       "retryOnFail": true
@@ -1584,10 +1431,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
-      "position": [
-        528,
-        1328
-      ],
+      "position": [528, 1328],
       "id": "528465ed-c39c-4462-ab03-34db762cd077",
       "name": "TikTok Strategy Angles",
       "retryOnFail": true
@@ -1608,10 +1452,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
-      "position": [
-        528,
-        1472
-      ],
+      "position": [528, 1472],
       "id": "9e053af9-6848-47fe-a56e-a044aaf30913",
       "name": "Blog / Written Strategy Angles",
       "retryOnFail": true
@@ -1623,10 +1464,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.2,
-      "position": [
-        1056,
-        1168
-      ],
+      "position": [1056, 1168],
       "id": "add04d01-af99-4a73-9869-e6d7502cfeb7",
       "name": "Structured Output Parser7"
     },
@@ -1637,10 +1475,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.2,
-      "position": [
-        1056,
-        1296
-      ],
+      "position": [1056, 1296],
       "id": "91da74ac-bbb3-4ca5-bb02-3d2a2aca04df",
       "name": "Structured Output Parser8"
     },
@@ -1651,10 +1486,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.2,
-      "position": [
-        1056,
-        1456
-      ],
+      "position": [1056, 1456],
       "id": "26d5542f-061b-48a0-be00-6447ab6036d0",
       "name": "Structured Output Parser9"
     },
@@ -1665,10 +1497,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.2,
-      "position": [
-        1056,
-        1632
-      ],
+      "position": [1056, 1632],
       "id": "0f788d08-f7fb-4e9f-8159-9d853696e3eb",
       "name": "Structured Output Parser10"
     },
@@ -1688,10 +1517,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
-      "position": [
-        560,
-        2480
-      ],
+      "position": [560, 2480],
       "id": "342b9797-ad96-4ce9-abde-e1e4d2e57863",
       "name": "Instagram Idea Generator"
     },
@@ -1711,10 +1537,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
-      "position": [
-        560,
-        2624
-      ],
+      "position": [560, 2624],
       "id": "83267c92-e070-46cd-91b5-8ed5ff05edf5",
       "name": "YouTube Idea Generator"
     },
@@ -1734,10 +1557,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
-      "position": [
-        560,
-        2752
-      ],
+      "position": [560, 2752],
       "id": "723b4b70-6bb5-45b6-aadd-acd0977b4cea",
       "name": "TikTok Idea Generator"
     },
@@ -1757,10 +1577,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
-      "position": [
-        560,
-        2880
-      ],
+      "position": [560, 2880],
       "id": "e02095e2-6b9d-4f1d-ac3b-70b6ad520df6",
       "name": "Blogs / Written content Idea Generator"
     },
@@ -1780,10 +1597,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
-      "position": [
-        560,
-        2352
-      ],
+      "position": [560, 2352],
       "id": "8989e938-e835-4996-abcf-a73257ac4ce6",
       "name": "Facebook Idea Generator"
     },
@@ -1802,10 +1616,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
-      "position": [
-        624,
-        3904
-      ],
+      "position": [624, 3904],
       "id": "4dbdadb1-9a04-4e41-ad60-dad17cb46ec0",
       "name": "Facebook Content Generator"
     },
@@ -1824,10 +1635,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
-      "position": [
-        624,
-        4064
-      ],
+      "position": [624, 4064],
       "id": "19418f77-ef13-4eac-94ea-1cb2f66255f0",
       "name": "Instagram Content Generator"
     },
@@ -1846,10 +1654,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
-      "position": [
-        624,
-        4208
-      ],
+      "position": [624, 4208],
       "id": "be71b361-fb59-449f-ba04-eae5be6aad70",
       "name": "Youtube Content Generator"
     },
@@ -1868,10 +1673,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
-      "position": [
-        624,
-        4368
-      ],
+      "position": [624, 4368],
       "id": "2a72ab8d-03a1-41cc-adbb-45e637f7ac43",
       "name": "TikTok Content Generator"
     },
@@ -1891,10 +1693,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
-      "position": [
-        624,
-        4544
-      ],
+      "position": [624, 4544],
       "id": "3538532b-d5dd-48fc-b4ff-c604cd374837",
       "name": "Blog / Written Content Generator"
     },
@@ -1920,10 +1719,7 @@
       },
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [
-        1296,
-        3952
-      ],
+      "position": [1296, 3952],
       "id": "3c0e1903-390a-4bf4-a488-38c8992734ad",
       "name": "Add Newsletter content1",
       "credentials": {
@@ -1949,10 +1745,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
-      "position": [
-        528,
-        1040
-      ],
+      "position": [528, 1040],
       "id": "c3905197-b4de-40b8-86be-ddbd49450b78",
       "name": "Instagram Strategy Angles",
       "retryOnFail": true
@@ -2168,10 +1961,7 @@
       },
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
-      "position": [
-        160,
-        704
-      ],
+      "position": [160, 704],
       "id": "a4099e9b-3a8b-43f9-a31c-eccd197a859e",
       "name": "Switch Strategies"
     },
@@ -2386,10 +2176,7 @@
       },
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
-      "position": [
-        160,
-        2160
-      ],
+      "position": [160, 2160],
       "id": "c4580fba-ebda-4794-8284-8c66fcd0ede6",
       "name": "Switch Ideas"
     },
@@ -2604,10 +2391,7 @@
       },
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
-      "position": [
-        112,
-        3648
-      ],
+      "position": [112, 3648],
       "id": "8d55e9c4-9ee8-4892-888f-d4576a4cffc9",
       "name": "Switch Content"
     },
@@ -2633,10 +2417,7 @@
       },
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [
-        1296,
-        4112
-      ],
+      "position": [1296, 4112],
       "id": "5ec0f091-e40f-4c09-9dfe-f90066f00310",
       "name": "Add Facebook content",
       "credentials": {
@@ -2664,10 +2445,7 @@
       },
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [
-        1296,
-        4272
-      ],
+      "position": [1296, 4272],
       "id": "a4a53708-1e66-48d4-8744-283ce4b6ac07",
       "name": "Add Youtube content",
       "credentials": {
@@ -2695,10 +2473,7 @@
       },
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [
-        1296,
-        4448
-      ],
+      "position": [1296, 4448],
       "id": "83545460-3fa8-4ccf-be29-453c7dbd5ac2",
       "name": "Add TikTok content",
       "credentials": {
@@ -2730,10 +2505,7 @@
       },
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [
-        1296,
-        4640
-      ],
+      "position": [1296, 4640],
       "id": "32c8267a-44bd-46ee-92dd-cadf1cdc883a",
       "name": "Add Blog content",
       "credentials": {
@@ -2905,16 +2677,7 @@
           "description": "## Content Pillars:\n- First-time homebuyer tips and resources\n- Understanding modern home design and features\n- Financial planning for homeownership\n- Personal stories from satisfied first-time buyers\n\n## Post Types:\n- Evergreen guides\n- Interview/Q&A formats\n- Case studies of successful home purchases\n- Opinion/editorial pieces addressing common fears\n\n## Publishing Plan:\n- Evergreen guides: Monthly\n- Interview posts: Bi-monthly\n- Case studies: Quarterly\n- Opinion pieces: As needed based on trends\n\n## Growth Tactics:\n- SEO Optimization: Focus on keywords like \"first-time homebuyers,\" \"home buying tips,\" and \"affordable homes.\"\n- Internal linking strategy to link to related articles and resources on the website.\n- Guest posting on real estate blogs to capture a broader audience.\n- Repurposing content into short videos for social media platforms.\n\n## Voice Guidelines:\nMaintain a professional yet approachable tone. Use headers and bullet points for easy reading. Include personal anecdotes to increase relatability.\n\n## Weekly Content Calendar:\n- **Monday**: \"5 Essential Tips for First-Time Homebuyers\" - an evergreen guide covering basic steps.\n- **Wednesday**: \"Local Family Shares Their Journey to Homeownership\" - a Q&A with recent buyers.\n- **Friday**: \"Understanding Home Design: What Features Sell\" - editorial piece discussing popular trends.\n\n## Metrics:\nTrack organic traffic increase, time on page of guides, scroll depth on interviews, social shares of stories, and conversions from CTA links to schedule consultations or visits.",
           "objective": "This strategy aims to build trust with first-time homebuyers by providing valuable information and reassuring them about their purchase decisions.",
           "tonality": "The communication style is professional yet approachable, blending warmth with confidence to build trust with prospective homebuyers. The tone is moderately formal, avoiding jargon to remain accessible to a broad audience that may not be familiar with technical real estate terms. Messaging leverages emotional triggers such as security, pride of homeownership, family wellbeing, and future stability. Storytelling is used to highlight community building, quality craftsmanship, and client satisfaction, setting itself apart by focusing on authentic customer experiences rather than just sales pitches. The brand projects reliability and transparency, seeking to differentiate itself from faceless corporate builders by emphasizing local roots and dedication to client happiness. Content DNA focuses on topics like quality construction methodologies, neighborhood advantages, home design innovation, customer testimonials, and advice for first-time buyers. The brand values transparency, client-centricity, integrity, and building lasting community connections.",
-          "platforms": [
-            "twitter",
-            "",
-            "",
-            "facebook",
-            "",
-            "",
-            "tiktok",
-            "blog"
-          ]
+          "platforms": ["twitter", "", "", "facebook", "", "", "tiktok", "blog"]
         }
       },
       {
@@ -2924,16 +2687,7 @@
           "description": "## Content Pillars:\n- Neighborhood highlights and features\n- Family-friendly housing options\n- Community events and local attractions\n- Testimonials from families in the community\n\n## Post Types:\n- Evergreen guides\n- Series featuring local events\n- Case studies on family experiences\n- Opinion pieces on community living benefits\n\n## Publishing Plan:\n- Neighborhood guides: Quarterly\n- Local events series: Monthly\n- Testimonials and case studies: Bi-monthly\n- Opinion pieces as community news arises\n\n## Growth Tactics:\n- SEO Optimization: Keywords such as \"family-friendly neighborhoods,\" \"local community events,\" \"moving to [location].\"\n- Internal links to other community-focused articles and development projects.\n- Collaborate with local businesses and community leaders for guest posts or joint events.\n- Utilize social media to showcase neighborhood highlights with multimedia content.\n\n## Voice Guidelines:\nUse a warm, inviting tone that highlights community aspects. Keep content structured with visuals and local imagery. \n\n## Weekly Content Calendar:\n- **Tuesday**: \"Discover the Best Neighborhoods for Families in [Location]\" - guide on local areas.\n- **Thursday**: \"Meet the Neighbors: A Family’s Experience Moving to Baja Seca\" - a detailed testimonial.\n- **Saturday**: \"Upcoming Local Events for Families this Month\" - a community update.\n\n## Metrics:\nMeasure organic traffic, social shares on community content, click-through rates for neighborhood guides, and engagement on local event promotions.",
           "objective": "This strategy aims to attract families considering relocation by showcasing community strengths and fostering emotional connections.",
           "tonality": "The communication style is professional yet approachable, blending warmth with confidence to build trust with prospective homebuyers. The tone is moderately formal, avoiding jargon to remain accessible to a broad audience that may not be familiar with technical real estate terms. Messaging leverages emotional triggers such as security, pride of homeownership, family wellbeing, and future stability. Storytelling is used to highlight community building, quality craftsmanship, and client satisfaction, setting itself apart by focusing on authentic customer experiences rather than just sales pitches. The brand projects reliability and transparency, seeking to differentiate itself from faceless corporate builders by emphasizing local roots and dedication to client happiness. Content DNA focuses on topics like quality construction methodologies, neighborhood advantages, home design innovation, customer testimonials, and advice for first-time buyers. The brand values transparency, client-centricity, integrity, and building lasting community connections.",
-          "platforms": [
-            "twitter",
-            "",
-            "",
-            "facebook",
-            "",
-            "",
-            "tiktok",
-            "blog"
-          ]
+          "platforms": ["twitter", "", "", "facebook", "", "", "tiktok", "blog"]
         }
       },
       {
@@ -2943,16 +2697,7 @@
           "description": "## Content Pillars:\n- Latest trends in home design\n- Construction methodologies and standards\n- Sustainability in home building\n- Expert interviews with industry professionals\n\n## Post Types:\n- Timely news/commentary on emerging trends\n- Opinion/editorial pieces by local experts\n- Case studies showcasing innovative building techniques\n- Evergreen guides about home features\n\n## Publishing Plan:\n- Timely news pieces: Monthly\n- Expert opinions: Quarterly\n- Case studies: Bi-annual\n- Evergreen guides: Monthly\n\n## Growth Tactics:\n- SEO Optimization: Focus on keywords like \"modern home design trends,\" \"sustainable building methods,\" and \"quality home construction.\"\n- Use internal links to related content in the design and construction categories.\n- Partner with industry experts for guest posts and collaborations.\n- Create infographics and video content to share insights visually on social platforms.\n\n## Voice Guidelines:\nMaintain an authoritative yet relatable tone, ensuring accessibility. Utilize visuals in the form of diagrams and photos to supplement technical discussions.\n\n## Weekly Content Calendar:\n- **Monday**: \"Top 5 Home Design Trends for 2025\" - a news piece analyzing current trends.\n- **Wednesday**: \"Interview with an Architect: Designing Family-Friendly Homes\" - Q&A format.\n- **Friday**: \"Understanding Sustainable Building Materials: What to Look For\" - an informative guide.\n\n## Metrics:\nEvaluate organic traffic on design pieces, engagement on interviews, shares of case studies, and subscriber growth from expert insights content.",
           "objective": "This strategy aims to establish Baja Seca as a reputable authority in home design and construction, appealing to informed buyers seeking quality.",
           "tonality": "The communication style is professional yet approachable, blending warmth with confidence to build trust with prospective homebuyers. The tone is moderately formal, avoiding jargon to remain accessible to a broad audience that may not be familiar with technical real estate terms. Messaging leverages emotional triggers such as security, pride of homeownership, family wellbeing, and future stability. Storytelling is used to highlight community building, quality craftsmanship, and client satisfaction, setting itself apart by focusing on authentic customer experiences rather than just sales pitches. The brand projects reliability and transparency, seeking to differentiate itself from faceless corporate builders by emphasizing local roots and dedication to client happiness. Content DNA focuses on topics like quality construction methodologies, neighborhood advantages, home design innovation, customer testimonials, and advice for first-time buyers. The brand values transparency, client-centricity, integrity, and building lasting community connections.",
-          "platforms": [
-            "twitter",
-            "",
-            "",
-            "facebook",
-            "",
-            "",
-            "tiktok",
-            "blog"
-          ]
+          "platforms": ["twitter", "", "", "facebook", "", "", "tiktok", "blog"]
         }
       },
       {
@@ -2962,16 +2707,7 @@
           "description": "## Content Pillars:\n- Real estate market trends and analysis\n- Opportunities in the local housing market\n- Sustainable development practices\n- Insights from successful collaborations\n\n## Post Types:\n- Timely market commentary\n- Case studies on successful projects\n- Opinion pieces regarding industry standards\n- Interview/Q&A formats with local influencers\n\n## Publishing Plan:\n- Market analysis pieces: Bi-monthly\n- Case studies: Quarterly\n- Opinion pieces: As industry shifts occur\n- Interviews: Monthly\n\n## Growth Tactics:\n- SEO Optimization: Utilize keywords like \"real estate investment opportunities,\" \"market analysis,\" and \"sustainable development trends.\"\n- Internal linking to related investor-focused content.\n- Foster relationships with other industry leaders for guest contributions.\n- Leverage LinkedIn and industry forums for sharing insights and gathering insights.\n\n## Voice Guidelines:\nMaintain a professional and authoritative tone. Use data visualizations to support insights and lend credibility.\n\n## Weekly Content Calendar:\n- **Tuesday**: \"Current Trends in Real Estate Investment: What You Need to Know\" - data-driven article.\n- **Thursday**: \"Success Story: How Baja Seca Collaborated with Local Investors\" - a case study.\n- **Saturday**: \"Expert Insight: The Future of Sustainable Development in [Region]\" - an industry opinion piece.\n\n## Metrics:\nAnalyze organic traffic to investment content, engagement levels on LinkedIn, shares of industry-related posts, and conversions from clicks to investment inquiries.",
           "objective": "This strategy aims to engage potential investors by demonstrating market knowledge and opportunities, fostering partnerships, and advancing Baja Seca’s credibility.",
           "tonality": "The communication style is professional yet approachable, blending warmth with confidence to build trust with prospective homebuyers. The tone is moderately formal, avoiding jargon to remain accessible to a broad audience that may not be familiar with technical real estate terms. Messaging leverages emotional triggers such as security, pride of homeownership, family wellbeing, and future stability. Storytelling is used to highlight community building, quality craftsmanship, and client satisfaction, setting itself apart by focusing on authentic customer experiences rather than just sales pitches. The brand projects reliability and transparency, seeking to differentiate itself from faceless corporate builders by emphasizing local roots and dedication to client happiness. Content DNA focuses on topics like quality construction methodologies, neighborhood advantages, home design innovation, customer testimonials, and advice for first-time buyers. The brand values transparency, client-centricity, integrity, and building lasting community connections.",
-          "platforms": [
-            "twitter",
-            "",
-            "",
-            "facebook",
-            "",
-            "",
-            "tiktok",
-            "blog"
-          ]
+          "platforms": ["twitter", "", "", "facebook", "", "", "tiktok", "blog"]
         }
       }
     ],
@@ -3053,16 +2789,7 @@
                 "created_at": "2025-08-22T18:51:39.792795+00:00"
               }
             },
-            "platforms": [
-              "",
-              "",
-              "",
-              "",
-              "instagram",
-              "",
-              "tiktok",
-              ""
-            ],
+            "platforms": ["", "", "", "", "instagram", "", "tiktok", ""],
             "brand": {
               "id": 15,
               "name": "Brioche",
@@ -3123,16 +2850,7 @@
               "keyOffer": "Brioche offers a lightweight, no-code messaging automation platform designed to empower entrepreneurs and small businesses to engage customers through their preferred messaging apps effortlessly. The core offer is the ability to create customizable, automated conversational flows that foster real-time, personalized interactions without needing complex technical skills. The transformation promised is shifting from chaotic, manual customer messaging to streamlined, automated dialogue that feels authentic and responsive—bolstering engagement, retention, and sales. Beneath the surface, Brioche also delivers time savings, improved brand experience, and scalable communication that grows with the business. Their unique advantage is their focus on popular chat platforms with easy-to-use tools that integrate conversation automation without disrupting natural human connection, which differentiates them from generic bulk messaging or traditional CRM systems.",
               "brandTone": "Brioche's brand voice is warm, approachable, and clear, blending a conversational and encouraging tone with authoritative clarity. It strikes a balance between professional reliability and friendly accessibility, avoiding overly formal or technical language to welcome users of all levels of digital literacy. The communication style leverages emotional triggers related to relief from communication overload, empowerment through simplicity, and confidence in driving business success. Storytelling often revolves around small business growth, customer connection, and time-saving automation, positioning Brioche as a caring ally rather than a distant corporate solution. This approachable yet expert voice differentiates Brioche from typical impersonal SaaS brands by emphasizing humanity and genuine customer relationships within automated messaging.",
               "targetAudience": "Brioche primarily targets small to medium-sized business owners, solopreneurs, freelancers, and creative professionals who seek an effortless and elegant way to communicate with their customers and audience through messaging apps. These users often operate solo or in small teams without extensive marketing resources. Their pain points include managing communication channels, engaging customers effectively, and delivering personalized messages without technical complexity or high costs. They aspire to automate their messaging workflows seamlessly while maintaining a warm, human touch that fosters customer loyalty and boosts engagement. Decision-making criteria center on ease of use, integration capabilities, affordability, and the ability to enhance direct customer relationships via popular messaging platforms like WhatsApp and Instagram. This audience consumes content primarily via digital channels such as blogs, social media, tech and marketing forums, and video tutorials, preferring clear, straightforward language that emphasizes benefits and practical results rather than technical jargon.",
-              "platforms": [
-                "",
-                "",
-                "",
-                "",
-                "instagram",
-                "",
-                "tiktok",
-                ""
-              ],
+              "platforms": ["", "", "", "", "instagram", "", "tiktok", ""],
               "contentType": "idea_to_content_generation"
             },
             "context": {

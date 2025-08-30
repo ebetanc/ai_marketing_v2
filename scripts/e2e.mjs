@@ -22,7 +22,7 @@ async function runBEChecks() {
   const SUPABASE_URL = getEnv("VITE_SUPABASE_URL", "http://127.0.0.1:55321");
   const SUPABASE_ANON_KEY = getEnv(
     "VITE_SUPABASE_ANON_KEY",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0",
   );
 
   const clientA = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -62,7 +62,7 @@ async function runBEChecks() {
   });
   assert(
     !compA.error && compA.data.owner_id === userA.id,
-    "A company insert failed or wrong owner"
+    "A company insert failed or wrong owner",
   );
   const companyAId = compA.data.id;
 
@@ -294,7 +294,7 @@ async function runBEChecks() {
   // B cannot see A's companies
   const listBCompanies = await clientB.from("companies").select("brand_name");
   const seesAUpdated = (listBCompanies.data || []).some(
-    (r) => r.brand_name === "E2E Co A Updated"
+    (r) => r.brand_name === "E2E Co A Updated",
   );
   steps.push({ step: "B_rls_companies_isolation", ok: !seesAUpdated });
   assert(!seesAUpdated, "B can see A's updated company name (RLS leak)");
@@ -314,7 +314,7 @@ async function runBEChecks() {
   });
   assert(
     !!forbidIdeaB.error,
-    "B should be blocked inserting idea for A's company"
+    "B should be blocked inserting idea for A's company",
   );
 
   // B inserts own company, strategy, idea, and content
@@ -432,7 +432,7 @@ async function runFEChecks() {
   steps.push({ step: "read_index", ok: true, bytes: html.length });
   assert(
     html.includes('<div id="root">') || html.includes('id="root"'),
-    "index.html missing root div"
+    "index.html missing root div",
   );
 
   const jsMatch = html.match(/assets\/index-[A-Za-z0-9_-]+\.js/);
@@ -506,7 +506,7 @@ async function runWebhookChecks() {
     const SUPABASE_URL = getEnv("VITE_SUPABASE_URL", "http://127.0.0.1:55321");
     const SUPABASE_ANON_KEY = getEnv(
       "VITE_SUPABASE_ANON_KEY",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0",
     );
     const tmp = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const email = `e2e_webhook_${Date.now()}@test.local`;
@@ -723,7 +723,7 @@ async function runWebhookChecks() {
     // Validate receipts
     assert(
       received.length === payloads.length,
-      `Expected ${payloads.length} webhook hits, got ${received.length}`
+      `Expected ${payloads.length} webhook hits, got ${received.length}`,
     );
     payloads.forEach((p, i) => {
       const rec = received[i];
@@ -753,7 +753,7 @@ async function runWebhookChecks() {
           b.platforms.length === 8 &&
           b.platforms.every(
             (it, idx) =>
-              typeof it === "string" && (it === "" || it === ORDER[idx])
+              typeof it === "string" && (it === "" || it === ORDER[idx]),
           );
       }
       steps.push({
@@ -763,13 +763,13 @@ async function runWebhookChecks() {
       });
       assert(
         idOk && opOk && keysOk && shapeOk,
-        `Webhook payload ${i + 1} failed validation`
+        `Webhook payload ${i + 1} failed validation`,
       );
       // user consistency
       if (b.meta?.user_id !== undefined && b.user_id !== undefined) {
         assert(
           b.meta.user_id === b.user_id,
-          `meta.user_id and user_id mismatch for ${b.identifier}`
+          `meta.user_id and user_id mismatch for ${b.identifier}`,
         );
       }
     });
@@ -790,8 +790,8 @@ async function runWebhookChecks() {
       JSON.stringify(
         { ok: out.be.ok && out.fe.ok && out.webhooks.ok, ...out },
         null,
-        2
-      )
+        2,
+      ),
     );
     process.exit(0);
   } catch (err) {
@@ -799,8 +799,8 @@ async function runWebhookChecks() {
       JSON.stringify(
         { ok: false, error: String(err?.message || err), ...out },
         null,
-        2
-      )
+        2,
+      ),
     );
     process.exit(1);
   }

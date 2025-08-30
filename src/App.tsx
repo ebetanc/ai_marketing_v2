@@ -1,24 +1,30 @@
-import React from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { Layout } from './components/layout/Layout'
-import { AuthProvider, ProtectedLayout } from './lib/auth'
-import Login from './pages/Login'
-import SignUp from './pages/SignUp'
-import ForgotPassword from './pages/ForgotPassword'
-import ResetPassword from './pages/ResetPassword'
-import { Dashboard } from './pages/Dashboard'
-import { Companies } from './pages/Companies'
-import { Strategies } from './pages/Strategies'
-import { Ideas } from './pages/Ideas'
-import { Content } from './pages/Content'
-import { Campaigns } from './pages/Campaigns'
-import { YouTubeSEO } from './pages/YouTubeSEO'
-import { TrendBlog } from './pages/TrendBlog'
-import { SemanticSEO } from './pages/SemanticSEO'
-import { KeywordResearch } from './pages/KeywordResearch'
-import { RealEstateContent } from './pages/RealEstateContent'
-import { ToastProvider } from './components/ui/Toast'
-import { Account } from './pages/Account'
+import React from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
+import { Layout } from "./components/layout/Layout";
+import { AuthProvider, ProtectedLayout } from "./lib/auth";
+import Login from "./pages/Login";
+import SignUp from "./pages/SignUp";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import { Dashboard } from "./pages/Dashboard";
+import { Companies } from "./pages/Companies";
+import { Strategies } from "./pages/Strategies";
+import { Ideas } from "./pages/Ideas";
+import { Content } from "./pages/Content";
+import { Campaigns } from "./pages/Campaigns";
+import { YouTubeSEO } from "./pages/YouTubeSEO";
+import { TrendBlog } from "./pages/TrendBlog";
+import { SemanticSEO } from "./pages/SemanticSEO";
+import { KeywordResearch } from "./pages/KeywordResearch";
+import { RealEstateContent } from "./pages/RealEstateContent";
+import { ToastProvider } from "./components/ui/Toast";
+import { Account } from "./pages/Account";
 
 function App() {
   return (
@@ -29,7 +35,7 @@ function App() {
         </AuthProvider>
       </ToastProvider>
     </Router>
-  )
+  );
 }
 
 function AppRoutes() {
@@ -57,17 +63,17 @@ function AppRoutes() {
         </Route>
       </Route>
     </Routes>
-  )
+  );
 }
 
 function RootRedirector() {
-  const location = useLocation()
-  const params = new URLSearchParams(location.search)
-  const redirectTo = params.get('redirectTo')
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const redirectTo = params.get("redirectTo");
   if (redirectTo) {
-    return <Navigate to={redirectTo} replace />
+    return <Navigate to={redirectTo} replace />;
   }
-  return <Navigate to="/dashboard" replace />
+  return <Navigate to="/dashboard" replace />;
 }
 
-export default App
+export default App;

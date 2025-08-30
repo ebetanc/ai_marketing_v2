@@ -1,1 +1,5 @@
-npm run -s check
+#!/usr/bin/env sh
+
+# Husky v9+ doesn't require sourcing husky.sh; removed deprecated lines.
+# Run lint-staged (prettier + eslint fixes)
+npx lint-staged

@@ -4,11 +4,18 @@ import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 import jsxA11y from "eslint-plugin-jsx-a11y";
+// Prettier config integration: extends at end disables stylistic ESLint rules conflicting with Prettier
+import eslintConfigPrettier from "eslint-config-prettier";
+import prettierPlugin from "eslint-plugin-prettier";
 
 export default tseslint.config(
   { ignores: ["dist"] },
   {
-    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    extends: [
+      js.configs.recommended,
+      ...tseslint.configs.recommended,
+      eslintConfigPrettier,
+    ],
     files: ["**/*.{ts,tsx}"],
     languageOptions: {
       ecmaVersion: 2020,
@@ -18,6 +25,7 @@ export default tseslint.config(
       "react-hooks": reactHooks,
       "react-refresh": reactRefresh,
       "jsx-a11y": jsxA11y,
+      prettier: prettierPlugin,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
@@ -64,6 +72,11 @@ export default tseslint.config(
           depth: 3,
         },
       ],
+      // Let Prettier handle formatting differences instead of ESLint complaining
+      "arrow-body-style": "off",
+      "prefer-arrow-callback": "off",
+      // Surface Prettier formatting issues as ESLint errors for single-run convenience
+      "prettier/prettier": "error",
     },
-  }
+  },
 );
