@@ -64,3 +64,30 @@
 }
 
 /* (Removed non-standard prefers-reduced-transparency media query) */
+
+/* -------------------------------------------------------------------------- */
+/*  Global minimum touch target size                                          */
+/*  WCAG / Apple HIG / Material guidelines recommend 44x44px (or 48x48) for   */
+/*  interactive controls. We enforce a logical minimum using an attribute so  */
+/*  components can just add data-touch-target instead of repeating inline     */
+/*  styles. Padding / layout can still shrink visual affordance; extra        */
+/*  hit-area is provided via transparent bounds.                              */
+/* -------------------------------------------------------------------------- */
+[data-touch-target] {
+  min-width: 44px;
+  min-height: 44px;
+  /* Ensure inline-flex / flex items don't collapse the hit area if empty */
+  position: relative;
+}
+
+/* When a control is visually smaller (icon-only, etc.), center the content */
+[data-touch-target].icon-only > svg,
+[data-touch-target].icon-only > * {
+  pointer-events: none;
+}
+
+/* Provide a utility class for explicit cases (fallback) */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+}

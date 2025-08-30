@@ -46,7 +46,8 @@ export function Button({
       disabled={disabled || loading}
       aria-disabled={disabled || loading || undefined}
       aria-busy={loading || undefined}
-      style={{ minWidth: 44, minHeight: 44 }}
+      // Enforce minimum touch size via global attribute selector (see index.css)
+      data-touch-target
       {...props}
     >
       {loading && (

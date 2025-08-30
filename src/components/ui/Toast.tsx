@@ -303,7 +303,7 @@ export function ToastProvider({
                 }}
                 className="shrink-0 rounded-md text-brand-700 hover:text-brand-900 hover:bg-brand-50 px-3 py-2 text-base font-medium"
                 aria-label={t.action.ariaLabel || t.action.label}
-                style={{ minWidth: 44, minHeight: 36 }}
+                data-touch-target
               >
                 {t.action.label}
               </button>
@@ -312,7 +312,7 @@ export function ToastProvider({
               onClick={() => remove(t.id)}
               className="shrink-0 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
               aria-label="Dismiss notification"
-              style={{ minWidth: 44, minHeight: 44 }}
+              data-touch-target
             >
               <X className="h-4 w-4" />
             </button>

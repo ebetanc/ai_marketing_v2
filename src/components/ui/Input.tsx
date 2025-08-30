@@ -59,7 +59,7 @@ export function Input({
         aria-invalid={Boolean(error) || undefined}
         aria-describedby={describedIds}
         aria-required={props.required || undefined}
-        style={{ minHeight: 44 }}
+        data-touch-target
         {...props}
         onKeyDown={(e) => {
           onKeyDown?.(e);

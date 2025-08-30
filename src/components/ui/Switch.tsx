@@ -41,7 +41,7 @@ export function Switch({
         checked ? "bg-brand-600" : "bg-gray-200",
         disabled && "opacity-50 cursor-not-allowed",
       )}
-      style={{ minWidth: 44, minHeight: 44 }}
+      data-touch-target
     >
       <span
         className={cn(
