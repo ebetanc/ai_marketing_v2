@@ -15,6 +15,7 @@ import {
   Search,
   ImagePlus,
   Wand2,
+  Video,
 } from "lucide-react";
 
 // Navigation sections (order matters for grouped rendering)
@@ -47,6 +48,11 @@ const realEstateNav = [
     name: "Real Estate Content",
     href: "/real-estate-content",
     icon: Building2,
+  },
+  {
+    name: "Create Video (avatar)",
+    href: "/create-video-avatar",
+    icon: Video,
   },
 ];
 
