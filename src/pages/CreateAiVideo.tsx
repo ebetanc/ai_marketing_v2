@@ -228,77 +228,81 @@ export function CreateAiVideo() {
             setSubmitting(false);
           }
         }}
-        className="grid gap-6 max-w-5xl"
+        className="grid gap-8 max-w-5xl"
         aria-label="AI video generation structured prompt builder"
       >
-        <div className="grid gap-4 md:grid-cols-5">
-          <div className="space-y-1">
-            <label
-              htmlFor="duration"
-              className="block text-base font-medium text-gray-700"
-            >
-              Duration (s)
-            </label>
-            <input
-              id="duration"
-              type="number"
-              min={4}
-              max={20}
-              value={duration}
-              onChange={(e) =>
-                setDuration(
-                  Math.min(
-                    20,
-                    Math.max(4, parseInt(e.target.value || "8", 10)),
-                  ),
-                )
-              }
-              className="block w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-gray-900 focus:border-brand-500 focus:outline-none"
-            />
-            <p className="text-base text-gray-500">Target length (4–20s).</p>
-          </div>
-          <div className="space-y-1 md:col-span-2">
-            <label
-              htmlFor="aspectRatio"
-              className="block text-base font-medium text-gray-700"
-            >
-              Aspect ratio
-            </label>
-            <select
-              id="aspectRatio"
-              className="block w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-gray-900 motion-safe:transition-colors focus:border-brand-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-200"
-              value={aspectRatio}
-              onChange={(e) => setAspectRatio(e.target.value)}
-              name="aspectRatio"
-            >
-              <option value="square">Square (1:1)</option>
-              <option value="16:9">Widescreen (16:9)</option>
-              <option value="9:16">Vertical (9:16)</option>
-            </select>
-            <p className="text-base text-gray-500">
-              Output orientation (square / wide / vertical).
-            </p>
-          </div>
-          <div className="md:col-span-2 flex flex-col justify-end">
-            <p className="text-base text-gray-500 mb-1">Prompt templates</p>
-            <div className="flex flex-wrap gap-2">
-              {templates.map((t) => (
-                <button
-                  key={t.label}
-                  type="button"
-                  onClick={() => applyTemplate(t)}
-                  className="text-base rounded-full border border-gray-300 bg-white px-3 py-1 font-medium text-gray-700 hover:bg-gray-50 motion-safe:transition"
-                >
-                  <Wand2 className="inline h-3 w-3 mr-1" />
-                  {t.label}
-                </button>
-              ))}
+        {/** Generation settings */}
+        <fieldset className="space-y-4 p-5 rounded-2xl border border-gray-200 bg-white/50">
+          <legend className="px-2 text-sm font-semibold text-gray-700">
+            Generation settings
+          </legend>
+          <div className="grid gap-4 md:grid-cols-5 items-end">
+            <div className="space-y-1">
+              <label
+                htmlFor="duration"
+                className="block text-xs font-medium text-gray-700 mb-1 tracking-wide uppercase"
+              >
+                Duration (s)
+              </label>
+              <input
+                id="duration"
+                type="number"
+                min={4}
+                max={20}
+                value={duration}
+                onChange={(e) =>
+                  setDuration(
+                    Math.min(
+                      20,
+                      Math.max(4, parseInt(e.target.value || "8", 10)),
+                    ),
+                  )
+                }
+                className="block w-full rounded-xl border-2 border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none"
+              />
+              <p className="text-[11px] text-gray-500">4–20 seconds</p>
             </div>
-            <p className="text-[10px] text-gray-400 mt-1">
-              Ctrl/Cmd+Enter to submit
-            </p>
+            <div className="space-y-1 md:col-span-2">
+              <label
+                htmlFor="aspectRatio"
+                className="block text-xs font-medium text-gray-700 mb-1 tracking-wide uppercase"
+              >
+                Aspect ratio
+              </label>
+              <select
+                id="aspectRatio"
+                className="block w-full rounded-xl border-2 border-gray-200 px-3 py-2 text-sm text-gray-900 motion-safe:transition-colors focus:border-brand-500 focus:outline-none"
+                value={aspectRatio}
+                onChange={(e) => setAspectRatio(e.target.value)}
+                name="aspectRatio"
+              >
+                <option value="square">Square (1:1)</option>
+                <option value="16:9">Widescreen (16:9)</option>
+                <option value="9:16">Vertical (9:16)</option>
+              </select>
+              <p className="text-[11px] text-gray-500">Orientation</p>
+            </div>
+            <div className="md:col-span-2 flex flex-col justify-end">
+              <p className="text-xs text-gray-500 mb-1">Prompt templates</p>
+              <div className="flex flex-wrap gap-2">
+                {templates.map((t) => (
+                  <button
+                    key={t.label}
+                    type="button"
+                    onClick={() => applyTemplate(t)}
+                    className="text-xs rounded-full border border-gray-300 bg-white px-3 py-1 font-medium text-gray-700 hover:bg-gray-50 motion-safe:transition"
+                  >
+                    <Wand2 className="inline h-3 w-3 mr-1" />
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-gray-400 mt-1">
+                Ctrl/Cmd+Enter to submit
+              </p>
+            </div>
           </div>
-        </div>
+        </fieldset>
         <div className="grid gap-8 md:grid-cols-2">
           <Textarea
             label="Subject *"

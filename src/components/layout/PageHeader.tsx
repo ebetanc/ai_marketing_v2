@@ -3,6 +3,10 @@ import { cn } from "../../lib/utils";
 
 type PageHeaderProps = {
   title: string;
+  /**
+   * (Deprecated) Previously rendered a subtext/description under the title.
+   * Kept for backward compatibility with existing page usages; ignored now.
+   */
   description?: React.ReactNode;
   icon?: React.ReactNode;
   actions?: React.ReactNode;
@@ -44,11 +48,7 @@ export function PageHeader({
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">
             {title}
           </h1>
-          {description ? (
-            <p className="mt-1 text-gray-600 text-base sm:text-base">
-              {description}
-            </p>
-          ) : null}
+          {/* Subtext removed intentionally to simplify headers site-wide. */}
         </div>
       </div>
       {actions ? (
