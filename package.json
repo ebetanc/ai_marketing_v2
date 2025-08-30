@@ -8,6 +8,7 @@
     "dev-db": "npx supabase start",
     "dev-full": "npx supabase start & vite",
     "prebuild": "npm run types:gen",
+    "types:gen": "node scripts/generate-types.mjs",
     "build": "vite build",
     "vite-build": "vite build",
     "lint": "eslint . --no-cache",
