@@ -37,7 +37,8 @@ export function Select({
         <label
           htmlFor={selectId}
           className={cn(
-            "block text-sm font-medium",
+            // Enforce minimum 16px font size
+            "block text-base font-medium",
             props.disabled || (props as any).readOnly
               ? "text-gray-500"
               : "text-gray-700",
@@ -91,12 +92,18 @@ export function Select({
         />
       </div>
       {description && !error && (
-        <p id={`${selectId}-desc`} className="text-xs text-gray-500">
+        <p
+          id={`${selectId}-desc`}
+          className="text-base text-gray-600 leading-snug"
+        >
           {description}
         </p>
       )}
       {error && (
-        <p id={`${selectId}-error`} className="text-sm text-red-600">
+        <p
+          id={`${selectId}-error`}
+          className="text-base text-red-600 font-medium"
+        >
           {error}
         </p>
       )}

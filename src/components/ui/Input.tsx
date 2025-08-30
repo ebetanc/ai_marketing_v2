@@ -32,7 +32,8 @@ export function Input({
         <label
           htmlFor={inputId}
           className={cn(
-            "block text-sm font-medium",
+            // Minimum 16px font size (text-base) per guidelines
+            "block text-base font-medium",
             props.disabled || props.readOnly
               ? "text-gray-500"
               : "text-gray-700",
@@ -68,12 +69,18 @@ export function Input({
         }}
       />
       {description && !error && (
-        <p id={`${inputId}-desc`} className="text-xs text-gray-500">
+        <p
+          id={`${inputId}-desc`}
+          className="text-base text-gray-600 leading-snug"
+        >
           {description}
         </p>
       )}
       {error && (
-        <p id={`${inputId}-error`} className="text-sm text-red-600">
+        <p
+          id={`${inputId}-error`}
+          className="text-base text-red-600 font-medium"
+        >
           {error}
         </p>
       )}

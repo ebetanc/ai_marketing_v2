@@ -33,7 +33,8 @@ export function Textarea({
         <label
           htmlFor={textareaId}
           className={cn(
-            "block text-sm font-medium",
+            // Upgrade to text-base (16px) per accessibility guideline
+            "block text-base font-medium",
             props.disabled || (props as any).readOnly
               ? "text-gray-500"
               : "text-gray-700",
@@ -64,12 +65,18 @@ export function Textarea({
         }}
       />
       {description && !error && (
-        <p id={`${textareaId}-desc`} className="text-xs text-gray-500">
+        <p
+          id={`${textareaId}-desc`}
+          className="text-base text-gray-600 leading-snug"
+        >
           {description}
         </p>
       )}
       {error && (
-        <p id={`${textareaId}-error`} className="text-sm text-red-600">
+        <p
+          id={`${textareaId}-error`}
+          className="text-base text-red-600 font-medium"
+        >
           {error}
         </p>
       )}

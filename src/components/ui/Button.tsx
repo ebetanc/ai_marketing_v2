@@ -34,10 +34,11 @@ export function Button({
             variant === "ghost",
           "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500 disabled:bg-red-400":
             variant === "destructive",
-          "px-2 py-1 text-xs": size === "xs",
-          "px-3 py-1.5 text-sm": size === "sm",
-          "px-4 py-2 text-sm": size === "md",
-          "px-6 py-3 text-base": size === "lg",
+          // All text sizes must be at least 16px per guidelines. We keep padding scale for visual hierarchy.
+          "px-2 py-1 text-base": size === "xs",
+          "px-3 py-1.5 text-base": size === "sm",
+          "px-4 py-2 text-base": size === "md",
+          "px-6 py-3 text-lg": size === "lg",
         },
         className,
       )}

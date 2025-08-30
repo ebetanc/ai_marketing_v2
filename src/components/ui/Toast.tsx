@@ -284,9 +284,13 @@ export function ToastProvider({
             </div>
             <div className="flex-1 min-w-0">
               {t.title && (
-                <p className="text-sm font-medium text-gray-900">{t.title}</p>
+                <p className="text-base font-semibold text-gray-900 leading-snug">
+                  {t.title}
+                </p>
               )}
-              <p className="text-sm text-gray-700">{t.message}</p>
+              <p className="text-base text-gray-800 leading-snug">
+                {t.message}
+              </p>
             </div>
             {allowActions && t.action && (
               <button
@@ -297,7 +301,7 @@ export function ToastProvider({
                     remove(t.id);
                   }
                 }}
-                className="shrink-0 rounded-md text-brand-700 hover:text-brand-900 hover:bg-brand-50 px-2 py-1 text-sm font-medium"
+                className="shrink-0 rounded-md text-brand-700 hover:text-brand-900 hover:bg-brand-50 px-3 py-2 text-base font-medium"
                 aria-label={t.action.ariaLabel || t.action.label}
                 style={{ minWidth: 44, minHeight: 36 }}
               >
