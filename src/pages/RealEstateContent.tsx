@@ -372,7 +372,6 @@ export function RealEstateContent() {
             className={`relative border-2 rounded-xl p-4 transition-colors ${isDragging ? "border-brand-500 bg-brand-50" : "border-dashed border-gray-300"}`}
             aria-label="Drag and drop a URL here or use the input field"
             role="group"
-            tabIndex={0}
           >
             <div className="space-y-3">
               <Input

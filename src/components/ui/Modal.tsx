@@ -325,12 +325,19 @@ export function ModalFooter({ className, ...props }: ModalSectionProps) {
 
 type ModalTitleProps = React.HTMLAttributes<HTMLHeadingElement> & {
   id?: string;
+  children: React.ReactNode; // enforce non-empty
 };
-export function ModalTitle({ className, ...props }: ModalTitleProps) {
+export function ModalTitle({ className, children, ...props }: ModalTitleProps) {
+  // Fallback to visually hidden placeholder if empty (defensive)
+  const content =
+    children === undefined || children === null || children === "" ? (
+      <span className="sr-only">Dialog title</span>
+    ) : (
+      children
+    );
   return (
-    <h2
-      className={cn("text-xl font-bold text-gray-900", className)}
-      {...props}
-    />
+    <h2 className={cn("text-xl font-bold text-gray-900", className)} {...props}>
+      {content}
+    </h2>
   );
 }

@@ -59,6 +59,8 @@ type ModalContent = {
   source: ContentSource;
   // Optional angles array when already transformed upstream
   angles?: unknown[];
+  // Scheduling
+  scheduled_at?: string | null;
 };
 
 interface ViewContentModalProps {
@@ -158,6 +160,28 @@ export function ViewContentModal({
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
   const [timeHour, setTimeHour] = useState("09");
   const [timeMinute, setTimeMinute] = useState("00");
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
+  // Timezone info for clarity
+  const [tzInfo] = useState(() => {
+    const d = new Date();
+    const offsetMin = d.getTimezoneOffset(); // minutes behind UTC (positive if behind)
+    const totalMin = -offsetMin; // invert sign: positive means ahead of UTC
+    const sign = totalMin >= 0 ? "+" : "-";
+    const abs = Math.abs(totalMin);
+    const oh = String(Math.floor(abs / 60)).padStart(2, "0");
+    const om = String(abs % 60).padStart(2, "0");
+    let abbr: string | undefined;
+    try {
+      const parts = Intl.DateTimeFormat(undefined, {
+        timeZoneName: "short",
+      }).formatToParts(d);
+      abbr = parts.find((p) => p.type === "timeZoneName")?.value;
+    } catch (_e) {
+      // ignore
+    }
+    const utcOffset = `UTC${sign}${oh}:${om}`;
+    return { abbr: abbr || utcOffset, utcOffset };
+  });
   // Re-hydrate edit form when content changes if not actively editing
   useEffect(() => {
     if (!isEditing) {
@@ -171,6 +195,19 @@ export function ViewContentModal({
     content?.body_text,
     isEditing,
   ]);
+  // Rehydrate scheduled time from content
+  useEffect(() => {
+    if (content?.scheduled_at) {
+      const dt = new Date(content.scheduled_at);
+      if (!Number.isNaN(dt.getTime())) {
+        setScheduledAt(dt);
+        setTimeHour(String(dt.getHours()).padStart(2, "0"));
+        setTimeMinute(String(dt.getMinutes()).padStart(2, "0"));
+      }
+    } else {
+      setScheduledAt(null);
+    }
+  }, [content?.scheduled_at]);
   const { call: runPost, loading: posting } = useAsyncCallback(async () => {
     if (!content?.id || !content?.source) return;
     console.log("Posting content:", content.id, "from table:", content.source);
@@ -465,19 +502,27 @@ export function ViewContentModal({
                       {content.platform}
                     </Badge>
                   )}
-                  {content.type &&
-                    content.platform &&
-                    content.type?.replace("_", " ").toLowerCase() !==
-                      content.platform.toLowerCase() && (
-                      <Badge variant="secondary" className="text-xs">
-                        {content.type?.replace("_", " ")}
-                      </Badge>
-                    )}
-                  {!content.platform && content.type && (
-                    <Badge variant="secondary" className="text-xs">
-                      {content.type?.replace("_", " ")}
-                    </Badge>
-                  )}
+                  {/* Suppress separate type badge when type is social_post */}
+                  {(() => {
+                    const typeIsSocial = content.type === "social_post";
+                    if (!content.type || typeIsSocial) return null;
+                    // Show type badge only if there's no platform OR it's different (and not social_post)
+                    const normalizedType = content.type
+                      .replace(/_/g, " ")
+                      .toLowerCase();
+                    const normalizedPlatform = content.platform?.toLowerCase();
+                    if (
+                      !content.platform ||
+                      normalizedType !== normalizedPlatform
+                    ) {
+                      return (
+                        <Badge variant="secondary" className="text-xs">
+                          {content.type.replace(/_/g, " ")}
+                        </Badge>
+                      );
+                    }
+                    return null;
+                  })()}
                 </p>
               </>
             )}
@@ -507,12 +552,14 @@ export function ViewContentModal({
                   {formatDate(content.created_at)}
                 </p>
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">Type</p>
-                <p className="text-gray-700 capitalize">
-                  {content.type?.replace("_", " ") || "Content"}
-                </p>
-              </div>
+              {content.type && content.type !== "social_post" && (
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Type</p>
+                  <p className="text-gray-700 capitalize">
+                    {content.type.replace(/_/g, " ") || "Content"}
+                  </p>
+                </div>
+              )}
 
               <div>
                 <p className="text-sm font-medium text-gray-900">Platform</p>
@@ -641,6 +688,12 @@ export function ViewContentModal({
             role="dialog"
             aria-label="Schedule content"
           >
+            <div className="text-[11px] text-gray-500 mb-2">
+              Times shown in <span className="font-medium">local time</span> (
+              {tzInfo.abbr}
+              {tzInfo.abbr !== tzInfo.utcOffset && `, ${tzInfo.utcOffset}`}
+              ).
+            </div>
             <div className="flex items-center justify-between mb-2">
               <button
                 type="button"
@@ -702,6 +755,16 @@ export function ViewContentModal({
                 d.getFullYear() === scheduledAt.getFullYear() &&
                 d.getMonth() === scheduledAt.getMonth() &&
                 d.getDate() === scheduledAt.getDate();
+              const today = new Date();
+              const todayStart = new Date(
+                today.getFullYear(),
+                today.getMonth(),
+                today.getDate(),
+                0,
+                0,
+                0,
+                0,
+              );
               return (
                 <div className="grid grid-cols-7 gap-1 mb-3 text-center">
                   {["S", "M", "T", "W", "T", "F", "S"].map((d) => (
@@ -715,11 +778,13 @@ export function ViewContentModal({
                   {cells.map((d, i) => {
                     if (!d) return <div key={i} />;
                     const isSelectedDay = selectedSameDay(d);
+                    const isPastDay = d < todayStart; // strictly before today
                     return (
                       <button
                         key={i}
                         type="button"
                         onClick={() => {
+                          if (isPastDay) return; // ignore clicks on past days
                           // preserve chosen time when changing day
                           const base = new Date(d);
                           base.setHours(
@@ -729,8 +794,10 @@ export function ViewContentModal({
                             0,
                           );
                           setScheduledAt(base);
+                          setScheduleError(null);
                         }}
-                        className={`text-sm h-8 w-8 flex items-center justify-center rounded-md hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-500 transition ${isSelectedDay ? "bg-brand-600 text-white hover:bg-brand-600" : "text-gray-700"}`}
+                        disabled={isPastDay}
+                        className={`text-sm h-8 w-8 flex items-center justify-center rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 transition ${isPastDay ? "text-gray-300 cursor-not-allowed" : "hover:bg-brand-50 text-gray-700"} ${isSelectedDay ? "bg-brand-600 text-white hover:bg-brand-600" : ""}`}
                         aria-pressed={isSelectedDay ? true : false}
                         aria-label={d.toDateString()}
                       >
@@ -744,10 +811,14 @@ export function ViewContentModal({
             {/* Time selectors */}
             <div className="flex items-end space-x-2 mb-3">
               <div className="flex-1">
-                <label className="block text-xs font-medium text-gray-600 mb-1">
+                <label
+                  htmlFor="schedule-hour"
+                  className="block text-xs font-medium text-gray-600 mb-1"
+                >
                   Hour
                 </label>
                 <select
+                  id="schedule-hour"
                   className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                   value={timeHour}
                   onChange={(e) => {
@@ -758,6 +829,7 @@ export function ViewContentModal({
                       next.setHours(parseInt(e.target.value, 10));
                       return next;
                     });
+                    setScheduleError(null);
                   }}
                 >
                   {Array.from({ length: 24 }, (_, h) =>
@@ -770,10 +842,14 @@ export function ViewContentModal({
                 </select>
               </div>
               <div className="flex-1">
-                <label className="block text-xs font-medium text-gray-600 mb-1">
+                <label
+                  htmlFor="schedule-minute"
+                  className="block text-xs font-medium text-gray-600 mb-1"
+                >
                   Minute
                 </label>
                 <select
+                  id="schedule-minute"
                   className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                   value={timeMinute}
                   onChange={(e) => {
@@ -784,6 +860,7 @@ export function ViewContentModal({
                       next.setMinutes(parseInt(e.target.value, 10));
                       return next;
                     });
+                    setScheduleError(null);
                   }}
                 >
                   {Array.from({ length: 12 }, (_, i) =>
@@ -796,6 +873,11 @@ export function ViewContentModal({
                 </select>
               </div>
             </div>
+            {scheduleError && (
+              <div className="text-[11px] text-red-600 mb-2" role="alert">
+                {scheduleError}
+              </div>
+            )}
             <div className="flex justify-between items-center gap-2">
               <div className="text-[11px] text-gray-500 flex-1">
                 {scheduledAt
@@ -807,8 +889,28 @@ export function ViewContentModal({
                   size="sm"
                   variant="outline"
                   onClick={() => {
+                    if (!content?.id || !content?.source) return;
+                    const prev = scheduledAt;
                     setScheduledAt(null);
                     push({ message: "Schedule cleared", variant: "info" });
+                    void (async () => {
+                      const { error } = await supabase
+                        .from(content.source)
+                        .update({ scheduled_at: null })
+                        .eq("id", content.id);
+                      if (error) {
+                        console.error("Failed clearing schedule", error);
+                        push({
+                          message: error.message,
+                          variant: "error",
+                        });
+                        // rollback UI if failed
+                        setScheduledAt(prev);
+                      } else {
+                        onUpdated?.({ ...content, scheduled_at: null });
+                        setScheduleError(null);
+                      }
+                    })();
                   }}
                   disabled={!scheduledAt}
                 >
@@ -829,11 +931,41 @@ export function ViewContentModal({
                       );
                       setScheduledAt(dt);
                     }
-                    push({
-                      message: `Scheduled for ${dt!.toLocaleString()}`,
-                      variant: "success",
-                    });
-                    setShowScheduler(false);
+                    if (!content?.id || !content?.source) return;
+                    // Validation: cannot schedule in the past (allow 30s grace)
+                    const now = new Date();
+                    if (dt!.getTime() < now.getTime() + 30000) {
+                      setScheduleError("Choose a future date & time");
+                      push({
+                        message: "Cannot schedule in the past",
+                        variant: "error",
+                      });
+                      return;
+                    }
+                    const iso = dt!.toISOString();
+                    void (async () => {
+                      const { error } = await supabase
+                        .from(content.source)
+                        .update({ scheduled_at: iso })
+                        .eq("id", content.id)
+                        .select()
+                        .single();
+                      if (error) {
+                        console.error("Failed to set schedule", error);
+                        push({
+                          message: error.message,
+                          variant: "error",
+                        });
+                      } else {
+                        push({
+                          message: `Scheduled for ${dt!.toLocaleString()}`,
+                          variant: "success",
+                        });
+                        onUpdated?.({ ...content, scheduled_at: iso });
+                        setShowScheduler(false);
+                        setScheduleError(null);
+                      }
+                    })();
                   }}
                 >
                   Set
@@ -886,9 +1018,14 @@ export function ViewContentModal({
                     {scheduledAt.toLocaleString(undefined, {
                       month: "short",
                       day: "numeric",
+                      year: "numeric",
                       hour: "2-digit",
                       minute: "2-digit",
+                      timeZoneName: "short",
                     })}
+                    <span className="ml-1 text-gray-400">
+                      ({tzInfo.utcOffset})
+                    </span>
                   </span>
                 </span>
               )}

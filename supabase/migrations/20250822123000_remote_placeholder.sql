@@ -1,0 +1,3 @@
+-- Placeholder migration for remote version 20250822123000
+-- The original SQL was already applied remotely but the file was missing locally.
+-- Keeping this empty (idempotent). Add actual statements if recovery of historical diff is required.

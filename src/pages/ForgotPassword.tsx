@@ -54,15 +54,7 @@ export default function ForgotPassword() {
             We’ll email a reset link.
           </p>
         </div>
-        <form
-          onSubmit={onSubmit}
-          className="space-y-4"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && (!email.trim() || loading)) {
-              e.preventDefault();
-            }
-          }}
-        >
+        <form onSubmit={onSubmit} className="space-y-4">
           <Input
             type="email"
             label="Email"

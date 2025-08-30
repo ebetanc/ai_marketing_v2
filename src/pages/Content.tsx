@@ -121,6 +121,7 @@ export function Content() {
     body?: string;
     status?: string;
     post?: boolean | null;
+    scheduled_at?: string | null;
   };
   // Legacy types removed; unified content only
   const [companies, setCompanies] = useState<any[]>([]);
@@ -250,6 +251,7 @@ export function Content() {
           title: (item as any).title || truncateText(item.content_body, 60),
           status: item.status || "draft",
           post: item.post || false,
+          scheduled_at: (item as any).scheduled_at || null,
           company_id: item.idea?.company_id ?? item.company_id ?? item.brand_id,
           strategy_id: item.idea?.strategy_id ?? item.strategy_id,
           brand_name:

@@ -53,6 +53,7 @@ export type Database = {
           idea_id: number;
           platform: string;
           post: boolean | null;
+          scheduled_at: string | null;
           status: string;
         };
         Insert: {
@@ -62,6 +63,7 @@ export type Database = {
           idea_id: number;
           platform: string;
           post?: boolean | null;
+          scheduled_at?: string | null;
           status?: string;
         };
         Update: {
@@ -71,6 +73,7 @@ export type Database = {
           idea_id?: number;
           platform?: string;
           post?: boolean | null;
+          scheduled_at?: string | null;
           status?: string;
         };
         Relationships: [
@@ -224,21 +227,151 @@ export type Database = {
           },
         ];
       };
+      media_assets: {
+        Row: {
+          asset_index: number;
+          created_at: string;
+          duration_seconds: number | null;
+          height: number | null;
+          id: number;
+          job_id: number;
+          metadata: Json | null;
+          mime_type: string | null;
+          storage_path: string | null;
+          url: string;
+          width: number | null;
+        };
+        Insert: {
+          asset_index: number;
+          created_at?: string;
+          duration_seconds?: number | null;
+          height?: number | null;
+          id?: number;
+          job_id: number;
+          metadata?: Json | null;
+          mime_type?: string | null;
+          storage_path?: string | null;
+          url: string;
+          width?: number | null;
+        };
+        Update: {
+          asset_index?: number;
+          created_at?: string;
+          duration_seconds?: number | null;
+          height?: number | null;
+          id?: number;
+          job_id?: number;
+          metadata?: Json | null;
+          mime_type?: string | null;
+          storage_path?: string | null;
+          url?: string;
+          width?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "media_assets_job_id_fkey";
+            columns: ["job_id"];
+            isOneToOne: false;
+            referencedRelation: "media_jobs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      media_jobs: {
+        Row: {
+          aspect_ratio: string | null;
+          assembled_prompt: string;
+          company_id: number;
+          completed_at: string | null;
+          created_at: string;
+          duration_seconds: number | null;
+          error_message: string | null;
+          id: number;
+          num_images: number | null;
+          prompt_action: string | null;
+          prompt_ambiance: string | null;
+          prompt_audio: string | null;
+          prompt_camera: string | null;
+          prompt_composition: string | null;
+          prompt_context: string | null;
+          prompt_refinement: string | null;
+          prompt_style: string | null;
+          prompt_subject: string;
+          started_at: string | null;
+          status: string;
+          type: string;
+        };
+        Insert: {
+          aspect_ratio?: string | null;
+          assembled_prompt: string;
+          company_id: number;
+          completed_at?: string | null;
+          created_at?: string;
+          duration_seconds?: number | null;
+          error_message?: string | null;
+          id?: number;
+          num_images?: number | null;
+          prompt_action?: string | null;
+          prompt_ambiance?: string | null;
+          prompt_audio?: string | null;
+          prompt_camera?: string | null;
+          prompt_composition?: string | null;
+          prompt_context?: string | null;
+          prompt_refinement?: string | null;
+          prompt_style?: string | null;
+          prompt_subject: string;
+          started_at?: string | null;
+          status?: string;
+          type: string;
+        };
+        Update: {
+          aspect_ratio?: string | null;
+          assembled_prompt?: string;
+          company_id?: number;
+          completed_at?: string | null;
+          created_at?: string;
+          duration_seconds?: number | null;
+          error_message?: string | null;
+          id?: number;
+          num_images?: number | null;
+          prompt_action?: string | null;
+          prompt_ambiance?: string | null;
+          prompt_audio?: string | null;
+          prompt_camera?: string | null;
+          prompt_composition?: string | null;
+          prompt_context?: string | null;
+          prompt_refinement?: string | null;
+          prompt_style?: string | null;
+          prompt_subject?: string;
+          started_at?: string | null;
+          status?: string;
+          type?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "media_jobs_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       profiles: {
         Row: {
           created_at: string;
           id: string;
-          role: Database["public"]["Enums"]["user_role"];
+          role: string | null;
         };
         Insert: {
           created_at?: string;
           id: string;
-          role?: Database["public"]["Enums"]["user_role"];
+          role?: string | null;
         };
         Update: {
           created_at?: string;
           id?: string;
-          role?: Database["public"]["Enums"]["user_role"];
+          role?: string | null;
         };
         Relationships: [];
       };
@@ -420,16 +553,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      set_user_role: {
-        Args: {
-          p_role: Database["public"]["Enums"]["user_role"];
-          p_user_id: string;
-        };
-        Returns: undefined;
-      };
+      [_ in never]: never;
     };
     Enums: {
-      user_role: "user" | "admin" | "call_center" | "marketing" | "real_estate";
+      [_ in never]: never;
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -559,8 +686,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      user_role: ["user", "admin", "call_center", "marketing", "real_estate"],
-    },
+    Enums: {},
   },
 } as const;

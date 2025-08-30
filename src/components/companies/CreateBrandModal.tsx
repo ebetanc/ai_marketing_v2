@@ -684,17 +684,7 @@ export function CreateBrandModal({
               <form
                 onSubmit={handleSubmit}
                 className="space-y-6"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    const blocked =
-                      submitLoading ||
-                      !formData.name.trim() ||
-                      !formData.targetAudience.trim() ||
-                      !formData.brandTone.trim() ||
-                      !formData.keyOffer.trim();
-                    if (blocked) e.preventDefault();
-                  }
-                }}
+                /* Removed keydown form handler to satisfy a11y rule: rely on required fields + submit validation */
               >
                 <Textarea
                   label="Target audience"

@@ -101,20 +101,7 @@ export default function ResetPassword() {
             Invalid or expired reset link. Request a new one.
           </div>
         )}
-        <form
-          onSubmit={onSubmit}
-          className="space-y-4"
-          aria-disabled={!hasRecoverySession}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              const blocked =
-                !hasRecoverySession ||
-                password.trim().length < minPasswordLength ||
-                loading;
-              if (blocked) e.preventDefault();
-            }
-          }}
-        >
+        <form onSubmit={onSubmit} className="space-y-4">
           <Input
             type="password"
             label="New password"

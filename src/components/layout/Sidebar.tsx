@@ -13,6 +13,8 @@ import {
   TrendingUp,
   Network,
   Search,
+  ImagePlus,
+  Wand2,
 } from "lucide-react";
 
 // Navigation sections (order matters for grouped rendering)
@@ -34,6 +36,9 @@ const toolsNav = [
   { name: "Trend Blog", href: "/trend-blog", icon: TrendingUp },
   { name: "Semantic SEO", href: "/semantic-seo", icon: Network },
   { name: "Keyword Research", href: "/keyword-research", icon: Search },
+  { name: "Create AI Image", href: "/create-ai-image", icon: ImagePlus },
+  { name: "Edit Image with AI", href: "/edit-image-with-ai", icon: Wand2 },
+  { name: "Create AI Video", href: "/create-ai-video", icon: ImagePlus },
 ];
 
 // Real Estate (hidden for marketing mode)

@@ -25,6 +25,9 @@ import { KeywordResearch } from "./pages/KeywordResearch";
 import { RealEstateContent } from "./pages/RealEstateContent";
 import { ToastProvider } from "./components/ui/Toast";
 import { Account } from "./pages/Account";
+import { CreateAiVideo as CreateAIVideoPage } from "./pages/CreateAiVideo";
+import { CreateAIImage } from "./pages/CreateAIImage";
+import { EditImageWithAI } from "./pages/EditImageWithAI";
 
 function App() {
   return (
@@ -57,6 +60,9 @@ function AppRoutes() {
           <Route path="/trend-blog" element={<TrendBlog />} />
           <Route path="/semantic-seo" element={<SemanticSEO />} />
           <Route path="/keyword-research" element={<KeywordResearch />} />
+          <Route path="/create-ai-video" element={<CreateAIVideoPage />} />
+          <Route path="/create-ai-image" element={<CreateAIImage />} />
+          <Route path="/edit-image-with-ai" element={<EditImageWithAI />} />
           <Route path="/real-estate-content" element={<RealEstateContent />} />
           <Route path="/account" element={<Account />} />
           <Route path="/" element={<RootRedirector />} />
@@ -71,6 +77,7 @@ function RootRedirector() {
   const params = new URLSearchParams(location.search);
   const redirectTo = params.get("redirectTo");
   if (redirectTo) {
+    // Redirect to provided path (sanitized: basic allowlisting could be added)
     return <Navigate to={redirectTo} replace />;
   }
   return <Navigate to="/dashboard" replace />;

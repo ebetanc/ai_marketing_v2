@@ -414,52 +414,51 @@ export function GenerateStrategyModal({
             </div>
           </div>
 
-          <div className="mb-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-1">
-              Select platforms
-            </h3>
-            <p id="platforms-helper" className="text-xs text-gray-500 mb-3">
-              Choose where to publish content.
-            </p>
-            <div
-              role="group"
-              aria-labelledby="platforms-helper"
-              aria-invalid={errors.platforms ? true : undefined}
-              aria-errormessage={
-                errors.platforms ? "platforms-error" : undefined
-              }
-              className="grid grid-cols-2 gap-3"
-            >
-              {platforms.map((platform) => {
-                const active = selectedPlatforms.includes(platform.id);
-                return (
-                  <button
-                    key={platform.id}
-                    aria-pressed={active}
-                    onClick={() => togglePlatform(platform.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === " ") {
-                        e.preventDefault();
-                        togglePlatform(platform.id);
-                      }
-                    }}
-                    className={cn(
-                      "p-3 rounded-xl border-2 transition-all duration-200 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2",
-                      active
-                        ? `${platform.color} text-white border-transparent shadow-md`
-                        : "bg-gray-50 text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-100",
-                    )}
-                  >
-                    {platform.name}
-                  </button>
-                );
-              })}
-            </div>
-            {errors.platforms && (
-              <div id="platforms-error" className="text-sm text-red-600 mt-2">
-                {errors.platforms}
+          <div className="mb-6 text-left">
+            <fieldset className="m-0 p-0 border-0">
+              <legend className="text-lg font-medium text-gray-900 mb-1">
+                Select platforms
+              </legend>
+              <p id="platforms-helper" className="text-xs text-gray-500 mb-3">
+                Choose where to publish content.
+              </p>
+              <div
+                role="group"
+                aria-labelledby="platforms-helper"
+                className="grid grid-cols-2 gap-3"
+              >
+                {platforms.map((platform) => {
+                  const active = selectedPlatforms.includes(platform.id);
+                  return (
+                    <button
+                      key={platform.id}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => togglePlatform(platform.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === " ") {
+                          e.preventDefault();
+                          togglePlatform(platform.id);
+                        }
+                      }}
+                      className={cn(
+                        "p-3 rounded-xl border-2 transition-all duration-200 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2",
+                        active
+                          ? `${platform.color} text-white border-transparent shadow-md`
+                          : "bg-gray-50 text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-100",
+                      )}
+                    >
+                      {platform.name}
+                    </button>
+                  );
+                })}
               </div>
-            )}
+              {errors.platforms && (
+                <div id="platforms-error" className="text-sm text-red-600 mt-2">
+                  {errors.platforms}
+                </div>
+              )}
+            </fieldset>
           </div>
 
           <Button

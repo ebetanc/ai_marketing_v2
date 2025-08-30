@@ -11,6 +11,7 @@ export type ContentPiece = {
   body: string;
   platform?: string;
   strategy_id?: string;
+  scheduled_at?: string | null;
   metadata?: {
     prompt?: string;
     generated_at?: string;
@@ -65,6 +66,7 @@ export function useContentPieces(companyId?: string) {
       body: row.content_body || (row as any).body || "",
       platform: platformLabel,
       strategy_id: sid != null ? String(sid) : undefined,
+      scheduled_at: (row as any).scheduled_at || null,
       created_at: row.created_at,
     };
   };
