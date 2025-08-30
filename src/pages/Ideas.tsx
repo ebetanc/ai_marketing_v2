@@ -1383,7 +1383,7 @@ export function Ideas() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Badge variant="primary" className="text-xs">
+                      <Badge variant="primary">
                         {brandIdeas.length} set
                         {brandIdeas.length === 1 ? "" : "s"}
                       </Badge>

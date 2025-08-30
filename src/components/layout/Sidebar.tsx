@@ -174,7 +174,7 @@ export function Sidebar() {
 
         {/* Content workflow group */}
         <div>
-          <p className="px-2 sm:px-3 mb-2 text-[10px] sm:text-xs font-semibold tracking-wider text-gray-500 uppercase">
+          <p className="px-2 sm:px-3 mb-2 text-base font-semibold tracking-wider text-gray-500 uppercase">
             Content workflow
           </p>
           <div className="space-y-1">
@@ -211,7 +211,7 @@ export function Sidebar() {
         {/* Tools (marketing & admin) */}
         {showTools && (
           <div>
-            <p className="px-2 sm:px-3 mb-2 text-[10px] sm:text-xs font-semibold tracking-wider text-gray-500 uppercase">
+            <p className="px-2 sm:px-3 mb-2 text-base font-semibold tracking-wider text-gray-500 uppercase">
               Tools
             </p>
             <div className="space-y-1">
@@ -249,7 +249,7 @@ export function Sidebar() {
         {/* Real Estate (real_estate & admin) */}
         {showRealEstate && (
           <div>
-            <p className="px-2 sm:px-3 mb-2 text-[10px] sm:text-xs font-semibold tracking-wider text-gray-500 uppercase">
+            <p className="px-2 sm:px-3 mb-2 text-base font-semibold tracking-wider text-gray-500 uppercase">
               Real Estate
             </p>
             <div className="space-y-1">

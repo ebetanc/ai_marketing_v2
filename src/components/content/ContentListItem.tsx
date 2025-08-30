@@ -67,11 +67,7 @@ export function ContentListItem({
               {content.title}
             </span>
             {/* Status badge removed */}
-            {content.post && (
-              <Badge variant="success" className="text-xs">
-                Posted
-              </Badge>
-            )}
+            {content.post && <Badge variant="success">Posted</Badge>}
             {(() => {
               const typeLabel = content.type?.replace("_", " ");
               const platformLabel = content.platform;
@@ -82,25 +78,17 @@ export function ContentListItem({
               ) {
                 return (
                   <>
-                    <Badge variant="secondary" className="text-xs">
-                      {platformLabel}
-                    </Badge>
-                    <Badge variant="secondary" className="text-xs">
-                      {typeLabel}
-                    </Badge>
+                    <Badge variant="secondary">{platformLabel}</Badge>
+                    <Badge variant="secondary">{typeLabel}</Badge>
                   </>
                 );
               }
               return (
-                <Badge variant="secondary" className="text-xs">
-                  {platformLabel || typeLabel}
-                </Badge>
+                <Badge variant="secondary">{platformLabel || typeLabel}</Badge>
               );
             })()}
             {content.strategy_id && (
-              <Badge variant="secondary" className="text-xs">
-                Strategy #{content.strategy_id}
-              </Badge>
+              <Badge variant="secondary">Strategy #{content.strategy_id}</Badge>
             )}
           </div>
           <p className="text-sm text-gray-600 line-clamp-2">

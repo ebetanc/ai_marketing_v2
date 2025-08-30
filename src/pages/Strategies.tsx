@@ -984,7 +984,7 @@ export function Strategies() {
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <Badge variant="primary" className="text-xs">
+                        <Badge variant="primary">
                           {company.strategies.length} strateg
                           {company.strategies.length === 1 ? "y" : "ies"}
                         </Badge>

@@ -423,7 +423,7 @@ export function ViewContentModal({
                   {angleTitle}
                 </h4>
                 {Boolean((angle as any).platform) && (
-                  <Badge variant="secondary" className="text-xs mt-1">
+                  <Badge variant="secondary" className="mt-1">
                     {String((angle as any).platform)}
                   </Badge>
                 )}
@@ -498,9 +498,7 @@ export function ViewContentModal({
                 <p className="text-sm text-gray-500 flex flex-wrap items-center gap-2">
                   <span>{content.brand_name || "Unknown brand"}</span>
                   {content.platform && (
-                    <Badge variant="secondary" className="text-xs">
-                      {content.platform}
-                    </Badge>
+                    <Badge variant="secondary">{content.platform}</Badge>
                   )}
                   {/* Suppress separate type badge when type is social_post */}
                   {(() => {
@@ -516,7 +514,7 @@ export function ViewContentModal({
                       normalizedType !== normalizedPlatform
                     ) {
                       return (
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="secondary">
                           {content.type.replace(/_/g, " ")}
                         </Badge>
                       );
@@ -581,7 +579,7 @@ export function ViewContentModal({
             {strategyId && (
               <div>
                 <p className="text-sm font-medium text-gray-900">Strategy ID</p>
-                <Badge variant="secondary" className="font-mono text-xs">
+                <Badge variant="secondary" className="font-mono">
                   {strategyId}
                 </Badge>
               </div>
@@ -688,8 +686,8 @@ export function ViewContentModal({
             role="dialog"
             aria-label="Schedule content"
           >
-            <div className="text-[11px] text-gray-500 mb-2">
-              Times shown in <span className="font-medium">local time</span> (
+            <div className="text-base text-gray-600 mb-2 leading-snug">
+              Times shown in <span className="font-semibold">local time</span> (
               {tzInfo.abbr}
               {tzInfo.abbr !== tzInfo.utcOffset && `, ${tzInfo.utcOffset}`}
               ).
@@ -770,7 +768,7 @@ export function ViewContentModal({
                   {["S", "M", "T", "W", "T", "F", "S"].map((d) => (
                     <div
                       key={d}
-                      className="text-[10px] uppercase tracking-wide text-gray-500 font-medium py-1"
+                      className="text-base uppercase tracking-wide text-gray-500 font-semibold py-1 leading-none"
                     >
                       {d}
                     </div>
@@ -813,7 +811,7 @@ export function ViewContentModal({
               <div className="flex-1">
                 <label
                   htmlFor="schedule-hour"
-                  className="block text-xs font-medium text-gray-600 mb-1"
+                  className="block text-base font-medium text-gray-700 mb-1"
                 >
                   Hour
                 </label>
@@ -844,7 +842,7 @@ export function ViewContentModal({
               <div className="flex-1">
                 <label
                   htmlFor="schedule-minute"
-                  className="block text-xs font-medium text-gray-600 mb-1"
+                  className="block text-base font-medium text-gray-700 mb-1"
                 >
                   Minute
                 </label>
@@ -874,12 +872,15 @@ export function ViewContentModal({
               </div>
             </div>
             {scheduleError && (
-              <div className="text-[11px] text-red-600 mb-2" role="alert">
+              <div
+                className="text-base text-red-600 mb-2 font-medium"
+                role="alert"
+              >
                 {scheduleError}
               </div>
             )}
             <div className="flex justify-between items-center gap-2">
-              <div className="text-[11px] text-gray-500 flex-1">
+              <div className="text-base text-gray-600 flex-1 leading-snug">
                 {scheduledAt
                   ? `Scheduled: ${scheduledAt.toLocaleString()}`
                   : "Pick a day & time"}

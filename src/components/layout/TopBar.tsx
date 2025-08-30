@@ -174,7 +174,7 @@ export function TopBar({
           <IconButton className="relative" aria-label="Notifications">
             <Bell className="h-5 w-5" />
             {notificationsCount > 0 && (
-              <span className="absolute -top-1 -right-1 h-3 w-3 sm:h-4 sm:w-4 bg-red-500 text-white text-[10px] sm:text-xs rounded-full flex items-center justify-center leading-none">
+              <span className="absolute -top-1 -right-1 min-h-[1.25rem] min-w-[1.25rem] px-1 bg-red-500 text-white text-base rounded-full flex items-center justify-center leading-none font-semibold shadow-sm">
                 {notificationsCount}
               </span>
             )}

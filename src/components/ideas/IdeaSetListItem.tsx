@@ -46,19 +46,13 @@ export function IdeaSetListItem({
               Idea set #{idea.id}
             </span>
             {topics.length > 0 && (
-              <Badge variant="success" className="text-xs">
-                {topics.length} Topics
-              </Badge>
+              <Badge variant="success">{topics.length} Topics</Badge>
             )}
             {idea.strategy_id && (
-              <Badge variant="secondary" className="text-xs">
-                Strategy #{idea.strategy_id}
-              </Badge>
+              <Badge variant="secondary">Strategy #{idea.strategy_id}</Badge>
             )}
             {idea.angle_number && (
-              <Badge variant="secondary" className="text-xs">
-                Angle {idea.angle_number}
-              </Badge>
+              <Badge variant="secondary">Angle {idea.angle_number}</Badge>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500">

@@ -131,7 +131,7 @@ export function MediaJobsList(props: Props) {
                             Unsupported asset
                           </div>
                         ) : null}
-                        <div className="absolute left-1 top-1 rounded bg-white/80 px-1.5 py-0.5 text-[10px] text-gray-700 shadow-sm">
+                        <div className="absolute left-1 top-1 rounded bg-white/90 px-2 py-1 text-base text-gray-800 shadow-sm font-semibold leading-none min-h-[1.5rem] min-w-[1.5rem] flex items-center justify-center">
                           {a.asset_index + 1}
                         </div>
                       </div>

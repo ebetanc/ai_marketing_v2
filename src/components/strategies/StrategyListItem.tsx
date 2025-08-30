@@ -40,9 +40,7 @@ export function StrategyListItem({
               Strategy #{strategy.id}
             </span>
             {angleCount > 0 && (
-              <Badge variant="success" className="text-xs">
-                {angleCount} Angles
-              </Badge>
+              <Badge variant="success">{angleCount} Angles</Badge>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500">
