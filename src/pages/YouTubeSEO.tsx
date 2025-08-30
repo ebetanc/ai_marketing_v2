@@ -39,7 +39,7 @@ export function YouTubeSEO() {
                 <h4 className="font-medium text-gray-900 mb-2">
                   Extract Transcript
                 </h4>
-                <p className="text-sm text-gray-600">
+                <p className="text-base text-gray-600">
                   Automatically pull transcripts
                 </p>
               </div>
@@ -50,7 +50,7 @@ export function YouTubeSEO() {
                 <h4 className="font-medium text-gray-900 mb-2">
                   AI Processing
                 </h4>
-                <p className="text-sm text-gray-600">SEO optimization</p>
+                <p className="text-base text-gray-600">SEO optimization</p>
               </div>
               <div className="text-center">
                 <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
@@ -59,7 +59,7 @@ export function YouTubeSEO() {
                 <h4 className="font-medium text-gray-900 mb-2">
                   SEO Blog Post
                 </h4>
-                <p className="text-sm text-gray-600">Ready to publish</p>
+                <p className="text-base text-gray-600">Ready to publish</p>
               </div>
             </div>
           </div>

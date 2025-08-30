@@ -39,7 +39,7 @@ export function KeywordResearch() {
                 <h4 className="font-medium text-gray-900 mb-2">
                   Keyword Analysis
                 </h4>
-                <p className="text-sm text-gray-600">
+                <p className="text-base text-gray-600">
                   Deep research into intent
                 </p>
               </div>
@@ -50,7 +50,7 @@ export function KeywordResearch() {
                 <h4 className="font-medium text-gray-900 mb-2">
                   Semantic Mapping
                 </h4>
-                <p className="text-sm text-gray-600">
+                <p className="text-base text-gray-600">
                   Related topics & variations
                 </p>
               </div>
@@ -59,7 +59,7 @@ export function KeywordResearch() {
                   <Lightbulb className="h-6 w-6 text-purple-600" />
                 </div>
                 <h4 className="font-medium text-gray-900 mb-2">5 Blog Ideas</h4>
-                <p className="text-sm text-gray-600">
+                <p className="text-base text-gray-600">
                   Unique, researched ideas
                 </p>
               </div>

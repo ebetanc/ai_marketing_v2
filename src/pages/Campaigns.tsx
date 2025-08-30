@@ -40,7 +40,7 @@ export function Campaigns() {
                 <h4 className="font-medium text-gray-900 mb-2">
                   Smart scheduling
                 </h4>
-                <p className="text-sm text-gray-600">
+                <p className="text-base text-gray-600">
                   Optimize posting times across all platforms
                 </p>
               </div>
@@ -51,7 +51,7 @@ export function Campaigns() {
                 <h4 className="font-medium text-gray-900 mb-2">
                   Multi‑channel
                 </h4>
-                <p className="text-sm text-gray-600">
+                <p className="text-base text-gray-600">
                   Coordinate campaigns across social, email, and ads
                 </p>
               </div>
@@ -62,7 +62,7 @@ export function Campaigns() {
                 <h4 className="font-medium text-gray-900 mb-2">
                   Team collaboration
                 </h4>
-                <p className="text-sm text-gray-600">
+                <p className="text-base text-gray-600">
                   Review and approve campaigns with your team
                 </p>
               </div>
@@ -71,7 +71,7 @@ export function Campaigns() {
         }
         variant="orange"
         actions={
-          <Badge variant="primary" className="text-sm px-4 py-2">
+          <Badge variant="primary" className="text-base px-4 py-2">
             Phase 2 (Demo)
           </Badge>
         }

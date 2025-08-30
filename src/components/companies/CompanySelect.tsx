@@ -27,14 +27,14 @@ export function CompanySelect({
 
   return (
     <div className={cn("space-y-1", className)}>
-      <label className="block text-xs font-medium text-gray-600">
+      <label className="block text-base font-medium text-gray-600">
         {label}
         {required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
       <div>
         <select
           className={cn(
-            "w-full rounded-lg border bg-white px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:opacity-60",
+            "w-full rounded-lg border bg-white px-3 py-2 text-base focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:opacity-60",
             error && "border-red-500",
           )}
           value={value ?? ""}
@@ -55,7 +55,7 @@ export function CompanySelect({
             </option>
           ))}
         </select>
-        {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+        {error && <p className="mt-1 text-base text-red-600">{error}</p>}
       </div>
     </div>
   );

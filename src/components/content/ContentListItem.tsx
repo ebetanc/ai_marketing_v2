@@ -91,10 +91,10 @@ export function ContentListItem({
               <Badge variant="secondary">Strategy #{content.strategy_id}</Badge>
             )}
           </div>
-          <p className="text-sm text-gray-600 line-clamp-2">
+          <p className="text-base text-gray-600 line-clamp-2">
             {truncateText(content.body_text || content.body || "", 200)}
           </p>
-          <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-gray-500">
+          <div className="mt-2 flex flex-wrap items-center gap-4 text-base text-gray-500">
             <span className="inline-flex items-center gap-1">
               <Calendar className="h-3 w-3" /> {formatDate(content.created_at)}
             </span>

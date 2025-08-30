@@ -55,7 +55,7 @@ export function IdeaSetListItem({
               <Badge variant="secondary">Angle {idea.angle_number}</Badge>
             )}
           </div>
-          <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500">
+          <div className="flex flex-wrap items-center gap-4 text-base text-gray-500">
             <span className="inline-flex items-center gap-1">
               <Calendar className="h-3 w-3" /> {formatDate(idea.created_at)}
             </span>

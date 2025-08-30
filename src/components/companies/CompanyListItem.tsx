@@ -35,12 +35,12 @@ export function CompanyListItem({ company, onView }: CompanyListItemProps) {
               {company.brand_name || company.name}
             </span>
           </div>
-          <p className="text-xs text-gray-600 line-clamp-2">
+          <p className="text-base text-gray-600 line-clamp-2">
             {company.brand_tone
               ? truncateText(company.brand_tone, 120)
               : "No brand description available"}
           </p>
-          <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 mt-2">
+          <div className="flex flex-wrap items-center gap-4 text-base text-gray-500 mt-2">
             <span className="inline-flex items-center gap-1">
               <Calendar className="h-3 w-3" /> {formatDate(company.created_at)}
             </span>

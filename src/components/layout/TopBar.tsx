@@ -145,7 +145,7 @@ export function TopBar({
               }}
               aria-label="Search"
               ref={searchRef}
-              className="w-full pl-10 pr-10 py-3 text-sm border-2 border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus:border-brand-500"
+              className="w-full pl-10 pr-10 py-3 text-base border-2 border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus:border-brand-500"
               style={{ minHeight: 44 }}
             />
             {searchQuery && (

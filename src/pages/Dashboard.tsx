@@ -161,7 +161,7 @@ export function Dashboard() {
             <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-base font-medium text-gray-600">
                     {stat.title}
                   </p>
                   <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-2">
@@ -169,10 +169,10 @@ export function Dashboard() {
                   </p>
                   <div className="flex items-center mt-2">
                     <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-                    <span className="text-sm text-green-600">
+                    <span className="text-base text-green-600">
                       {stat.change}
                     </span>
-                    <span className="text-sm text-gray-500 ml-1 hidden sm:inline">
+                    <span className="text-base text-gray-500 ml-1 hidden sm:inline">
                       vs last month
                     </span>
                   </div>
@@ -248,15 +248,15 @@ export function Dashboard() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-base font-medium text-gray-900">
                         {activity.title}
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-base text-gray-500">
                         {activity.description}
                       </p>
                       <div className="flex items-center mt-1 space-x-2">
                         <Clock className="h-3 w-3 text-gray-400" />
-                        <span className="text-xs text-gray-500">
+                        <span className="text-base text-gray-500">
                           {formatTime(activity.time)}
                         </span>
                         {/* Status badge removed */}
@@ -318,7 +318,7 @@ export function Dashboard() {
                   >
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center">
-                        <span className="text-white font-semibold text-sm">
+                        <span className="text-white font-semibold text-base">
                           {(company.brand_name || company.name || "U").charAt(
                             0,
                           )}
@@ -330,7 +330,7 @@ export function Dashboard() {
                             company.name ||
                             "Unnamed Brand"}
                         </p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-base text-gray-500">
                           {(company.brand_voice?.tone || "").length > 50
                             ? `${(company.brand_voice?.tone || "").substring(0, 50)}...`
                             : company.brand_voice?.tone || "Not specified"}
@@ -339,7 +339,7 @@ export function Dashboard() {
                     </div>
                     <div className="flex items-center space-x-3">
                       <div className="text-right">
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-base font-medium text-gray-900">
                           {
                             contentPieces.filter(
                               (c) => c.company_id === String(company.id),
@@ -347,7 +347,7 @@ export function Dashboard() {
                           }{" "}
                           pieces
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-base text-gray-500">
                           Created {formatDate(company.created_at)}
                         </p>
                       </div>
@@ -384,7 +384,7 @@ export function Dashboard() {
               <h3 className="font-medium text-gray-900 group-hover:text-brand-900">
                 Generate content
               </h3>
-              <p className="text-sm text-gray-500 mt-1 hidden sm:block">
+              <p className="text-base text-gray-500 mt-1 hidden sm:block">
                 Create posts, blogs, and more.
               </p>
             </button>
@@ -397,7 +397,7 @@ export function Dashboard() {
               <h3 className="font-medium text-gray-900 group-hover:text-teal-900">
                 New campaign
               </h3>
-              <p className="text-sm text-gray-500 mt-1 hidden sm:block">
+              <p className="text-base text-gray-500 mt-1 hidden sm:block">
                 Plan a multi‑channel campaign.
               </p>
             </button>
@@ -410,7 +410,7 @@ export function Dashboard() {
               <h3 className="font-medium text-gray-900 group-hover:text-orange-900">
                 Add company
               </h3>
-              <p className="text-sm text-gray-500 mt-1 hidden sm:block">
+              <p className="text-base text-gray-500 mt-1 hidden sm:block">
                 Onboard a client.
               </p>
             </button>

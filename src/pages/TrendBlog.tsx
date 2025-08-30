@@ -38,7 +38,7 @@ export function TrendBlog() {
                 <h4 className="font-medium text-gray-900 mb-2">
                   Trend Analysis
                 </h4>
-                <p className="text-sm text-gray-600">
+                <p className="text-base text-gray-600">
                   Identify trending topics
                 </p>
               </div>
@@ -49,7 +49,9 @@ export function TrendBlog() {
                 <h4 className="font-medium text-gray-900 mb-2">
                   AI Generation
                 </h4>
-                <p className="text-sm text-gray-600">Create engaging content</p>
+                <p className="text-base text-gray-600">
+                  Create engaging content
+                </p>
               </div>
               <div className="text-center">
                 <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mx-auto mb-3">
@@ -58,7 +60,7 @@ export function TrendBlog() {
                 <h4 className="font-medium text-gray-900 mb-2">
                   Viral Potential
                 </h4>
-                <p className="text-sm text-gray-600">Maximize reach</p>
+                <p className="text-base text-gray-600">Maximize reach</p>
               </div>
             </div>
           </div>

@@ -638,7 +638,7 @@ export function Content() {
                   navigate({ search: params.toString() }, { replace: true });
                 }}
                 aria-label="Search content"
-                className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm"
+                className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-base"
               />
             </div>
             <Select
@@ -668,7 +668,7 @@ export function Content() {
             {/* Status filter removed */}
           </div>
           {isFiltersActive && (
-            <div className="flex justify-between items-center text-xs text-gray-500">
+            <div className="flex justify-between items-center text-base text-gray-500">
               <span className="truncate">
                 {filteredContent.length} result
                 {filteredContent.length === 1 ? "" : "s"}
@@ -737,7 +737,7 @@ export function Content() {
                     aria-expanded={!collapsed}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-md bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center text-white text-sm font-semibold">
+                      <div className="w-8 h-8 rounded-md bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center text-white text-base font-semibold">
                         {brandName.slice(0, 2).toUpperCase()}
                       </div>
                       <div>
@@ -773,7 +773,7 @@ export function Content() {
                           />
                         ))}
                       </ul>
-                      <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500 flex items-center gap-1">
+                      <div className="mt-4 pt-3 border-t border-gray-100 text-base text-gray-500 flex items-center gap-1">
                         <HelpCircle className="h-3 w-3" /> How content
                         generation works
                       </div>

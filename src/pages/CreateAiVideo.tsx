@@ -1,5 +1,12 @@
 import React from "react";
-import { ImagePlus, Sparkles, Upload } from "lucide-react";
+import {
+  ImagePlus,
+  Sparkles,
+  Upload,
+  Clipboard,
+  Check,
+  Wand2,
+} from "lucide-react";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { PageHeader } from "../components/layout/PageHeader";
 import { EmptyState } from "../components/ui/EmptyState";
@@ -16,7 +23,8 @@ export function CreateAiVideo() {
   const [selectedCompanyId, setSelectedCompanyId] = React.useState<
     string | number | null
   >(null);
-  const [numImages, setNumImages] = React.useState<number>(4);
+  // Video settings
+  const [duration, setDuration] = React.useState<number>(8);
   const [aspectRatio, setAspectRatio] = React.useState<string>("square");
   // Structured prompt builder state (could be lifted later if needed)
   const [subject, setSubject] = React.useState("");
@@ -28,6 +36,10 @@ export function CreateAiVideo() {
   const [ambiance, setAmbiance] = React.useState("");
   const [audio, setAudio] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [highlightedJob, setHighlightedJob] = React.useState<number | null>(
+    null,
+  );
   const { push } = useToast();
 
   const assembledPrompt = React.useMemo(() => {
@@ -42,6 +54,112 @@ export function CreateAiVideo() {
     if (audio) parts.push(`Audio: ${audio.trim()}`);
     return parts.join("\n");
   }, [subject, context, action, style, camera, composition, ambiance, audio]);
+  // Keyboard shortcut submit
+  React.useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+        if (
+          subject.trim() &&
+          context.trim() &&
+          action.trim() &&
+          style.trim() &&
+          !submitting
+        ) {
+          const form = document.getElementById("create-video-form");
+          form?.dispatchEvent(new Event("submit", { cancelable: true }));
+        }
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [subject, context, action, style, submitting]);
+
+  const templates = [
+    {
+      label: "Talking head intro",
+      fill: () => {
+        setSubject(
+          "Mid-30s Black software founder, short natural hair, smart casual navy knit, authentic energetic confidence",
+        );
+        setContext(
+          "Minimal studio corner, soft neutral backdrop with subtle gradient, practical warm key light left, soft cool fill right",
+        );
+        setAction(
+          "Smiles, slight lean forward, raises hand in greeting, delivers 2-line intro with natural hand gesture, friendly head nod toward end",
+        );
+        setStyle(
+          "Clean YouTube tech channel, crisp 4K, soft cinematic depth, gentle highlight rolloff",
+        );
+        setCamera(
+          "Static locked medium shot, 50mm look, gentle micro eye-level",
+        );
+        setComposition(
+          "Centered rule-of-thirds vertical alignment, subtle negative space around head",
+        );
+        setAmbiance(
+          "Warm key + cool fill balance, subtle back rim light, faint air movement implied",
+        );
+        setAudio(
+          "Character: 'Welcome back, today we build an AI workflow' (engaging, medium pace)",
+        );
+      },
+    },
+    {
+      label: "Product hero pan",
+      fill: () => {
+        setSubject(
+          "Sleek matte black wireless earbuds charging case open, both earbuds levitating just above slots",
+        );
+        setContext(
+          "Dark moody studio, soft volumetric particles, glossy charcoal surface with faint reflections",
+        );
+        setAction(
+          "Slow lateral parallax pan left-to-right while earbuds subtly rotate 15° showcasing contour",
+        );
+        setStyle(
+          "Premium cinematic tech ad, high contrast, controlled specular highlights, subtle bloom",
+        );
+        setCamera(
+          "Motorized slider pan, 70mm macro feel, ultra smooth stabilization",
+        );
+        setComposition(
+          "Subject centered initially then easing into right third, layered depth with foreground haze",
+        );
+        setAmbiance(
+          "Focused key spotlight with soft falloff, cool ambient rim light edge separation",
+        );
+        setAudio("Sub-bass pulse + soft high-frequency shimmer swell");
+      },
+    },
+  ];
+
+  function applyTemplate(t: (typeof templates)[number]) {
+    const hasValues = [
+      subject,
+      context,
+      action,
+      style,
+      camera,
+      composition,
+      ambiance,
+      audio,
+    ].some((v) => v.trim());
+    if (hasValues) {
+      if (!window.confirm("Replace current prompt fields with template?"))
+        return;
+    }
+    t.fill();
+  }
+
+  function copyPrompt() {
+    if (!assembledPrompt) return;
+    navigator.clipboard.writeText(assembledPrompt).then(() => {
+      setCopied(true);
+      push({ message: "Prompt copied", variant: "success" });
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -64,6 +182,7 @@ export function CreateAiVideo() {
         />
       </div>
       <form
+        id="create-video-form"
         onSubmit={async (e) => {
           e.preventDefault();
           if (!selectedCompanyId) {
@@ -92,13 +211,14 @@ export function CreateAiVideo() {
               prompt_ambiance: ambiance || null,
               prompt_audio: audio || null,
               aspect_ratio: aspectRatio as any,
-              duration_seconds: 8,
+              duration_seconds: duration,
             });
             push({
               title: "Video generation queued",
               message: `Job #${job.id}`,
               variant: "success",
             });
+            setHighlightedJob(job.id);
           } catch (err: any) {
             push({
               message: err.message || "Failed to queue video",
@@ -111,30 +231,36 @@ export function CreateAiVideo() {
         className="grid gap-6 max-w-5xl"
         aria-label="AI video generation structured prompt builder"
       >
-        <div className="grid gap-4 md:grid-cols-4">
-          <Input
-            label="Number of images"
-            type="number"
-            min={1}
-            max={10}
-            required
-            value={numImages}
-            onChange={(e) => {
-              const v = parseInt(e.target.value, 10);
-              if (!isNaN(v)) {
-                setNumImages(Math.min(10, Math.max(1, v)));
-              } else {
-                setNumImages(1);
+        <div className="grid gap-4 md:grid-cols-5">
+          <div className="space-y-1">
+            <label
+              htmlFor="duration"
+              className="block text-base font-medium text-gray-700"
+            >
+              Duration (s)
+            </label>
+            <input
+              id="duration"
+              type="number"
+              min={4}
+              max={20}
+              value={duration}
+              onChange={(e) =>
+                setDuration(
+                  Math.min(
+                    20,
+                    Math.max(4, parseInt(e.target.value || "8", 10)),
+                  ),
+                )
               }
-            }}
-            placeholder="4"
-            description="How many variants (max 10)."
-            name="numImages"
-          />
+              className="block w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-gray-900 focus:border-brand-500 focus:outline-none"
+            />
+            <p className="text-base text-gray-500">Target length (4–20s).</p>
+          </div>
           <div className="space-y-1 md:col-span-2">
             <label
               htmlFor="aspectRatio"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-base font-medium text-gray-700"
             >
               Aspect ratio
             </label>
@@ -149,8 +275,27 @@ export function CreateAiVideo() {
               <option value="16:9">Widescreen (16:9)</option>
               <option value="9:16">Vertical (9:16)</option>
             </select>
-            <p className="text-xs text-gray-500">
+            <p className="text-base text-gray-500">
               Output orientation (square / wide / vertical).
+            </p>
+          </div>
+          <div className="md:col-span-2 flex flex-col justify-end">
+            <p className="text-base text-gray-500 mb-1">Prompt templates</p>
+            <div className="flex flex-wrap gap-2">
+              {templates.map((t) => (
+                <button
+                  key={t.label}
+                  type="button"
+                  onClick={() => applyTemplate(t)}
+                  className="text-base rounded-full border border-gray-300 bg-white px-3 py-1 font-medium text-gray-700 hover:bg-gray-50 motion-safe:transition"
+                >
+                  <Wand2 className="inline h-3 w-3 mr-1" />
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-[10px] text-gray-400 mt-1">
+              Ctrl/Cmd+Enter to submit
             </p>
           </div>
         </div>
@@ -234,19 +379,37 @@ export function CreateAiVideo() {
         </div>
         <div className="grid gap-4 md:grid-cols-2 items-start">
           <div className="space-y-2">
-            <h3 className="text-sm font-semibold text-gray-700">
+            <h3 className="text-base font-semibold text-gray-700">
               Assembled prompt preview
             </h3>
-            <pre
-              className="whitespace-pre-wrap rounded-xl border-2 border-gray-200 bg-white p-4 text-xs text-gray-800 min-h-[180px]"
-              aria-label="Prompt preview"
-            >
-              {assembledPrompt ||
-                "Fill fields to build your structured prompt."}
-            </pre>
+            <div className="relative">
+              <pre
+                className="whitespace-pre-wrap rounded-xl border-2 border-gray-200 bg-white p-4 pr-12 text-base text-gray-800 min-h-[180px]"
+                aria-label="Prompt preview"
+              >
+                {assembledPrompt ||
+                  "Fill fields to build your structured prompt."}
+              </pre>
+              <button
+                type="button"
+                onClick={copyPrompt}
+                disabled={!assembledPrompt}
+                className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2 py-1 text-[11px] font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+              >
+                {copied ? (
+                  <>
+                    <Check className="h-3 w-3" /> Copied
+                  </>
+                ) : (
+                  <>
+                    <Clipboard className="h-3 w-3" /> Copy
+                  </>
+                )}
+              </button>
+            </div>
           </div>
           <div className="space-y-3">
-            <div className="text-xs text-gray-500 leading-relaxed bg-gray-50 border border-gray-200 rounded-xl p-4">
+            <div className="text-base text-gray-500 leading-relaxed bg-gray-50 border border-gray-200 rounded-xl p-4">
               <p className="font-medium mb-1">Guidance</p>
               <ul className="list-disc pl-4 space-y-1">
                 <li>Subject: 15+ concrete specifics.</li>
@@ -286,21 +449,21 @@ export function CreateAiVideo() {
                   <Sparkles className="h-6 w-6 text-brand-600" />
                 </div>
                 <h4 className="font-medium text-gray-900 mb-2">Prompt</h4>
-                <p className="text-sm text-gray-600">Describe your concept</p>
+                <p className="text-base text-gray-600">Describe your concept</p>
               </div>
               <div className="text-center">
                 <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                   <Upload className="h-6 w-6 text-purple-600" />
                 </div>
                 <h4 className="font-medium text-gray-900 mb-2">Reference</h4>
-                <p className="text-sm text-gray-600">Upload brand images</p>
+                <p className="text-base text-gray-600">Upload brand images</p>
               </div>
               <div className="text-center">
                 <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                   <ImagePlus className="h-6 w-6 text-green-600" />
                 </div>
                 <h4 className="font-medium text-gray-900 mb-2">Results</h4>
-                <p className="text-sm text-gray-600">High quality outputs</p>
+                <p className="text-base text-gray-600">High quality outputs</p>
               </div>
             </div>
           </div>
@@ -310,6 +473,7 @@ export function CreateAiVideo() {
       <MediaJobsList
         companyId={selectedCompanyId ? Number(selectedCompanyId) : null}
         className="mt-10"
+        highlightJobId={highlightedJob}
       />
     </div>
   );

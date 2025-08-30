@@ -345,7 +345,7 @@ export function RealEstateContent() {
               >
                 Enter property URL
               </h2>
-              <p className="text-sm text-gray-500">
+              <p className="text-base text-gray-500">
                 We’ll analyze it and generate content.
               </p>
             </div>
@@ -381,14 +381,14 @@ export function RealEstateContent() {
                 onChange={(e) => setUrl(e.target.value)}
                 disabled={isGenerating}
               />
-              <div className="text-xs text-gray-500">
+              <div className="text-base text-gray-500">
                 <strong>Drag & Drop:</strong> Drop a link from another tab or
                 app. We’ll grab the first URL we find.
               </div>
             </div>
             {isDragging && (
               <div className="absolute inset-0 rounded-xl bg-brand-500/10 backdrop-blur-sm flex items-center justify-center pointer-events-none">
-                <span className="text-sm font-medium text-brand-700">
+                <span className="text-base font-medium text-brand-700">
                   Release to capture URL
                 </span>
               </div>
@@ -396,7 +396,7 @@ export function RealEstateContent() {
           </div>
 
           <div className="bg-brand-50 rounded-lg p-3 border border-brand-200">
-            <p className="text-sm text-brand-800">
+            <p className="text-base text-brand-800">
               <strong>Tip:</strong> Use a listing or real estate page URL.
             </p>
           </div>
@@ -482,7 +482,7 @@ export function RealEstateContent() {
                       <CardTitle className="text-lg font-bold leading-tight">
                         Real Estate Content #{content.id}
                       </CardTitle>
-                      <div className="flex items-center space-x-2 text-xs text-gray-500 mt-1">
+                      <div className="flex items-center space-x-2 text-base text-gray-500 mt-1">
                         <Calendar className="h-3 w-3" />
                         <span>{formatDate(content.created_at)}</span>
                       </div>
@@ -503,7 +503,7 @@ export function RealEstateContent() {
                 {/* Origin Link */}
                 {content.link_origin && (
                   <div>
-                    <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
+                    <h4 className="text-base font-medium text-gray-900 mb-2 flex items-center">
                       <Link
                         aria-hidden
                         className="h-4 w-4 mr-1 text-brand-600"
@@ -515,7 +515,7 @@ export function RealEstateContent() {
                         href={content.link_origin}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-brand-700 hover:text-brand-900 text-sm break-all flex items-center"
+                        className="text-brand-700 hover:text-brand-900 text-base break-all flex items-center"
                       >
                         <ExternalLink
                           aria-hidden
@@ -530,7 +530,7 @@ export function RealEstateContent() {
                 {/* Final Link */}
                 {content.link_final && (
                   <div>
-                    <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
+                    <h4 className="text-base font-medium text-gray-900 mb-2 flex items-center">
                       <FileText
                         aria-hidden
                         className="h-4 w-4 mr-1 text-green-600"
@@ -542,7 +542,7 @@ export function RealEstateContent() {
                         href={content.link_final}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-green-700 hover:text-green-900 text-sm break-all flex items-center"
+                        className="text-green-700 hover:text-green-900 text-base break-all flex items-center"
                       >
                         <ExternalLink
                           aria-hidden
@@ -558,7 +558,7 @@ export function RealEstateContent() {
                 <div className="flex justify-between items-center pt-2">
                   <Badge
                     variant={content.link_final ? "success" : "warning"}
-                    className="text-xs"
+                    className="text-base"
                   >
                     {content.link_final ? "Processed" : "Processing"}
                   </Badge>
@@ -587,7 +587,7 @@ export function RealEstateContent() {
                   <h4 className="font-medium text-gray-900 mb-2">
                     Property analysis
                   </h4>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-base text-gray-600">
                     We extract key info from property URLs
                   </p>
                 </div>
@@ -598,7 +598,7 @@ export function RealEstateContent() {
                   <h4 className="font-medium text-gray-900 mb-2">
                     Content generation
                   </h4>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-base text-gray-600">
                     We create targeted real estate content
                   </p>
                 </div>
@@ -609,7 +609,7 @@ export function RealEstateContent() {
                   <h4 className="font-medium text-gray-900 mb-2">
                     Ready to use
                   </h4>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-base text-gray-600">
                     Use it in your campaigns
                   </p>
                 </div>

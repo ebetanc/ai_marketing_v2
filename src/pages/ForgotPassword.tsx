@@ -50,7 +50,7 @@ export default function ForgotPassword() {
           <h1 className="text-2xl font-semibold text-gray-900">
             Forgot password
           </h1>
-          <p className="text-gray-500 text-sm mt-1">
+          <p className="text-gray-500 text-base mt-1">
             We’ll email a reset link.
           </p>
         </div>
@@ -74,9 +74,9 @@ export default function ForgotPassword() {
             Send link
           </Button>
         </form>
-        {message && <div className="text-sm text-green-600">{message}</div>}
+        {message && <div className="text-base text-green-600">{message}</div>}
         {error && (
-          <div className="text-sm text-red-600">
+          <div className="text-base text-red-600">
             {error.message || "Couldn’t send reset email."}
           </div>
         )}

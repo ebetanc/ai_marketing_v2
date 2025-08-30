@@ -45,7 +45,7 @@ export function PageHeader({
             {title}
           </h1>
           {description ? (
-            <p className="mt-1 text-gray-600 text-sm sm:text-base">
+            <p className="mt-1 text-gray-600 text-base sm:text-base">
               {description}
             </p>
           ) : null}

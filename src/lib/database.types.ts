@@ -240,6 +240,7 @@ export type Database = {
           storage_path: string | null;
           url: string;
           width: number | null;
+          kind: string; // 'input' | 'output'
         };
         Insert: {
           asset_index: number;
@@ -253,6 +254,7 @@ export type Database = {
           storage_path?: string | null;
           url: string;
           width?: number | null;
+          kind?: string;
         };
         Update: {
           asset_index?: number;
@@ -266,6 +268,7 @@ export type Database = {
           storage_path?: string | null;
           url?: string;
           width?: number | null;
+          kind?: string;
         };
         Relationships: [
           {

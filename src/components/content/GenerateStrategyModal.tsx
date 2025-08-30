@@ -268,7 +268,7 @@ export function GenerateStrategyModal({
               <ModalTitle id="generate-strategy-title" className="text-base">
                 Generate content strategy
               </ModalTitle>
-              <div className="text-xs text-gray-500">
+              <div className="text-base text-gray-500">
                 {selectedCompany ? "Back" : "Close"}
               </div>
             </div>
@@ -287,7 +287,7 @@ export function GenerateStrategyModal({
           <div className="p-6 border-b border-gray-100">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-brand-100 rounded-xl flex items-center justify-center">
-                <span className="text-brand-600 font-semibold text-sm">
+                <span className="text-brand-600 font-semibold text-base">
                   {(
                     selectedCompany.brand_name ||
                     selectedCompany.name ||
@@ -301,7 +301,7 @@ export function GenerateStrategyModal({
                     selectedCompany.name ||
                     "Brand"}
                 </h3>
-                <p className="text-sm text-gray-500">
+                <p className="text-base text-gray-500">
                   {selectedCompany.website || ""}
                 </p>
               </div>
@@ -324,7 +324,7 @@ export function GenerateStrategyModal({
             <h3 className="text-lg font-medium text-gray-900 mb-1">
               Select company
             </h3>
-            <p id="company-helper" className="text-xs text-gray-500 mb-3">
+            <p id="company-helper" className="text-base text-gray-500 mb-3">
               Pick which brand to generate a strategy for.
             </p>
             <div
@@ -386,7 +386,7 @@ export function GenerateStrategyModal({
                   >
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 bg-brand-100 rounded-lg flex items-center justify-center">
-                        <span className="text-brand-600 font-semibold text-xs">
+                        <span className="text-brand-600 font-semibold text-base">
                           {(company.brand_name || company.name || "B").charAt(
                             0,
                           )}
@@ -397,7 +397,7 @@ export function GenerateStrategyModal({
                           {company.brand_name || company.name}
                         </p>
                         {company.website && (
-                          <p className="text-xs text-gray-500">
+                          <p className="text-base text-gray-500">
                             {company.website}
                           </p>
                         )}
@@ -407,7 +407,7 @@ export function GenerateStrategyModal({
                 );
               })}
               {errors.company && (
-                <div id="company-error" className="text-sm text-red-600 mt-2">
+                <div id="company-error" className="text-base text-red-600 mt-2">
                   {errors.company}
                 </div>
               )}
@@ -419,7 +419,7 @@ export function GenerateStrategyModal({
               <legend className="text-lg font-medium text-gray-900 mb-1">
                 Select platforms
               </legend>
-              <p id="platforms-helper" className="text-xs text-gray-500 mb-3">
+              <p id="platforms-helper" className="text-base text-gray-500 mb-3">
                 Choose where to publish content.
               </p>
               <div
@@ -442,7 +442,7 @@ export function GenerateStrategyModal({
                         }
                       }}
                       className={cn(
-                        "p-3 rounded-xl border-2 transition-all duration-200 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2",
+                        "p-3 rounded-xl border-2 transition-all duration-200 text-base font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2",
                         active
                           ? `${platform.color} text-white border-transparent shadow-md`
                           : "bg-gray-50 text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-100",
@@ -454,7 +454,10 @@ export function GenerateStrategyModal({
                 })}
               </div>
               {errors.platforms && (
-                <div id="platforms-error" className="text-sm text-red-600 mt-2">
+                <div
+                  id="platforms-error"
+                  className="text-base text-red-600 mt-2"
+                >
                   {errors.platforms}
                 </div>
               )}

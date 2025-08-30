@@ -94,10 +94,12 @@ export default function ResetPassword() {
           <h1 className="text-2xl font-semibold text-gray-900">
             Reset password
           </h1>
-          <p className="text-gray-500 text-sm mt-1">Enter your new password.</p>
+          <p className="text-gray-500 text-base mt-1">
+            Enter your new password.
+          </p>
         </div>
         {!hasRecoverySession && (
-          <div className="text-sm text-red-600" role="alert">
+          <div className="text-base text-red-600" role="alert">
             Invalid or expired reset link. Request a new one.
           </div>
         )}
@@ -124,8 +126,8 @@ export default function ResetPassword() {
             Update password
           </Button>
         </form>
-        {message && <div className="text-sm text-green-600">{message}</div>}
-        {error && <div className="text-sm text-red-600">{error}</div>}
+        {message && <div className="text-base text-green-600">{message}</div>}
+        {error && <div className="text-base text-red-600">{error}</div>}
       </div>
     </div>
   );

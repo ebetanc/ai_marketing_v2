@@ -1,11 +1,21 @@
 import React from "react";
-import { Wand2, Image as ImageIcon, Layers, Upload } from "lucide-react";
+import {
+  Wand2,
+  Image as ImageIcon,
+  Layers,
+  Upload,
+  Clipboard,
+  Check,
+} from "lucide-react";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { PageHeader } from "../components/layout/PageHeader";
 import { EmptyState } from "../components/ui/EmptyState";
 import { Button } from "../components/ui/Button";
 import { CompanySelect } from "../components/companies/CompanySelect";
 import { Input } from "../components/ui/Input";
+import { useToast } from "../components/ui/Toast";
+import { createImageEditJob } from "../lib/media";
+import { MediaJobsList } from "../components/media/MediaJobsList";
 import { Textarea } from "../components/ui/Textarea";
 
 export function EditImageWithAI() {
@@ -23,6 +33,11 @@ export function EditImageWithAI() {
   const [composition, setComposition] = React.useState("");
   const [refinement, setRefinement] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [highlightedJob, setHighlightedJob] = React.useState<number | null>(
+    null,
+  );
+  const { push } = useToast();
 
   const assembledPrompt = React.useMemo(() => {
     const parts: string[] = [];
@@ -34,6 +49,14 @@ export function EditImageWithAI() {
     if (refinement) parts.push(`Refinement: ${refinement.trim()}`);
     return parts.join("\n");
   }, [subject, action, style, context, composition, refinement]);
+
+  function copyPrompt() {
+    if (!assembledPrompt) return;
+    navigator.clipboard.writeText(assembledPrompt).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const fileList = e.target.files;
@@ -69,17 +92,36 @@ export function EditImageWithAI() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!images.length || !subject.trim() || !action.trim()) return; // minimal required fields
+    if (!selectedCompanyId) {
+      push({ message: "Select a company first", variant: "error" });
+      return;
+    }
+    if (!images.length || !subject.trim() || !action.trim()) {
+      push({ message: "Upload images and fill * fields", variant: "error" });
+      return;
+    }
     setSubmitting(true);
     try {
-      // Placeholder: future API call to backend / edge function for image editing
-      await new Promise((r) => setTimeout(r, 800));
-      // For now just log
-      console.log("Submitting image edit", {
-        companyId: selectedCompanyId,
-        prompt: assembledPrompt,
-        imageCount: images.length,
-        images,
+      const { job } = await createImageEditJob({
+        company_id: Number(selectedCompanyId),
+        prompt_subject: subject.trim(),
+        prompt_action: action.trim(),
+        prompt_style: style || null,
+        prompt_context: context || null,
+        prompt_composition: composition || null,
+        prompt_refinement: refinement || null,
+        files: images.map((i) => i.file),
+      });
+      push({
+        title: "Image edit queued",
+        message: `Job #${job.id}`,
+        variant: "success",
+      });
+      setHighlightedJob(job.id);
+    } catch (err: any) {
+      push({
+        message: err?.message || "Failed to queue image edit",
+        variant: "error",
       });
     } finally {
       setSubmitting(false);
@@ -223,13 +265,32 @@ export function EditImageWithAI() {
                 <h3 className="text-sm font-semibold text-gray-700">
                   Assembled prompt preview
                 </h3>
-                <pre
-                  className="whitespace-pre-wrap rounded-xl border-2 border-gray-200 bg-white p-4 text-xs text-gray-800 min-h-[160px]"
-                  aria-label="Prompt preview"
-                >
-                  {assembledPrompt ||
-                    "Fill required fields to build structured edit prompt."}
-                </pre>
+                <div className="relative">
+                  <pre
+                    className="whitespace-pre-wrap rounded-xl border-2 border-gray-200 bg-white p-4 pr-12 text-xs text-gray-800 min-h-[160px]"
+                    aria-label="Prompt preview"
+                  >
+                    {assembledPrompt ||
+                      "Fill required fields to build structured edit prompt."}
+                  </pre>
+                  <button
+                    type="button"
+                    onClick={copyPrompt}
+                    disabled={!assembledPrompt}
+                    className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2 py-1 text-[11px] font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+                    aria-label="Copy prompt"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="h-3 w-3" /> Copied
+                      </>
+                    ) : (
+                      <>
+                        <Clipboard className="h-3 w-3" /> Copy
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
               <div className="space-y-3">
                 <div className="text-xs text-gray-500 leading-relaxed bg-gray-50 border border-gray-200 rounded-xl p-4">
@@ -315,6 +376,12 @@ export function EditImageWithAI() {
           </div>
         }
         variant="purple"
+      />
+      {/* Jobs list */}
+      <MediaJobsList
+        companyId={selectedCompanyId ? Number(selectedCompanyId) : null}
+        highlightJobId={highlightedJob}
+        className="mt-8"
       />
     </div>
   );

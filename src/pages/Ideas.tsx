@@ -927,7 +927,7 @@ export function Ideas() {
                       : viewIdeaModal.topic?.topic ||
                         `Topic ${viewIdeaModal.topic?.number}`}
                   </h2>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-base text-gray-500">
                     {viewIdeaModal.idea?.company?.brand_name || "Unknown Brand"}
                   </p>
                 </div>
@@ -987,7 +987,7 @@ export function Ideas() {
                       {editErrors.topic && (
                         <p
                           id="edit-topic-error"
-                          className="mt-2 text-sm text-red-600"
+                          className="mt-2 text-base text-red-600"
                         >
                           {editErrors.topic}
                         </p>
@@ -1031,7 +1031,7 @@ export function Ideas() {
                       {editErrors.description && (
                         <p
                           id="edit-description-error"
-                          className="mt-2 text-sm text-red-600"
+                          className="mt-2 text-base text-red-600"
                         >
                           {editErrors.description}
                         </p>
@@ -1081,7 +1081,7 @@ export function Ideas() {
                           {editErrors.image_prompt && (
                             <p
                               id="edit-imageprompt-error"
-                              className="mt-2 text-sm text-red-600"
+                              className="mt-2 text-base text-red-600"
                             >
                               {editErrors.image_prompt}
                             </p>
@@ -1174,7 +1174,7 @@ export function Ideas() {
                     {viewIdeaSetModal.idea?.company?.brand_name ||
                       "Unknown Brand"}
                   </h2>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-base text-gray-500">
                     {viewIdeaSetModal.topics.length} ideas • Created{" "}
                     {viewIdeaSetModal.idea?.created_at
                       ? formatDate(viewIdeaSetModal.idea.created_at)
@@ -1216,10 +1216,10 @@ export function Ideas() {
                   >
                     <CardHeader className="pb-2">
                       <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-sm">
+                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-full flex items-center justify-center text-base font-bold shadow-sm">
                           {topic.number}
                         </div>
-                        <CardTitle className="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight">
+                        <CardTitle className="text-base font-semibold text-gray-900 line-clamp-2 leading-tight">
                           {truncateText(topic.topic, 40)}
                         </CardTitle>
                       </div>
@@ -1228,7 +1228,7 @@ export function Ideas() {
                     <CardContent className="space-y-3 pt-0 pb-4">
                       {/* Description */}
                       <div>
-                        <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed bg-gray-50 p-2 rounded-lg">
+                        <p className="text-base text-gray-600 line-clamp-3 leading-relaxed bg-gray-50 p-2 rounded-lg">
                           {truncateText(topic.description, 100)}
                         </p>
                       </div>
@@ -1237,10 +1237,10 @@ export function Ideas() {
                       {topic.image_prompt &&
                         topic.image_prompt !== "No image prompt provided" && (
                           <div>
-                            <p className="text-xs font-medium text-purple-700 mb-1">
+                            <p className="text-base font-medium text-purple-700 mb-1">
                               Image:
                             </p>
-                            <p className="text-xs text-purple-600 line-clamp-3 bg-purple-50 p-2 rounded-lg">
+                            <p className="text-base text-purple-600 line-clamp-3 bg-purple-50 p-2 rounded-lg">
                               {truncateText(topic.image_prompt, 80)}
                             </p>
                           </div>
@@ -1248,7 +1248,7 @@ export function Ideas() {
 
                       {/* View indicator */}
                       <div className="pt-1">
-                        <div className="text-xs text-brand-600 font-medium">
+                        <div className="text-base text-brand-600 font-medium">
                           Click to view →
                         </div>
                       </div>
@@ -1344,7 +1344,7 @@ export function Ideas() {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search topics or brand"
               aria-label="Search ideas by topic or brand"
-              className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm"
+              className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 text-base"
             />
           </div>
           <div className="space-y-4">
@@ -1368,14 +1368,14 @@ export function Ideas() {
                     aria-expanded={!collapsed}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-teal-500 rounded-md flex items-center justify-center text-white text-sm font-semibold">
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-teal-500 rounded-md flex items-center justify-center text-white text-base font-semibold">
                         {brandName.slice(0, 2).toUpperCase()}
                       </div>
                       <div>
                         <h3 className="font-semibold text-gray-900 leading-tight">
                           {brandName}
                         </h3>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-base text-gray-500">
                           {brandIdeas.length} set
                           {brandIdeas.length === 1 ? "" : "s"} • {totalTopics}{" "}
                           topics
@@ -1407,7 +1407,7 @@ export function Ideas() {
                           />
                         ))}
                       </ul>
-                      <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500 flex items-center gap-1">
+                      <div className="mt-4 pt-3 border-t border-gray-100 text-base text-gray-500 flex items-center gap-1">
                         <HelpCircle className="h-3 w-3" /> How ideas work
                       </div>
                     </div>

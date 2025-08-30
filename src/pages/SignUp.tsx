@@ -102,7 +102,7 @@ export default function SignUp() {
 
           {/* Role selection (immutable later) */}
           <fieldset>
-            <legend className="block text-sm font-medium text-gray-700 mb-2">
+            <legend className="block text-base font-medium text-gray-700 mb-2">
               Role
             </legend>
             <div className="grid gap-3">
@@ -129,7 +129,7 @@ export default function SignUp() {
                     >
                       Marketing
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-base text-gray-500">
                       General marketing teams & creators.
                     </div>
                   </div>
@@ -166,7 +166,7 @@ export default function SignUp() {
                     >
                       Real Estate
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-base text-gray-500">
                       Content & strategy for real estate niche.
                     </div>
                   </div>
@@ -211,7 +211,7 @@ export default function SignUp() {
             Create account
           </Button>
 
-          <div className="text-sm text-gray-600">
+          <div className="text-base text-gray-600">
             Already have an account?{" "}
             <a
               className="text-brand-600 hover:underline"
@@ -222,10 +222,10 @@ export default function SignUp() {
           </div>
         </div>
 
-        {message && <div className="text-sm text-green-600">{message}</div>}
+        {message && <div className="text-base text-green-600">{message}</div>}
         {(formError || signUpError) && (
           <div className="space-y-2">
-            <div className="text-sm text-red-600">
+            <div className="text-base text-red-600">
               {formError || signUpError?.message}
             </div>
           </div>

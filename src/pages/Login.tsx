@@ -133,12 +133,12 @@ export default function Login() {
           <div className="text-right">
             <a
               href="/forgot-password"
-              className="text-xs text-brand-600 hover:underline"
+              className="text-base text-brand-600 hover:underline"
             >
               Forgot password?
             </a>
           </div>
-          <div className="text-sm text-gray-600">
+          <div className="text-base text-gray-600">
             Don’t have an account?{" "}
             <a
               className="text-brand-600 hover:underline"
@@ -149,10 +149,10 @@ export default function Login() {
           </div>
         </div>
 
-        {message && <div className="text-sm text-green-600">{message}</div>}
+        {message && <div className="text-base text-green-600">{message}</div>}
         {(formError || signInError) && (
           <div className="space-y-2">
-            <div className="text-sm text-red-600">
+            <div className="text-base text-red-600">
               {formError || signInError?.message}
             </div>
             {(/not\s*confirmed/i.test(
@@ -208,7 +208,7 @@ function ResendConfirmation({
     }
   };
   return (
-    <div className="text-xs">
+    <div className="text-base">
       <Button
         type="button"
         size="sm"

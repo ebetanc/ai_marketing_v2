@@ -39,7 +39,9 @@ export function SemanticSEO() {
                 <h4 className="font-medium text-gray-900 mb-2">
                   Keyword Clustering
                 </h4>
-                <p className="text-sm text-gray-600">Group related keywords</p>
+                <p className="text-base text-gray-600">
+                  Group related keywords
+                </p>
               </div>
               <div className="text-center">
                 <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
@@ -48,7 +50,7 @@ export function SemanticSEO() {
                 <h4 className="font-medium text-gray-900 mb-2">
                   SEO Optimization
                 </h4>
-                <p className="text-sm text-gray-600">Optimize for intent</p>
+                <p className="text-base text-gray-600">Optimize for intent</p>
               </div>
               <div className="text-center">
                 <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
@@ -57,7 +59,9 @@ export function SemanticSEO() {
                 <h4 className="font-medium text-gray-900 mb-2">
                   Comprehensive Article
                 </h4>
-                <p className="text-sm text-gray-600">Well-structured results</p>
+                <p className="text-base text-gray-600">
+                  Well-structured results
+                </p>
               </div>
             </div>
           </div>

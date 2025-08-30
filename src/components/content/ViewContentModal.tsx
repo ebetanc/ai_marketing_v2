@@ -130,7 +130,7 @@ const formatContentBody = (content: string) => {
 
     // Regular paragraphs with safe bold formatting
     return (
-      <p key={index} className="text-sm text-gray-700 mb-2 leading-relaxed">
+      <p key={index} className="text-base text-gray-700 mb-2 leading-relaxed">
         {renderBoldSegments(line)}
       </p>
     );
@@ -364,12 +364,12 @@ export function ViewContentModal({
 
     return (
       <div key={key}>
-        <h5 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
+        <h5 className="text-base font-medium text-gray-900 mb-2 flex items-center">
           <FileText className="h-4 w-4 mr-1 text-brand-600" />
           {capitalizedKey}
         </h5>
         <div className="bg-gray-50 rounded-lg p-3">
-          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+          <p className="text-base text-gray-700 leading-relaxed whitespace-pre-wrap">
             {displayValue}
           </p>
         </div>
@@ -414,7 +414,7 @@ export function ViewContentModal({
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-brand-100 rounded-lg flex items-center justify-center">
-                <span className="text-brand-600 font-semibold text-sm">
+                <span className="text-brand-600 font-semibold text-base">
                   {index + 1}
                 </span>
               </div>
@@ -428,7 +428,7 @@ export function ViewContentModal({
                   </Badge>
                 )}
                 {!isExpanded && (
-                  <p className="text-sm text-gray-600 mt-2 leading-relaxed">
+                  <p className="text-base text-gray-600 mt-2 leading-relaxed">
                     {getPreviewContent()}
                   </p>
                 )}
@@ -490,12 +490,12 @@ export function ViewContentModal({
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500"
                   placeholder="Title"
                 />
-                <p className="text-xs text-gray-500">Editing title</p>
+                <p className="text-base text-gray-500">Editing title</p>
               </div>
             ) : (
               <>
                 <ModalTitle id={titleId}>{content.title}</ModalTitle>
-                <p className="text-sm text-gray-500 flex flex-wrap items-center gap-2">
+                <p className="text-base text-gray-500 flex flex-wrap items-center gap-2">
                   <span>{content.brand_name || "Unknown brand"}</span>
                   {content.platform && (
                     <Badge variant="secondary">{content.platform}</Badge>
@@ -544,7 +544,7 @@ export function ViewContentModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 {/* Status removed */}
-                <p className="text-sm font-medium text-gray-900">Created</p>
+                <p className="text-base font-medium text-gray-900">Created</p>
                 <p className="text-gray-700 flex items-center">
                   <Calendar className="h-4 w-4 mr-1 text-gray-400" />
                   {formatDate(content.created_at)}
@@ -552,7 +552,7 @@ export function ViewContentModal({
               </div>
               {content.type && content.type !== "social_post" && (
                 <div>
-                  <p className="text-sm font-medium text-gray-900">Type</p>
+                  <p className="text-base font-medium text-gray-900">Type</p>
                   <p className="text-gray-700 capitalize">
                     {content.type.replace(/_/g, " ") || "Content"}
                   </p>
@@ -560,13 +560,13 @@ export function ViewContentModal({
               )}
 
               <div>
-                <p className="text-sm font-medium text-gray-900">Platform</p>
+                <p className="text-base font-medium text-gray-900">Platform</p>
                 <p className="text-gray-700">{content.platform || "—"}</p>
               </div>
 
               {typeof (content.metadata as any)?.word_count === "number" && (
                 <div>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-base font-medium text-gray-900">
                     Word count
                   </p>
                   <p className="text-gray-700">
@@ -578,7 +578,9 @@ export function ViewContentModal({
 
             {strategyId && (
               <div>
-                <p className="text-sm font-medium text-gray-900">Strategy ID</p>
+                <p className="text-base font-medium text-gray-900">
+                  Strategy ID
+                </p>
                 <Badge variant="secondary" className="font-mono">
                   {strategyId}
                 </Badge>
@@ -601,7 +603,7 @@ export function ViewContentModal({
                     variant="outline"
                     size="sm"
                     onClick={expandAllAngles}
-                    className="text-xs"
+                    className="text-base"
                   >
                     Expand all
                   </Button>
@@ -609,7 +611,7 @@ export function ViewContentModal({
                     variant="outline"
                     size="sm"
                     onClick={collapseAllAngles}
-                    className="text-xs"
+                    className="text-base"
                   >
                     Collapse all
                   </Button>
@@ -643,11 +645,13 @@ export function ViewContentModal({
                     className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 resize-y"
                     placeholder="Content body markdown/text"
                   />
-                  <p className="text-xs text-gray-500">Editing content body</p>
+                  <p className="text-base text-gray-500">
+                    Editing content body
+                  </p>
                 </div>
               ) : (
                 <div className="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto">
-                  <div className="text-sm">
+                  <div className="text-base">
                     {formatContentBody(
                       content.body_text || content.body || "No content",
                     )}
@@ -669,7 +673,7 @@ export function ViewContentModal({
             </CardHeader>
             <CardContent>
               <div className="bg-gray-50 rounded-lg p-4">
-                <pre className="text-xs text-gray-700 whitespace-pre-wrap">
+                <pre className="text-base text-gray-700 whitespace-pre-wrap">
                   {JSON.stringify(content.metadata, null, 2)}
                 </pre>
               </div>
@@ -705,7 +709,7 @@ export function ViewContentModal({
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
-              <p className="text-sm font-medium">
+              <p className="text-base font-medium">
                 {calendarMonth.toLocaleString(undefined, {
                   month: "long",
                   year: "numeric",
@@ -795,7 +799,7 @@ export function ViewContentModal({
                           setScheduleError(null);
                         }}
                         disabled={isPastDay}
-                        className={`text-sm h-8 w-8 flex items-center justify-center rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 transition ${isPastDay ? "text-gray-300 cursor-not-allowed" : "hover:bg-brand-50 text-gray-700"} ${isSelectedDay ? "bg-brand-600 text-white hover:bg-brand-600" : ""}`}
+                        className={`text-base h-8 w-8 flex items-center justify-center rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 transition ${isPastDay ? "text-gray-300 cursor-not-allowed" : "hover:bg-brand-50 text-gray-700"} ${isSelectedDay ? "bg-brand-600 text-white hover:bg-brand-600" : ""}`}
                         aria-pressed={isSelectedDay ? true : false}
                         aria-label={d.toDateString()}
                       >
@@ -817,7 +821,7 @@ export function ViewContentModal({
                 </label>
                 <select
                   id="schedule-hour"
-                  className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full border border-gray-300 rounded px-2 py-1 text-base focus:outline-none focus:ring-2 focus:ring-brand-500"
                   value={timeHour}
                   onChange={(e) => {
                     setTimeHour(e.target.value);
@@ -848,7 +852,7 @@ export function ViewContentModal({
                 </label>
                 <select
                   id="schedule-minute"
-                  className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full border border-gray-300 rounded px-2 py-1 text-base focus:outline-none focus:ring-2 focus:ring-brand-500"
                   value={timeMinute}
                   onChange={(e) => {
                     setTimeMinute(e.target.value);
@@ -1013,7 +1017,7 @@ export function ViewContentModal({
                 {scheduledAt ? "Reschedule" : "Schedule"}
               </Button>
               {scheduledAt && (
-                <span className="text-xs text-gray-600 flex items-center space-x-1">
+                <span className="text-base text-gray-600 flex items-center space-x-1">
                   <Clock className="h-3 w-3" />
                   <span>
                     {scheduledAt.toLocaleString(undefined, {

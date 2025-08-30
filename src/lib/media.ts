@@ -69,6 +69,45 @@ export async function createImageJob(input: CreateImageJobInput) {
   return data as MediaJob;
 }
 
+/**
+ * Convenience helper for image edit flow: first create an 'image' job with num_images = number of reference images (or 1),
+ * then upload the provided base images into the storage bucket under media-inputs/{jobId}/.
+ * The actual generation worker can later read these sources and produce output assets.
+ * Returns the created job plus list of uploaded storage paths.
+ */
+export async function createImageEditJob(
+  args: Omit<CreateImageJobInput, "num_images"> & { files: File[] },
+) {
+  const job = await createImageJob({
+    ...args,
+    num_images: args.files.length || 1,
+  });
+  try {
+    const paths = await uploadInputImages(job.id, args.files);
+    // Insert input asset rows (negative indices to avoid collision with outputs 0..N)
+    if (paths.length) {
+      const inputAssets = paths.map((p, idx) => ({
+        job_id: job.id,
+        asset_index: -(paths.length - idx), // e.g., -3,-2,-1 for 3 inputs
+        url: p.startsWith("http") ? p : `storage://media-inputs/${p}`,
+        mime_type: null,
+        kind: "input",
+        metadata: { source_bucket: "media-inputs" },
+      }));
+      // Best effort insert; ignore error silently (will show toast on failure path earlier)
+      try {
+        await supabase.from("media_assets").insert(inputAssets as any);
+      } catch (_e) {
+        // noop
+      }
+    }
+    return { job, input_paths: paths };
+  } catch (e) {
+    // Surface but don't swallow (frontend can show toast)
+    throw e;
+  }
+}
+
 export async function createVideoJob(input: CreateVideoJobInput) {
   const assembled_prompt = assemblePrompt({
     prompt_subject: input.prompt_subject,
@@ -163,4 +202,38 @@ export function pollJobCompletion(
       controller.abort();
     },
   };
+}
+
+/**
+ * Upload raw input images that will be used as sources for an image edit job.
+ * NOTE: Currently we don't persist these as rows; backend worker should look
+ * for them in the storage bucket `media-inputs/{jobId}/...`.
+ * Returns an array of storage paths successfully uploaded.
+ */
+export async function uploadInputImages(
+  jobId: number,
+  files: File[],
+  bucket = "media-inputs",
+) {
+  const uploaded: string[] = [];
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    const ext = (f.name.split(".").pop() || "png").toLowerCase();
+    const safeName = f.name
+      .replace(/[^a-zA-Z0-9._-]+/g, "-")
+      .replace(/--+/g, "-")
+      .slice(0, 80);
+    const path = `${jobId}/${String(i).padStart(2, "0")}-${safeName}`;
+    const { error } = await supabase.storage.from(bucket).upload(path, f, {
+      cacheControl: "3600",
+      upsert: true,
+      contentType: f.type || `image/${ext}`,
+    });
+    if (error) {
+      // Stop early on first failure; caller can decide how to proceed
+      throw new Error(`Failed to upload image ${i + 1}: ${error.message}`);
+    }
+    uploaded.push(path);
+  }
+  return uploaded;
 }

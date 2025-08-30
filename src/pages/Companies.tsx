@@ -182,7 +182,7 @@ export function Companies() {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search companies"
               aria-label="Search companies"
-              className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm"
+              className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 text-base"
             />
           </div>
           <ul className="space-y-3">

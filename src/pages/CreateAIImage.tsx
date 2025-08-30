@@ -1,5 +1,5 @@
 import React from "react";
-import { ImagePlus, Sparkles } from "lucide-react";
+import { ImagePlus, Sparkles, Clipboard, Check, Wand2 } from "lucide-react";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { PageHeader } from "../components/layout/PageHeader";
 import { Button } from "../components/ui/Button";
@@ -22,6 +22,8 @@ export function CreateAIImage() {
   const [composition, setComposition] = React.useState("");
   const [refinement, setRefinement] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
+  const [numImages, setNumImages] = React.useState(4);
+  const [copied, setCopied] = React.useState(false);
   const { push } = useToast();
 
   const assembledPrompt = React.useMemo(() => {
@@ -52,7 +54,7 @@ export function CreateAIImage() {
         prompt_context: context || null,
         prompt_composition: composition || null,
         prompt_refinement: refinement || null,
-        num_images: 4,
+        num_images: numImages,
       });
       push({
         title: "Image generation queued",
@@ -60,6 +62,12 @@ export function CreateAIImage() {
         variant: "success",
       });
       handleReset();
+      setHighlightedJob(job.id);
+    } catch (err: any) {
+      push({
+        message: err?.message || "Failed to queue image generation",
+        variant: "error",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -72,6 +80,119 @@ export function CreateAIImage() {
     setContext("");
     setComposition("");
     setRefinement("");
+    setNumImages(4);
+  }
+
+  // Highlight new job in list
+  const [highlightedJob, setHighlightedJob] = React.useState<number | null>(
+    null,
+  );
+
+  // Keyboard shortcut (Ctrl/Cmd+Enter) to submit when valid
+  React.useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+        if (subject.trim() && action.trim() && !submitting) {
+          const form = document.getElementById("create-image-form");
+          form?.dispatchEvent(new Event("submit", { cancelable: true }));
+        }
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [subject, action, submitting]);
+
+  const templates = [
+    {
+      label: "Product on white",
+      fill: () => {
+        setSubject(
+          "Matte black stainless travel tumbler with subtle engraved logo front facing",
+        );
+        setAction(
+          "Place centered on seamless pure white cyclorama; add soft diffused shadow directly beneath; remove any dust or imperfections",
+        );
+        setStyle(
+          "Clean e‑commerce minimal, high-key lighting, crisp sharp detail, subtle rim light",
+        );
+        setContext("");
+        setComposition(
+          "Centered, slight top-down 10°, generous white negative space around",
+        );
+        setRefinement(
+          "True brand color accuracy; no reflections; no extra props; keep proportions realistic",
+        );
+      },
+    },
+    {
+      label: "Pro headshot",
+      fill: () => {
+        setSubject(
+          "30-year-old Latina marketing manager, shoulder-length wavy dark brown hair, smart navy blazer over soft cream blouse, confident approachable expression",
+        );
+        setAction(
+          "Refine grooming, enhance natural skin texture, subtle catchlight in eyes, gently smooth flyaway hairs",
+        );
+        setStyle(
+          "Cinematic corporate realism, soft Rembrandt lighting, natural warm tones",
+        );
+        setContext("Neutral textured medium-gray studio backdrop");
+        setComposition(
+          "Tight crop shoulders up, shallow depth, gentle vignette, eyes on top third",
+        );
+        setRefinement(
+          "Keep authentic features; no over-retouching; maintain natural skin tone",
+        );
+      },
+    },
+    {
+      label: "Lifestyle brand",
+      fill: () => {
+        setSubject(
+          "Young couple mid-20s laughing while walking golden retriever on coastal boardwalk",
+        );
+        setAction(
+          "Enhance golden hour glow; soften background crowd; add subtle motion blur to dog leash",
+        );
+        setStyle(
+          "Warm editorial lifestyle, filmic highlight rolloff, subtle grain",
+        );
+        setContext(
+          "Sunset pastel sky, gentle ocean haze, boardwalk shops blurred",
+        );
+        setComposition(
+          "Wide horizontal crop, leading lines receding, subjects left third",
+        );
+        setRefinement(
+          "Natural skin tones; no lens distortion; keep authentic clothing",
+        );
+      },
+    },
+  ];
+
+  function applyTemplate(t: (typeof templates)[number]) {
+    const hasValues = [
+      subject,
+      action,
+      style,
+      context,
+      composition,
+      refinement,
+    ].some((v) => v.trim());
+    if (hasValues) {
+      const ok = window.confirm("Replace current prompt fields with template?");
+      if (!ok) return;
+    }
+    t.fill();
+  }
+
+  function copyPrompt() {
+    if (!assembledPrompt) return;
+    navigator.clipboard.writeText(assembledPrompt).then(() => {
+      setCopied(true);
+      push({ message: "Prompt copied", variant: "success" });
+      setTimeout(() => setCopied(false), 1500);
+    });
   }
 
   return (
@@ -90,7 +211,53 @@ export function CreateAIImage() {
           placeholder="Choose a company"
         />
       </div>
-      <form onSubmit={handleSubmit} className="space-y-10 max-w-5xl">
+      <form
+        id="create-image-form"
+        onSubmit={handleSubmit}
+        className="space-y-10 max-w-5xl"
+      >
+        <div className="flex flex-wrap gap-3 items-end">
+          <div className="w-40">
+            <label
+              htmlFor="numImages"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Images
+            </label>
+            <select
+              id="numImages"
+              value={numImages}
+              onChange={(e) => setNumImages(parseInt(e.target.value, 10))}
+              className="w-full rounded-xl border-2 border-gray-200 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none"
+            >
+              {[1, 2, 3, 4, 6, 8].map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-500 mt-1">Variants (max 8)</p>
+          </div>
+          <div className="flex-1 min-w-[240px]">
+            <p className="text-xs text-gray-500">
+              Use templates or craft a structured prompt. Ctrl/Cmd+Enter to
+              submit.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {templates.map((t) => (
+                <button
+                  type="button"
+                  key={t.label}
+                  onClick={() => applyTemplate(t)}
+                  className="text-xs rounded-full border border-gray-300 bg-white px-3 py-1 font-medium text-gray-700 hover:bg-gray-50 motion-safe:transition"
+                >
+                  <Wand2 className="inline h-3 w-3 mr-1" />
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
         <div className="grid gap-8 md:grid-cols-2">
           <Textarea
             label="Subject *"
@@ -154,13 +321,32 @@ export function CreateAIImage() {
             <h3 className="text-sm font-semibold text-gray-700">
               Assembled prompt preview
             </h3>
-            <pre
-              className="whitespace-pre-wrap rounded-xl border-2 border-gray-200 bg-white p-4 text-xs text-gray-800 min-h-[160px]"
-              aria-label="Prompt preview"
-            >
-              {assembledPrompt ||
-                "Fill required fields to build structured edit prompt."}
-            </pre>
+            <div className="relative">
+              <pre
+                className="whitespace-pre-wrap rounded-xl border-2 border-gray-200 bg-white p-4 pr-12 text-xs text-gray-800 min-h-[160px]"
+                aria-label="Prompt preview"
+              >
+                {assembledPrompt ||
+                  "Fill required fields to build structured edit prompt."}
+              </pre>
+              <button
+                type="button"
+                onClick={copyPrompt}
+                disabled={!assembledPrompt}
+                className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2 py-1 text-[11px] font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+                aria-label="Copy prompt"
+              >
+                {copied ? (
+                  <>
+                    <Check className="h-3 w-3" /> Copied
+                  </>
+                ) : (
+                  <>
+                    <Clipboard className="h-3 w-3" /> Copy
+                  </>
+                )}
+              </button>
+            </div>
           </div>
           <div className="space-y-3">
             <div className="text-xs text-gray-500 leading-relaxed bg-gray-50 border border-gray-200 rounded-xl p-4">
@@ -203,6 +389,7 @@ export function CreateAIImage() {
       </form>
       <MediaJobsList
         companyId={selectedCompanyId ? Number(selectedCompanyId) : null}
+        highlightJobId={highlightedJob}
       />
     </div>
   );

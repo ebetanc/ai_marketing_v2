@@ -226,7 +226,7 @@ export function Account() {
       />
 
       {!isSupabaseConfigured && (
-        <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
+        <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-4 text-base text-yellow-800">
           Supabase is not configured. Demo mode: changes won’t persist.
         </div>
       )}
@@ -391,7 +391,7 @@ export function Account() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <p className="text-gray-600 text-sm">
+              <p className="text-gray-600 text-base">
                 Sign out of your account on this device.
               </p>
               <div className="flex justify-end">

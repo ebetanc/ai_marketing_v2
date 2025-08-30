@@ -77,7 +77,7 @@ export function ViewCompanyModal({
             </div>
             <div>
               <ModalTitle id={titleId}>{company.name}</ModalTitle>
-              <p className="text-sm text-gray-500">Company details</p>
+              <p className="text-base text-gray-500">Company details</p>
             </div>
           </div>
 
@@ -102,7 +102,7 @@ export function ViewCompanyModal({
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-base font-medium text-gray-900">
                   Company name
                 </p>
                 <p className="text-gray-700">
@@ -112,7 +112,7 @@ export function ViewCompanyModal({
 
               {company.website && (
                 <div>
-                  <p className="text-sm font-medium text-gray-900">Website</p>
+                  <p className="text-base font-medium text-gray-900">Website</p>
                   <a
                     href={
                       /^https?:\/\//i.test(company.website)
@@ -131,7 +131,7 @@ export function ViewCompanyModal({
               )}
 
               <div>
-                <p className="text-sm font-medium text-gray-900">Created</p>
+                <p className="text-base font-medium text-gray-900">Created</p>
                 <p className="text-gray-700 flex items-center">
                   <Calendar className="h-4 w-4 mr-1 text-gray-400" />
                   {formatDate(company.created_at)}
@@ -220,7 +220,7 @@ export function ViewCompanyModal({
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-base font-medium text-gray-900">
                     Brand tone
                   </p>
                   <p className="text-gray-700 leading-relaxed">
@@ -231,7 +231,7 @@ export function ViewCompanyModal({
                 </div>
 
                 <div>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-base font-medium text-gray-900">
                     Key offer / style
                   </p>
                   <p className="text-gray-700 leading-relaxed">
@@ -244,7 +244,7 @@ export function ViewCompanyModal({
                 {company.brand_voice?.keywords &&
                   company.brand_voice.keywords.length > 0 && (
                     <div>
-                      <p className="text-sm font-medium text-gray-900 mb-2">
+                      <p className="text-base font-medium text-gray-900 mb-2">
                         Keywords
                       </p>
                       <div className="flex flex-wrap gap-2">
@@ -276,7 +276,7 @@ export function ViewCompanyModal({
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-base font-medium text-gray-900">
                       Demographics
                     </p>
                     <p className="text-gray-700 leading-relaxed">
@@ -288,7 +288,7 @@ export function ViewCompanyModal({
                   {(company!.target_audience as any)?.interests &&
                     (company!.target_audience as any).interests.length > 0 && (
                       <div>
-                        <p className="text-sm font-medium text-gray-900 mb-2">
+                        <p className="text-base font-medium text-gray-900 mb-2">
                           Interests
                         </p>
                         <div className="flex flex-wrap gap-2">
@@ -307,7 +307,7 @@ export function ViewCompanyModal({
                     (company!.target_audience as any).pain_points.length >
                       0 && (
                       <div>
-                        <p className="text-sm font-medium text-gray-900 mb-2">
+                        <p className="text-base font-medium text-gray-900 mb-2">
                           Pain points
                         </p>
                         <div className="flex flex-wrap gap-2">

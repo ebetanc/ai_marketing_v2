@@ -132,7 +132,7 @@ export function Sidebar() {
             <h1 className="text-base lg:text-lg font-semibold text-gray-900">
               AI Marketing
             </h1>
-            <p className="text-xs text-gray-500 lg:hidden">Companion</p>
+            <p className="text-base text-gray-500 lg:hidden">Companion</p>
           </div>
         </div>
       </div>
@@ -150,7 +150,7 @@ export function Sidebar() {
                 key={item.name}
                 to={item.href}
                 className={cn(
-                  "group flex items-center px-2 sm:px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",
+                  "group flex items-center px-2 sm:px-3 py-2.5 text-base font-medium rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",
                   isActive
                     ? "bg-brand-50 text-brand-700 border border-brand-200"
                     : "text-gray-600 hover:text-gray-900 hover:bg-gray-50",
@@ -185,7 +185,7 @@ export function Sidebar() {
                   key={item.name}
                   to={item.href}
                   className={cn(
-                    "group flex items-center px-2 sm:px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",
+                    "group flex items-center px-2 sm:px-3 py-2.5 text-base font-medium rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",
                     isActive
                       ? "bg-brand-50 text-brand-700 border border-brand-200"
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-50",
@@ -222,7 +222,7 @@ export function Sidebar() {
                     key={item.name}
                     to={item.href}
                     className={cn(
-                      "group flex items-center px-2 sm:px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",
+                      "group flex items-center px-2 sm:px-3 py-2.5 text-base font-medium rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",
                       isActive
                         ? "bg-brand-50 text-brand-700 border border-brand-200"
                         : "text-gray-600 hover:text-gray-900 hover:bg-gray-50",
@@ -260,7 +260,7 @@ export function Sidebar() {
                     key={item.name}
                     to={item.href}
                     className={cn(
-                      "group flex items-center px-2 sm:px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",
+                      "group flex items-center px-2 sm:px-3 py-2.5 text-base font-medium rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",
                       isActive
                         ? "bg-brand-50 text-brand-700 border border-brand-200"
                         : "text-gray-600 hover:text-gray-900 hover:bg-gray-50",
@@ -292,12 +292,12 @@ export function Sidebar() {
           className="flex items-center rounded-xl px-2 py-2 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
         >
           <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-            <span className="text-sm font-medium text-gray-600">
+            <span className="text-base font-medium text-gray-600">
               {displayName ? displayName.charAt(0).toUpperCase() : "U"}
             </span>
           </div>
           <div className="ml-3 min-w-0 flex-1 hidden sm:block">
-            <p className="text-sm font-medium text-gray-900 truncate">
+            <p className="text-base font-medium text-gray-900 truncate">
               {displayName || "User"}
             </p>
           </div>

@@ -558,7 +558,7 @@ export function CreateBrandModal({
                   ? "Create company – Basics"
                   : "Create company – Brand details"}
               </ModalTitle>
-              <div className="text-xs text-gray-500">Back</div>
+              <div className="text-base text-gray-500">Back</div>
             </div>
           </div>
           <IconButton
@@ -573,7 +573,7 @@ export function CreateBrandModal({
         <ModalBody>
           {currentStep === 1 ? (
             <div className="space-y-6">
-              <p className="text-xs font-medium text-gray-500">Step 1 of 2</p>
+              <p className="text-base font-medium text-gray-500">Step 1 of 2</p>
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">
                   Basics
@@ -646,7 +646,7 @@ export function CreateBrandModal({
                 {!formData.name.trim() && (
                   <p
                     id="step1-next-help"
-                    className="text-xs text-gray-500 mt-2"
+                    className="text-base text-gray-500 mt-2"
                   >
                     Enter a company name to continue.
                   </p>
@@ -655,7 +655,7 @@ export function CreateBrandModal({
             </div>
           ) : (
             <div className="space-y-6">
-              <p className="text-xs font-medium text-gray-500">Step 2 of 2</p>
+              <p className="text-base font-medium text-gray-500">Step 2 of 2</p>
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">
@@ -663,8 +663,8 @@ export function CreateBrandModal({
                   </h2>
                   <div className="flex items-center text-gray-600 mb-4">
                     <Globe className="h-4 w-4 mr-2" />
-                    <span className="text-sm">Let AI help</span>
-                    <span className="text-xs text-gray-500 ml-2">
+                    <span className="text-base">Let AI help</span>
+                    <span className="text-base text-gray-500 ml-2">
                       We can analyze your site to suggest details
                     </span>
                   </div>
@@ -775,7 +775,7 @@ export function CreateBrandModal({
                 {missingFields.length > 0 && (
                   <p
                     id="final-submit-help"
-                    className="text-xs text-gray-600 text-right mt-2"
+                    className="text-base text-gray-600 text-right mt-2"
                   >
                     Complete required fields: {missingFields.join(", ")}.
                   </p>

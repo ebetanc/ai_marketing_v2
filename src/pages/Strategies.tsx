@@ -588,7 +588,7 @@ export function Strategies() {
                   >
                     Strategy #{viewModal.strategy.id}
                   </h2>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-base text-gray-500">
                     {viewModal.company.brand_name}
                   </p>
                 </div>
@@ -609,7 +609,7 @@ export function Strategies() {
               <div className="bg-gradient-to-r from-brand-50 to-purple-50 rounded-xl p-4 border border-brand-100">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                   <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">
+                    <p className="text-base text-gray-500 uppercase tracking-wide">
                       Created
                     </p>
                     <p className="font-semibold text-gray-900">
@@ -617,7 +617,7 @@ export function Strategies() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">
+                    <p className="text-base text-gray-500 uppercase tracking-wide">
                       Platforms
                     </p>
                     <p className="font-semibold text-gray-900">
@@ -627,7 +627,7 @@ export function Strategies() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">
+                    <p className="text-base text-gray-500 uppercase tracking-wide">
                       Total Angles
                     </p>
                     <p className="font-semibold text-gray-900">
@@ -635,7 +635,7 @@ export function Strategies() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">
+                    <p className="text-base text-gray-500 uppercase tracking-wide">
                       Company
                     </p>
                     <p className="font-semibold text-gray-900">
@@ -651,7 +651,7 @@ export function Strategies() {
                   <Target className="h-5 w-5 mr-2 text-purple-600" />
                   Substrategies ({countAngles(viewModal.strategy)})
                   {loadingIdeaAngles && (
-                    <span className="ml-3 text-xs text-gray-500">
+                    <span className="ml-3 text-base text-gray-500">
                       Loading existing ideas…
                     </span>
                   )}
@@ -703,7 +703,7 @@ export function Strategies() {
                                     placeholder="Angle header"
                                   />
                                   {angleErrors.header && (
-                                    <p className="text-xs text-red-600">
+                                    <p className="text-base text-red-600">
                                       {angleErrors.header}
                                     </p>
                                   )}
@@ -713,7 +713,7 @@ export function Strategies() {
                                   <h4 className="text-xl font-bold text-gray-900 group-hover:text-brand-700 transition-colors">
                                     {angle.header}
                                   </h4>
-                                  <p className="text-sm text-gray-500">
+                                  <p className="text-base text-gray-500">
                                     Click to{" "}
                                     {isAngleExpanded(angle.number)
                                       ? "collapse"
@@ -797,7 +797,7 @@ export function Strategies() {
                               <div>
                                 <label
                                   htmlFor={`angle-${angle.number}-description`}
-                                  className="block text-xs font-medium text-gray-600 mb-1"
+                                  className="block text-base font-medium text-gray-600 mb-1"
                                 >
                                   Description
                                 </label>
@@ -819,7 +819,7 @@ export function Strategies() {
                               <div>
                                 <label
                                   htmlFor={`angle-${angle.number}-objective`}
-                                  className="block text-xs font-medium text-gray-600 mb-1"
+                                  className="block text-base font-medium text-gray-600 mb-1"
                                 >
                                   Objective
                                 </label>
@@ -841,7 +841,7 @@ export function Strategies() {
                               <div>
                                 <label
                                   htmlFor={`angle-${angle.number}-tonality`}
-                                  className="block text-xs font-medium text-gray-600 mb-1"
+                                  className="block text-base font-medium text-gray-600 mb-1"
                                 >
                                   Tonality
                                 </label>
@@ -935,7 +935,7 @@ export function Strategies() {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search company or platform"
               aria-label="Search strategies by company or platform"
-              className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm"
+              className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 text-base"
             />
           </div>
           <div className="space-y-4">
@@ -970,14 +970,14 @@ export function Strategies() {
                       aria-expanded={!collapsed}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-teal-500 rounded-md flex items-center justify-center text-white text-sm font-semibold">
+                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-teal-500 rounded-md flex items-center justify-center text-white text-base font-semibold">
                           {company.brand_name.slice(0, 2).toUpperCase()}
                         </div>
                         <div>
                           <h3 className="font-semibold text-gray-900 leading-tight">
                             {company.brand_name}
                           </h3>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-base text-gray-500">
                             {company.strategies.length} strateg
                             {company.strategies.length === 1 ? "y" : "ies"}
                           </p>
@@ -1008,7 +1008,7 @@ export function Strategies() {
                             />
                           ))}
                         </ul>
-                        <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500 flex items-center gap-1">
+                        <div className="mt-4 pt-3 border-t border-gray-100 text-base text-gray-500 flex items-center gap-1">
                           <HelpCircle className="h-3 w-3" /> How strategies work
                         </div>
                       </div>
@@ -1034,7 +1034,7 @@ export function Strategies() {
                   <h4 className="font-medium text-gray-900 mb-2">
                     Multi‑platform
                   </h4>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-base text-gray-600">
                     Strategies for all your channels
                   </p>
                 </div>
@@ -1043,7 +1043,7 @@ export function Strategies() {
                     <Zap className="h-6 w-6 text-purple-600" />
                   </div>
                   <h4 className="font-medium text-gray-900 mb-2">AI‑powered</h4>
-                  <p className="text-sm text-gray-600">Generated using AI</p>
+                  <p className="text-base text-gray-600">Generated using AI</p>
                 </div>
                 <div className="text-center">
                   <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mx-auto mb-3">
@@ -1052,7 +1052,7 @@ export function Strategies() {
                   <h4 className="font-medium text-gray-900 mb-2">
                     Brand‑specific
                   </h4>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-base text-gray-600">
                     Tailored to your brand
                   </p>
                 </div>
