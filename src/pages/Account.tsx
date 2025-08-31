@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 
 export function Account() {
-  useDocumentTitle("Account — AI Marketing");
+  useDocumentTitle("Account — Lighting");
   const { session } = useAuth();
   const { push } = useToast();
   const navigate = useNavigate();
@@ -203,15 +203,13 @@ export function Account() {
 
   function copy(text: string) {
     if (!text) return;
-    navigator.clipboard
-      .writeText(text)
-      .then(() =>
-        push({
-          title: "Copied",
-          message: "Value copied to clipboard.",
-          variant: "success",
-        }),
-      );
+    navigator.clipboard.writeText(text).then(() =>
+      push({
+        title: "Copied",
+        message: "Value copied to clipboard.",
+        variant: "success",
+      }),
+    );
   }
 
   return (

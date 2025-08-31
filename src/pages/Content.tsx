@@ -100,7 +100,7 @@ const _extractContentBody = (content: any) => {
 // extractContentTopic moved into list item rendering logic; legacy helper removed
 
 export function Content() {
-  useDocumentTitle("Content — AI Marketing");
+  useDocumentTitle("Content — Lighting");
   const location = useLocation();
   const navigate = useNavigate();
   const initialQ = new URLSearchParams(location.search).get("q") || "";
@@ -170,7 +170,7 @@ export function Content() {
   useEffect(() => {
     if (!viewContentModal.isOpen || !viewContentModal.content?.title) return;
     const prev = document.title;
-    document.title = `${viewContentModal.content.title} — Content — AI Marketing`;
+    document.title = `${viewContentModal.content.title} — Content — Lighting`;
     return () => {
       document.title = prev;
     };

@@ -8,7 +8,7 @@ import { PageContainer } from "../components/layout/PageContainer";
 import { EmptyState } from "../components/ui/EmptyState";
 
 export function Campaigns() {
-  useDocumentTitle("Campaigns — AI Marketing");
+  useDocumentTitle("Campaigns — Lighting");
   return (
     <PageContainer>
       <PageHeader

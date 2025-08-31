@@ -17,7 +17,7 @@ import { createImageJob } from "../lib/media";
 import { MediaJobsList } from "../components/media/MediaJobsList";
 
 export function CreateAIImage() {
-  useDocumentTitle("Create AI Image — AI Marketing");
+  useDocumentTitle("Create AI Image — Lighting");
   const [selectedCompanyId, setSelectedCompanyId] = React.useState<
     string | number | null
   >(null);
@@ -94,8 +94,7 @@ export function CreateAIImage() {
             },
       );
       push({
-        title: "Image generation queued",
-        message: `Job #${job.id}`,
+        message: `Image generation queued (Job #${job.id})`,
         variant: "success",
       });
       handleReset();

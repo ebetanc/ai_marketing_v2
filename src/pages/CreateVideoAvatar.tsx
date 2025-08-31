@@ -22,7 +22,7 @@ import {
 } from "../components/ui/Card";
 
 export function CreateVideoAvatar() {
-  useDocumentTitle("Create Video (avatar) — AI Marketing");
+  useDocumentTitle("Create Video (avatar) — Lighting");
   const [showUrlModal, setShowUrlModal] = useState(false);
   const [videoUrl, setVideoUrl] = useState("");
   const [isDragging, setIsDragging] = useState(false);

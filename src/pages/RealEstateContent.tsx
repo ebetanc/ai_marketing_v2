@@ -54,7 +54,7 @@ interface RealEstateContent {
 }
 
 export function RealEstateContent() {
-  useDocumentTitle("Real estate — AI Marketing");
+  useDocumentTitle("Real estate — Lighting");
   const [showUrlModal, setShowUrlModal] = useState(false);
   const [url, setUrl] = useState("");
   const [isDragging, setIsDragging] = useState(false);
@@ -171,10 +171,9 @@ export function RealEstateContent() {
 
   const { call: generateContentCall } = useAsyncCallback(async () => {
     const loadingToastId = push({
-      title: "Ingesting page",
-      message: "Extracting real estate content…",
+      message: "Ingesting page…",
       variant: "info",
-      duration: 600000,
+      duration: 60000,
     });
     const end = () => loadingToastId && remove(loadingToastId);
     if (!url.trim()) {
@@ -222,8 +221,7 @@ export function RealEstateContent() {
     console.log("Webhook response:", result);
     end();
     push({
-      title: "Ingestion queued",
-      message: "Check back in a few minutes",
+      message: "Ingestion queued. Check back soon",
       variant: "success",
     });
     setShowUrlModal(false);

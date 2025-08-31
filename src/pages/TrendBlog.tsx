@@ -7,7 +7,7 @@ import { PageContainer } from "../components/layout/PageContainer";
 import { EmptyState } from "../components/ui/EmptyState";
 
 export function TrendBlog() {
-  useDocumentTitle("Trend Blog — AI Marketing");
+  useDocumentTitle("Trend Blog — Lighting");
   return (
     <PageContainer>
       <PageHeader

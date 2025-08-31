@@ -9,7 +9,7 @@ import { useAsyncCallback } from "../hooks/useAsync";
 import { z } from "zod";
 
 export default function SignUp() {
-  useDocumentTitle("Sign up — AI Marketing");
+  useDocumentTitle("Sign up — Lighting");
   const { session } = useAuth();
   const location = useLocation();
   const redirectTo = useMemo(() => {

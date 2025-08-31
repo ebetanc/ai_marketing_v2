@@ -7,7 +7,7 @@ import { PageContainer } from "../components/layout/PageContainer";
 import { EmptyState } from "../components/ui/EmptyState";
 
 export function SemanticSEO() {
-  useDocumentTitle("Semantic SEO — AI Marketing");
+  useDocumentTitle("Semantic SEO — Lighting");
   return (
     <PageContainer>
       <PageHeader

@@ -29,6 +29,7 @@ import { Account } from "./pages/Account";
 import { CreateAiVideo as CreateAIVideoPage } from "./pages/CreateAiVideo";
 import { CreateAIImage } from "./pages/CreateAIImage";
 import { EditImageWithAI } from "./pages/EditImageWithAI";
+import { AnimateImageWithAI } from "./pages/AnimateImageWithAI";
 import { CreateVideoAvatar } from "./pages/CreateVideoAvatar";
 
 function App() {
@@ -67,6 +68,10 @@ function AppRoutes() {
           <Route path="/create-ai-video" element={<CreateAIVideoPage />} />
           <Route path="/create-ai-image" element={<CreateAIImage />} />
           <Route path="/edit-image-with-ai" element={<EditImageWithAI />} />
+          <Route
+            path="/animate-image-with-ai"
+            element={<AnimateImageWithAI />}
+          />
           <Route path="/real-estate-content" element={<RealEstateContent />} />
           <Route path="/create-video-avatar" element={<CreateVideoAvatar />} />
           <Route path="/account" element={<Account />} />

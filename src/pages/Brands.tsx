@@ -15,7 +15,7 @@ import BrandListItem from "../components/brands/BrandListItem";
 import { ErrorState } from "../components/ui/ErrorState";
 
 export function Brands() {
-  useDocumentTitle("Brands — AI Marketing");
+  useDocumentTitle("Brands — Lighting");
   const { companies: brands, loading, error, refetch } = useCompanies();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [viewModal, setViewModal] = useState<{

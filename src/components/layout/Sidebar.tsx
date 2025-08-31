@@ -61,6 +61,11 @@ const toolsNav: NavItem[] = [
   // Asset generation (images then video)
   { name: "Create AI Image", href: "/create-ai-image", icon: ImagePlus },
   { name: "Edit Image with AI", href: "/edit-image-with-ai", icon: Wand2 },
+  {
+    name: "Animate Image with AI",
+    href: "/animate-image-with-ai",
+    icon: Wand2,
+  },
   { name: "Create AI Video", href: "/create-ai-video", icon: Video },
   {
     name: "Create Video (avatar)",
@@ -356,7 +361,7 @@ export function Sidebar() {
           </div>
           {!sidebarCollapsed && (
             <div className="ml-3 hidden sm:block truncate">
-              <h1 className="text-base lg:text-lg font-semibold text-gray-900 truncate">
+              <h1 className="text-base lg:text-2xl font-bold text-gray-900 truncate">
                 Lighting
               </h1>
               <p className="text-base text-gray-500 lg:hidden">Companion</p>

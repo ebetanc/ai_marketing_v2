@@ -8,7 +8,7 @@ import { useAsyncCallback } from "../hooks/useAsync";
 import { z } from "zod";
 
 export default function ResetPassword() {
-  useDocumentTitle("Reset password — AI Marketing");
+  useDocumentTitle("Reset password — Lighting");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

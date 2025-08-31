@@ -26,7 +26,7 @@ import {
 } from "../components/ui/Modal";
 
 export function EditImageWithAI() {
-  useDocumentTitle("Edit Image with AI — AI Marketing");
+  useDocumentTitle("Edit Image with AI — Lighting");
   const [selectedCompanyId, setSelectedCompanyId] = React.useState<
     string | number | null
   >(null);

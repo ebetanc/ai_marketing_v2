@@ -22,7 +22,7 @@ import { ErrorState } from "../components/ui/ErrorState";
 import { ListSkeleton } from "../components/ui/ListSkeleton";
 
 export function Dashboard() {
-  useDocumentTitle("Dashboard — AI Marketing");
+  useDocumentTitle("Dashboard — Lighting");
   const navigate = useNavigate();
   const {
     companies,

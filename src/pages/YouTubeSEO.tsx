@@ -7,7 +7,7 @@ import { PageContainer } from "../components/layout/PageContainer";
 import { EmptyState } from "../components/ui/EmptyState";
 
 export function YouTubeSEO() {
-  useDocumentTitle("YouTube → SEO Blog — AI Marketing");
+  useDocumentTitle("YouTube → SEO Blog — Lighting");
   return (
     <PageContainer>
       <PageHeader

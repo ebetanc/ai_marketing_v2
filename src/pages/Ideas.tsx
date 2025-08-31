@@ -71,7 +71,7 @@ const extractTopicsFromIdea = (
 };
 
 export function Ideas() {
-  useDocumentTitle("Ideas — AI Marketing");
+  useDocumentTitle("Ideas — Lighting");
   type CompanyRow = Tables<"companies">;
   type StrategyRow = Tables<"strategies">;
   type IdeaRow = Tables<"ideas">;
@@ -517,17 +517,27 @@ export function Ideas() {
   };
 
   const { call: generateContentCall } = useAsyncCallback(async () => {
-    const loadingToastId = push({
-      title: "Generating content",
-      message: "Queueing full content piece…",
-      variant: "info",
-      // duration 0 = persist until manually dismissed
-      duration: 0,
-    });
-    const end = () => loadingToastId && remove(loadingToastId);
-    if (!viewIdeaModal.idea || !viewIdeaModal.topic) {
-      end();
-      return;
+    // Toasts handled exclusively in runTopicGeneration to avoid duplicates
+    if (!viewIdeaModal.idea || !viewIdeaModal.topic) return;
+
+    // Prevent duplicate generation: check if content already exists for this idea/topic
+    try {
+      const topicLowerCheck = (viewIdeaModal.topic.topic || "").toLowerCase();
+      const { data: existingContent, error: existingErr } = await supabase
+        .from("content")
+        .select("content_body, idea_id")
+        .eq("idea_id", viewIdeaModal.idea.id);
+      if (!existingErr && Array.isArray(existingContent)) {
+        const duplicate = existingContent.some((row: any) =>
+          (row?.content_body || "").toLowerCase().includes(topicLowerCheck),
+        );
+        if (duplicate) {
+          throw new Error("Content already generated for this topic.");
+        }
+      }
+    } catch (dupCheckErr) {
+      // Rethrow so upstream handler can surface a friendly toast & prevent webhook call
+      throw dupCheckErr;
     }
 
     console.log("=== FETCHING COMPANY DETAILS ===");
@@ -591,6 +601,18 @@ export function Ideas() {
         console.log("Strategy data fetched:", strategyData);
         console.log("Angle details extracted:", angleDetails);
       }
+    }
+
+    // n8n contract safeguard: ensure angleDetails object always exists for template fields
+    if (!angleDetails) {
+      angleDetails = {
+        number: viewIdeaModal.idea.angle_number ?? 0,
+        header: "Unknown Strategy",
+        description: "",
+        objective: "",
+        tonality: "",
+      };
+      console.log("Applied fallback angleDetails", angleDetails);
     }
 
     const topicData = {
@@ -662,6 +684,16 @@ export function Ideas() {
       if (idx !== -1) platformsSlotted[idx] = p;
     });
 
+    const companyDetailsPayload = {
+      id: companyData?.id ?? viewIdeaModal.idea.company_id,
+      name: brandName,
+      website,
+      brandTone: tone,
+      keyOffer: style,
+      targetAudience: targetAudienceStr,
+      additionalInfo,
+    };
+
     const webhookPayload = {
       identifier: "generateContent",
       operation: "generate_content_from_idea",
@@ -675,6 +707,7 @@ export function Ideas() {
       company_id: viewIdeaModal.idea.company_id,
       strategy_id: viewIdeaModal.idea.strategy_id,
       idea_id: viewIdeaModal.idea.id,
+      topic_number: viewIdeaModal.topic.number,
       topic: topicData,
       // Fixed-length string array for n8n Switch node compatibility
       platforms: platformsSlotted,
@@ -699,17 +732,8 @@ export function Ideas() {
           keyOffer: style,
         },
       },
-      companyDetails: companyData
-        ? {
-            ...companyData,
-            name: brandName,
-            brandTone: tone,
-            keyOffer: style,
-            targetAudience: targetAudienceStr,
-            additionalInfo,
-            website,
-          }
-        : null,
+      // Always provide an object for companyDetails so n8n prompt templates resolve keys
+      companyDetails: companyDetailsPayload,
       // SPECIFIC ANGLE DETAILS THAT GENERATED THIS IDEA
       angleDetails: angleDetails,
       // FULL STRATEGY CONTEXT
@@ -797,7 +821,6 @@ export function Ideas() {
     try {
       response = await postToN8n("generateContent", webhookPayload);
     } catch (e) {
-      end();
       throw e;
     }
 
@@ -808,7 +831,6 @@ export function Ideas() {
     );
 
     if (!response.ok) {
-      end();
       throw new Error(`Webhook failed with status: ${response.status}`);
     }
 
@@ -826,31 +848,60 @@ export function Ideas() {
     }
 
     console.log("Webhook response:", result);
-    end();
-    push({
-      title: "Content queued",
-      message: "Check Content page soon",
-      variant: "success",
-    });
   });
 
-  // Lightweight generator when clicking directly on a topic card button.
-  const generateContentForTopic = useCallback(
-    async (idea: IdeaJoined, topic: Topic) => {
+  // Unified generation logic for both modal button and inline topic buttons
+  const runTopicGeneration = useCallback(
+    async (
+      idea: IdeaJoined,
+      topic: Topic,
+      options: { viaModal?: boolean } = {},
+    ) => {
+      const { viaModal } = options;
       const key = `${idea.id}-${topic.number}`;
-      if (topicGenerating[key] || topicGenerated[key]) return;
-      setTopicGenerating((m) => ({ ...m, [key]: true }));
-      const loadingToastId = push({
-        title: "Generating content",
-        message: `Topic ${topic.number}…`,
-        variant: "info",
-        duration: 0,
-      });
-      const end = () => loadingToastId && remove(loadingToastId);
+      if (!idea || !topic) return;
+      if (topicGenerated[key]) return; // already done
+      // Prevent duplicate inline invocations
+      if (!viaModal && topicGenerating[key]) return;
+
+      // Extra server-side duplicate guard (in case page reloaded or not yet flagged)
       try {
-        // Reuse existing modal generator logic by temporarily setting viewIdeaModal
-        // so generateContentCall can leverage its data pipeline without duplication.
-        const prevState = viewIdeaModal;
+        const topicLowerCheck = (topic.topic || "").toLowerCase();
+        const { data: existingContent, error: existingErr } = await supabase
+          .from("content")
+          .select("content_body, idea_id")
+          .eq("idea_id", idea.id);
+        if (!existingErr && Array.isArray(existingContent)) {
+          const duplicate = existingContent.some((row: any) =>
+            (row?.content_body || "").toLowerCase().includes(topicLowerCheck),
+          );
+          if (duplicate) {
+            push({
+              title: "Already generated",
+              message: `Content already exists for Topic ${topic.number}`,
+              variant: "info",
+            });
+            setTopicGenerated((m) => ({ ...m, [key]: true }));
+            return;
+          }
+        }
+      } catch (e) {
+        // Non-fatal; proceed (webhook may still succeed) but log for diagnostics
+        console.warn("Duplicate generation pre-check failed", e);
+      }
+
+      // Unified toast pattern (match Idea Set generation): single persistent loading toast
+      const loadingToast = push({
+        message: `Generating content (Topic #${topic.number})…`,
+        variant: "info",
+        duration: 60000, // long duration, we manually dismiss when done
+      });
+      const dismissLoading = () => remove(loadingToast);
+
+      const prevState = viewIdeaModal;
+      // For inline we temporarily assign modal state so generateContentCall uses the data path
+      if (!viaModal) {
+        setTopicGenerating((m) => ({ ...m, [key]: true }));
         setViewIdeaModal({
           isOpen: false,
           idea,
@@ -859,33 +910,107 @@ export function Ideas() {
           hasGeneratedContent: false,
           checkingGenerated: false,
         });
-        try {
-          const res = await generateContentCall();
-          if (res && (res as any).error) throw (res as any).error;
-          push({
-            title: "Queued",
-            message: "Content generation started",
-            variant: "success",
-          });
-          setTopicGenerated((m) => ({ ...m, [key]: true }));
-        } finally {
-          // restore previous modal state (without overwriting if user opened another)
-          setViewIdeaModal((curr) =>
-            curr.idea?.id === idea.id && curr.topic?.number === topic.number
-              ? prevState
-              : curr,
-          );
-        }
+      } else {
+        setGeneratingContent(true);
+        // Ensure modal state has latest topic (it should already)
+        setViewIdeaModal((prev) => ({
+          ...prev,
+          idea,
+          topic,
+        }));
+      }
+
+      let success = false;
+      try {
+        const res = await generateContentCall();
+        if (res && (res as any).error) throw (res as any).error;
+        success = true;
+        // Keep same loading toast during processing/polling
       } catch (e) {
-        console.error("Topic generation failed", e);
+        console.error("Content generation failed", e);
+        dismissLoading();
         push({
-          title: "Generation failed",
-          message: e instanceof Error ? e.message : "Unknown error",
+          message: e instanceof Error ? e.message : "Content generation failed",
           variant: "error",
         });
       } finally {
-        end();
-        setTopicGenerating((m) => ({ ...m, [key]: false }));
+        if (!success) {
+          // loading toast already dismissed on failure
+          if (!viaModal) {
+            setTopicGenerating((m) => ({ ...m, [key]: false }));
+            setViewIdeaModal((curr) =>
+              curr.idea?.id === idea.id && curr.topic?.number === topic.number
+                ? prevState
+                : curr,
+            );
+          } else {
+            setGeneratingContent(false);
+          }
+          return; // abort polling
+        }
+
+        // Success: begin polling until content row appears
+        let attempts = 0;
+        const maxAttempts = 20; // ~60s if interval 3s
+        const intervalMs = 3000;
+        const poll = async () => {
+          attempts++;
+          try {
+            const { data, error } = await supabase
+              .from("content")
+              .select("id, idea_id, topic_number")
+              .eq("idea_id", idea.id)
+              .eq("topic_number", topic.number)
+              .limit(1);
+            if (!error && data && data.length) {
+              // Mark generated
+              setTopicGenerated((m) => ({ ...m, [key]: true }));
+              if (viaModal) {
+                setViewIdeaModal((prev) => ({
+                  ...prev,
+                  hasGeneratedContent: true,
+                }));
+                setGeneratingContent(false);
+              } else {
+                // restore previous modal state if placeholder
+                setViewIdeaModal((curr) =>
+                  curr.idea?.id === idea.id &&
+                  curr.topic?.number === topic.number
+                    ? prevState
+                    : curr,
+                );
+              }
+              dismissLoading();
+              setTopicGenerating((m) => ({ ...m, [key]: false }));
+              push({
+                message: `Content generated for Topic #${topic.number}`,
+                variant: "success",
+              });
+              return; // stop polling
+            }
+          } catch {
+            // swallow and continue polling
+          }
+          if (attempts < maxAttempts) {
+            setTimeout(poll, intervalMs);
+          } else {
+            // Timeout: leave as not generated; user can retry or it may appear later
+            dismissLoading();
+            if (viaModal) setGeneratingContent(false);
+            setTopicGenerating((m) => ({ ...m, [key]: false }));
+            push({
+              message: "Still processing; content will appear once generated",
+              variant: "info",
+            });
+          }
+        };
+        // Keep generating state true during polling
+        if (!viaModal) {
+          // already true
+        } else {
+          // generatingContent stays true; only cleared when detected or timeout
+        }
+        poll();
       }
     },
     [
@@ -898,25 +1023,20 @@ export function Ideas() {
     ],
   );
 
-  const handleGenerateContent = async () => {
+  // Inline button handler
+  const generateContentForTopic = useCallback(
+    (idea: IdeaJoined, topic: Topic) =>
+      void runTopicGeneration(idea, topic, { viaModal: false }),
+    [runTopicGeneration],
+  );
+
+  // Modal button handler
+  const handleGenerateContent = useCallback(() => {
     if (!viewIdeaModal.idea || !viewIdeaModal.topic) return;
-    setGeneratingContent(true);
-    try {
-      const res = await generateContentCall();
-      if (res && "error" in res && res.error) throw res.error;
-    } catch (error) {
-      console.error("Error generating content:", error);
-      push({
-        title: "Generation failed",
-        message: `${error instanceof Error ? error.message : "Unknown error"}`,
-        variant: "error",
-      });
-    } finally {
-      setGeneratingContent(false);
-      // On success, optimistically flag as generated
-      setViewIdeaModal((prev) => ({ ...prev, hasGeneratedContent: true }));
-    }
-  };
+    void runTopicGeneration(viewIdeaModal.idea, viewIdeaModal.topic, {
+      viaModal: true,
+    });
+  }, [runTopicGeneration, viewIdeaModal.idea, viewIdeaModal.topic]);
 
   // Group ideas by brand name (from joined company)
   const ideasByBrand = useMemo(() => {
@@ -946,6 +1066,172 @@ export function Ideas() {
 
   const toggleBrand = (brand: string) =>
     setCollapsedBrands((prev) => ({ ...prev, [brand]: !prev[brand] }));
+
+  // Retry generation for an empty idea set by re-calling the generateIdeas webhook with stored metadata.
+  const [regeneratingEmpty, setRegeneratingEmpty] = useState<
+    Record<number, boolean>
+  >({});
+  // Track which idea sets we've already inspected for generated content
+  const inspectedIdeasRef = useRef<Record<number, boolean>>({});
+
+  // When expanding an idea set, lazily detect which topics already have generated content
+  const detectGeneratedForIdea = useCallback(async (idea: IdeaJoined) => {
+    if (!idea?.id) return;
+    if (inspectedIdeasRef.current[idea.id]) return; // already done
+    try {
+      const { data, error } = await supabase
+        .from("content")
+        .select("content_body, idea_id")
+        .eq("idea_id", idea.id);
+      if (error) return;
+      const rows: { content_body: string | null }[] = (data as any) || [];
+      if (!rows.length) return;
+      const bodyLower = rows.map((r) => (r.content_body || "").toLowerCase());
+      const topics = extractTopicsFromIdea(idea);
+      const updates: Record<string, boolean> = {};
+      for (const t of topics) {
+        const topicLower = (t.topic || "").toLowerCase();
+        if (topicLower && bodyLower.some((b) => b.includes(topicLower))) {
+          const key = `${idea.id}-${t.number}`;
+          updates[key] = true;
+        }
+      }
+      if (Object.keys(updates).length) {
+        setTopicGenerated((m) => ({ ...m, ...updates }));
+      }
+    } finally {
+      inspectedIdeasRef.current[idea.id] = true;
+    }
+  }, []);
+  const handleRegenerateEmpty = useCallback(
+    async (idea: IdeaJoined) => {
+      if (regeneratingEmpty[idea.id]) return;
+      if (!idea.strategy_id || !idea.company_id || !idea.angle_number) {
+        push({
+          title: "Cannot retry",
+          message: "Missing strategy or angle references",
+          variant: "error",
+        });
+        return;
+      }
+      setRegeneratingEmpty((m) => ({ ...m, [idea.id]: true }));
+      const loadingToast = push({
+        title: "Retrying",
+        message: `Regenerating Idea Set #${idea.id}`,
+        variant: "info",
+        duration: 0,
+      });
+      try {
+        // Fetch minimal strategy + company for context
+        const [{ data: strategy }, { data: company }] = await Promise.all([
+          supabase
+            .from("strategies")
+            .select("* ")
+            .eq("id", idea.strategy_id)
+            .single(),
+          supabase
+            .from("companies")
+            .select("* ")
+            .eq("id", idea.company_id)
+            .single(),
+        ]);
+        if (!strategy || !company) throw new Error("Context fetch failed");
+        const angleNumber = idea.angle_number;
+        const angle = {
+          number: angleNumber,
+          header: (strategy as any)[`angle${angleNumber}_header`] || "",
+          description:
+            (strategy as any)[`angle${angleNumber}_description`] || "",
+          objective: (strategy as any)[`angle${angleNumber}_objective`] || "",
+          tonality: (strategy as any)[`angle${angleNumber}_tonality`] || "",
+        };
+        const { data: sessionData } = await supabase.auth.getSession();
+        const userId = sessionData.session?.user.id || null;
+        const normalizePlatforms = (platforms: string | null): string[] => {
+          if (!platforms) return [];
+          try {
+            const parsed = JSON.parse(platforms);
+            if (Array.isArray(parsed)) return parsed;
+          } catch {}
+          return String(platforms)
+            .split(",")
+            .map((p) => p.trim())
+            .filter(Boolean);
+        };
+        const PLATFORM_ORDER = [
+          "twitter",
+          "linkedin",
+          "newsletter",
+          "facebook",
+          "instagram",
+          "youtube",
+          "tiktok",
+          "blog",
+        ];
+        const normalizedPlatforms = normalizePlatforms(strategy.platforms).map(
+          (p) => p.toLowerCase(),
+        );
+        const platformsSlotted = PLATFORM_ORDER.map(() => "");
+        normalizedPlatforms.forEach((p) => {
+          const idx = PLATFORM_ORDER.indexOf(p);
+          if (idx !== -1) platformsSlotted[idx] = p;
+        });
+        const payload = {
+          identifier: "generateIdeas",
+          operation: "create_ideas_from_angle",
+          company_id: company.id,
+          strategy_id: strategy.id,
+          strategyIndex: angle.number,
+          angle_number: angle.number,
+          platforms: platformsSlotted,
+          meta: {
+            user_id: userId,
+            source: "app",
+            ts: new Date().toISOString(),
+          },
+          user_id: userId,
+          brand: { id: company.id, name: company.brand_name },
+          brandDetails: { id: company.id, name: company.brand_name },
+          data: { brandData: { id: company.id, name: company.brand_name } },
+          company: { id: company.id, brand_name: company.brand_name },
+          strategy: {
+            id: strategy.id,
+            platforms: strategy.platforms,
+            created_at: strategy.created_at,
+          },
+          angle: {
+            angleNumber: angle.number,
+            number: angle.number,
+            header: angle.header,
+            description: angle.description,
+            objective: angle.objective,
+            tonality: angle.tonality,
+            strategy: { id: strategy.id, platforms: strategy.platforms },
+          },
+        };
+        const resp = await postToN8n("generateIdeas", payload);
+        if (!resp.ok) throw new Error(`Retry failed (${resp.status})`);
+        push({
+          title: "Queued",
+          message: `Retry started for set #${idea.id}`,
+          variant: "success",
+        });
+      } catch (e) {
+        console.error("Retry generation failed", e);
+        push({
+          title: "Retry failed",
+          message: e instanceof Error ? e.message : "Unknown error",
+          variant: "error",
+        });
+      } finally {
+        remove(loadingToast);
+        setRegeneratingEmpty((m) => ({ ...m, [idea.id]: false }));
+        // Refresh ideas later (slight delay to allow creation) - fire and forget
+        setTimeout(() => void fetchIdeas(false), 4000);
+      }
+    },
+    [regeneratingEmpty, push, remove, fetchIdeas],
+  );
 
   return (
     <PageContainer>
@@ -1318,10 +1604,13 @@ export function Ideas() {
             {(
               Object.entries(ideasByBrand ?? {}) as [string, IdeaJoined[]][]
             ).map(([brandName, brandIdeas]) => {
-              const totalTopics = brandIdeas.reduce(
-                (sum, idea) => sum + extractTopicsFromIdea(idea).length,
-                0,
-              );
+              const totalTopics = brandIdeas.reduce((sum, idea) => {
+                const count = extractTopicsFromIdea(idea).length;
+                return sum + count;
+              }, 0);
+              const nonEmptySets = brandIdeas.filter(
+                (i) => extractTopicsFromIdea(i).length > 0,
+              ).length;
               const collapsed = collapsedBrands[brandName];
 
               return (
@@ -1343,16 +1632,14 @@ export function Ideas() {
                           {brandName}
                         </h3>
                         <p className="text-xs text-gray-500 font-medium">
-                          {brandIdeas.length} set
-                          {brandIdeas.length === 1 ? "" : "s"} • {totalTopics}{" "}
-                          topics
+                          {nonEmptySets}/{brandIdeas.length} sets with topics •{" "}
+                          {totalTopics} topics
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <Badge variant="primary" className="text-xs px-2 py-0.5">
-                        {brandIdeas.length} set
-                        {brandIdeas.length === 1 ? "" : "s"}
+                        {nonEmptySets} active
                       </Badge>
                       {collapsed ? (
                         <ChevronRight className="h-4 w-4 text-gray-500" />
@@ -1368,10 +1655,18 @@ export function Ideas() {
                           const topics = extractTopicsFromIdea(idea);
                           const expanded = !!collapsedBrands[`idea-${idea.id}`];
                           const toggle = (id: number) =>
-                            setCollapsedBrands((prev) => ({
-                              ...prev,
-                              [`idea-${id}`]: !prev[`idea-${id}`],
-                            }));
+                            setCollapsedBrands((prev) => {
+                              const currently = !!prev[`idea-${id}`];
+                              const next = {
+                                ...prev,
+                                [`idea-${id}`]: !currently,
+                              };
+                              // If we are expanding now (currently collapsed), run detection
+                              if (currently) return next; // we are collapsing
+                              // Expanding -> trigger detection (fire and forget)
+                              void detectGeneratedForIdea(idea);
+                              return next;
+                            });
                           return (
                             <IdeaSetListItem
                               key={idea.id}
@@ -1384,6 +1679,8 @@ export function Ideas() {
                               onGenerateTopic={generateContentForTopic}
                               generatingMap={topicGenerating}
                               generatedMap={topicGenerated}
+                              onRegenerateEmpty={handleRegenerateEmpty}
+                              regenerating={regeneratingEmpty[idea.id]}
                             />
                           );
                         })}

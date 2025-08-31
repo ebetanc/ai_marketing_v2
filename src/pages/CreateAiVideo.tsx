@@ -34,7 +34,7 @@ import {
 } from "../components/ui/Modal";
 
 export function CreateAiVideo() {
-  useDocumentTitle("Create AI Video — AI Marketing");
+  useDocumentTitle("Create AI Video — Lighting");
   const [selectedCompanyId, setSelectedCompanyId] = React.useState<
     string | number | null
   >(null);
@@ -177,8 +177,7 @@ export function CreateAiVideo() {
                   },
             );
             push({
-              title: "Video generation queued",
-              message: `Job #${job.id}`,
+              message: `Video generation queued (Job #${job.id})`,
               variant: "success",
             });
             setHighlightedJob(job.id);

@@ -47,7 +47,7 @@ interface Company {
 }
 
 export function Strategies() {
-  useDocumentTitle("Strategies — AI Marketing");
+  useDocumentTitle("Strategies — Lighting");
   const [companiesWithStrategies, setCompaniesWithStrategies] = useState<
     Company[]
   >([]);
@@ -418,7 +418,7 @@ export function Strategies() {
         };
       });
       remove(loadingToast);
-      success("Idea set generation started");
+      success("Idea Set generated successfully");
     } catch (e: any) {
       remove(loadingToast);
       toastError(e?.message || "Failed to generate ideas");
@@ -458,7 +458,7 @@ export function Strategies() {
         };
       });
       remove(loadingToast);
-      success("Idea set generation started");
+      success("Idea Set generated successfully");
     } catch (e: any) {
       remove(loadingToast);
       toastError(e?.message || "Failed to generate ideas");

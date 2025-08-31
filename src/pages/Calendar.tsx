@@ -75,7 +75,14 @@ export function Calendar() {
     contentPieces.forEach((c) => {
       if (!c.scheduled_at) return;
       const dt = new Date(c.scheduled_at);
-      const key = dt.toISOString().slice(0, 10);
+      // Use LOCAL date (year-month-day) instead of UTC ISO date so that
+      // users in positive UTC offsets don't see items shifted to the previous day.
+      // (Previously used dt.toISOString().slice(0,10) which is UTC-based.)
+      const key = [
+        dt.getFullYear(),
+        String(dt.getMonth() + 1).padStart(2, "0"),
+        String(dt.getDate()).padStart(2, "0"),
+      ].join("-");
       (map[key] = map[key] || []).push(c);
     });
     return map;
@@ -111,7 +118,13 @@ export function Calendar() {
     year: "numeric",
   });
   const isSameMonth = (d: Date) => d.getMonth() === cursor.getMonth();
-  const todayStr = new Date().toISOString().slice(0, 10);
+  // Local today string (was UTC slice previously)
+  const now = new Date();
+  const todayStr = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0"),
+  ].join("-");
 
   return (
     <>

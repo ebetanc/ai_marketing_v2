@@ -257,7 +257,6 @@ export function GenerateStrategyModal({
         if (loadingToastRef.current) remove(loadingToastRef.current);
         loadingToastRef.current = null;
         push({
-          title: "Generated",
           message: "Content strategy created",
           variant: "success",
         });

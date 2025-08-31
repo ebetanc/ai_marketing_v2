@@ -30,6 +30,9 @@ interface IdeaSetListItemProps {
   onGenerateTopic?: (idea: any, topic: TopicPreview) => void;
   generatingMap?: Record<string, boolean>; // key: `${idea.id}-${topic.number}`
   generatedMap?: Record<string, boolean>; // key: `${idea.id}-${topic.number}`
+  // Empty-set recovery
+  onRegenerateEmpty?: (idea: any) => void;
+  regenerating?: boolean;
 }
 
 export function IdeaSetListItem({
@@ -42,6 +45,8 @@ export function IdeaSetListItem({
   onGenerateTopic,
   generatingMap,
   generatedMap,
+  onRegenerateEmpty,
+  regenerating,
 }: IdeaSetListItemProps) {
   return (
     <li className="relative">
@@ -125,6 +130,34 @@ export function IdeaSetListItem({
           id={`idea-panel-${idea.id}`}
           className="mt-3 ml-4 pl-4 border-l border-gray-200 space-y-2"
         >
+          {topics.length === 0 && (
+            <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 flex items-start gap-3">
+              <div className="flex-1 text-sm leading-relaxed">
+                <p className="font-medium mb-1">
+                  No topics were generated for this set.
+                </p>
+                <p className="text-amber-700/80">
+                  This sometimes happens if the AI response was empty or failed
+                  validation. You can retry generating this idea set.
+                </p>
+              </div>
+              {onRegenerateEmpty && (
+                <div className="flex-shrink-0">
+                  <Button
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRegenerateEmpty(idea);
+                    }}
+                    disabled={!!regenerating}
+                    className="bg-brand-600 hover:bg-brand-700 text-white"
+                  >
+                    {regenerating ? "Retrying…" : "Retry"}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
           {topics.map((t) => {
             const preview = truncateText(t.description || t.topic, 140);
             const hasImage =
@@ -191,7 +224,7 @@ export function IdeaSetListItem({
                           ? "Generating…"
                           : isGenerated
                             ? "Generated"
-                            : "Generate"}
+                            : "Generate Content"}
                       </Button>
                     </div>
                   )}

@@ -16,7 +16,7 @@ import CompanyListItem from "../components/companies/CompanyListItem";
 import { ErrorState } from "../components/ui/ErrorState";
 
 export function Companies() {
-  useDocumentTitle("Companies — AI Marketing");
+  useDocumentTitle("Companies — Lighting");
   const { companies: hookCompanies, loading, error, refetch } = useCompanies();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [viewCompanyModal, setViewCompanyModal] = useState<{

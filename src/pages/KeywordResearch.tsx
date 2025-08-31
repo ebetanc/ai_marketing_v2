@@ -7,7 +7,7 @@ import { PageContainer } from "../components/layout/PageContainer";
 import { EmptyState } from "../components/ui/EmptyState";
 
 export function KeywordResearch() {
-  useDocumentTitle("Keyword Research — AI Marketing");
+  useDocumentTitle("Keyword Research — Lighting");
   return (
     <PageContainer>
       <PageHeader

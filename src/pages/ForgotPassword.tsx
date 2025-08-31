@@ -7,7 +7,7 @@ import { useAsyncCallback } from "../hooks/useAsync";
 import { z } from "zod";
 
 export default function ForgotPassword() {
-  useDocumentTitle("Forgot password — AI Marketing");
+  useDocumentTitle("Forgot password — Lighting");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [fieldError, setFieldError] = useState<string | undefined>(undefined);
