@@ -164,3 +164,27 @@ export const supabase = isSupabaseConfigured
       },
     })
   : (supabaseStub as any);
+
+export async function uploadFileToSupabaseStorage(
+  file: File,
+  bucketName: string,
+  path?: string, // Optional path within the bucket
+) {
+  const fileName = path || `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+  const { data, error } = await supabase.storage.from(bucketName).upload(fileName, file, {
+    cacheControl: "3600",
+    upsert: true,
+    contentType: file.type,
+  });
+
+  if (error) {
+    throw new Error(`Failed to upload file to ${bucketName}: ${error.message}`);
+  }
+
+  const { data: publicUrlData } = supabase.storage.from(bucketName).getPublicUrl(fileName);
+  if (!publicUrlData?.publicUrl) {
+    throw new Error("Failed to get public URL for uploaded file.");
+  }
+
+  return publicUrlData.publicUrl;
+}
