@@ -555,7 +555,7 @@ export function AnimateImageWithAI() {
                           }
                           aria-pressed={aspect === a}
                         >
-                          <span className="text-[10px] font-medium text-gray-600 group-[aria-pressed=true]:text-brand-700">
+                          <span className="text-[10px] font-medium text-gray-600 group-aria-pressed:text-brand-700">
                             {a}
                           </span>
                           <span
