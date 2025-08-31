@@ -1,18 +1,10 @@
 import React, { useState } from "react";
-import { Video, Link, Sparkles, Upload, X, Info } from "lucide-react";
+import { Video, Upload, X, Trash2 } from "lucide-react";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { PageHeader } from "../components/layout/PageHeader";
 import { PageContainer } from "../components/layout/PageContainer";
 import { Button } from "../components/ui/Button";
-import { Input } from "../components/ui/Input";
-import {
-  Modal,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  ModalTitle,
-} from "../components/ui/Modal";
-import { IconButton } from "../components/ui/IconButton";
+import { Textarea } from "../components/ui/Textarea";
 import { useToast } from "../components/ui/Toast";
 import {
   Card,
@@ -23,19 +15,10 @@ import {
 
 export function CreateVideoAvatar() {
   useDocumentTitle("Create Video (avatar) — Lighting");
-  const [showUrlModal, setShowUrlModal] = useState(false);
-  const [videoUrl, setVideoUrl] = useState("");
+  const [images, setImages] = useState<{ file: File; url: string }[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [videoScript, setVideoScript] = useState("");
   const { push } = useToast();
-
-  const extractFirstUrl = (text: string): string | null => {
-    if (!text) return null;
-    // Basic URL regex for video platforms
-    const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/i;
-    const match = text.match(urlRegex);
-    return match ? match[0] : null;
-  };
 
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
@@ -52,7 +35,7 @@ export function CreateVideoAvatar() {
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if ((e.target as HTMLElement).id === "video-dropzone") {
+    if ((e.target as HTMLElement).closest("#image-dropzone")) {
       setIsDragging(false);
     }
   };
@@ -62,80 +45,59 @@ export function CreateVideoAvatar() {
     e.stopPropagation();
     setIsDragging(false);
 
-    try {
-      const dt = e.dataTransfer;
-      let droppedText = "";
-
-      if (dt.getData("text/uri-list")) {
-        droppedText = dt.getData("text/uri-list");
-      } else if (dt.getData("text/plain")) {
-        droppedText = dt.getData("text/plain");
-      }
-
-      const extractedUrl = extractFirstUrl(droppedText);
-      if (extractedUrl) {
-        setVideoUrl(extractedUrl);
-        push({
-          title: "Video URL captured",
-          message: "Dropped video URL ready to process.",
-          variant: "success",
-        });
-      } else {
-        push({
-          title: "No URL found",
-          message: "Drop a valid video URL.",
-          variant: "warning",
-        });
-      }
-    } catch (err) {
-      console.error("Drop handling failed", err);
+    const files = Array.from(e.dataTransfer.files);
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    
+    if (imageFiles.length === 0) {
       push({
-        title: "Drop failed",
-        message: "Could not read dropped data.",
-        variant: "error",
-      });
-    }
-  };
-
-  const handleProcessVideo = async () => {
-    if (!videoUrl.trim()) {
-      push({
-        title: "Missing URL",
-        message: "Please enter a video URL",
+        title: "No images found",
+        message: "Please drop image files only.",
         variant: "warning",
       });
       return;
     }
 
-    setIsProcessing(true);
-    try {
-      // Simulate processing - replace with actual video processing logic
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+    const newImages = imageFiles.map(file => ({
+      file,
+      url: URL.createObjectURL(file)
+    }));
 
-      push({
-        title: "Processing started",
-        message: "Video avatar generation in progress",
-        variant: "success",
-      });
-
-      setShowUrlModal(false);
-      setVideoUrl("");
-    } catch (error) {
-      push({
-        title: "Processing failed",
-        message: "Could not process video",
-        variant: "error",
-      });
-    } finally {
-      setIsProcessing(false);
-    }
+    setImages(prev => [...prev, ...newImages]);
+    push({
+      title: "Images added",
+      message: `Added ${imageFiles.length} image(s)`,
+      variant: "success",
+    });
   };
 
-  const handleCloseModal = () => {
-    setShowUrlModal(false);
-    setVideoUrl("");
-    setIsProcessing(false);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
+    
+    const newImages = Array.from(fileList).map(file => ({
+      file,
+      url: URL.createObjectURL(file)
+    }));
+    
+    setImages(prev => [...prev, ...newImages]);
+    e.target.value = ""; // Reset input
   };
+
+  const removeImage = (index: number) => {
+    setImages(prev => {
+      const copy = [...prev];
+      const [removed] = copy.splice(index, 1);
+      if (removed) URL.revokeObjectURL(removed.url);
+      return copy;
+    });
+  };
+
+  // Cleanup object URLs on unmount
+  React.useEffect(() => {
+    return () => {
+      images.forEach(img => URL.revokeObjectURL(img.url));
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <PageContainer>
@@ -143,17 +105,112 @@ export function CreateVideoAvatar() {
         title="Create Video (avatar)"
         description="Turn existing video links into reusable AI avatars."
         icon={<Video className="h-5 w-5" />}
-        actions={
-          <Button
-            onClick={() => setShowUrlModal(true)}
-            className="bg-brand-600 hover:bg-brand-700"
-          >
-            <Video className="h-4 w-4" />
-            Create avatar
-          </Button>
-        }
+        actions={null}
       />
 
+      <div className="max-w-4xl space-y-8">
+        {/* Image Upload Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5 text-brand-600" />
+              Upload Images
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div
+              id="image-dropzone"
+              onDragEnter={handleDragEnter}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={`relative rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
+                isDragging 
+                  ? "border-brand-500 bg-brand-50" 
+                  : "border-gray-300 hover:border-gray-400"
+              }`}
+            >
+              <div className="space-y-4">
+                <Upload className="h-12 w-12 text-gray-400 mx-auto" />
+                <div>
+                  <p className="text-lg font-medium text-gray-900 mb-2">
+                    Drop images here or click to upload
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Support for PNG, JPG, JPEG, WebP files
+                  </p>
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleFileChange}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  aria-label="Upload images"
+                />
+              </div>
+              {isDragging && (
+                <div className="absolute inset-0 rounded-lg bg-brand-500/10 backdrop-blur-sm flex items-center justify-center pointer-events-none">
+                  <span className="text-lg font-medium text-brand-700">
+                    Release to upload images
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Image Preview Grid */}
+            {images.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-sm font-medium text-gray-900 mb-3">
+                  Uploaded Images ({images.length})
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {images.map((img, index) => (
+                    <div
+                      key={index}
+                      className="relative group border border-gray-200 rounded-lg overflow-hidden bg-gray-50"
+                    >
+                      <img
+                        src={img.url}
+                        alt={`Upload ${index + 1}`}
+                        className="w-full h-24 object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label={`Remove image ${index + 1}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Video Script Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Video className="h-5 w-5 text-brand-600" />
+              Video Script
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              label="Video Script"
+              placeholder="Enter the script for your video avatar..."
+              value={videoScript}
+              onChange={(e) => setVideoScript(e.target.value)}
+              rows={8}
+              description="Write the dialogue or narration for your video avatar."
+            />
+          </CardContent>
+        </Card>
+      </div>
 
     </PageContainer>
   );
