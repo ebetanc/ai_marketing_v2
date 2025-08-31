@@ -269,7 +269,7 @@ select id,
 from public.companies
 where brand_name = 'München Bikes 🚲';
 -- Ideas (a mix: some with 10 topics, some with a few, some with nulls)
--- Acme: two idea sets, one dense, one sparse
+-- Acme: two Idea Sets, one dense, one sparse
 insert into public.ideas (
         header,
         platforms,
@@ -378,7 +378,7 @@ from public.strategies s
     join public.companies c on c.id = s.company_id
 where c.brand_name = 'Acme Analytics'
     and coalesce(s.angle2_header, '') = 'Product Education';
--- Café Montréal: one idea set, some nulls and unicode
+-- Café Montréal: one Idea Set, some nulls and unicode
 insert into public.ideas (
         header,
         platforms,
@@ -413,7 +413,7 @@ from public.strategies s
     join public.companies c on c.id = s.company_id
 where c.brand_name = 'Café Montréal ☕'
 limit 1;
--- NeoFit+: two idea sets across two strategies
+-- NeoFit+: two Idea Sets across two strategies
 insert into public.ideas (
         header,
         platforms,
@@ -466,7 +466,7 @@ from public.strategies s
     join public.companies c on c.id = s.company_id
 where c.brand_name = 'NeoFit+'
     and coalesce(s.angle1_header, '') = 'Integrations';
--- Globex Realty: one idea set
+-- Globex Realty: one Idea Set
 insert into public.ideas (
         header,
         platforms,
@@ -497,7 +497,7 @@ from public.strategies s
     join public.companies c on c.id = s.company_id
 where c.brand_name = 'Globex Realty'
 limit 1;
--- Zeta DevTools: two idea sets
+-- Zeta DevTools: two Idea Sets
 insert into public.ideas (
         header,
         platforms,
@@ -548,7 +548,7 @@ from public.strategies s
     join public.companies c on c.id = s.company_id
 where c.brand_name = 'Zeta DevTools'
 limit 1;
--- München Bikes: one idea set
+-- München Bikes: one Idea Set
 insert into public.ideas (
         header,
         platforms,

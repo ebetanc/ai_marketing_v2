@@ -8,7 +8,8 @@ import { Button } from "../ui/Button";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { IconButton } from "../ui/IconButton";
 import { Input } from "../ui/Input";
-import { Modal, ModalBody, ModalHeader, ModalTitle } from "../ui/Modal";
+import { Modal, ModalBody } from "../ui/Modal";
+import { ModalBrandHeader } from "../ui/ModalBrandHeader";
 import { Textarea } from "../ui/Textarea";
 import { useToast } from "../ui/Toast";
 
@@ -46,7 +47,7 @@ export function CreateBrandModal({
 
   // Zod schema for basic validation. Website is optional but must be a URL if provided.
   const BrandSchema = z.object({
-    name: z.string().trim().min(1, "Company name is required"),
+    name: z.string().trim().min(1, "Brand name is required"),
     website: z
       .string()
       .trim()
@@ -82,6 +83,17 @@ export function CreateBrandModal({
       // Normalize website to include protocol to help downstream crawlers
       const normalizedWebsite = normalizeWebsite(formData.website);
 
+      // Show a long-lived loading toast while we analyze; dismiss manually later
+      const loadingToastId = push({
+        title: "Autofill",
+        message: "Analyzing site…",
+        variant: "info",
+        duration: 60000,
+      });
+      const endLoading = () => {
+        if (loadingToastId) remove(loadingToastId);
+      };
+
       console.log("=== AUTOFILL WEBHOOK REQUEST ===");
       console.log("Sending autofill request for website:", normalizedWebsite);
 
@@ -116,6 +128,7 @@ export function CreateBrandModal({
         });
       } catch (err) {
         console.error("Autofill network error:", err);
+        endLoading();
         push({
           title: "Autofill failed",
           message: "Network error contacting analyzer.",
@@ -134,12 +147,16 @@ export function CreateBrandModal({
         // Try fallback from Supabase if server didn't return body but may have saved data
         console.warn("Autofill server returned non-OK. Trying DB fallback...");
         const filled = await tryDbFallback(normalizedWebsite);
-        if (!filled)
+        if (!filled) {
+          endLoading();
           push({
             title: "Autofill failed",
             message: `Server error ${response.status}.`,
             variant: "error",
           });
+        } else {
+          endLoading();
+        }
         return;
       }
 
@@ -149,12 +166,16 @@ export function CreateBrandModal({
       if (!responseText) {
         console.warn("Empty server response. Trying DB fallback...");
         const filled = await tryDbFallback(normalizedWebsite);
-        if (!filled)
+        if (!filled) {
+          endLoading();
           push({
             title: "Autofill failed",
             message: "Empty server response.",
             variant: "error",
           });
+        } else {
+          endLoading();
+        }
         return;
       }
 
@@ -208,12 +229,16 @@ export function CreateBrandModal({
         } else {
           console.warn("Trying DB fallback...");
           const filled = await tryDbFallback(normalizedWebsite);
-          if (!filled)
+          if (!filled) {
+            endLoading();
             push({
               title: "Autofill failed",
               message: "Invalid server response.",
               variant: "error",
             });
+          } else {
+            endLoading();
+          }
           return;
         }
       }
@@ -257,12 +282,16 @@ export function CreateBrandModal({
       if (Object.keys(updates).length === 0) {
         console.warn("Autofill returned no usable fields:", payload);
         const filled = await tryDbFallback(normalizedWebsite);
-        if (!filled)
+        if (!filled) {
+          endLoading();
           push({
             title: "No suggestions",
             message: "No details found for this site.",
             variant: "warning",
           });
+        } else {
+          endLoading();
+        }
         return;
       }
 
@@ -272,6 +301,7 @@ export function CreateBrandModal({
       }));
 
       console.log("Form data updated successfully");
+      endLoading();
       push({
         title: "Analyzed",
         message: "Updated from website.",
@@ -350,7 +380,7 @@ export function CreateBrandModal({
       ) {
         push({
           title: "Missing fields",
-          message: "Complete all required fields.",
+          message: "Complete all required brand fields.",
           variant: "warning",
         });
         return;
@@ -368,9 +398,9 @@ export function CreateBrandModal({
         key_offer: formData.keyOffer,
       };
 
-      console.log("Creating company in Supabase:", brandData);
+      console.log("Creating brand in Supabase:", brandData);
 
-      // If n8n already created a company during Autofill, update it instead of inserting a duplicate
+      // If n8n already created a brand during Autofill, update it instead of inserting a duplicate
       const userId = await getUserId();
       let existingId: number | null = null;
       if (userId) {
@@ -393,7 +423,7 @@ export function CreateBrandModal({
           const { data: ex, error: exErr } = await q;
           if (!exErr && ex?.id) existingId = ex.id;
         } catch (err) {
-          console.warn("Existing company check failed:", err);
+          console.warn("Existing brand check failed:", err);
         }
       }
 
@@ -424,10 +454,10 @@ export function CreateBrandModal({
         return;
       }
 
-      console.log(`Company ${action}d successfully`);
+      console.log(`Brand ${action}d successfully`);
       push({
         title: action === "update" ? "Updated" : "Created",
-        message: action === "update" ? "Company updated." : "Company added.",
+        message: action === "update" ? "Brand updated." : "Brand added.",
         variant: "success",
       });
 
@@ -447,7 +477,7 @@ export function CreateBrandModal({
     keyOffer: "",
     imageGuidelines: "",
   });
-  const { push } = useToast();
+  const { push, remove } = useToast();
 
   const handleAutofill = () => {
     void runAutofill();
@@ -524,7 +554,7 @@ export function CreateBrandModal({
 
   const titleId = "create-brand-title";
   const missingMap: Record<string, string> = {
-    name: "Company name",
+    name: "Brand name",
     targetAudience: "Target audience",
     brandTone: "Brand tone",
     keyOffer: "Key offer",
@@ -541,34 +571,16 @@ export function CreateBrandModal({
   return (
     <Modal isOpen={isOpen} onClose={handleClose} labelledById={titleId}>
       <div className="w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
-        <ModalHeader>
-          <div className="flex items-center space-x-4">
-            <IconButton
-              onClick={() =>
-                currentStep === 2 ? handlePrevious() : handleClose()
-              }
-              aria-label="Back"
-              variant="ghost"
-            >
-              <ArrowLeft className="h-5 w-5 text-gray-600" />
-            </IconButton>
-            <div>
-              <ModalTitle id={titleId} className="text-base">
-                {currentStep === 1
-                  ? "Create company – Basics"
-                  : "Create company – Brand details"}
-              </ModalTitle>
-              <div className="text-base text-gray-500">Back</div>
-            </div>
-          </div>
-          <IconButton
-            onClick={handleClose}
-            aria-label="Close dialog"
-            variant="ghost"
-          >
-            <X className="h-5 w-5 text-gray-400" />
-          </IconButton>
-        </ModalHeader>
+        <ModalBrandHeader
+          titleId={titleId}
+          title={
+            currentStep === 1
+              ? "Create brand – Basics"
+              : "Create brand – Details"
+          }
+          onClose={handleClose}
+          icon={<Sparkles className="h-6 w-6 text-white" />}
+        />
 
         <ModalBody>
           {currentStep === 1 ? (
@@ -648,7 +660,7 @@ export function CreateBrandModal({
                     id="step1-next-help"
                     className="text-base text-gray-500 mt-2"
                   >
-                    Enter a company name to continue.
+                    Enter a brand name to continue.
                   </p>
                 )}
               </div>
@@ -769,7 +781,7 @@ export function CreateBrandModal({
                       missingFields.length > 0 ? "final-submit-help" : undefined
                     }
                   >
-                    Add company
+                    Add brand
                   </Button>
                 </div>
                 {missingFields.length > 0 && (
@@ -794,7 +806,7 @@ export function CreateBrandModal({
           onClose();
         }}
         title="Discard changes?"
-        message="Unsaved changes will be lost."
+        message="Unsaved brand changes will be lost."
         confirmText="Discard"
         cancelText="Keep editing"
         variant="danger"

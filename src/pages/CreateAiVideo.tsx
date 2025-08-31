@@ -5,18 +5,33 @@ import {
   Upload,
   Clipboard,
   Check,
-  Wand2,
+  Maximize2,
+  X,
 } from "lucide-react";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { PageHeader } from "../components/layout/PageHeader";
-import { EmptyState } from "../components/ui/EmptyState";
+import { PageContainer } from "../components/layout/PageContainer";
+// Removed legacy EmptyState in favor of contextual guidance & recent jobs card
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Textarea } from "../components/ui/Textarea";
-import { CompanySelect } from "../components/companies/CompanySelect";
+import { BrandSelect } from "../components/brands/BrandSelect";
 import { useToast } from "../components/ui/Toast";
 import { createVideoJob } from "../lib/media";
 import { MediaJobsList } from "../components/media/MediaJobsList";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/Card";
+import {
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalTitle,
+} from "../components/ui/Modal";
 
 export function CreateAiVideo() {
   useDocumentTitle("Create AI Video — AI Marketing");
@@ -35,14 +50,18 @@ export function CreateAiVideo() {
   const [composition, setComposition] = React.useState("");
   const [ambiance, setAmbiance] = React.useState("");
   const [audio, setAudio] = React.useState("");
+  const [mode, setMode] = React.useState<"simple" | "pro">("simple");
+  const [simplePrompt, setSimplePrompt] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
   const [highlightedJob, setHighlightedJob] = React.useState<number | null>(
     null,
   );
+  const [previewAsset, setPreviewAsset] = React.useState<any | null>(null);
   const { push } = useToast();
 
   const assembledPrompt = React.useMemo(() => {
+    if (mode === "simple") return simplePrompt.trim();
     const parts: string[] = [];
     if (subject) parts.push(`Subject: ${subject.trim()}`);
     if (context) parts.push(`Context: ${context.trim()}`);
@@ -53,18 +72,27 @@ export function CreateAiVideo() {
     if (ambiance) parts.push(`Ambiance: ${ambiance.trim()}`);
     if (audio) parts.push(`Audio: ${audio.trim()}`);
     return parts.join("\n");
-  }, [subject, context, action, style, camera, composition, ambiance, audio]);
+  }, [
+    mode,
+    simplePrompt,
+    subject,
+    context,
+    action,
+    style,
+    camera,
+    composition,
+    ambiance,
+    audio,
+  ]);
   // Keyboard shortcut submit
   React.useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-        if (
-          subject.trim() &&
-          context.trim() &&
-          action.trim() &&
-          style.trim() &&
-          !submitting
-        ) {
+        const valid =
+          mode === "simple"
+            ? simplePrompt.trim()
+            : subject.trim() && context.trim() && action.trim() && style.trim();
+        if (valid && !submitting) {
           const form = document.getElementById("create-video-form");
           form?.dispatchEvent(new Event("submit", { cancelable: true }));
         }
@@ -72,84 +100,9 @@ export function CreateAiVideo() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [subject, context, action, style, submitting]);
+  }, [mode, simplePrompt, subject, context, action, style, submitting]);
 
-  const templates = [
-    {
-      label: "Talking head intro",
-      fill: () => {
-        setSubject(
-          "Mid-30s Black software founder, short natural hair, smart casual navy knit, authentic energetic confidence",
-        );
-        setContext(
-          "Minimal studio corner, soft neutral backdrop with subtle gradient, practical warm key light left, soft cool fill right",
-        );
-        setAction(
-          "Smiles, slight lean forward, raises hand in greeting, delivers 2-line intro with natural hand gesture, friendly head nod toward end",
-        );
-        setStyle(
-          "Clean YouTube tech channel, crisp 4K, soft cinematic depth, gentle highlight rolloff",
-        );
-        setCamera(
-          "Static locked medium shot, 50mm look, gentle micro eye-level",
-        );
-        setComposition(
-          "Centered rule-of-thirds vertical alignment, subtle negative space around head",
-        );
-        setAmbiance(
-          "Warm key + cool fill balance, subtle back rim light, faint air movement implied",
-        );
-        setAudio(
-          "Character: 'Welcome back, today we build an AI workflow' (engaging, medium pace)",
-        );
-      },
-    },
-    {
-      label: "Product hero pan",
-      fill: () => {
-        setSubject(
-          "Sleek matte black wireless earbuds charging case open, both earbuds levitating just above slots",
-        );
-        setContext(
-          "Dark moody studio, soft volumetric particles, glossy charcoal surface with faint reflections",
-        );
-        setAction(
-          "Slow lateral parallax pan left-to-right while earbuds subtly rotate 15° showcasing contour",
-        );
-        setStyle(
-          "Premium cinematic tech ad, high contrast, controlled specular highlights, subtle bloom",
-        );
-        setCamera(
-          "Motorized slider pan, 70mm macro feel, ultra smooth stabilization",
-        );
-        setComposition(
-          "Subject centered initially then easing into right third, layered depth with foreground haze",
-        );
-        setAmbiance(
-          "Focused key spotlight with soft falloff, cool ambient rim light edge separation",
-        );
-        setAudio("Sub-bass pulse + soft high-frequency shimmer swell");
-      },
-    },
-  ];
-
-  function applyTemplate(t: (typeof templates)[number]) {
-    const hasValues = [
-      subject,
-      context,
-      action,
-      style,
-      camera,
-      composition,
-      ambiance,
-      audio,
-    ].some((v) => v.trim());
-    if (hasValues) {
-      if (!window.confirm("Replace current prompt fields with template?"))
-        return;
-    }
-    t.fill();
-  }
+  // (Templates removed to simplify UI)
 
   function copyPrompt() {
     if (!assembledPrompt) return;
@@ -161,26 +114,13 @@ export function CreateAiVideo() {
   }
 
   return (
-    <div className="space-y-6">
+    <PageContainer>
       <PageHeader
         title="Create AI Video"
-        description="Generate on-brand images using AI prompts."
+        description="Generate short AI video clips from rich structured prompts."
         icon={<ImagePlus className="h-5 w-5" />}
-        actions={
-          <Button>
-            <Sparkles className="h-4 w-4" />
-            New generation
-          </Button>
-        }
+        actions={null}
       />
-      <div className="max-w-sm">
-        <CompanySelect
-          value={selectedCompanyId}
-          onChange={(id) => setSelectedCompanyId(id)}
-          label="Generate for company"
-          placeholder="Choose a company"
-        />
-      </div>
       <form
         id="create-video-form"
         onSubmit={async (e) => {
@@ -189,30 +129,53 @@ export function CreateAiVideo() {
             push({ message: "Select a company first", variant: "error" });
             return;
           }
-          if (
-            !subject.trim() ||
-            !context.trim() ||
-            !action.trim() ||
-            !style.trim()
-          ) {
-            push({ message: "Fill required * fields", variant: "error" });
-            return;
+          if (mode === "simple") {
+            if (!simplePrompt.trim()) {
+              push({ message: "Enter a prompt", variant: "error" });
+              return;
+            }
+          } else {
+            if (
+              !subject.trim() ||
+              !context.trim() ||
+              !action.trim() ||
+              !style.trim()
+            ) {
+              push({ message: "Fill required * fields", variant: "error" });
+              return;
+            }
           }
           setSubmitting(true);
           try {
-            const job = await createVideoJob({
-              company_id: Number(selectedCompanyId),
-              prompt_subject: subject.trim(),
-              prompt_context: context.trim(),
-              prompt_action: action.trim(),
-              prompt_style: style.trim(),
-              prompt_camera: camera || null,
-              prompt_composition: composition || null,
-              prompt_ambiance: ambiance || null,
-              prompt_audio: audio || null,
-              aspect_ratio: aspectRatio as any,
-              duration_seconds: duration,
-            });
+            const job = await createVideoJob(
+              mode === "simple"
+                ? {
+                    company_id: Number(selectedCompanyId),
+                    prompt_subject: simplePrompt.trim(),
+                    prompt_context: "",
+                    prompt_action: "",
+                    prompt_style: "",
+                    prompt_camera: null,
+                    prompt_composition: null,
+                    prompt_ambiance: null,
+                    prompt_audio: null,
+                    aspect_ratio: aspectRatio as any,
+                    duration_seconds: duration,
+                  }
+                : {
+                    company_id: Number(selectedCompanyId),
+                    prompt_subject: subject.trim(),
+                    prompt_context: context.trim(),
+                    prompt_action: action.trim(),
+                    prompt_style: style.trim(),
+                    prompt_camera: camera || null,
+                    prompt_composition: composition || null,
+                    prompt_ambiance: ambiance || null,
+                    prompt_audio: audio || null,
+                    aspect_ratio: aspectRatio as any,
+                    duration_seconds: duration,
+                  },
+            );
             push({
               title: "Video generation queued",
               message: `Job #${job.id}`,
@@ -228,258 +191,411 @@ export function CreateAiVideo() {
             setSubmitting(false);
           }
         }}
-        className="grid gap-8 max-w-5xl"
+        className="space-y-8 max-w-6xl"
         aria-label="AI video generation structured prompt builder"
       >
-        {/** Generation settings */}
-        <fieldset className="space-y-4 p-5 rounded-2xl border border-gray-200 bg-white/50">
-          <legend className="px-2 text-sm font-semibold text-gray-700">
-            Generation settings
-          </legend>
-          <div className="grid gap-4 md:grid-cols-5 items-end">
-            <div className="space-y-1">
-              <label
-                htmlFor="duration"
-                className="block text-xs font-medium text-gray-700 mb-1 tracking-wide uppercase"
-              >
-                Duration (s)
-              </label>
-              <input
-                id="duration"
-                type="number"
-                min={4}
-                max={20}
-                value={duration}
-                onChange={(e) =>
-                  setDuration(
-                    Math.min(
-                      20,
-                      Math.max(4, parseInt(e.target.value || "8", 10)),
-                    ),
-                  )
-                }
-                className="block w-full rounded-xl border-2 border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none"
-              />
-              <p className="text-[11px] text-gray-500">4–20 seconds</p>
-            </div>
-            <div className="space-y-1 md:col-span-2">
-              <label
-                htmlFor="aspectRatio"
-                className="block text-xs font-medium text-gray-700 mb-1 tracking-wide uppercase"
-              >
-                Aspect ratio
-              </label>
-              <select
-                id="aspectRatio"
-                className="block w-full rounded-xl border-2 border-gray-200 px-3 py-2 text-sm text-gray-900 motion-safe:transition-colors focus:border-brand-500 focus:outline-none"
-                value={aspectRatio}
-                onChange={(e) => setAspectRatio(e.target.value)}
-                name="aspectRatio"
-              >
-                <option value="square">Square (1:1)</option>
-                <option value="16:9">Widescreen (16:9)</option>
-                <option value="9:16">Vertical (9:16)</option>
-              </select>
-              <p className="text-[11px] text-gray-500">Orientation</p>
-            </div>
-            <div className="md:col-span-2 flex flex-col justify-end">
-              <p className="text-xs text-gray-500 mb-1">Prompt templates</p>
-              <div className="flex flex-wrap gap-2">
-                {templates.map((t) => (
-                  <button
-                    key={t.label}
-                    type="button"
-                    onClick={() => applyTemplate(t)}
-                    className="text-xs rounded-full border border-gray-300 bg-white px-3 py-1 font-medium text-gray-700 hover:bg-gray-50 motion-safe:transition"
-                  >
-                    <Wand2 className="inline h-3 w-3 mr-1" />
-                    {t.label}
-                  </button>
-                ))}
+        {/* Step 1 */}
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-brand-600/10 ring-1 ring-brand-600/20 text-brand-700">
+                1
+              </span>
+              Select brand & settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-5 items-end">
+              <div className="md:col-span-2 lg:col-span-2">
+                <BrandSelect
+                  value={selectedCompanyId}
+                  onChange={(id) => setSelectedCompanyId(id)}
+                  label="Generate for brand"
+                  placeholder="Choose a brand"
+                />
               </div>
-              <p className="text-[10px] text-gray-400 mt-1">
-                Ctrl/Cmd+Enter to submit
+              <div className="space-y-1">
+                <label
+                  htmlFor="duration"
+                  className="block text-xs font-medium text-gray-600 mb-1 uppercase tracking-wide"
+                >
+                  Duration (s)
+                </label>
+                <input
+                  id="duration"
+                  type="number"
+                  min={4}
+                  max={20}
+                  value={duration}
+                  onChange={(e) =>
+                    setDuration(
+                      Math.min(
+                        20,
+                        Math.max(4, parseInt(e.target.value || "8", 10)),
+                      ),
+                    )
+                  }
+                  className="block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/40 focus:outline-none"
+                />
+                <p className="text-[10px] text-gray-500">4–20 seconds</p>
+              </div>
+              <div className="space-y-1">
+                <label
+                  htmlFor="aspectRatio"
+                  className="block text-xs font-medium text-gray-600 mb-1 uppercase tracking-wide"
+                >
+                  Aspect ratio
+                </label>
+                <select
+                  id="aspectRatio"
+                  className="block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/40 focus:outline-none"
+                  value={aspectRatio}
+                  onChange={(e) => setAspectRatio(e.target.value)}
+                  name="aspectRatio"
+                >
+                  <option value="square">Square (1:1)</option>
+                  <option value="16:9">Widescreen (16:9)</option>
+                  <option value="9:16">Vertical (9:16)</option>
+                </select>
+                <p className="text-[10px] text-gray-500">Orientation</p>
+              </div>
+              <div className="flex flex-col justify-end">
+                <p className="text-[10px] text-gray-400">
+                  Ctrl/Cmd+Enter submits
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        {/* Step 2 */}
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-brand-600/10 ring-1 ring-brand-600/20 text-brand-700">
+                2
+              </span>
+              Craft prompt
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-8">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <p className="text-xs text-gray-500">
+                {mode === "pro"
+                  ? "Structured fields for granular control."
+                  : "Single free-form concept."}
               </p>
-            </div>
-          </div>
-        </fieldset>
-        <div className="grid gap-8 md:grid-cols-2">
-          <Textarea
-            label="Subject *"
-            required
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            placeholder="A 35-year-old Asian-American woman with shoulder-length black hair, wire-rimmed glasses, charcoal blazer over cream blouse, relaxed confident posture, gentle genuine smile, subtle natural makeup, standing with weight on left leg, holding a thin tablet at waist height"
-            description="Primary focus: 15+ specifics (age, ethnicity, build, clothing, posture, emotion, accessories). Avoid generic terms."
-            name="subject"
-            rows={4}
-          />
-          <Textarea
-            label="Context *"
-            required
-            value={context}
-            onChange={(e) => setContext(e.target.value)}
-            placeholder="Sunlit open-plan tech startup hub; matte concrete floor, biophilic wall of moss, soft morning haze through floor-to-ceiling windows, warm rim light, subtle lens dust motes, minimal Nordic furniture, soft ambient reflections on glass partitions"
-            description="Environment / setting, props, weather, time of day, sensory & material details. Blend evocative & concrete."
-            name="context"
-            rows={4}
-          />
-          <Textarea
-            label="Action *"
-            required
-            value={action}
-            onChange={(e) => setAction(e.target.value)}
-            placeholder="She raises tablet, taps to change slide, glances to colleagues, nods thoughtfully, then points with stylus, brief pause, soft inhale before concluding gesture"
-            description="Dynamic sequence, verbs, micro-expressions, timing (aim 5–8s continuity)."
-            name="action"
-            rows={4}
-          />
-          <Textarea
-            label="Style *"
-            required
-            value={style}
-            onChange={(e) => setStyle(e.target.value)}
-            placeholder="Cinematic corporate realism, warm golden-hour grading, subtle filmic halation, gentle bloom, Wes Anderson inspired symmetry with restrained pastel accents"
-            description="Visual aesthetic, genre, references (directors / movements), color grading & effects."
-            name="style"
-            rows={4}
-          />
-          <Textarea
-            label="Camera"
-            value={camera}
-            onChange={(e) => setCamera(e.target.value)}
-            placeholder="Slow dolly-in from medium to close-up, slight parallax, 50mm lens look, stabilized"
-            description="Shot type, angle, movement (dolly, pan, crane, handheld) & lens qualities."
-            name="camera"
-            rows={3}
-          />
-          <Textarea
-            label="Composition"
-            value={composition}
-            onChange={(e) => setComposition(e.target.value)}
-            placeholder="Rule of thirds, subject left, negative space right with soft bokeh, shallow depth (f/2), layered foreground light flare"
-            description="Framing, layout, depth cues, focus / lens effects (bokeh, rack focus)."
-            name="composition"
-            rows={3}
-          />
-          <Textarea
-            label="Ambiance"
-            value={ambiance}
-            onChange={(e) => setAmbiance(e.target.value)}
-            placeholder="Gentle warm key light, cool blue shadow fill, subtle dust particles, low hum of HVAC implied"
-            description="Lighting, mood, atmosphere, particles, temperature."
-            name="ambiance"
-            rows={3}
-          />
-          <Textarea
-            label="Audio"
-            value={audio}
-            onChange={(e) => setAudio(e.target.value)}
-            placeholder="Distant soft office murmur, faint keyboard clicks; She says: 'This is the inflection point' (calm conviction, medium volume)"
-            description="Dialogue, SFX, ambient bed. Format: Character: 'Line' (Tone: descriptor)."
-            name="audio"
-            rows={3}
-          />
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 items-start">
-          <div className="space-y-2">
-            <h3 className="text-base font-semibold text-gray-700">
-              Assembled prompt preview
-            </h3>
-            <div className="relative">
-              <pre
-                className="whitespace-pre-wrap rounded-xl border-2 border-gray-200 bg-white p-4 pr-12 text-base text-gray-800 min-h-[180px]"
-                aria-label="Prompt preview"
+              <div
+                role="tablist"
+                aria-label="Prompt mode"
+                className="inline-flex rounded-full bg-gray-100 p-1 text-xs font-medium"
               >
-                {assembledPrompt ||
-                  "Fill fields to build your structured prompt."}
-              </pre>
-              <button
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === "simple"}
+                  onClick={() => setMode("simple")}
+                  className={`px-3 py-1 rounded-full transition ${mode === "simple" ? "bg-brand-600 text-white shadow" : "text-gray-600 hover:text-gray-900"}`}
+                >
+                  Simple
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === "pro"}
+                  onClick={() => setMode("pro")}
+                  className={`px-3 py-1 rounded-full transition ${mode === "pro" ? "bg-brand-600 text-white shadow" : "text-gray-600 hover:text-gray-900"}`}
+                >
+                  Pro
+                </button>
+              </div>
+            </div>
+            {mode === "simple" ? (
+              <div className="relative">
+                <Textarea
+                  label="Prompt *"
+                  required
+                  value={simplePrompt}
+                  onChange={(e) => setSimplePrompt(e.target.value)}
+                  placeholder="Free-form video concept (subject, setting, motion, style)."
+                  description="Stored condensed. Switch to Pro for granular control."
+                  rows={8}
+                  name="simpleVideoPrompt"
+                />
+                <div className="absolute right-2 -top-8 flex items-center gap-2">
+                  <span className="text-[10px] text-gray-400 font-medium">
+                    {simplePrompt.length} chars
+                  </span>
+                  <button
+                    type="button"
+                    onClick={copyPrompt}
+                    disabled={!simplePrompt.trim()}
+                    className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2 py-1 text-[11px] font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+                    aria-label="Copy prompt"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="h-3 w-3" /> Copied
+                      </>
+                    ) : (
+                      <>
+                        <Clipboard className="h-3 w-3" /> Copy
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid gap-8 md:grid-cols-2">
+                <Textarea
+                  label="Subject *"
+                  required
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="A 35-year-old Asian-American woman..."
+                  description="Primary focus specifics."
+                  name="subject"
+                  rows={4}
+                />
+                <Textarea
+                  label="Context *"
+                  required
+                  value={context}
+                  onChange={(e) => setContext(e.target.value)}
+                  placeholder="Sunlit open-plan tech startup hub..."
+                  description="Environment & setting details."
+                  name="context"
+                  rows={4}
+                />
+                <Textarea
+                  label="Action *"
+                  required
+                  value={action}
+                  onChange={(e) => setAction(e.target.value)}
+                  placeholder="She raises tablet..."
+                  description="Sequence & motion verbs."
+                  name="action"
+                  rows={4}
+                />
+                <Textarea
+                  label="Style *"
+                  required
+                  value={style}
+                  onChange={(e) => setStyle(e.target.value)}
+                  placeholder="Cinematic corporate realism..."
+                  description="Aesthetic & grading."
+                  name="style"
+                  rows={4}
+                />
+                <Textarea
+                  label="Camera"
+                  value={camera}
+                  onChange={(e) => setCamera(e.target.value)}
+                  placeholder="Slow dolly-in..."
+                  description="Shot / movement / lens."
+                  name="camera"
+                  rows={3}
+                />
+                <Textarea
+                  label="Composition"
+                  value={composition}
+                  onChange={(e) => setComposition(e.target.value)}
+                  placeholder="Rule of thirds..."
+                  description="Framing & depth cues."
+                  name="composition"
+                  rows={3}
+                />
+                <Textarea
+                  label="Ambiance"
+                  value={ambiance}
+                  onChange={(e) => setAmbiance(e.target.value)}
+                  placeholder="Gentle warm key light..."
+                  description="Lighting & atmosphere."
+                  name="ambiance"
+                  rows={3}
+                />
+                <Textarea
+                  label="Audio"
+                  value={audio}
+                  onChange={(e) => setAudio(e.target.value)}
+                  placeholder="Distant soft office murmur..."
+                  description="Dialogue & SFX (optional)."
+                  name="audio"
+                  rows={3}
+                />
+              </div>
+            )}
+            {mode === "pro" && (
+              <div className="grid gap-6 md:grid-cols-2 items-start">
+                <div className="space-y-2">
+                  <h3 className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                    Assembled prompt
+                  </h3>
+                  <div className="relative">
+                    <pre
+                      className="whitespace-pre-wrap rounded-lg border border-gray-200 bg-white p-4 pr-14 text-xs text-gray-800 min-h-[160px]"
+                      aria-label="Prompt preview"
+                    >
+                      {assembledPrompt ||
+                        "Fill fields to build your structured prompt."}
+                    </pre>
+                    <div className="absolute top-2 right-2 flex items-center gap-2">
+                      <span className="text-[10px] text-gray-400 font-medium">
+                        {assembledPrompt.length} chars
+                      </span>
+                      <button
+                        type="button"
+                        onClick={copyPrompt}
+                        disabled={!assembledPrompt}
+                        className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2 py-1 text-[11px] font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+                        aria-label="Copy prompt"
+                      >
+                        {copied ? (
+                          <>
+                            <Check className="h-3 w-3" /> Copied
+                          </>
+                        ) : (
+                          <>
+                            <Clipboard className="h-3 w-3" /> Copy
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="text-xs text-gray-600 leading-relaxed bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <p className="font-medium mb-1 text-gray-700">Guidance</p>
+                    <ul className="list-disc pl-4 space-y-1">
+                      <li>Subject: Concrete specifics.</li>
+                      <li>Context: Rich environment & sensory detail.</li>
+                      <li>Action: Sequential verbs + micro-expressions.</li>
+                      <li>Style: Aesthetic + grading references.</li>
+                      <li>Camera: Movement & lens feel.</li>
+                      <li>Composition: Framing & depth cues.</li>
+                      <li>Ambiance: Lighting & atmosphere.</li>
+                      <li>Audio: Dialogue & ambient SFX.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div className="flex gap-3 flex-wrap">
+              <Button
+                type="submit"
+                disabled={
+                  submitting ||
+                  (mode === "simple"
+                    ? !simplePrompt.trim()
+                    : !subject.trim() ||
+                      !context.trim() ||
+                      !action.trim() ||
+                      !style.trim())
+                }
+                loading={submitting}
+                className="bg-brand-600 hover:bg-brand-700"
+              >
+                <Sparkles className="h-4 w-4" />{" "}
+                {submitting ? "Queuing..." : "Generate"}
+              </Button>
+              <Button
                 type="button"
-                onClick={copyPrompt}
-                disabled={!assembledPrompt}
-                className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2 py-1 text-[11px] font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+                variant="outline"
+                disabled={
+                  mode === "simple"
+                    ? !simplePrompt
+                    : !subject &&
+                      !context &&
+                      !action &&
+                      !style &&
+                      !camera &&
+                      !composition &&
+                      !ambiance &&
+                      !audio
+                }
+                onClick={() => {
+                  setSimplePrompt("");
+                  setSubject("");
+                  setContext("");
+                  setAction("");
+                  setStyle("");
+                  setCamera("");
+                  setComposition("");
+                  setAmbiance("");
+                  setAudio("");
+                }}
               >
-                {copied ? (
-                  <>
-                    <Check className="h-3 w-3" /> Copied
-                  </>
-                ) : (
-                  <>
-                    <Clipboard className="h-3 w-3" /> Copy
-                  </>
-                )}
-              </button>
+                Reset
+              </Button>
             </div>
-          </div>
-          <div className="space-y-3">
-            <div className="text-base text-gray-500 leading-relaxed bg-gray-50 border border-gray-200 rounded-xl p-4">
-              <p className="font-medium mb-1">Guidance</p>
-              <ul className="list-disc pl-4 space-y-1">
-                <li>Subject: 15+ concrete specifics.</li>
-                <li>Context: Rich environment & sensory detail.</li>
-                <li>Action: Sequential verbs + micro-expressions.</li>
-                <li>Style: Aesthetic + references + grading.</li>
-                <li>Camera: Shot, angle, movement, lens feel.</li>
-                <li>Composition: Framing, depth, focus cues.</li>
-                <li>Ambiance: Lighting & mood atmosphere.</li>
-                <li>Audio: Dialogue & ambient SFX (optional).</li>
-              </ul>
-            </div>
-            <Button
-              type="submit"
-              className="w-full md:w-auto"
-              disabled={submitting}
-              loading={submitting}
-            >
-              <Sparkles className="h-4 w-4" />{" "}
-              {submitting ? "Queuing..." : "Generate"}
-            </Button>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </form>
-      <EmptyState
-        icon={<ImagePlus className="h-8 w-8 text-white" />}
-        title="AI image generation"
-        message={
-          <div>
-            <p className="mb-6">
-              Soon you'll be able to generate consistent, on-brand images
-              powered by AI and style presets.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
-              <div className="text-center">
-                <div className="w-12 h-12 bg-brand-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <Sparkles className="h-6 w-6 text-brand-600" />
-                </div>
-                <h4 className="font-medium text-gray-900 mb-2">Prompt</h4>
-                <p className="text-base text-gray-600">Describe your concept</p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <Upload className="h-6 w-6 text-purple-600" />
-                </div>
-                <h4 className="font-medium text-gray-900 mb-2">Reference</h4>
-                <p className="text-base text-gray-600">Upload brand images</p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <ImagePlus className="h-6 w-6 text-green-600" />
-                </div>
-                <h4 className="font-medium text-gray-900 mb-2">Results</h4>
-                <p className="text-base text-gray-600">High quality outputs</p>
-              </div>
-            </div>
+      {/* Step 3 */}
+      <Card className="mt-10">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-brand-600/10 ring-1 ring-brand-600/20 text-brand-700">
+              3
+            </span>
+            Recent jobs
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <MediaJobsList
+            companyId={selectedCompanyId ? Number(selectedCompanyId) : null}
+            highlightJobId={highlightedJob}
+            onAssetClick={(asset) => setPreviewAsset(asset)}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Asset preview modal */}
+      <Modal
+        isOpen={!!previewAsset}
+        onClose={() => setPreviewAsset(null)}
+        size="lg"
+      >
+        <ModalHeader className="bg-gradient-to-r from-brand-600 to-brand-700 text-white">
+          <ModalTitle className="text-white flex items-center gap-2">
+            <Maximize2 className="h-4 w-4" /> Asset preview
+          </ModalTitle>
+          <button
+            type="button"
+            onClick={() => setPreviewAsset(null)}
+            className="rounded-md p-2 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </ModalHeader>
+        <ModalBody className="p-0 bg-black flex items-center justify-center">
+          {previewAsset && previewAsset.mime_type?.startsWith("image/") && (
+            <img
+              src={previewAsset.url}
+              alt="Video frame asset"
+              className="max-h-[70vh] w-auto object-contain"
+            />
+          )}
+          {previewAsset && previewAsset.mime_type?.startsWith("video/") && (
+            <video
+              src={previewAsset.url}
+              className="max-h-[70vh] w-auto"
+              controls
+            >
+              <track kind="captions" src="" label="(No captions yet)" />
+            </video>
+          )}
+        </ModalBody>
+        <ModalFooter className="bg-gray-50 justify-between">
+          <div className="text-[11px] text-gray-500">
+            Asset ID {previewAsset?.id}
           </div>
-        }
-        variant="purple"
-      />
-      <MediaJobsList
-        companyId={selectedCompanyId ? Number(selectedCompanyId) : null}
-        className="mt-10"
-        highlightJobId={highlightedJob}
-      />
-    </div>
+          <Button variant="outline" onClick={() => setPreviewAsset(null)}>
+            Close
+          </Button>
+        </ModalFooter>
+      </Modal>
+    </PageContainer>
   );
 }
 

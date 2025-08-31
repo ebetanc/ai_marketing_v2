@@ -91,8 +91,9 @@ export function TopBar({
       className="bg-white px-4 sm:px-6 h-[var(--app-header-h)] flex items-center border-b border-gray-200"
       {...divProps}
     >
-      <div className="flex items-center justify-between gap-4 w-full">
-        <div className="flex items-center space-x-2 sm:space-x-4 flex-1">
+      <div className="w-full grid grid-cols-[auto_1fr_auto] items-center gap-4">
+        {/* Left: menu (mobile) */}
+        <div className="flex items-center">
           <IconButton
             className={cn("lg:hidden", menuButtonProps?.className)}
             aria-label="Open menu"
@@ -101,76 +102,77 @@ export function TopBar({
           >
             <Menu className="h-5 w-5" />
           </IconButton>
-          <form
-            role="search"
-            className="relative max-w-md flex-1"
-            onSubmit={(e) => {
-              e.preventDefault();
-              const q = searchQuery.trim();
-              if (!q) return; // don’t submit empty queries
-              navigate(`/content?q=${encodeURIComponent(q)}`);
-            }}
-          >
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="search"
-              placeholder="Search (Cmd/Ctrl+K)"
-              value={searchQuery}
-              onChange={(e) => {
-                const v = e.target.value;
-                setSearchQuery(v);
-                // Debounced URL sync while typing only when on /content
-                if (location.pathname.startsWith("/content")) {
-                  if (debounceRef.current)
-                    window.clearTimeout(debounceRef.current);
-                  debounceRef.current = window.setTimeout(() => {
-                    const params = new URLSearchParams(location.search);
-                    if (v) params.set("q", v);
-                    else params.delete("q");
-                    navigate({ search: params.toString() }, { replace: true });
-                  }, 250);
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  const q = searchQuery.trim();
-                  if (!q) {
-                    e.preventDefault();
-                    return;
-                  }
-                  if (debounceRef.current)
-                    window.clearTimeout(debounceRef.current);
-                  navigate(`/content?q=${encodeURIComponent(q)}`);
-                }
-              }}
-              aria-label="Search"
-              ref={searchRef}
-              className="w-full pl-10 pr-10 py-3 text-base border-2 border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus:border-brand-500"
-              style={{ minHeight: 44 }}
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                aria-label="Clear search"
-                title="Clear search"
-                onClick={() => {
-                  setSearchQuery("");
-                  if (location.pathname.startsWith("/content")) {
-                    const params = new URLSearchParams(location.search);
-                    params.delete("q");
-                    navigate({ search: params.toString() }, { replace: true });
-                  }
-                }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-                style={{ width: 44, height: 44 }}
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </form>
         </div>
-
-        <div className="flex items-center space-x-2 sm:space-x-3">
+        {/* Center: search (always centered thanks to grid) */}
+        <form
+          role="search"
+          className="relative w-full max-w-lg justify-self-center"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const q = searchQuery.trim();
+            if (!q) return; // don’t submit empty queries
+            navigate(`/content?q=${encodeURIComponent(q)}`);
+          }}
+        >
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="search"
+            placeholder="Search (Cmd/Ctrl+K)"
+            value={searchQuery}
+            onChange={(e) => {
+              const v = e.target.value;
+              setSearchQuery(v);
+              // Debounced URL sync while typing only when on /content
+              if (location.pathname.startsWith("/content")) {
+                if (debounceRef.current)
+                  window.clearTimeout(debounceRef.current);
+                debounceRef.current = window.setTimeout(() => {
+                  const params = new URLSearchParams(location.search);
+                  if (v) params.set("q", v);
+                  else params.delete("q");
+                  navigate({ search: params.toString() }, { replace: true });
+                }, 250);
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                const q = searchQuery.trim();
+                if (!q) {
+                  e.preventDefault();
+                  return;
+                }
+                if (debounceRef.current)
+                  window.clearTimeout(debounceRef.current);
+                navigate(`/content?q=${encodeURIComponent(q)}`);
+              }
+            }}
+            aria-label="Search"
+            ref={searchRef}
+            className="w-full pl-10 pr-10 py-3 text-base border-2 border-gray-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus:border-brand-500"
+            style={{ minHeight: 44 }}
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              aria-label="Clear search"
+              title="Clear search"
+              onClick={() => {
+                setSearchQuery("");
+                if (location.pathname.startsWith("/content")) {
+                  const params = new URLSearchParams(location.search);
+                  params.delete("q");
+                  navigate({ search: params.toString() }, { replace: true });
+                }
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+              style={{ width: 44, height: 44 }}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </form>
+        {/* Right: actions */}
+        <div className="flex items-center space-x-2 sm:space-x-3 justify-self-end">
           <IconButton className="relative" aria-label="Notifications">
             <Bell className="h-5 w-5" />
             {notificationsCount > 0 && (

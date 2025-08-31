@@ -12,10 +12,11 @@ import { ViewCompanyModal } from "../components/companies/ViewCompanyModal";
 import { TrendingUp, FileText, Users, Target, Clock, Eye } from "lucide-react";
 import { useCompanies } from "../hooks/useCompanies";
 import { useContentPieces } from "../hooks/useContentPieces";
-import { formatDate, formatTime } from "../lib/utils";
+import { formatDate, formatTime, relativeTime, cn } from "../lib/utils";
 import type { CompanyUI } from "../hooks/useCompanies";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { PageHeader } from "../components/layout/PageHeader";
+import { PageContainer } from "../components/layout/PageContainer";
 import { EmptyState } from "../components/ui/EmptyState";
 import { ErrorState } from "../components/ui/ErrorState";
 import { ListSkeleton } from "../components/ui/ListSkeleton";
@@ -90,25 +91,31 @@ export function Dashboard() {
 
   const stats = [
     {
+      id: "companies",
       title: "Active Companies",
       value: companies.length,
       change: pct(companiesCurrent.length, companiesPrev.length),
-      changeType: "positive" as const,
       icon: Users,
+      accent: "from-brand-500/10 to-brand-500/0 text-brand-600",
+      iconBg: "bg-brand-50",
     },
     {
+      id: "content",
       title: "Content Pieces",
       value: contentPieces.length,
       change: pct(contentCurrent.length, contentPrev.length),
-      changeType: "positive" as const,
       icon: FileText,
+      accent: "from-brand-500/10 to-brand-500/0 text-brand-600",
+      iconBg: "bg-brand-50",
     },
     {
+      id: "generated",
       title: "Generated Content",
       value: contentPieces.length,
       change: pct(contentCurrent.length, contentPrev.length),
-      changeType: "positive" as const,
       icon: Target,
+      accent: "from-brand-500/10 to-brand-500/0 text-brand-600",
+      iconBg: "bg-brand-50",
     },
   ];
 
@@ -125,7 +132,7 @@ export function Dashboard() {
   }, [contentPieces]);
 
   return (
-    <div className="space-y-6">
+    <PageContainer>
       <PageHeader
         title="Dashboard"
         description="Your marketing at a glance."
@@ -139,10 +146,6 @@ export function Dashboard() {
             >
               Refresh
             </Button>
-            <Button onClick={() => navigate("/content")}>
-              <FileText className="h-4 w-4 mr-2" />
-              Generate content
-            </Button>
           </>
         }
       />
@@ -155,30 +158,45 @@ export function Dashboard() {
       />
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {stats.map((stat) => (
-          <Card key={stat.title}>
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-base font-medium text-gray-600">
+          <Card
+            key={stat.id}
+            className="relative overflow-hidden group focus-within:ring-2 focus-within:ring-brand-500"
+          >
+            <div
+              aria-hidden
+              className={cn(
+                "pointer-events-none absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity",
+                stat.accent,
+              )}
+            />
+            <CardContent className="relative p-5 sm:p-6">
+              <div className="flex items-start justify-between">
+                <div className="space-y-3">
+                  <p className="text-sm font-medium text-gray-600 tracking-wide uppercase">
                     {stat.title}
                   </p>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-2">
+                  <p className="text-3xl font-semibold text-gray-900 tabular-nums">
                     {stat.value}
                   </p>
-                  <div className="flex items-center mt-2">
-                    <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-                    <span className="text-base text-green-600">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-0.5 font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                      <TrendingUp className="h-3.5 w-3.5 mr-1" />
                       {stat.change}
                     </span>
-                    <span className="text-base text-gray-500 ml-1 hidden sm:inline">
-                      vs last month
-                    </span>
+                    <span className="text-gray-500">vs last 7d</span>
                   </div>
                 </div>
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-brand-50 rounded-xl flex items-center justify-center">
-                  <stat.icon className="h-6 w-6 text-brand-600" />
+                <div
+                  className={cn(
+                    "relative w-12 h-12 rounded-xl flex items-center justify-center ring-1 ring-inset ring-gray-200",
+                    stat.iconBg,
+                  )}
+                >
+                  <stat.icon
+                    className={cn("h-6 w-6", stat.accent?.split(" ").at(-1))}
+                  />
                 </div>
               </div>
             </CardContent>
@@ -188,7 +206,7 @@ export function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Recent Activity */}
-        <Card>
+        <Card className="flex flex-col">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Recent activity</CardTitle>
@@ -197,7 +215,7 @@ export function Dashboard() {
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1 flex flex-col">
             {contentLoading ? (
               <ListSkeleton
                 rows={4}
@@ -229,37 +247,36 @@ export function Dashboard() {
                 }
               />
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-2 divide-y divide-gray-100 -mx-4 sm:mx-0">
                 {recentActivity.map((activity) => (
                   <div
                     key={activity.id}
-                    className="flex items-start space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                    className="flex items-start gap-3 p-4 first:rounded-t-xl last:rounded-b-xl hover:bg-gray-50 transition-colors"
                   >
-                    <div className="flex-shrink-0">
+                    <div className="flex-shrink-0 mt-1">
                       {activity.type === "content_generated" && (
-                        <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center">
-                          <FileText className="h-4 w-4 text-brand-600" />
+                        <div className="w-9 h-9 bg-brand-600/10 ring-1 ring-brand-600/20 rounded-full flex items-center justify-center">
+                          <FileText className="h-4 w-4 text-brand-700" />
                         </div>
                       )}
                       {activity.type === "company_added" && (
-                        <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
-                          <Users className="h-4 w-4 text-teal-600" />
+                        <div className="w-9 h-9 bg-brand-600/10 ring-1 ring-brand-600/20 rounded-full flex items-center justify-center">
+                          <Users className="h-4 w-4 text-brand-700" />
                         </div>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-base font-medium text-gray-900">
+                      <p className="text-sm font-medium text-gray-900 line-clamp-1">
                         {activity.title}
                       </p>
-                      <p className="text-base text-gray-500">
-                        {activity.description}
+                      <p className="text-sm text-gray-600 line-clamp-2">
+                        {activity.description || "No description"}
                       </p>
-                      <div className="flex items-center mt-1 space-x-2">
-                        <Clock className="h-3 w-3 text-gray-400" />
-                        <span className="text-base text-gray-500">
-                          {formatTime(activity.time)}
-                        </span>
-                        {/* Status badge removed */}
+                      <div className="flex items-center mt-2 gap-2 text-xs text-gray-500">
+                        <Clock className="h-3 w-3" />
+                        <span>{formatTime(activity.time)}</span>
+                        <span aria-hidden>•</span>
+                        <span>{relativeTime(activity.time)}</span>
                       </div>
                     </div>
                   </div>
@@ -270,14 +287,16 @@ export function Dashboard() {
         </Card>
 
         {/* Active Companies */}
-        <Card>
+        <Card className="flex flex-col">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Active companies</CardTitle>
-              <Badge variant="primary">{companies.length} companies</Badge>
+              <Badge variant="primary" className="font-medium">
+                {companies.length} companies
+              </Badge>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1 flex flex-col">
             {companiesLoading ? (
               <ListSkeleton
                 rows={4}
@@ -310,36 +329,34 @@ export function Dashboard() {
                 }
               />
             ) : (
-              <div className="space-y-4">
+              <div className="-mx-4 sm:mx-0 divide-y divide-gray-100">
                 {companies.map((company) => (
                   <div
                     key={company.id}
-                    className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors group"
+                    className="flex items-center justify-between p-4 gap-4 hover:bg-gray-50 group transition-colors"
                   >
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center">
-                        <span className="text-white font-semibold text-base">
+                      <div className="relative">
+                        <div className="w-11 h-11 bg-gradient-to-br from-brand-500 to-brand-600 rounded-xl flex items-center justify-center text-white font-semibold text-base shadow-sm">
                           {(company.brand_name || company.name || "U").charAt(
                             0,
                           )}
-                        </span>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900">
-                          {company.brand_name ||
-                            company.name ||
-                            "Unnamed Brand"}
-                        </p>
-                        <p className="text-base text-gray-500">
-                          {(company.brand_voice?.tone || "").length > 50
-                            ? `${(company.brand_voice?.tone || "").substring(0, 50)}...`
-                            : company.brand_voice?.tone || "Not specified"}
-                        </p>
-                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 line-clamp-1">
+                        {company.brand_name || company.name || "Unnamed Brand"}
+                      </p>
+                      <p className="text-sm text-gray-500 line-clamp-1">
+                        {(company.brand_voice?.tone || "").length > 70
+                          ? `${(company.brand_voice?.tone || "").substring(0, 70)}...`
+                          : company.brand_voice?.tone || "Not specified"}
+                      </p>
                     </div>
                     <div className="flex items-center space-x-3">
                       <div className="text-right">
-                        <p className="text-base font-medium text-gray-900">
+                        <p className="text-sm font-medium text-gray-900">
                           {
                             contentPieces.filter(
                               (c) => c.company_id === String(company.id),
@@ -347,8 +364,8 @@ export function Dashboard() {
                           }{" "}
                           pieces
                         </p>
-                        <p className="text-base text-gray-500">
-                          Created {formatDate(company.created_at)}
+                        <p className="text-xs text-gray-500">
+                          Added {relativeTime(company.created_at)}
                         </p>
                       </div>
                       <Button
@@ -357,8 +374,10 @@ export function Dashboard() {
                         onClick={() => handleViewCompany(company)}
                         className="transition-opacity"
                       >
-                        <Eye className="h-3 w-3 mr-1" />
-                        View
+                        <Eye className="h-3.5 w-3.5" />
+                        <span className="sr-only sm:not-sr-only sm:ml-1">
+                          View
+                        </span>
                       </Button>
                     </div>
                   </div>
@@ -376,47 +395,94 @@ export function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            <button
+            <QuickAction
+              icon={FileText}
+              title="Generate content"
+              description="Create posts, blogs, and more."
               onClick={() => navigate("/content")}
-              className="p-4 border-2 border-dashed border-gray-200 rounded-xl hover:border-brand-300 hover:bg-brand-50 transition-all duration-200 group"
-            >
-              <FileText className="h-8 w-8 text-gray-400 group-hover:text-brand-600 mx-auto mb-3" />
-              <h3 className="font-medium text-gray-900 group-hover:text-brand-900">
-                Generate content
-              </h3>
-              <p className="text-base text-gray-500 mt-1 hidden sm:block">
-                Create posts, blogs, and more.
-              </p>
-            </button>
-
-            <button
+            />
+            <QuickAction
+              icon={Target}
+              title="New campaign"
+              description="Plan a multi-channel campaign."
               onClick={() => navigate("/campaigns")}
-              className="p-4 border-2 border-dashed border-gray-200 rounded-xl hover:border-teal-300 hover:bg-teal-50 transition-all duration-200 group"
-            >
-              <Target className="h-8 w-8 text-gray-400 group-hover:text-teal-600 mx-auto mb-3" />
-              <h3 className="font-medium text-gray-900 group-hover:text-teal-900">
-                New campaign
-              </h3>
-              <p className="text-base text-gray-500 mt-1 hidden sm:block">
-                Plan a multi‑channel campaign.
-              </p>
-            </button>
-
-            <button
+            />
+            <QuickAction
+              icon={Users}
+              title="Add company"
+              description="Onboard a client."
               onClick={() => navigate("/companies")}
-              className="p-4 border-2 border-dashed border-gray-200 rounded-xl hover:border-orange-300 hover:bg-orange-50 transition-all duration-200 group"
-            >
-              <Users className="h-8 w-8 text-gray-400 group-hover:text-orange-600 mx-auto mb-3" />
-              <h3 className="font-medium text-gray-900 group-hover:text-orange-900">
-                Add company
-              </h3>
-              <p className="text-base text-gray-500 mt-1 hidden sm:block">
-                Onboard a client.
-              </p>
-            </button>
+            />
           </div>
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
+  );
+}
+
+interface QuickActionProps {
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  title: string;
+  description: string;
+  color?: "brand" | "teal" | "orange";
+  onClick: () => void;
+}
+
+function QuickAction({
+  icon: Icon,
+  title,
+  description,
+  color = "brand",
+  onClick,
+}: QuickActionProps) {
+  const colorMap: Record<
+    string,
+    {
+      border: string;
+      hoverBorder: string;
+      hoverBg: string;
+      icon: string;
+      title: string;
+    }
+  > = {
+    brand: {
+      border: "border-gray-200",
+      hoverBorder: "hover:border-brand-300",
+      hoverBg: "hover:bg-brand-50",
+      icon: "text-gray-400 group-hover:text-brand-600",
+      title: "group-hover:text-brand-900",
+    },
+    teal: {
+      border: "border-gray-200",
+      hoverBorder: "hover:border-teal-300",
+      hoverBg: "hover:bg-teal-50",
+      icon: "text-gray-400 group-hover:text-teal-600",
+      title: "group-hover:text-teal-900",
+    },
+    orange: {
+      border: "border-gray-200",
+      hoverBorder: "hover:border-orange-300",
+      hoverBg: "hover:bg-orange-50",
+      icon: "text-gray-400 group-hover:text-orange-600",
+      title: "group-hover:text-orange-900",
+    },
+  };
+  const c = colorMap[color];
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "p-4 border-2 border-dashed rounded-xl transition-all duration-200 group w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",
+        c.border,
+        c.hoverBorder,
+        c.hoverBg,
+      )}
+    >
+      <Icon className={cn("h-8 w-8 mx-auto mb-3", c.icon)} />
+      <h3 className={cn("font-medium text-gray-900", c.title)}>{title}</h3>
+      <p className="text-sm text-gray-500 mt-1 hidden sm:block">
+        {description}
+      </p>
+    </button>
   );
 }

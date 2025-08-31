@@ -1,6 +1,7 @@
 import React from "react";
 import { listJobs, listAssets, MediaJob, MediaAsset } from "../../lib/media";
 import { useToast } from "../ui/Toast";
+import { supabase } from "../../lib/supabase";
 
 interface UseMediaJobsOptions {
   companyId: number | null;
@@ -22,7 +23,10 @@ export function useMediaJobs({
   const [jobs, setJobs] = React.useState<MediaJobWithAssets[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const timerRef = React.useRef<number | null>(null);
+  // Realtime channel ref for cleanup when company changes
+  const channelRef = React.useRef<ReturnType<typeof supabase.channel> | null>(
+    null,
+  );
   const loadingAssetsRef = React.useRef<Set<number>>(new Set());
 
   const load = React.useCallback(async () => {
@@ -94,16 +98,104 @@ export function useMediaJobs({
       });
   }, [jobs, loadAssets]);
 
+  // Realtime subscription: listen to job & asset changes instead of interval polling
   React.useEffect(() => {
-    if (!companyId) return;
-    if (timerRef.current) window.clearInterval(timerRef.current);
-    timerRef.current = window.setInterval(() => {
-      load();
-    }, refreshIntervalMs);
+    if (!companyId) {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+      return;
+    }
+
+    // Tear down any existing channel
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
+    const channel = supabase
+      .channel(`media_jobs_company_${companyId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "media_jobs",
+          filter: `company_id=eq.${companyId}`,
+        },
+        (payload: any) => {
+          setJobs((prev) => {
+            const id = payload.new?.id ?? payload.old?.id;
+            const idx = prev.findIndex((j) => j.id === id);
+            const next = [...prev];
+            if (payload.eventType === "INSERT") {
+              if (idx === -1) {
+                const newJob: MediaJobWithAssets = {
+                  ...(payload.new as MediaJob),
+                  assets: [],
+                  assetsLoaded: false,
+                };
+                return [newJob, ...next].slice(0, limit);
+              } else {
+                next[idx] = { ...next[idx], ...(payload.new as MediaJob) };
+                return next;
+              }
+            }
+            if (payload.eventType === "UPDATE") {
+              if (idx !== -1) {
+                next[idx] = { ...next[idx], ...(payload.new as MediaJob) };
+                return next;
+              }
+              return next;
+            }
+            if (payload.eventType === "DELETE") {
+              if (idx !== -1) {
+                next.splice(idx, 1);
+                return next;
+              }
+              return next;
+            }
+            return next;
+          });
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "media_assets",
+        },
+        (payload: any) => {
+          setJobs((prev) =>
+            prev.map((j) =>
+              j.id === payload.new.job_id
+                ? {
+                    ...j,
+                    assets: [...(j.assets || []), payload.new as MediaAsset],
+                    assetsLoaded: true,
+                  }
+                : j,
+            ),
+          );
+        },
+      )
+      .subscribe();
+    channelRef.current = channel;
+
     return () => {
-      if (timerRef.current) window.clearInterval(timerRef.current);
+      supabase.removeChannel(channel);
+      channelRef.current = null;
     };
-  }, [companyId, refreshIntervalMs, load]);
+  }, [companyId, limit]);
+
+  // (Optional) very infrequent refresh as safety net; disabled by default
+  // React.useEffect(() => {
+  //   if (!companyId) return;
+  //   const id = window.setInterval(() => load(), refreshIntervalMs * 12);
+  //   return () => window.clearInterval(id);
+  // }, [companyId, load, refreshIntervalMs]);
 
   return { jobs, loading, error, reload: load, loadAssets };
 }

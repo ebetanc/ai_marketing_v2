@@ -18,7 +18,8 @@ import { Button } from "../ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/Card";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { IconButton } from "../ui/IconButton";
-import { Modal, ModalBody, ModalHeader, ModalTitle } from "../ui/Modal";
+import { Modal, ModalBody } from "../ui/Modal";
+import { ModalBrandHeader } from "../ui/ModalBrandHeader";
 import { useToast } from "../ui/Toast";
 
 interface ViewCompanyModalProps {
@@ -70,25 +71,12 @@ export function ViewCompanyModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} labelledById={titleId} size="md">
       <div className="w-full max-h-[90vh] flex flex-col overflow-hidden">
-        <ModalHeader>
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center">
-              <Building2 className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <ModalTitle id={titleId}>{company.name}</ModalTitle>
-              <p className="text-base text-gray-500">Company details</p>
-            </div>
-          </div>
-
-          <IconButton
-            onClick={onClose}
-            aria-label="Close dialog"
-            variant="ghost"
-          >
-            <X className="h-5 w-5 text-gray-400" />
-          </IconButton>
-        </ModalHeader>
+        <ModalBrandHeader
+          titleId={titleId}
+          title={company.name}
+          onClose={onClose}
+          icon={<Building2 className="h-6 w-6 text-white" />}
+        />
 
         {/* Content */}
         <ModalBody className="space-y-6">

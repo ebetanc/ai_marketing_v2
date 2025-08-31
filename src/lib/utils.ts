@@ -20,6 +20,31 @@ export function formatTime(date: string) {
   });
 }
 
+// Basic relative time formatter (e.g. "3h ago")
+const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+const divisions: { amount: number; name: Intl.RelativeTimeFormatUnit }[] = [
+  { amount: 60, name: "seconds" },
+  { amount: 60, name: "minutes" },
+  { amount: 24, name: "hours" },
+  { amount: 7, name: "days" },
+  { amount: 4.34524, name: "weeks" },
+  { amount: 12, name: "months" },
+  { amount: Number.POSITIVE_INFINITY, name: "years" },
+];
+
+export function relativeTime(date: string | number | Date) {
+  const d = new Date(date).getTime();
+  const now = Date.now();
+  let diff = (d - now) / 1000; // seconds
+  for (const div of divisions) {
+    if (Math.abs(diff) < div.amount) {
+      return rtf.format(Math.round(diff), div.name);
+    }
+    diff /= div.amount;
+  }
+  return ""; // should never reach
+}
+
 export function truncateText(text: string, maxLength: number) {
   if (text.length <= maxLength) return text;
   return text.slice(0, maxLength) + "...";

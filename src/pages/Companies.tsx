@@ -10,6 +10,7 @@ import { useToast } from "../components/ui/Toast";
 import { Skeleton } from "../components/ui/Skeleton";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { PageHeader } from "../components/layout/PageHeader";
+import { PageContainer } from "../components/layout/PageContainer";
 import { EmptyState } from "../components/ui/EmptyState";
 import CompanyListItem from "../components/companies/CompanyListItem";
 import { ErrorState } from "../components/ui/ErrorState";
@@ -84,7 +85,7 @@ export function Companies() {
   // }, {} as Record<string, any[]>)
 
   return (
-    <div className="space-y-6">
+    <PageContainer>
       <PageHeader
         title="Companies"
         description="Manage brands and profiles."
@@ -220,6 +221,6 @@ export function Companies() {
           }
         />
       )}
-    </div>
+    </PageContainer>
   );
 }

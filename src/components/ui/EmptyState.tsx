@@ -10,7 +10,7 @@ type EmptyStateProps = {
 };
 
 const variantMap: Record<NonNullable<EmptyStateProps["variant"]>, string> = {
-  brand: "from-brand-500 to-purple-500",
+  brand: "from-brand-500 to-brand-600",
   red: "from-red-500 to-pink-500",
   green: "from-green-500 to-blue-500",
   purple: "from-purple-500 to-blue-500",

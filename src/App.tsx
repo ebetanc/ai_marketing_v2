@@ -13,10 +13,11 @@ import SignUp from "./pages/SignUp";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import { Dashboard } from "./pages/Dashboard";
-import { Companies } from "./pages/Companies";
+import { Brands } from "./pages/Brands";
 import { Strategies } from "./pages/Strategies";
 import { Ideas } from "./pages/Ideas";
 import { Content } from "./pages/Content";
+import { Calendar } from "./pages/Calendar";
 import { Campaigns } from "./pages/Campaigns";
 import { YouTubeSEO } from "./pages/YouTubeSEO";
 import { TrendBlog } from "./pages/TrendBlog";
@@ -52,10 +53,12 @@ function AppRoutes() {
       <Route element={<ProtectedLayout />}>
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/companies" element={<Companies />} />
+          <Route path="/companies" element={<Brands />} />
+          <Route path="/brands" element={<Brands />} />
           <Route path="/strategies" element={<Strategies />} />
           <Route path="/ideas" element={<Ideas />} />
           <Route path="/content" element={<Content />} />
+          <Route path="/calendar" element={<Calendar />} />
           <Route path="/campaigns" element={<Campaigns />} />
           <Route path="/youtube-seo" element={<YouTubeSEO />} />
           <Route path="/trend-blog" element={<TrendBlog />} />

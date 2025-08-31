@@ -18,5 +18,5 @@
     "jsx": "react-jsx"
   },
   "include": ["src", "vite-env.d.ts", "**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "supabase/functions"]
 }

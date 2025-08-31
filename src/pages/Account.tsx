@@ -15,12 +15,16 @@ import { useNavigate } from "react-router-dom";
 import { useAsyncCallback } from "../hooks/useAsync";
 import { z } from "zod";
 import { PageHeader } from "../components/layout/PageHeader";
+import { PageContainer } from "../components/layout/PageContainer";
 import {
   ShieldCheck,
   LogOut,
   Mail,
   User as UserIcon,
   KeyRound,
+  Check,
+  Copy,
+  AlertTriangle,
 } from "lucide-react";
 
 export function Account() {
@@ -28,19 +32,13 @@ export function Account() {
   const { session } = useAuth();
   const { push } = useToast();
   const navigate = useNavigate();
-
   const user = session?.user;
 
-  // Metadata
-  const [name, setName] = useState<string>("");
+  const [name, setName] = useState("");
   const [metaSaving, setMetaSaving] = useState(false);
-
-  // Email
-  const [email, setEmail] = useState<string>("");
+  const [email, setEmail] = useState("");
   const [emailSaving, setEmailSaving] = useState(false);
-  const [emailError, setEmailError] = useState<string | undefined>(undefined);
-
-  // Password
+  const [emailError, setEmailError] = useState<string | undefined>();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -59,7 +57,6 @@ export function Account() {
 
   const userId = user?.id ?? "—";
   const emailVerified = Boolean(user?.email_confirmed_at);
-
   const canSave = useMemo(() => Boolean(user), [user]);
 
   const { call: saveMetaCall, loading: metaLoading } = useAsyncCallback(
@@ -68,7 +65,7 @@ export function Account() {
       if (!isSupabaseConfigured) {
         push({
           title: "Demo mode",
-          message: "Supabase is not configured; changes won’t persist.",
+          message: "Supabase not configured; changes won’t persist.",
           variant: "warning",
         });
         return;
@@ -107,7 +104,7 @@ export function Account() {
       if (!isSupabaseConfigured) {
         push({
           title: "Demo mode",
-          message: "Supabase is not configured; email change won’t persist.",
+          message: "Supabase not configured; email change won’t persist.",
           variant: "warning",
         });
         return;
@@ -131,7 +128,7 @@ export function Account() {
           newPassword: z.string().min(8, "Use at least 8 characters."),
           confirmPassword: z.string(),
         })
-        .refine((data) => data.newPassword === data.confirmPassword, {
+        .refine((d) => d.newPassword === d.confirmPassword, {
           message: "Passwords don’t match.",
           path: ["confirmPassword"],
         });
@@ -158,7 +155,7 @@ export function Account() {
       if (!isSupabaseConfigured) {
         push({
           title: "Demo mode",
-          message: "Supabase is not configured; password change won’t persist.",
+          message: "Supabase not configured; password change won’t persist.",
           variant: "warning",
         });
         return;
@@ -169,8 +166,8 @@ export function Account() {
           password: currentPassword,
         });
         if (reauthError) {
-          setPwdErrors((prev) => ({
-            ...prev,
+          setPwdErrors((p) => ({
+            ...p,
             currentPassword: "Invalid current password.",
           }));
           push({
@@ -204,40 +201,51 @@ export function Account() {
     }
   });
 
+  function copy(text: string) {
+    if (!text) return;
+    navigator.clipboard
+      .writeText(text)
+      .then(() =>
+        push({
+          title: "Copied",
+          message: "Value copied to clipboard.",
+          variant: "success",
+        }),
+      );
+  }
+
   return (
-    <div className="space-y-6">
+    <PageContainer>
       <PageHeader
         title="Account"
         description="Manage your profile, email, and password."
         icon={<ShieldCheck className="h-5 w-5" />}
-        actions={
-          session ? (
-            <Button
-              variant="outline"
-              onClick={() => {
-                signOutCall();
-              }}
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign out
-            </Button>
-          ) : null
-        }
       />
 
       {!isSupabaseConfigured && (
-        <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-4 text-base text-yellow-800">
-          Supabase is not configured. Demo mode: changes won’t persist.
+        <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800 flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 mt-0.5 text-amber-600" />
+          <div>
+            <p className="font-medium">Demo mode</p>
+            <p>Supabase isn’t configured; changes won’t persist.</p>
+          </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        {/* Profile metadata */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Profile */}
         <Card>
           <CardHeader>
-            <div className="flex items-center gap-2">
-              <UserIcon className="h-4 w-4 text-gray-500" />
-              <CardTitle>Profile</CardTitle>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-brand-600/10 ring-1 ring-brand-600/20 flex items-center justify-center text-brand-700">
+                <UserIcon className="h-5 w-5" />
+              </div>
+              <div>
+                <CardTitle>Profile</CardTitle>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Basic account metadata.
+                </p>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -251,12 +259,37 @@ export function Account() {
                 />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Input label="User ID" value={userId} disabled />
-                <Input
-                  label="Email verified"
-                  value={emailVerified ? "Yes" : "No"}
-                  disabled
-                />
+                <div className="relative">
+                  <Input label="User ID" value={userId} disabled />
+                  {user && (
+                    <button
+                      type="button"
+                      onClick={() => copy(userId)}
+                      className="absolute top-7 right-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                      aria-label="Copy user id"
+                    >
+                      <Copy className="h-3 w-3" /> Copy
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-gray-700 mb-1">
+                    Email status
+                  </span>
+                  <div className="flex items-center gap-2 h-[42px] px-3 rounded-xl border bg-gray-50 text-sm">
+                    {emailVerified ? (
+                      <>
+                        <Check className="h-4 w-4 text-green-600" />
+                        <span className="text-gray-800">Verified</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertTriangle className="h-4 w-4 text-amber-600" />
+                        <span className="text-gray-700">Not verified</span>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
               <div className="flex justify-end">
                 <Button
@@ -277,9 +310,16 @@ export function Account() {
         {/* Email */}
         <Card>
           <CardHeader>
-            <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-gray-500" />
-              <CardTitle>Email</CardTitle>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-brand-600/10 ring-1 ring-brand-600/20 flex items-center justify-center text-brand-700">
+                <Mail className="h-5 w-5" />
+              </div>
+              <div>
+                <CardTitle>Email</CardTitle>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Update your account email.
+                </p>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -295,17 +335,22 @@ export function Account() {
                 }}
                 error={emailError}
               />
-              <div className="flex justify-end">
-                <Button
-                  onClick={() => {
-                    setEmailSaving(true);
-                    saveEmailCall()?.finally(() => setEmailSaving(false));
-                  }}
-                  loading={emailSaving || emailLoading}
-                  disabled={!canSave}
-                >
-                  Update email
-                </Button>
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <p className="text-xs text-gray-500">
+                  We’ll send a confirmation email if you change this.
+                </p>
+                <div className="flex justify-end">
+                  <Button
+                    onClick={() => {
+                      setEmailSaving(true);
+                      saveEmailCall()?.finally(() => setEmailSaving(false));
+                    }}
+                    loading={emailSaving || emailLoading}
+                    disabled={!canSave}
+                  >
+                    Update email
+                  </Button>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -314,9 +359,16 @@ export function Account() {
         {/* Password */}
         <Card>
           <CardHeader>
-            <div className="flex items-center gap-2">
-              <KeyRound className="h-4 w-4 text-gray-500" />
-              <CardTitle>Password</CardTitle>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-brand-600/10 ring-1 ring-brand-600/20 flex items-center justify-center text-brand-700">
+                <KeyRound className="h-5 w-5" />
+              </div>
+              <div>
+                <CardTitle>Password</CardTitle>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Use a strong, unique password (min 8 characters).
+                </p>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -327,10 +379,7 @@ export function Account() {
                 value={currentPassword}
                 onChange={(e) => {
                   setCurrentPassword(e.target.value);
-                  setPwdErrors((prev) => ({
-                    ...prev,
-                    currentPassword: undefined,
-                  }));
+                  setPwdErrors((p) => ({ ...p, currentPassword: undefined }));
                 }}
                 autoComplete="current-password"
                 error={pwdErrors.currentPassword}
@@ -342,10 +391,7 @@ export function Account() {
                   value={newPassword}
                   onChange={(e) => {
                     setNewPassword(e.target.value);
-                    setPwdErrors((prev) => ({
-                      ...prev,
-                      newPassword: undefined,
-                    }));
+                    setPwdErrors((p) => ({ ...p, newPassword: undefined }));
                   }}
                   autoComplete="new-password"
                   error={pwdErrors.newPassword}
@@ -356,26 +402,28 @@ export function Account() {
                   value={confirmPassword}
                   onChange={(e) => {
                     setConfirmPassword(e.target.value);
-                    setPwdErrors((prev) => ({
-                      ...prev,
-                      confirmPassword: undefined,
-                    }));
+                    setPwdErrors((p) => ({ ...p, confirmPassword: undefined }));
                   }}
                   autoComplete="new-password"
                   error={pwdErrors.confirmPassword}
                 />
               </div>
-              <div className="flex justify-end">
-                <Button
-                  onClick={() => {
-                    setPwdSaving(true);
-                    savePasswordCall()?.finally(() => setPwdSaving(false));
-                  }}
-                  loading={pwdSaving || pwdLoading}
-                  disabled={!canSave}
-                >
-                  Update password
-                </Button>
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <p className="text-xs text-gray-500">
+                  Minimum 8 characters. Avoid reuse across sites.
+                </p>
+                <div className="flex justify-end">
+                  <Button
+                    onClick={() => {
+                      setPwdSaving(true);
+                      savePasswordCall()?.finally(() => setPwdSaving(false));
+                    }}
+                    loading={pwdSaving || pwdLoading}
+                    disabled={!canSave}
+                  >
+                    Update password
+                  </Button>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -384,9 +432,16 @@ export function Account() {
         {/* Sign out */}
         <Card>
           <CardHeader>
-            <div className="flex items-center gap-2">
-              <LogOut className="h-4 w-4 text-gray-500" />
-              <CardTitle>Sign out</CardTitle>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-brand-600/10 ring-1 ring-brand-600/20 flex items-center justify-center text-brand-700">
+                <LogOut className="h-5 w-5" />
+              </div>
+              <div>
+                <CardTitle>Sign out</CardTitle>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  End your current session on this device.
+                </p>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -397,9 +452,7 @@ export function Account() {
               <div className="flex justify-end">
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    signOutCall();
-                  }}
+                  onClick={() => signOutCall()}
                   disabled={!session}
                 >
                   Sign Out
@@ -409,6 +462,6 @@ export function Account() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </PageContainer>
   );
 }

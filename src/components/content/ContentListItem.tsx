@@ -1,7 +1,7 @@
 import { Calendar, Eye, Share2, Trash2 } from "lucide-react";
 import { Badge } from "../ui/Badge";
 import { IconButton } from "../ui/IconButton";
-import { formatDate, truncateText } from "../../lib/utils";
+import { formatDate, truncateText, relativeTime } from "../../lib/utils";
 
 interface ContentListItemProps {
   content: any;
@@ -40,7 +40,7 @@ export function ContentListItem({
   return (
     <li>
       <div
-        className={`group flex items-start gap-4 rounded-md border border-gray-200 bg-white px-4 py-3 hover:border-brand-400 hover:shadow-sm focus-within:border-brand-500 transition ${content.post ? "opacity-50 pointer-events-none" : "cursor-pointer"}`}
+        className={`group relative flex items-start gap-4 rounded-xl border border-gray-200 bg-white px-5 py-4 hover:border-brand-400 hover:shadow focus-within:border-brand-500 transition ${content.post ? "opacity-50 pointer-events-none" : "cursor-pointer"}`}
         role={!content.post ? "button" : undefined}
         tabIndex={!content.post ? 0 : -1}
         onClick={() => !content.post && onView(content)}
@@ -55,18 +55,22 @@ export function ContentListItem({
           !content.post ? `View details for ${content.title}` : undefined
         }
       >
-        <div className="mt-1 text-lg select-none" aria-hidden>
-          {typeEmoji(content.type)}
+        <div
+          className="w-12 h-12 flex-shrink-0 bg-brand-600/10 ring-1 ring-brand-600/20 rounded-lg flex items-center justify-center text-lg"
+          aria-hidden
+        >
+          <span className="select-none" role="img" aria-label={content.type}>
+            {typeEmoji(content.type)}
+          </span>
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2 mb-1">
+        <div className="flex-1 min-w-0 space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span
-              className="font-medium text-gray-900 truncate max-w-[22ch]"
+              className="font-medium text-gray-900 truncate max-w-[30ch]"
               title={content.title}
             >
               {content.title}
             </span>
-            {/* Status badge removed */}
             {content.post && <Badge variant="success">Posted</Badge>}
             {(() => {
               const typeLabel = content.type?.replace("_", " ");
@@ -94,21 +98,23 @@ export function ContentListItem({
           <p className="text-base text-gray-600 line-clamp-2">
             {truncateText(content.body_text || content.body || "", 200)}
           </p>
-          <div className="mt-2 flex flex-wrap items-center gap-4 text-base text-gray-500">
+          <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500">
             <span className="inline-flex items-center gap-1">
               <Calendar className="h-3 w-3" /> {formatDate(content.created_at)}
             </span>
             <span>{content.metadata?.word_count || 0} words</span>
             {content.metadata?.topic && (
-              <span className="text-brand-600">
-                Topic: {truncateText(content.metadata.topic, 40)}
+              <span className="text-brand-600 font-medium">
+                {truncateText(content.metadata.topic, 40)}
               </span>
             )}
+            <span className="text-gray-400">
+              {relativeTime(content.created_at)}
+            </span>
           </div>
         </div>
         <div className="flex flex-col gap-2 items-end ml-2">
-          {/* Approve button removed */}
-          <div className="flex gap-1">
+          <div className="flex gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
             <IconButton
               aria-label="Copy link"
               onClick={(e) => {

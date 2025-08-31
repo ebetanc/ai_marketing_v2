@@ -30,13 +30,21 @@ import { formatDate } from "../lib/utils";
 import { postToN8n } from "../lib/n8n";
 import { useToast } from "../components/ui/Toast";
 import { Skeleton } from "../components/ui/Skeleton";
-import { Modal } from "../components/ui/Modal";
+import {
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalTitle,
+} from "../components/ui/Modal";
 import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { useAsyncCallback } from "../hooks/useAsync";
 import { PageHeader } from "../components/layout/PageHeader";
+import { PageContainer } from "../components/layout/PageContainer";
 import { ErrorState } from "../components/ui/ErrorState";
 import { EmptyState } from "../components/ui/EmptyState";
+import { Clipboard, Check } from "lucide-react";
 
 interface RealEstateContent {
   id: number;
@@ -63,7 +71,7 @@ export function RealEstateContent() {
     content: null,
     loading: false,
   });
-  const { push } = useToast();
+  const { push, remove } = useToast();
 
   const handleDeleteClick = (content: RealEstateContent) => {
     setDeleteDialog({ isOpen: true, content, loading: false });
@@ -162,7 +170,15 @@ export function RealEstateContent() {
   }, [fetchRealEstateContent]);
 
   const { call: generateContentCall } = useAsyncCallback(async () => {
+    const loadingToastId = push({
+      title: "Ingesting page",
+      message: "Extracting real estate content…",
+      variant: "info",
+      duration: 600000,
+    });
+    const end = () => loadingToastId && remove(loadingToastId);
     if (!url.trim()) {
+      end();
       push({
         title: "Missing URL",
         message: "Please enter a URL",
@@ -177,23 +193,36 @@ export function RealEstateContent() {
     console.log("Sending URL to n8n webhook:", normalizedUrl);
     const { data: sessionData } = await supabase.auth.getSession();
     const userId = sessionData.session?.user.id;
-    const response = await postToN8n(
-      "content_saas",
-      {
-        operation: "real_estate_ingest",
-        url: normalizedUrl,
-        user_id: userId,
-        meta: { user_id: userId, source: "app", ts: new Date().toISOString() },
-      },
-      { path: "1776dcc3-2b3e-4cfa-abfd-0ad9cabaf6ea" },
-    );
+    let response: Response;
+    try {
+      response = await postToN8n(
+        "content_saas",
+        {
+          operation: "real_estate_ingest",
+          url: normalizedUrl,
+          user_id: userId,
+          meta: {
+            user_id: userId,
+            source: "app",
+            ts: new Date().toISOString(),
+          },
+        },
+        { path: "1776dcc3-2b3e-4cfa-abfd-0ad9cabaf6ea" },
+      );
+    } catch (e) {
+      end();
+      throw e;
+    }
     console.log("Webhook response status:", response.status);
-    if (!response.ok)
+    if (!response.ok) {
+      end();
       throw new Error(`Webhook request failed with status: ${response.status}`);
+    }
     const result = await response.text();
     console.log("Webhook response:", result);
+    end();
     push({
-      title: "Generation started",
+      title: "Ingestion queued",
       message: "Check back in a few minutes",
       variant: "success",
     });
@@ -233,6 +262,14 @@ export function RealEstateContent() {
     setUrl("");
     setIsGenerating(false);
   };
+  const [copied, setCopied] = useState<string | null>(null);
+  function copyText(text: string, key: string) {
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(key);
+      setTimeout(() => setCopied(null), 1500);
+    });
+  }
 
   // --- Drag & Drop URL Support ---
   const extractFirstUrl = (text: string): string | null => {
@@ -301,7 +338,7 @@ export function RealEstateContent() {
   };
 
   return (
-    <div className="space-y-6">
+    <PageContainer>
       <PageHeader
         title="Real estate content"
         description="Generate content for real estate pros."
@@ -330,46 +367,33 @@ export function RealEstateContent() {
         isOpen={showUrlModal}
         onClose={handleCloseModal}
         labelledById="realestate-url-title"
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md"
+        size="md"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center">
-              <Link className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <h2
-                id="realestate-url-title"
-                className="text-lg font-bold text-gray-900"
-              >
-                Enter property URL
-              </h2>
-              <p className="text-base text-gray-500">
-                We’ll analyze it and generate content.
-              </p>
-            </div>
-          </div>
-
+        <ModalHeader className="bg-gradient-to-r from-brand-600 to-brand-700 text-white">
+          <ModalTitle
+            id="realestate-url-title"
+            className="text-white flex items-center gap-2"
+          >
+            <Link className="h-5 w-5 text-white" /> Enter property URL
+          </ModalTitle>
           <IconButton
             onClick={handleCloseModal}
             aria-label="Close dialog"
             disabled={isGenerating}
             variant="ghost"
+            className="text-white hover:bg-white/10"
           >
-            <X className="h-5 w-5 text-gray-400" />
+            <X className="h-5 w-5" />
           </IconButton>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 min-h-0 p-6 space-y-4 overflow-y-auto">
+        </ModalHeader>
+        <ModalBody className="space-y-5">
           <div
             id="realestate-dropzone"
             onDragEnter={handleDragEnter}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            className={`relative border-2 rounded-xl p-4 transition-colors ${isDragging ? "border-brand-500 bg-brand-50" : "border-dashed border-gray-300"}`}
+            className={`relative rounded-lg border p-4 transition-colors ${isDragging ? "border-brand-500 bg-brand-50" : "border-dashed border-gray-300 bg-white"}`}
             aria-label="Drag and drop a URL here or use the input field"
             role="group"
           >
@@ -381,29 +405,24 @@ export function RealEstateContent() {
                 onChange={(e) => setUrl(e.target.value)}
                 disabled={isGenerating}
               />
-              <div className="text-base text-gray-500">
-                <strong>Drag & Drop:</strong> Drop a link from another tab or
-                app. We’ll grab the first URL we find.
-              </div>
+              <p className="text-xs text-gray-500">
+                Drag a link or paste directly. We capture the first URL found.
+              </p>
             </div>
             {isDragging && (
-              <div className="absolute inset-0 rounded-xl bg-brand-500/10 backdrop-blur-sm flex items-center justify-center pointer-events-none">
-                <span className="text-base font-medium text-brand-700">
+              <div className="absolute inset-0 rounded-lg bg-brand-500/10 backdrop-blur-sm flex items-center justify-center pointer-events-none">
+                <span className="text-xs font-medium text-brand-700">
                   Release to capture URL
                 </span>
               </div>
             )}
           </div>
-
-          <div className="bg-brand-50 rounded-lg p-3 border border-brand-200">
-            <p className="text-base text-brand-800">
-              <strong>Tip:</strong> Use a listing or real estate page URL.
-            </p>
+          <div className="text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-lg p-3">
+            <strong className="text-gray-700">Tip:</strong> Use listing or
+            property detail pages with rich metadata.
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="flex justify-end space-x-3 p-6 border-t border-gray-200 flex-shrink-0">
+        </ModalBody>
+        <ModalFooter className="bg-gray-50">
           <Button
             variant="outline"
             onClick={handleCloseModal}
@@ -415,12 +434,12 @@ export function RealEstateContent() {
             onClick={handleGenerateContent}
             loading={isGenerating}
             disabled={!url.trim() || isGenerating}
-            variant="primary"
+            className="bg-brand-600 hover:bg-brand-700"
           >
-            <Sparkles className="h-4 w-4" />
+            <Sparkles className="h-4 w-4" />{" "}
             {isGenerating ? "Generating…" : "Generate content"}
           </Button>
-        </div>
+        </ModalFooter>
       </Modal>
 
       {/* Loading State */}
@@ -470,13 +489,13 @@ export function RealEstateContent() {
           {realEstateData.map((content) => (
             <Card
               key={content.id}
-              className="hover:shadow-md transition-shadow duration-200"
+              className="hover:shadow-md transition-shadow duration-200 rounded-xl"
             >
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex items-start space-x-3 flex-1">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <Building2 className="h-6 w-6 text-white" />
+                    <div className="w-12 h-12 rounded-lg bg-brand-600/10 ring-1 ring-brand-600/20 flex items-center justify-center flex-shrink-0 text-brand-700">
+                      <Building2 className="h-6 w-6" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <CardTitle className="text-lg font-bold leading-tight">
@@ -502,20 +521,37 @@ export function RealEstateContent() {
               <CardContent className="space-y-4">
                 {/* Origin Link */}
                 {content.link_origin && (
-                  <div>
-                    <h4 className="text-base font-medium text-gray-900 mb-2 flex items-center">
-                      <Link
-                        aria-hidden
-                        className="h-4 w-4 mr-1 text-brand-600"
-                      />
-                      Origin Link
-                    </h4>
-                    <div className="bg-brand-50 rounded-lg p-3 border border-brand-100">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-1">
+                        <Link aria-hidden className="h-4 w-4 text-brand-600" />{" "}
+                        Origin
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          copyText(content.link_origin!, `origin-${content.id}`)
+                        }
+                        className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2 py-1 text-[11px] font-medium text-gray-700 hover:bg-gray-50"
+                        aria-label="Copy origin link"
+                      >
+                        {copied === `origin-${content.id}` ? (
+                          <>
+                            <Check className="h-3 w-3" /> Copied
+                          </>
+                        ) : (
+                          <>
+                            <Clipboard className="h-3 w-3" /> Copy
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <div className="rounded-lg border border-gray-200 bg-white p-3">
                       <a
                         href={content.link_origin}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-brand-700 hover:text-brand-900 text-base break-all flex items-center"
+                        className="text-xs text-brand-700 hover:text-brand-900 break-all flex items-center"
                       >
                         <ExternalLink
                           aria-hidden
@@ -529,20 +565,40 @@ export function RealEstateContent() {
 
                 {/* Final Link */}
                 {content.link_final && (
-                  <div>
-                    <h4 className="text-base font-medium text-gray-900 mb-2 flex items-center">
-                      <FileText
-                        aria-hidden
-                        className="h-4 w-4 mr-1 text-green-600"
-                      />
-                      Final Link
-                    </h4>
-                    <div className="bg-green-50 rounded-lg p-3 border border-green-100">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-1">
+                        <FileText
+                          aria-hidden
+                          className="h-4 w-4 text-brand-600"
+                        />{" "}
+                        Final
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          copyText(content.link_final!, `final-${content.id}`)
+                        }
+                        className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2 py-1 text-[11px] font-medium text-gray-700 hover:bg-gray-50"
+                        aria-label="Copy final link"
+                      >
+                        {copied === `final-${content.id}` ? (
+                          <>
+                            <Check className="h-3 w-3" /> Copied
+                          </>
+                        ) : (
+                          <>
+                            <Clipboard className="h-3 w-3" /> Copy
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <div className="rounded-lg border border-gray-200 bg-white p-3">
                       <a
                         href={content.link_final}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-green-700 hover:text-green-900 text-base break-all flex items-center"
+                        className="text-xs text-brand-700 hover:text-brand-900 break-all flex items-center"
                       >
                         <ExternalLink
                           aria-hidden
@@ -573,54 +629,53 @@ export function RealEstateContent() {
       {!loading && !error && realEstateData.length === 0 && (
         <EmptyState
           icon={<Building2 className="h-8 w-8 text-white" />}
-          title="No content"
+          title="No content yet"
           message={
             <div>
-              <p className="mb-8">
-                Generate your first piece with a property URL.
+              <p className="mb-6">
+                Generate your first piece with a property listing URL.
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto mb-8">
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-brand-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                    <Home className="h-6 w-6 text-brand-600" />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-2xl mx-auto mb-4">
+                {[
+                  {
+                    icon: <Home className="h-5 w-5" />,
+                    title: "Analyze",
+                    text: "Extract listing data",
+                  },
+                  {
+                    icon: <FileText className="h-5 w-5" />,
+                    title: "Generate",
+                    text: "AI content draft",
+                  },
+                  {
+                    icon: <TrendingUp className="h-5 w-5" />,
+                    title: "Deploy",
+                    text: "Use in campaigns",
+                  },
+                ].map((f, i) => (
+                  <div key={i} className="flex items-start gap-3 text-left">
+                    <div className="w-10 h-10 rounded-lg bg-brand-600/10 ring-1 ring-brand-600/20 flex items-center justify-center text-brand-700">
+                      {f.icon}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        {f.title}
+                      </p>
+                      <p className="text-xs text-gray-600">{f.text}</p>
+                    </div>
                   </div>
-                  <h4 className="font-medium text-gray-900 mb-2">
-                    Property analysis
-                  </h4>
-                  <p className="text-base text-gray-600">
-                    We extract key info from property URLs
-                  </p>
-                </div>
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                    <FileText className="h-6 w-6 text-green-600" />
-                  </div>
-                  <h4 className="font-medium text-gray-900 mb-2">
-                    Content generation
-                  </h4>
-                  <p className="text-base text-gray-600">
-                    We create targeted real estate content
-                  </p>
-                </div>
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                    <TrendingUp className="h-6 w-6 text-purple-600" />
-                  </div>
-                  <h4 className="font-medium text-gray-900 mb-2">
-                    Ready to use
-                  </h4>
-                  <p className="text-base text-gray-600">
-                    Use it in your campaigns
-                  </p>
-                </div>
+                ))}
               </div>
             </div>
           }
-          variant="green"
+          variant="brand"
           actions={
-            <Button onClick={() => setShowUrlModal(true)} size="lg">
-              <Building2 className="h-4 w-4" />
-              Generate your first content
+            <Button
+              onClick={() => setShowUrlModal(true)}
+              size="lg"
+              className="bg-brand-600 hover:bg-brand-700"
+            >
+              <Building2 className="h-4 w-4" /> Generate your first content
             </Button>
           }
         />
@@ -638,6 +693,6 @@ export function RealEstateContent() {
         variant="danger"
         loading={deleteDialog.loading}
       />
-    </div>
+    </PageContainer>
   );
 }

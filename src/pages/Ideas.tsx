@@ -17,6 +17,7 @@ import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { IconButton } from "../components/ui/IconButton";
 import { Modal } from "../components/ui/Modal";
+import { ModalBrandHeader } from "../components/ui/ModalBrandHeader";
 import {
   Card,
   CardContent,
@@ -32,6 +33,7 @@ import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { useAsyncCallback } from "../hooks/useAsync";
 import { z } from "zod";
 import { PageHeader } from "../components/layout/PageHeader";
+import { PageContainer } from "../components/layout/PageContainer";
 import { ErrorState } from "../components/ui/ErrorState";
 import { EmptyState } from "../components/ui/EmptyState";
 import { ConfirmDialog } from "../components/ui/ConfirmDialog";
@@ -115,15 +117,14 @@ export function Ideas() {
   }>({});
   const [saving, setSaving] = useState(false);
   const [generatingContent, setGeneratingContent] = useState(false);
-  const [viewIdeaSetModal, setViewIdeaSetModal] = useState<{
-    isOpen: boolean;
-    idea: IdeaJoined | null;
-    topics: Topic[];
-  }>({
-    isOpen: false,
-    idea: null,
-    topics: [],
-  });
+  // per-topic generation state maps
+  const [topicGenerating, setTopicGenerating] = useState<
+    Record<string, boolean>
+  >({});
+  const [topicGenerated, setTopicGenerated] = useState<Record<string, boolean>>(
+    {},
+  );
+  // no longer showing entire idea set modal; we expand inline
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean;
     idea: IdeaJoined | null;
@@ -137,7 +138,7 @@ export function Ideas() {
     isOpen: boolean;
     loading: boolean;
   }>({ isOpen: false, loading: false });
-  const { push } = useToast();
+  const { push, remove } = useToast();
 
   // initial load handled in the effect after fetchIdeas definition
 
@@ -375,14 +376,7 @@ export function Ideas() {
     }
   };
 
-  const handleViewIdeaSet = (idea: IdeaJoined) => {
-    const topics = extractTopicsFromIdea(idea);
-    setViewIdeaSetModal({
-      isOpen: true,
-      idea,
-      topics,
-    });
-  };
+  // removed handleViewIdeaSet; inline expansion instead
 
   const openDeleteDialog = (idea: IdeaJoined) => {
     setDeleteDialog({ isOpen: true, idea, loading: false });
@@ -396,9 +390,7 @@ export function Ideas() {
     // remove from local state
     setIdeas((prev) => prev.filter((i) => i.id !== id));
     // close modals referencing this idea
-    setViewIdeaSetModal((prev) =>
-      prev.idea?.id === id ? { isOpen: false, idea: null, topics: [] } : prev,
-    );
+    // removed idea set modal close
     setViewIdeaModal((prev) =>
       prev.idea?.id === id
         ? {
@@ -410,7 +402,7 @@ export function Ideas() {
           }
         : prev,
     );
-    push({ title: "Deleted", message: "Idea set removed", variant: "success" });
+    push({ title: "Deleted", message: "Idea Set removed", variant: "success" });
     setDeleteDialog({ isOpen: false, idea: null, loading: false });
   });
 
@@ -446,14 +438,7 @@ export function Ideas() {
         i.id === viewIdeaModal.idea!.id ? { ...i, ...updateData } : i,
       ),
     );
-    setViewIdeaSetModal((prev) =>
-      prev.idea?.id === viewIdeaModal.idea!.id
-        ? {
-            ...prev,
-            topics: extractTopicsFromIdea({ ...prev.idea, ...updateData }),
-          }
-        : prev,
-    );
+    // previously updated idea set modal topics; removed after inline expansion refactor
     setViewIdeaModal((prev) => ({
       ...prev,
       isOpen: false,
@@ -474,13 +459,7 @@ export function Ideas() {
   const cancelDeleteTopic = () =>
     setDeleteTopicDialog({ isOpen: false, loading: false });
 
-  const handleCloseIdeaSetModal = () => {
-    setViewIdeaSetModal({
-      isOpen: false,
-      idea: null,
-      topics: [],
-    });
-  };
+  // removed handleCloseIdeaSetModal
 
   const handleFormChange = (field: string, value: string) => {
     setEditForm((prev) => ({
@@ -538,7 +517,18 @@ export function Ideas() {
   };
 
   const { call: generateContentCall } = useAsyncCallback(async () => {
-    if (!viewIdeaModal.idea || !viewIdeaModal.topic) return;
+    const loadingToastId = push({
+      title: "Generating content",
+      message: "Queueing full content piece…",
+      variant: "info",
+      // duration 0 = persist until manually dismissed
+      duration: 0,
+    });
+    const end = () => loadingToastId && remove(loadingToastId);
+    if (!viewIdeaModal.idea || !viewIdeaModal.topic) {
+      end();
+      return;
+    }
 
     console.log("=== FETCHING COMPANY DETAILS ===");
     console.log("Idea company_id:", viewIdeaModal.idea.company_id);
@@ -803,7 +793,13 @@ export function Ideas() {
     console.log(JSON.stringify(webhookPayload, null, 2));
 
     console.log("=== MAKING WEBHOOK REQUEST ===");
-    const response = await postToN8n("generateContent", webhookPayload);
+    let response: Response;
+    try {
+      response = await postToN8n("generateContent", webhookPayload);
+    } catch (e) {
+      end();
+      throw e;
+    }
 
     console.log("Webhook response status:", response.status);
     console.log(
@@ -812,6 +808,7 @@ export function Ideas() {
     );
 
     if (!response.ok) {
+      end();
       throw new Error(`Webhook failed with status: ${response.status}`);
     }
 
@@ -829,12 +826,77 @@ export function Ideas() {
     }
 
     console.log("Webhook response:", result);
+    end();
     push({
-      title: "Generation started",
+      title: "Content queued",
       message: "Check Content page soon",
       variant: "success",
     });
   });
+
+  // Lightweight generator when clicking directly on a topic card button.
+  const generateContentForTopic = useCallback(
+    async (idea: IdeaJoined, topic: Topic) => {
+      const key = `${idea.id}-${topic.number}`;
+      if (topicGenerating[key] || topicGenerated[key]) return;
+      setTopicGenerating((m) => ({ ...m, [key]: true }));
+      const loadingToastId = push({
+        title: "Generating content",
+        message: `Topic ${topic.number}…`,
+        variant: "info",
+        duration: 0,
+      });
+      const end = () => loadingToastId && remove(loadingToastId);
+      try {
+        // Reuse existing modal generator logic by temporarily setting viewIdeaModal
+        // so generateContentCall can leverage its data pipeline without duplication.
+        const prevState = viewIdeaModal;
+        setViewIdeaModal({
+          isOpen: false,
+          idea,
+          topic,
+          isEditing: false,
+          hasGeneratedContent: false,
+          checkingGenerated: false,
+        });
+        try {
+          const res = await generateContentCall();
+          if (res && (res as any).error) throw (res as any).error;
+          push({
+            title: "Queued",
+            message: "Content generation started",
+            variant: "success",
+          });
+          setTopicGenerated((m) => ({ ...m, [key]: true }));
+        } finally {
+          // restore previous modal state (without overwriting if user opened another)
+          setViewIdeaModal((curr) =>
+            curr.idea?.id === idea.id && curr.topic?.number === topic.number
+              ? prevState
+              : curr,
+          );
+        }
+      } catch (e) {
+        console.error("Topic generation failed", e);
+        push({
+          title: "Generation failed",
+          message: e instanceof Error ? e.message : "Unknown error",
+          variant: "error",
+        });
+      } finally {
+        end();
+        setTopicGenerating((m) => ({ ...m, [key]: false }));
+      }
+    },
+    [
+      generateContentCall,
+      push,
+      remove,
+      topicGenerating,
+      topicGenerated,
+      viewIdeaModal,
+    ],
+  );
 
   const handleGenerateContent = async () => {
     if (!viewIdeaModal.idea || !viewIdeaModal.topic) return;
@@ -886,7 +948,7 @@ export function Ideas() {
     setCollapsedBrands((prev) => ({ ...prev, [brand]: !prev[brand] }));
 
   return (
-    <div className="space-y-6">
+    <PageContainer>
       <PageHeader
         title="Ideas"
         description="AI ideas by brand."
@@ -911,30 +973,18 @@ export function Ideas() {
           labelledById="view-idea-title"
         >
           <div className="w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
-                  <Lightbulb className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h2
-                    id="view-idea-title"
-                    className="text-xl font-bold text-gray-900"
-                  >
-                    {viewIdeaModal.isEditing
-                      ? "Edit topic"
-                      : viewIdeaModal.topic?.topic ||
-                        `Topic ${viewIdeaModal.topic?.number}`}
-                  </h2>
-                  <p className="text-base text-gray-500">
-                    {viewIdeaModal.idea?.company?.brand_name || "Unknown Brand"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {!viewIdeaModal.isEditing && viewIdeaModal.topic && (
+            <ModalBrandHeader
+              titleId="view-idea-title"
+              title={
+                viewIdeaModal.isEditing
+                  ? "Edit topic"
+                  : viewIdeaModal.topic?.topic ||
+                    `Topic ${viewIdeaModal.topic?.number}`
+              }
+              icon={<Lightbulb className="h-6 w-6 text-white" />}
+              onClose={handleCloseViewModal}
+              actionsRight={
+                !viewIdeaModal.isEditing && viewIdeaModal.topic ? (
                   <IconButton
                     aria-label="Delete idea"
                     variant="danger"
@@ -942,19 +992,22 @@ export function Ideas() {
                       setDeleteTopicDialog({ isOpen: true, loading: false })
                     }
                     disabled={saving || generatingContent}
+                    className="hover:bg-white/10"
                   >
                     <Trash2 className="h-5 w-5" />
                   </IconButton>
-                )}
-                <IconButton
-                  onClick={handleCloseViewModal}
-                  variant="ghost"
-                  aria-label="Close dialog"
-                  disabled={saving}
-                >
-                  <X className="h-5 w-5 text-gray-400" />
-                </IconButton>
+                ) : null
+              }
+            />
+            <div className="px-6 pt-4 -mb-2 flex flex-wrap gap-3 text-xs text-gray-600">
+              <div className="inline-flex items-center gap-1 rounded-md bg-brand-50 text-brand-700 px-3 py-1 font-medium">
+                {viewIdeaModal.idea?.company?.brand_name || "Unknown Brand"}
               </div>
+              {viewIdeaModal.topic?.number && (
+                <div className="inline-flex items-center gap-1 rounded-md bg-gray-100 text-gray-700 px-3 py-1">
+                  Topic {viewIdeaModal.topic.number}
+                </div>
+              )}
             </div>
 
             {/* Content */}
@@ -1053,7 +1106,7 @@ export function Ideas() {
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-lg">
-                        <Target className="h-5 w-5 text-purple-600" />
+                        <Target className="h-5 w-5 text-brand-600" />
                         Image Prompt
                       </CardTitle>
                     </CardHeader>
@@ -1130,7 +1183,7 @@ export function Ideas() {
                         viewIdeaModal.hasGeneratedContent ||
                         viewIdeaModal.checkingGenerated
                       }
-                      className="bg-purple-600 hover:bg-purple-700 disabled:opacity-60"
+                      className="bg-brand-600 hover:bg-brand-700 focus:ring-2 focus:ring-brand-500 disabled:opacity-60"
                     >
                       {generatingContent
                         ? "Generating…"
@@ -1151,123 +1204,15 @@ export function Ideas() {
         </Modal>
       )}
 
-      {/* View Idea Set Modal */}
-      {viewIdeaSetModal.isOpen && (
-        <Modal
-          isOpen={viewIdeaSetModal.isOpen}
-          onClose={handleCloseIdeaSetModal}
-          labelledById="view-idea-set-title"
-        >
-          <div className="w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
-                  <Lightbulb className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h2
-                    id="view-idea-set-title"
-                    className="text-xl font-bold text-gray-900"
-                  >
-                    Idea set #{viewIdeaSetModal.idea?.id} —{" "}
-                    {viewIdeaSetModal.idea?.company?.brand_name ||
-                      "Unknown Brand"}
-                  </h2>
-                  <p className="text-base text-gray-500">
-                    {viewIdeaSetModal.topics.length} ideas • Created{" "}
-                    {viewIdeaSetModal.idea?.created_at
-                      ? formatDate(viewIdeaSetModal.idea.created_at)
-                      : "Unknown"}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <IconButton
-                  aria-label="Delete idea set"
-                  variant="danger"
-                  onClick={() => {
-                    if (viewIdeaSetModal.idea)
-                      openDeleteDialog(viewIdeaSetModal.idea);
-                  }}
-                >
-                  <Trash2 className="h-5 w-5" />
-                </IconButton>
-                <IconButton
-                  onClick={handleCloseIdeaSetModal}
-                  variant="ghost"
-                  aria-label="Close dialog"
-                >
-                  <X className="h-5 w-5 text-gray-400" />
-                </IconButton>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 p-6 overflow-y-auto min-h-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {viewIdeaSetModal.topics.map((topic) => (
-                  <Card
-                    key={topic.number}
-                    className="bg-white border border-gray-200 hover:shadow-lg hover:border-brand-300 transition-all duration-200 group cursor-pointer"
-                    onClick={() =>
-                      handleViewTopic(viewIdeaSetModal.idea!, topic)
-                    }
-                  >
-                    <CardHeader className="pb-2">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-full flex items-center justify-center text-base font-bold shadow-sm">
-                          {topic.number}
-                        </div>
-                        <CardTitle className="text-base font-semibold text-gray-900 line-clamp-2 leading-tight">
-                          {truncateText(topic.topic, 40)}
-                        </CardTitle>
-                      </div>
-                    </CardHeader>
-
-                    <CardContent className="space-y-3 pt-0 pb-4">
-                      {/* Description */}
-                      <div>
-                        <p className="text-base text-gray-600 line-clamp-3 leading-relaxed bg-gray-50 p-2 rounded-lg">
-                          {truncateText(topic.description, 100)}
-                        </p>
-                      </div>
-
-                      {/* Image Prompt */}
-                      {topic.image_prompt &&
-                        topic.image_prompt !== "No image prompt provided" && (
-                          <div>
-                            <p className="text-base font-medium text-purple-700 mb-1">
-                              Image:
-                            </p>
-                            <p className="text-base text-purple-600 line-clamp-3 bg-purple-50 p-2 rounded-lg">
-                              {truncateText(topic.image_prompt, 80)}
-                            </p>
-                          </div>
-                        )}
-
-                      {/* View indicator */}
-                      <div className="pt-1">
-                        <div className="text-base text-brand-600 font-medium">
-                          Click to view →
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          </div>
-        </Modal>
-      )}
+      {/* Removed Idea Set Modal; sets expand inline now */}
 
       {/* Delete Idea Confirm Dialog */}
       <ConfirmDialog
         isOpen={deleteDialog.isOpen}
         onClose={cancelDeleteIdea}
         onConfirm={confirmDeleteIdea}
-        title="Delete idea set"
-        message={`Delete idea set #${deleteDialog.idea?.id}? This removes all its topics and cannot be undone.`}
+        title="Delete Idea Set"
+        message={`Delete Idea Set #${deleteDialog.idea?.id}? This removes all its topics and cannot be undone.`}
         confirmText="Delete"
         cancelText="Cancel"
         variant="danger"
@@ -1336,7 +1281,7 @@ export function Ideas() {
       {/* Search & Ideas by Brand */}
       {!loading && !error && ideas.length > 0 && (
         <>
-          <div className="relative mb-2 max-w-md">
+          <div className="relative mb-4 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
@@ -1344,10 +1289,32 @@ export function Ideas() {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search topics or brand"
               aria-label="Search ideas by topic or brand"
-              className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 text-base"
+              className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 text-base"
             />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                aria-label="Clear search"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
-          <div className="space-y-4">
+          {search && Object.keys(ideasByBrand ?? {}).length === 0 && (
+            <div className="text-base text-gray-500 bg-white border border-dashed border-gray-300 rounded-lg p-6 flex items-center gap-2">
+              <Search className="h-4 w-4 text-gray-400" /> No matches for "
+              {search}".
+              <button
+                onClick={() => setSearch("")}
+                className="text-brand-600 font-medium hover:underline"
+              >
+                Clear
+              </button>
+            </div>
+          )}
+          <div className="space-y-5">
             {(
               Object.entries(ideasByBrand ?? {}) as [string, IdeaJoined[]][]
             ).map(([brandName, brandIdeas]) => {
@@ -1360,22 +1327,22 @@ export function Ideas() {
               return (
                 <div
                   key={brandName}
-                  className="border border-gray-200 rounded-lg bg-white"
+                  className="border border-gray-200 rounded-xl bg-white shadow-sm hover:border-brand-300 transition"
                 >
                   <button
                     onClick={() => toggleBrand(brandName)}
-                    className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 rounded-t-xl focus:outline-none focus:ring-2 focus:ring-brand-500"
                     aria-expanded={!collapsed}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-teal-500 rounded-md flex items-center justify-center text-white text-base font-semibold">
+                      <div className="w-10 h-10 bg-gradient-to-br from-brand-500 to-brand-600 rounded-lg flex items-center justify-center text-white text-base font-semibold shadow-sm">
                         {brandName.slice(0, 2).toUpperCase()}
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900 leading-tight">
+                        <h3 className="font-semibold text-gray-900 leading-tight text-base">
                           {brandName}
                         </h3>
-                        <p className="text-base text-gray-500">
+                        <p className="text-xs text-gray-500 font-medium">
                           {brandIdeas.length} set
                           {brandIdeas.length === 1 ? "" : "s"} • {totalTopics}{" "}
                           topics
@@ -1383,7 +1350,7 @@ export function Ideas() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Badge variant="primary">
+                      <Badge variant="primary" className="text-xs px-2 py-0.5">
                         {brandIdeas.length} set
                         {brandIdeas.length === 1 ? "" : "s"}
                       </Badge>
@@ -1395,19 +1362,33 @@ export function Ideas() {
                     </div>
                   </button>
                   {!collapsed && (
-                    <div className="px-4 pb-4">
-                      <ul className="space-y-3 mt-2">
-                        {brandIdeas.map((idea) => (
-                          <IdeaSetListItem
-                            key={idea.id}
-                            idea={idea}
-                            topics={extractTopicsFromIdea(idea)}
-                            onView={handleViewIdeaSet}
-                            onDelete={openDeleteDialog}
-                          />
-                        ))}
+                    <div className="px-5 pb-5">
+                      <ul className="space-y-3 mt-3">
+                        {brandIdeas.map((idea) => {
+                          const topics = extractTopicsFromIdea(idea);
+                          const expanded = !!collapsedBrands[`idea-${idea.id}`];
+                          const toggle = (id: number) =>
+                            setCollapsedBrands((prev) => ({
+                              ...prev,
+                              [`idea-${id}`]: !prev[`idea-${id}`],
+                            }));
+                          return (
+                            <IdeaSetListItem
+                              key={idea.id}
+                              idea={idea}
+                              topics={topics}
+                              expanded={expanded}
+                              onToggle={toggle}
+                              onViewTopic={handleViewTopic}
+                              onDelete={openDeleteDialog}
+                              onGenerateTopic={generateContentForTopic}
+                              generatingMap={topicGenerating}
+                              generatedMap={topicGenerated}
+                            />
+                          );
+                        })}
                       </ul>
-                      <div className="mt-4 pt-3 border-t border-gray-100 text-base text-gray-500 flex items-center gap-1">
+                      <div className="mt-5 pt-4 border-t border-gray-100 text-xs text-gray-500 flex items-center gap-1">
                         <HelpCircle className="h-3 w-3" /> How ideas work
                       </div>
                     </div>
@@ -1433,6 +1414,6 @@ export function Ideas() {
           }
         />
       )}
-    </div>
+    </PageContainer>
   );
 }

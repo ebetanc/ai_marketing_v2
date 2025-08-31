@@ -5,12 +5,14 @@ import {
   Search,
   ChevronDown,
   ChevronRight,
+  X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ViewContentModal } from "../components/content/ViewContentModal";
 import ContentListItem from "../components/content/ContentListItem";
 import { PageHeader } from "../components/layout/PageHeader";
+import { PageContainer } from "../components/layout/PageContainer";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { Card, CardContent, CardHeader } from "../components/ui/Card";
@@ -566,7 +568,7 @@ export function Content() {
     setCollapsedBrands((prev) => ({ ...prev, [brand]: !prev[brand] }));
 
   return (
-    <div className="space-y-6">
+    <PageContainer>
       <PageHeader
         title="Content"
         description="Review and manage generated content."
@@ -619,8 +621,8 @@ export function Content() {
       />
 
       {/* Filters */}
-      <Card>
-        <CardContent className="p-4 space-y-4">
+      <Card className="shadow-sm">
+        <CardContent className="p-5 space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div className="md:col-span-2 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -638,8 +640,23 @@ export function Content() {
                   navigate({ search: params.toString() }, { replace: true });
                 }}
                 aria-label="Search content"
-                className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-base"
+                className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-base"
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    const params = new URLSearchParams(location.search);
+                    params.delete("q");
+                    navigate({ search: params.toString() }, { replace: true });
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  aria-label="Clear search"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
             <Select
               options={brandOptions}
@@ -683,7 +700,7 @@ export function Content() {
 
       {/* Loading State */}
       {loading && (
-        <div className="space-y-6">
+        <PageContainer noGap className="space-y-6">
           {Array.from({ length: 3 }).map((_, i) => (
             <Card key={i}>
               <CardHeader>
@@ -700,12 +717,12 @@ export function Content() {
               </CardContent>
             </Card>
           ))}
-        </div>
+        </PageContainer>
       )}
 
       {/* Content by Company */}
       {!loading && !error && filteredContent.length > 0 && (
-        <div className="space-y-4">
+        <div className="space-y-5">
           {(() => {
             const grouped = filteredContent.reduce(
               (acc, content) => {
@@ -729,26 +746,26 @@ export function Content() {
               return (
                 <div
                   key={brandName}
-                  className="border border-gray-200 rounded-lg bg-white"
+                  className="border border-gray-200 rounded-xl bg-white shadow-sm hover:border-brand-300 transition"
                 >
                   <button
-                    className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500 rounded-t-lg"
+                    className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500 rounded-t-xl"
                     onClick={() => toggleBrand(brandName)}
                     aria-expanded={!collapsed}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-md bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center text-white text-base font-semibold">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center text-white text-base font-semibold shadow-sm">
                         {brandName.slice(0, 2).toUpperCase()}
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900 leading-tight">
+                        <h3 className="font-semibold text-gray-900 leading-tight text-base">
                           {brandName}
                         </h3>
                         {/* Approved count removed */}
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Badge variant="primary">
+                      <Badge variant="primary" className="text-xs px-2 py-0.5">
                         {totalContent} piece{totalContent === 1 ? "" : "s"}
                       </Badge>
                       {collapsed ? (
@@ -759,8 +776,8 @@ export function Content() {
                     </div>
                   </button>
                   {!collapsed && (
-                    <div className="px-4 pb-4">
-                      <ul className="space-y-3 mt-2">
+                    <div className="px-5 pb-5">
+                      <ul className="space-y-3 mt-3">
                         {brandContent.map((content: any) => (
                           <ContentListItem
                             key={content.id}
@@ -773,7 +790,7 @@ export function Content() {
                           />
                         ))}
                       </ul>
-                      <div className="mt-4 pt-3 border-t border-gray-100 text-base text-gray-500 flex items-center gap-1">
+                      <div className="mt-5 pt-4 border-t border-gray-100 text-xs text-gray-500 flex items-center gap-1">
                         <HelpCircle className="h-3 w-3" /> How content
                         generation works
                       </div>
@@ -794,7 +811,7 @@ export function Content() {
               ? "Generate content from Ideas."
               : "Adjust filters to see more."
           }
-          variant="green"
+          variant="brand"
           actions={
             allContent.length > 0 && isFiltersActive ? (
               <Button variant="outline" onClick={clearFilters}>
@@ -804,6 +821,6 @@ export function Content() {
           }
         />
       )}
-    </div>
+    </PageContainer>
   );
 }

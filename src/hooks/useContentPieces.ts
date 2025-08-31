@@ -127,6 +127,50 @@ export function useContentPieces(companyId?: string) {
     fetchContent();
   }, [fetchContent]);
 
+  // Realtime subscription so calendar & lists reflect schedule/status changes quickly
+  useEffect(() => {
+    // Only subscribe once per companyId scope
+    const channel = supabase
+      .channel(`content_changes_${companyId || "all"}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "content",
+          // When filtering by company we still want any row that could belong; we'll do a client check below.
+        },
+        (payload: any) => {
+          setContentPieces((prev) => {
+            // For deletes just remove
+            if (payload.eventType === "DELETE") {
+              return prev.filter(
+                (p) => p.id !== String((payload.old as any)?.id),
+              );
+            }
+            const row = (payload.new || payload.old) as ContentRow | undefined;
+            if (!row) return prev;
+            // If company filter active ensure it matches joined idea.company_id when present; if we lack that join just accept update (refetch fallback)
+            // We don't have joined idea data in realtime payload; rely on refetch for strict company filtering
+            const mapped = mapContentRow(row);
+            const existingIdx = prev.findIndex((p) => p.id === mapped.id);
+            if (existingIdx === -1) {
+              // Insert new at top
+              return [mapped, ...prev];
+            }
+            const next = [...prev];
+            next[existingIdx] = { ...next[existingIdx], ...mapped };
+            return next;
+          });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [companyId, fetchContent]);
+
   return {
     contentPieces,
     loading,

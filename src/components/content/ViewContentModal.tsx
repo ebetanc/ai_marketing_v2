@@ -17,15 +17,10 @@ import {
   Clock,
 } from "lucide-react";
 import { formatDate } from "../../lib/utils";
-import {
-  Modal,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  ModalTitle,
-} from "../ui/Modal";
+import { Modal, ModalBody, ModalFooter } from "../ui/Modal"; // Footer still used; header replaced
 import { IconButton } from "../ui/IconButton";
 import { useToast } from "../ui/Toast";
+import { ModalBrandHeader } from "../ui/ModalBrandHeader";
 import type { Tables } from "../../lib/supabase";
 import { useAsyncCallback } from "../../hooks/useAsync";
 
@@ -474,66 +469,31 @@ export function ViewContentModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} labelledById={titleId} size="lg">
-      <ModalHeader>
-        <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-brand-500 to-purple-500 rounded-xl flex items-center justify-center">
-            <FileText className="h-6 w-6 text-white" />
-          </div>
-          <div>
-            {isEditing ? (
-              <div className="space-y-2">
-                <input
-                  id="content-title-input"
-                  aria-label="Content title"
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500"
-                  placeholder="Title"
-                />
-                <p className="text-base text-gray-500">Editing title</p>
-              </div>
-            ) : (
-              <>
-                <ModalTitle id={titleId}>{content.title}</ModalTitle>
-                <p className="text-base text-gray-500 flex flex-wrap items-center gap-2">
-                  <span>{content.brand_name || "Unknown brand"}</span>
-                  {content.platform && (
-                    <Badge variant="secondary">{content.platform}</Badge>
-                  )}
-                  {/* Suppress separate type badge when type is social_post */}
-                  {(() => {
-                    const typeIsSocial = content.type === "social_post";
-                    if (!content.type || typeIsSocial) return null;
-                    // Show type badge only if there's no platform OR it's different (and not social_post)
-                    const normalizedType = content.type
-                      .replace(/_/g, " ")
-                      .toLowerCase();
-                    const normalizedPlatform = content.platform?.toLowerCase();
-                    if (
-                      !content.platform ||
-                      normalizedType !== normalizedPlatform
-                    ) {
-                      return (
-                        <Badge variant="secondary">
-                          {content.type.replace(/_/g, " ")}
-                        </Badge>
-                      );
-                    }
-                    return null;
-                  })()}
-                </p>
-              </>
-            )}
-          </div>
-        </div>
-        <IconButton onClick={onClose} aria-label="Close dialog" variant="ghost">
-          <X className="h-5 w-5 text-gray-400" />
-        </IconButton>
-      </ModalHeader>
+      <ModalBrandHeader
+        titleId={titleId}
+        icon={<FileText className="h-6 w-6 text-white" />}
+        onClose={onClose}
+        title={
+          isEditing ? (
+            <div className="space-y-1">
+              <input
+                id="content-title-input"
+                aria-label="Content title"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                className="w-full px-3 py-1.5 text-sm border border-white/30 bg-white/10 text-white placeholder-white/50 rounded-md focus:outline-none focus:ring-2 focus:ring-white/60"
+                placeholder="Title"
+              />
+            </div>
+          ) : (
+            content.title || "Untitled content"
+          )
+        }
+      />
 
       <ModalBody className="space-y-6">
         {/* Basic Information */}
-        <Card>
+        <Card className="border border-gray-200">
           <CardHeader>
             <CardTitle className="flex items-center text-lg">
               <FileText className="h-5 w-5 mr-2 text-brand-600" />
@@ -591,11 +551,11 @@ export function ViewContentModal({
 
         {/* Angles Section */}
         {hasAngles ? (
-          <Card>
+          <Card className="border border-gray-200">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center text-lg">
-                  <Target className="h-5 w-5 mr-2 text-purple-600" />
+                  <Target className="h-5 w-5 mr-2 text-brand-600" />
                   Substrategies ({angles.length})
                 </CardTitle>
                 <div className="flex space-x-2">
@@ -626,10 +586,10 @@ export function ViewContentModal({
           </Card>
         ) : (
           /* Raw Content */
-          <Card>
+          <Card className="border border-gray-200">
             <CardHeader>
               <CardTitle className="flex items-center text-lg">
-                <Zap className="h-5 w-5 mr-2 text-green-600" />
+                <Zap className="h-5 w-5 mr-2 text-brand-600" />
                 Content body
               </CardTitle>
             </CardHeader>
@@ -664,7 +624,7 @@ export function ViewContentModal({
 
         {/* Metadata */}
         {content.metadata && (
-          <Card>
+          <Card className="border border-gray-200">
             <CardHeader>
               <CardTitle className="flex items-center text-lg">
                 <User className="h-5 w-5 mr-2 text-gray-600" />

@@ -4,12 +4,13 @@ import { Badge } from "../components/ui/Badge";
 import { Megaphone, Plus, Calendar, Target, Users } from "lucide-react";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { PageHeader } from "../components/layout/PageHeader";
+import { PageContainer } from "../components/layout/PageContainer";
 import { EmptyState } from "../components/ui/EmptyState";
 
 export function Campaigns() {
   useDocumentTitle("Campaigns — AI Marketing");
   return (
-    <div className="space-y-6">
+    <PageContainer>
       <PageHeader
         title="Campaigns"
         description="Plan and manage campaigns."
@@ -25,57 +26,61 @@ export function Campaigns() {
       {/* Coming Soon */}
       <EmptyState
         icon={<Megaphone className="h-8 w-8 text-white" />}
-        title="Campaign builder coming soon"
+        title="Campaign Builder"
         message={
-          <div>
-            <p className="mb-6">
-              A campaign builder is in development with scheduling and
-              performance tracking.
+          <div className="space-y-10">
+            <p className="text-base leading-relaxed">
+              Plan, orchestrate, and measure multi‑channel campaigns with
+              scheduling intelligence and collaborative workflow.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
-              <div className="text-center">
-                <div className="w-12 h-12 bg-brand-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <Calendar className="h-6 w-6 text-brand-600" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-3xl mx-auto">
+              <div className="group relative rounded-xl border border-gray-200 bg-white p-5 hover:border-brand-400 hover:shadow transition">
+                <div className="w-12 h-12 rounded-lg bg-brand-600/10 ring-1 ring-brand-600/20 flex items-center justify-center mb-4">
+                  <Calendar className="h-6 w-6 text-brand-700" />
                 </div>
-                <h4 className="font-medium text-gray-900 mb-2">
-                  Smart scheduling
+                <h4 className="font-medium text-gray-900 mb-1">
+                  Smart Scheduling
                 </h4>
-                <p className="text-base text-gray-600">
-                  Optimize posting times across all platforms
+                <p className="text-sm text-gray-600 leading-snug">
+                  Predict peak engagement windows.
                 </p>
               </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <Target className="h-6 w-6 text-teal-600" />
+              <div className="group relative rounded-xl border border-gray-200 bg-white p-5 hover:border-brand-400 hover:shadow transition">
+                <div className="w-12 h-12 rounded-lg bg-brand-600/10 ring-1 ring-brand-600/20 flex items-center justify-center mb-4">
+                  <Target className="h-6 w-6 text-brand-700" />
                 </div>
-                <h4 className="font-medium text-gray-900 mb-2">
-                  Multi‑channel
+                <h4 className="font-medium text-gray-900 mb-1">
+                  Multi‑Channel
                 </h4>
-                <p className="text-base text-gray-600">
-                  Coordinate campaigns across social, email, and ads
+                <p className="text-sm text-gray-600 leading-snug">
+                  Coordinate social, email & ads.
                 </p>
               </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <Users className="h-6 w-6 text-orange-600" />
+              <div className="group relative rounded-xl border border-gray-200 bg-white p-5 hover:border-brand-400 hover:shadow transition">
+                <div className="w-12 h-12 rounded-lg bg-brand-600/10 ring-1 ring-brand-600/20 flex items-center justify-center mb-4">
+                  <Users className="h-6 w-6 text-brand-700" />
                 </div>
-                <h4 className="font-medium text-gray-900 mb-2">
-                  Team collaboration
+                <h4 className="font-medium text-gray-900 mb-1">
+                  Collaboration
                 </h4>
-                <p className="text-base text-gray-600">
-                  Review and approve campaigns with your team
+                <p className="text-sm text-gray-600 leading-snug">
+                  Share drafts & track approvals.
                 </p>
               </div>
             </div>
+            <div className="flex items-center justify-center gap-3">
+              <Button className="bg-brand-600 hover:bg-brand-700">
+                <Megaphone className="h-4 w-4" />
+                Plan campaign
+              </Button>
+              <Badge variant="primary" className="text-xs px-2 py-1">
+                Phase 2
+              </Badge>
+            </div>
           </div>
         }
-        variant="orange"
-        actions={
-          <Badge variant="primary" className="text-base px-4 py-2">
-            Phase 2 (Demo)
-          </Badge>
-        }
+        variant="brand"
       />
-    </div>
+    </PageContainer>
   );
 }

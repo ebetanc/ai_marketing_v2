@@ -1,4 +1,14 @@
-import { ArrowLeft, Sparkles, X } from "lucide-react";
+import {
+  Sparkles,
+  Twitter,
+  Linkedin,
+  Mail,
+  Facebook as FacebookIcon,
+  Instagram,
+  Youtube,
+  Music4, // used as a TikTok style placeholder icon
+  FileText,
+} from "lucide-react";
 import { useRef, useState } from "react";
 import { z } from "zod";
 import { useAsyncCallback } from "../../hooks/useAsync";
@@ -6,8 +16,8 @@ import { postToN8n } from "../../lib/n8n";
 import { supabase } from "../../lib/supabase";
 import { cn } from "../../lib/utils";
 import { Button } from "../ui/Button";
-import { IconButton } from "../ui/IconButton";
-import { Modal, ModalBody, ModalHeader, ModalTitle } from "../ui/Modal";
+import { Modal, ModalBody } from "../ui/Modal";
+import { ModalBrandHeader } from "../ui/ModalBrandHeader";
 import { useToast } from "../ui/Toast";
 
 interface GenerateStrategyModalProps {
@@ -17,15 +27,43 @@ interface GenerateStrategyModalProps {
   onStrategyGenerated?: () => void;
 }
 
-const platforms = [
-  { id: "twitter", name: "Twitter", color: "bg-blue-500" },
-  { id: "linkedin", name: "LinkedIn", color: "bg-blue-600" },
-  { id: "newsletter", name: "Newsletter", color: "bg-gray-600" },
-  { id: "facebook", name: "Facebook", color: "bg-blue-700" },
-  { id: "instagram", name: "Instagram", color: "bg-pink-500" },
-  { id: "youtube", name: "YouTube", color: "bg-red-500" },
-  { id: "tiktok", name: "TikTok", color: "bg-black" },
-  { id: "blog", name: "Blog", color: "bg-green-600" },
+interface PlatformDef {
+  id: string;
+  name: string;
+  color: string; // active bg color
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+}
+
+// Precise brand colors / treatments
+// Twitter: #1DA1F2
+// LinkedIn: #0A66C2
+// Facebook: #1877F2
+// Instagram: official gradient approximation
+// YouTube: #FF0000
+// TikTok: primary dark background (#000) kept simple for contrast
+// Newsletter: neutral gray (kept)
+// Blog: generic green accent
+// NOTE: Display order reflects rough 2025 global marketing channel popularity/attention.
+// Payload ORDER mapping below remains stable for backend positional expectations.
+const platforms: PlatformDef[] = [
+  { id: "tiktok", name: "TikTok", color: "bg-[#000000]", icon: Music4 },
+  {
+    id: "instagram",
+    name: "Instagram",
+    color: "bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF]",
+    icon: Instagram,
+  },
+  { id: "youtube", name: "YouTube", color: "bg-[#FF0000]", icon: Youtube },
+  {
+    id: "facebook",
+    name: "Facebook",
+    color: "bg-[#1877F2]",
+    icon: FacebookIcon,
+  },
+  { id: "twitter", name: "X", color: "bg-black", icon: Twitter },
+  { id: "linkedin", name: "LinkedIn", color: "bg-[#0A66C2]", icon: Linkedin },
+  { id: "newsletter", name: "Newsletter", color: "bg-[#4B5563]", icon: Mail },
+  { id: "blog", name: "Blog", color: "bg-[#16A34A]", icon: FileText },
 ];
 
 export function GenerateStrategyModal({
@@ -37,6 +75,7 @@ export function GenerateStrategyModal({
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [selectedCompany, setSelectedCompany] = useState<any>(null);
   const companyListRef = useRef<HTMLDivElement | null>(null);
+  const loadingToastRef = useRef<string | null>(null);
   const [errors, setErrors] = useState<{
     company?: string;
     platforms?: string;
@@ -69,6 +108,15 @@ export function GenerateStrategyModal({
         return;
       }
       setErrors({});
+
+      // Show persistent loading toast (removed when finished)
+      if (!loadingToastRef.current) {
+        loadingToastRef.current = push({
+          message: "Generating strategy set…",
+          variant: "info",
+          duration: 600000, // 10 min safety window
+        });
+      }
 
       // Identify current user to pass ownership for backend CRUD
       const { data: sessionData } = await supabase.auth.getSession();
@@ -176,49 +224,53 @@ export function GenerateStrategyModal({
         },
       };
 
-      const response = await postToN8n("generateAngles", webhookPayload);
+      try {
+        const response = await postToN8n("generateAngles", webhookPayload);
 
-      if (!response.ok) {
-        throw new Error("Failed to generate content strategy");
-      }
-
-      // Read response as text first to handle empty or malformed JSON
-      const responseText = await response.text();
-
-      let result;
-      if (!responseText.trim()) {
-        // Handle empty response
-        result = {};
-      } else {
-        try {
-          // Attempt to parse as JSON
-          result = JSON.parse(responseText);
-        } catch (parseError) {
-          console.error("Failed to parse JSON response:", parseError);
-          console.log("Raw response:", responseText);
-          // Treat malformed JSON as plain text content
-          result = {
-            content: {
-              title: "Generated Content Strategy",
-              body: responseText,
-            },
-          };
+        if (!response.ok) {
+          throw new Error("Failed to generate Strategy Set");
         }
+
+        // Read response as text first to handle empty or malformed JSON
+        const responseText = await response.text();
+
+        let result;
+        if (!responseText.trim()) {
+          result = {};
+        } else {
+          try {
+            result = JSON.parse(responseText);
+          } catch (parseError) {
+            console.error("Failed to parse JSON response:", parseError);
+            console.log("Raw response:", responseText);
+            result = {
+              content: {
+                title: "Generated Content Strategy",
+                body: responseText,
+              },
+            };
+          }
+        }
+
+        console.log("Content strategy generation result:\n", result);
+        console.log("Strategy generation and save completed successfully");
+        if (loadingToastRef.current) remove(loadingToastRef.current);
+        loadingToastRef.current = null;
+        push({
+          title: "Generated",
+          message: "Content strategy created",
+          variant: "success",
+        });
+        onStrategyGenerated?.();
+        onClose();
+      } catch (err) {
+        if (loadingToastRef.current) remove(loadingToastRef.current);
+        loadingToastRef.current = null;
+        throw err; // propagate to outer error handler
       }
-
-      console.log("Content strategy generation result:", result);
-
-      console.log("Strategy generation and save completed successfully");
-      push({
-        title: "Generated",
-        message: "Content strategy created",
-        variant: "success",
-      });
-      onStrategyGenerated?.();
-      onClose();
     },
   );
-  const { push } = useToast();
+  const { push, remove } = useToast();
 
   const togglePlatform = (platformId: string) => {
     setSelectedPlatforms((prev) =>
@@ -243,6 +295,10 @@ export function GenerateStrategyModal({
   };
 
   const handleClose = () => {
+    if (loadingToastRef.current) {
+      remove(loadingToastRef.current);
+      loadingToastRef.current = null;
+    }
     setSelectedPlatforms([]);
     setSelectedCompany(null);
     setErrors({});
@@ -259,28 +315,12 @@ export function GenerateStrategyModal({
       size="md"
     >
       <div className="w-full max-h-[90vh] flex flex-col overflow-hidden">
-        <ModalHeader>
-          <div className="flex items-center space-x-4">
-            <IconButton onClick={handleClose} aria-label="Back" variant="ghost">
-              <ArrowLeft className="h-5 w-5 text-gray-600" />
-            </IconButton>
-            <div>
-              <ModalTitle id="generate-strategy-title" className="text-base">
-                Generate content strategy
-              </ModalTitle>
-              <div className="text-base text-gray-500">
-                {selectedCompany ? "Back" : "Close"}
-              </div>
-            </div>
-          </div>
-          <IconButton
-            onClick={handleClose}
-            aria-label="Close dialog"
-            variant="ghost"
-          >
-            <X className="h-5 w-5 text-gray-400" />
-          </IconButton>
-        </ModalHeader>
+        <ModalBrandHeader
+          titleId="generate-strategy-title"
+          title="Generate Strategy Set"
+          onClose={handleClose}
+          icon={<Sparkles className="h-6 w-6 text-white" />}
+        />
 
         {/* Brand Info */}
         {selectedCompany && (
@@ -316,9 +356,7 @@ export function GenerateStrategyModal({
           </div>
 
           {/* Title moved to ModalHeader via ModalTitle */}
-          <p className="text-gray-600 mb-6">
-            Create AI angles for your selected brand.
-          </p>
+          <p className="text-gray-600 mb-6">Create Strategy Sets</p>
 
           <div className="mb-6">
             <h3 className="text-lg font-medium text-gray-900 mb-1">
@@ -429,6 +467,7 @@ export function GenerateStrategyModal({
               >
                 {platforms.map((platform) => {
                   const active = selectedPlatforms.includes(platform.id);
+                  const Icon = platform.icon;
                   return (
                     <button
                       key={platform.id}
@@ -442,13 +481,20 @@ export function GenerateStrategyModal({
                         }
                       }}
                       className={cn(
-                        "p-3 rounded-xl border-2 transition-all duration-200 text-base font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2",
+                        "p-3 rounded-xl border-2 transition-all duration-200 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 flex items-center justify-center gap-2",
                         active
                           ? `${platform.color} text-white border-transparent shadow-md`
-                          : "bg-gray-50 text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-100",
+                          : "bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-50",
                       )}
                     >
-                      {platform.name}
+                      <Icon
+                        className={cn(
+                          "h-4 w-4",
+                          active ? "text-white" : "text-gray-500",
+                        )}
+                        aria-hidden="true"
+                      />
+                      <span>{platform.name}</span>
                     </button>
                   );
                 })}

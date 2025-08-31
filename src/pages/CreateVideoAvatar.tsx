@@ -1,13 +1,25 @@
 import React, { useState } from "react";
-import { Video, Link, Sparkles, Upload, X } from "lucide-react";
+import { Video, Link, Sparkles, Upload, X, Info } from "lucide-react";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { PageHeader } from "../components/layout/PageHeader";
+import { PageContainer } from "../components/layout/PageContainer";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
-import { Modal } from "../components/ui/Modal";
+import {
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalTitle,
+} from "../components/ui/Modal";
 import { IconButton } from "../components/ui/IconButton";
 import { useToast } from "../components/ui/Toast";
-import { EmptyState } from "../components/ui/EmptyState";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/Card";
 
 export function CreateVideoAvatar() {
   useDocumentTitle("Create Video (avatar) — AI Marketing");
@@ -49,17 +61,17 @@ export function CreateVideoAvatar() {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
-    
+
     try {
       const dt = e.dataTransfer;
       let droppedText = "";
-      
+
       if (dt.getData("text/uri-list")) {
         droppedText = dt.getData("text/uri-list");
       } else if (dt.getData("text/plain")) {
         droppedText = dt.getData("text/plain");
       }
-      
+
       const extractedUrl = extractFirstUrl(droppedText);
       if (extractedUrl) {
         setVideoUrl(extractedUrl);
@@ -98,14 +110,14 @@ export function CreateVideoAvatar() {
     setIsProcessing(true);
     try {
       // Simulate processing - replace with actual video processing logic
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
       push({
         title: "Processing started",
         message: "Video avatar generation in progress",
         variant: "success",
       });
-      
+
       setShowUrlModal(false);
       setVideoUrl("");
     } catch (error) {
@@ -126,68 +138,127 @@ export function CreateVideoAvatar() {
   };
 
   return (
-    <div className="space-y-6">
+    <PageContainer>
       <PageHeader
         title="Create Video (avatar)"
-        description="Generate avatar videos from video links."
+        description="Turn existing video links into reusable AI avatars."
         icon={<Video className="h-5 w-5" />}
         actions={
-          <Button onClick={() => setShowUrlModal(true)}>
+          <Button
+            onClick={() => setShowUrlModal(true)}
+            className="bg-brand-600 hover:bg-brand-700"
+          >
             <Video className="h-4 w-4" />
             Create avatar
           </Button>
         }
       />
 
+      <div className="max-w-6xl space-y-8">
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-brand-600/10 ring-1 ring-brand-600/20 text-brand-700">
+                1
+              </span>
+              Provide video source
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Paste a video URL (YouTube, Vimeo, MP4) or drag & drop it into the
+              capture dialog. We'll extract a consistent avatar reference.
+            </p>
+            <Button
+              onClick={() => setShowUrlModal(true)}
+              variant="outline"
+              className="gap-2"
+            >
+              <Link className="h-4 w-4" /> Enter video URL
+            </Button>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-brand-600/10 ring-1 ring-brand-600/20 text-brand-700">
+                2
+              </span>
+              Generate & reuse
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-6 sm:grid-cols-3">
+              {[
+                {
+                  icon: <Link className="h-5 w-5" />,
+                  title: "Capture",
+                  text: "Fast URL ingestion",
+                },
+                {
+                  icon: <Sparkles className="h-5 w-5" />,
+                  title: "Process",
+                  text: "AI avatar extraction",
+                },
+                {
+                  icon: <Video className="h-5 w-5" />,
+                  title: "Use",
+                  text: "Embed in future media",
+                },
+              ].map((f, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-brand-600/10 ring-1 ring-brand-600/20 flex items-center justify-center text-brand-700">
+                    {f.icon}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      {f.title}
+                    </p>
+                    <p className="text-xs text-gray-600">{f.text}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <Info className="h-4 w-4 text-gray-400" /> Avatar job history &
+              management coming soon.
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* URL Input Modal */}
       <Modal
         isOpen={showUrlModal}
         onClose={handleCloseModal}
         labelledById="video-avatar-url-title"
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md"
+        size="md"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-              <Video className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <h2
-                id="video-avatar-url-title"
-                className="text-lg font-bold text-gray-900"
-              >
-                Enter video URL
-              </h2>
-              <p className="text-base text-gray-500">
-                We'll create an avatar from your video.
-              </p>
-            </div>
-          </div>
-
+        <ModalHeader className="bg-gradient-to-r from-brand-600 to-brand-700 text-white">
+          <ModalTitle
+            id="video-avatar-url-title"
+            className="text-white flex items-center gap-2"
+          >
+            <Video className="h-5 w-5" /> Enter video URL
+          </ModalTitle>
           <IconButton
             onClick={handleCloseModal}
             aria-label="Close dialog"
             disabled={isProcessing}
             variant="ghost"
+            className="text-white hover:bg-white/10"
           >
-            <X className="h-5 w-5 text-gray-400" />
+            <X className="h-5 w-5" />
           </IconButton>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 min-h-0 p-6 space-y-4 overflow-y-auto">
+        </ModalHeader>
+        <ModalBody className="space-y-5">
           <div
             id="video-dropzone"
             onDragEnter={handleDragEnter}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            className={`relative border-2 rounded-xl p-4 transition-colors ${
-              isDragging 
-                ? "border-purple-500 bg-purple-50" 
-                : "border-dashed border-gray-300"
-            }`}
+            className={`relative rounded-lg border p-4 transition-colors ${isDragging ? "border-brand-500 bg-brand-50" : "border-dashed border-gray-300 bg-white"}`}
             aria-label="Drag and drop a video URL here or use the input field"
             role="group"
           >
@@ -199,28 +270,25 @@ export function CreateVideoAvatar() {
                 onChange={(e) => setVideoUrl(e.target.value)}
                 disabled={isProcessing}
               />
-              <div className="text-base text-gray-500">
-                <strong>Drag & Drop:</strong> Drop a video link from YouTube, Vimeo, or other platforms.
-              </div>
+              <p className="text-xs text-gray-500">
+                Drag a link, or paste directly. We support most public video
+                hosts.
+              </p>
             </div>
             {isDragging && (
-              <div className="absolute inset-0 rounded-xl bg-purple-500/10 backdrop-blur-sm flex items-center justify-center pointer-events-none">
-                <span className="text-base font-medium text-purple-700">
+              <div className="absolute inset-0 rounded-lg bg-brand-500/10 backdrop-blur-sm flex items-center justify-center pointer-events-none">
+                <span className="text-xs font-medium text-brand-700">
                   Release to capture video URL
                 </span>
               </div>
             )}
           </div>
-
-          <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
-            <p className="text-base text-purple-800">
-              <strong>Tip:</strong> Use YouTube, Vimeo, or direct video file URLs.
-            </p>
+          <div className="text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-lg p-3">
+            <strong className="font-medium text-gray-700">Tip:</strong> Include
+            high-resolution sources for better avatar fidelity.
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="flex justify-end space-x-3 p-6 border-t border-gray-200 flex-shrink-0">
+        </ModalBody>
+        <ModalFooter className="bg-gray-50">
           <Button
             variant="outline"
             onClick={handleCloseModal}
@@ -232,68 +300,13 @@ export function CreateVideoAvatar() {
             onClick={handleProcessVideo}
             loading={isProcessing}
             disabled={!videoUrl.trim() || isProcessing}
-            variant="primary"
+            className="bg-brand-600 hover:bg-brand-700"
           >
-            <Sparkles className="h-4 w-4" />
+            <Sparkles className="h-4 w-4" />{" "}
             {isProcessing ? "Processing…" : "Create avatar"}
           </Button>
-        </div>
+        </ModalFooter>
       </Modal>
-
-      {/* Empty State */}
-      <EmptyState
-        icon={<Video className="h-8 w-8 text-white" />}
-        title="Create video avatar"
-        message={
-          <div>
-            <p className="mb-8">
-              Transform any video into a personalized avatar for your content.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
-              <div className="text-center">
-                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <Link className="h-6 w-6 text-purple-600" />
-                </div>
-                <h4 className="font-medium text-gray-900 mb-2">
-                  Video Input
-                </h4>
-                <p className="text-base text-gray-600">
-                  Provide a video URL or upload
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-pink-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <Sparkles className="h-6 w-6 text-pink-600" />
-                </div>
-                <h4 className="font-medium text-gray-900 mb-2">
-                  AI Processing
-                </h4>
-                <p className="text-base text-gray-600">
-                  Extract and enhance avatar
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <Video className="h-6 w-6 text-blue-600" />
-                </div>
-                <h4 className="font-medium text-gray-900 mb-2">
-                  Avatar Ready
-                </h4>
-                <p className="text-base text-gray-600">
-                  Use in your content
-                </p>
-              </div>
-            </div>
-          </div>
-        }
-        variant="purple"
-        actions={
-          <Button onClick={() => setShowUrlModal(true)} size="lg">
-            <Video className="h-4 w-4" />
-            Create your first avatar
-          </Button>
-        }
-      />
-    </div>
+    </PageContainer>
   );
 }

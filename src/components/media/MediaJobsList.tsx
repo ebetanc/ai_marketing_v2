@@ -4,10 +4,19 @@ import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Skeleton } from "../ui/Skeleton";
 
+interface MediaAsset {
+  id: number;
+  url: string;
+  mime_type?: string | null;
+  asset_index: number;
+  [key: string]: any; // allow extra fields
+}
+
 interface Props {
   companyId: number | null;
   className?: string;
   highlightJobId?: number | null;
+  onAssetClick?: (asset: MediaAsset) => void;
 }
 
 function statusVariant(status: string) {
@@ -24,7 +33,7 @@ function statusVariant(status: string) {
 }
 
 export function MediaJobsList(props: Props) {
-  const { companyId, className, highlightJobId } = props;
+  const { companyId, className, highlightJobId, onAssetClick } = props;
   const { jobs, loading, error, reload, loadAssets } = useMediaJobs({
     companyId,
     limit: 50,
@@ -121,13 +130,30 @@ export function MediaJobsList(props: Props) {
                     .filter((a) =>
                       showInputs ? true : (a as any).kind !== "input",
                     )
-                    .map((a) => {
+                    .map((a: any) => {
                       const isImage = !!a.mime_type?.startsWith("image/");
                       const isVideo = !!a.mime_type?.startsWith("video/");
+                      const interactive =
+                        !!onAssetClick && (isImage || isVideo);
                       return (
                         <div
                           key={a.id}
-                          className="relative overflow-hidden rounded-lg border bg-gray-50 group"
+                          className={`relative overflow-hidden rounded-lg border bg-gray-50 group ${interactive ? "cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500" : ""}`}
+                          role={interactive ? "button" : undefined}
+                          tabIndex={interactive ? 0 : undefined}
+                          onClick={() => interactive && onAssetClick?.(a)}
+                          onKeyDown={(e) => {
+                            if (!interactive) return;
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              onAssetClick?.(a);
+                            }
+                          }}
+                          aria-label={
+                            interactive
+                              ? `Open asset ${a.asset_index + 1}`
+                              : undefined
+                          }
                         >
                           {isImage ? (
                             <img

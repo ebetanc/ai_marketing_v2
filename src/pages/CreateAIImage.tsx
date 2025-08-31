@@ -1,10 +1,17 @@
 import React from "react";
-import { ImagePlus, Sparkles, Clipboard, Check, Wand2 } from "lucide-react";
+import { ImagePlus, Sparkles, Clipboard, Check } from "lucide-react";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { PageHeader } from "../components/layout/PageHeader";
+import { PageContainer } from "../components/layout/PageContainer";
 import { Button } from "../components/ui/Button";
 import { Textarea } from "../components/ui/Textarea";
-import { CompanySelect } from "../components/companies/CompanySelect";
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  CardTitle,
+} from "../components/ui/Card";
+import { BrandSelect } from "../components/brands/BrandSelect";
 import { useToast } from "../components/ui/Toast";
 import { createImageJob } from "../lib/media";
 import { MediaJobsList } from "../components/media/MediaJobsList";
@@ -21,12 +28,16 @@ export function CreateAIImage() {
   const [context, setContext] = React.useState("");
   const [composition, setComposition] = React.useState("");
   const [refinement, setRefinement] = React.useState("");
+  // Prompt mode: 'simple' single box or 'pro' structured fields
+  const [mode, setMode] = React.useState<"simple" | "pro">("simple");
+  const [simplePrompt, setSimplePrompt] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
   const [numImages, setNumImages] = React.useState(4);
   const [copied, setCopied] = React.useState(false);
   const { push } = useToast();
 
   const assembledPrompt = React.useMemo(() => {
+    if (mode === "simple") return simplePrompt.trim();
     const parts: string[] = [];
     if (subject) parts.push(`Subject: ${subject.trim()}`);
     if (action) parts.push(`Action: ${action.trim()}`);
@@ -35,27 +46,53 @@ export function CreateAIImage() {
     if (composition) parts.push(`Composition: ${composition.trim()}`);
     if (refinement) parts.push(`Refinement: ${refinement.trim()}`);
     return parts.join("\n");
-  }, [subject, action, style, context, composition, refinement]);
+  }, [
+    mode,
+    simplePrompt,
+    subject,
+    action,
+    style,
+    context,
+    composition,
+    refinement,
+  ]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!subject.trim() || !action.trim()) return;
+    if (mode === "simple") {
+      if (!simplePrompt.trim()) return;
+    } else {
+      if (!subject.trim() || !action.trim()) return;
+    }
     if (!selectedCompanyId) {
       push({ message: "Select a company first", variant: "error" });
       return;
     }
     setSubmitting(true);
     try {
-      const job = await createImageJob({
-        company_id: Number(selectedCompanyId),
-        prompt_subject: subject.trim(),
-        prompt_action: action.trim() || null,
-        prompt_style: style || null,
-        prompt_context: context || null,
-        prompt_composition: composition || null,
-        prompt_refinement: refinement || null,
-        num_images: numImages,
-      });
+      const job = await createImageJob(
+        mode === "simple"
+          ? {
+              company_id: Number(selectedCompanyId),
+              prompt_subject: simplePrompt.trim(),
+              prompt_action: null,
+              prompt_style: null,
+              prompt_context: null,
+              prompt_composition: null,
+              prompt_refinement: null,
+              num_images: numImages,
+            }
+          : {
+              company_id: Number(selectedCompanyId),
+              prompt_subject: subject.trim(),
+              prompt_action: action.trim() || null,
+              prompt_style: style || null,
+              prompt_context: context || null,
+              prompt_composition: composition || null,
+              prompt_refinement: refinement || null,
+              num_images: numImages,
+            },
+      );
       push({
         title: "Image generation queued",
         message: `Job #${job.id}`,
@@ -74,6 +111,7 @@ export function CreateAIImage() {
   }
 
   function handleReset() {
+    setSimplePrompt("");
     setSubject("");
     setAction("");
     setStyle("");
@@ -92,7 +130,11 @@ export function CreateAIImage() {
   React.useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-        if (subject.trim() && action.trim() && !submitting) {
+        const valid =
+          mode === "simple"
+            ? simplePrompt.trim()
+            : subject.trim() && action.trim();
+        if (valid && !submitting) {
           const form = document.getElementById("create-image-form");
           form?.dispatchEvent(new Event("submit", { cancelable: true }));
         }
@@ -100,91 +142,9 @@ export function CreateAIImage() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [subject, action, submitting]);
+  }, [mode, simplePrompt, subject, action, submitting]);
 
-  const templates = [
-    {
-      label: "Product on white",
-      fill: () => {
-        setSubject(
-          "Matte black stainless travel tumbler with subtle engraved logo front facing",
-        );
-        setAction(
-          "Place centered on seamless pure white cyclorama; add soft diffused shadow directly beneath; remove any dust or imperfections",
-        );
-        setStyle(
-          "Clean e‑commerce minimal, high-key lighting, crisp sharp detail, subtle rim light",
-        );
-        setContext("");
-        setComposition(
-          "Centered, slight top-down 10°, generous white negative space around",
-        );
-        setRefinement(
-          "True brand color accuracy; no reflections; no extra props; keep proportions realistic",
-        );
-      },
-    },
-    {
-      label: "Pro headshot",
-      fill: () => {
-        setSubject(
-          "30-year-old Latina marketing manager, shoulder-length wavy dark brown hair, smart navy blazer over soft cream blouse, confident approachable expression",
-        );
-        setAction(
-          "Refine grooming, enhance natural skin texture, subtle catchlight in eyes, gently smooth flyaway hairs",
-        );
-        setStyle(
-          "Cinematic corporate realism, soft Rembrandt lighting, natural warm tones",
-        );
-        setContext("Neutral textured medium-gray studio backdrop");
-        setComposition(
-          "Tight crop shoulders up, shallow depth, gentle vignette, eyes on top third",
-        );
-        setRefinement(
-          "Keep authentic features; no over-retouching; maintain natural skin tone",
-        );
-      },
-    },
-    {
-      label: "Lifestyle brand",
-      fill: () => {
-        setSubject(
-          "Young couple mid-20s laughing while walking golden retriever on coastal boardwalk",
-        );
-        setAction(
-          "Enhance golden hour glow; soften background crowd; add subtle motion blur to dog leash",
-        );
-        setStyle(
-          "Warm editorial lifestyle, filmic highlight rolloff, subtle grain",
-        );
-        setContext(
-          "Sunset pastel sky, gentle ocean haze, boardwalk shops blurred",
-        );
-        setComposition(
-          "Wide horizontal crop, leading lines receding, subjects left third",
-        );
-        setRefinement(
-          "Natural skin tones; no lens distortion; keep authentic clothing",
-        );
-      },
-    },
-  ];
-
-  function applyTemplate(t: (typeof templates)[number]) {
-    const hasValues = [
-      subject,
-      action,
-      style,
-      context,
-      composition,
-      refinement,
-    ].some((v) => v.trim());
-    if (hasValues) {
-      const ok = window.confirm("Replace current prompt fields with template?");
-      if (!ok) return;
-    }
-    t.fill();
-  }
+  // (Templates removed to simplify UI)
 
   function copyPrompt() {
     if (!assembledPrompt) return;
@@ -196,202 +156,315 @@ export function CreateAIImage() {
   }
 
   return (
-    <div className="space-y-6">
+    <PageContainer>
       <PageHeader
         title="Create AI Image"
         description="Generate on-brand images using structured AI prompts."
         icon={<ImagePlus className="h-5 w-5" />}
         actions={null}
       />
-      <div className="max-w-sm">
-        <CompanySelect
-          value={selectedCompanyId}
-          onChange={(id) => setSelectedCompanyId(id)}
-          label="Generate for company"
-          placeholder="Choose a company"
-        />
-      </div>
       <form
         id="create-image-form"
         onSubmit={handleSubmit}
-        className="space-y-10 max-w-5xl"
+        className="space-y-8 max-w-6xl"
       >
-        <div className="flex flex-wrap gap-3 items-end">
-          <div className="w-40">
-            <label
-              htmlFor="numImages"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Images
-            </label>
-            <select
-              id="numImages"
-              value={numImages}
-              onChange={(e) => setNumImages(parseInt(e.target.value, 10))}
-              className="w-full rounded-xl border-2 border-gray-200 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none"
-            >
-              {[1, 2, 3, 4, 6, 8].map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-gray-500 mt-1">Variants (max 8)</p>
-          </div>
-          <div className="flex-1 min-w-[240px]">
-            <p className="text-xs text-gray-500">
-              Use templates or craft a structured prompt. Ctrl/Cmd+Enter to
-              submit.
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {templates.map((t) => (
-                <button
-                  type="button"
-                  key={t.label}
-                  onClick={() => applyTemplate(t)}
-                  className="text-xs rounded-full border border-gray-300 bg-white px-3 py-1 font-medium text-gray-700 hover:bg-gray-50 motion-safe:transition"
-                >
-                  <Wand2 className="inline h-3 w-3 mr-1" />
-                  {t.label}
-                </button>
-              ))}
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-brand-600/10 ring-1 ring-brand-600/20 text-brand-700">
+                1
+              </span>
+              Select brand & settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex flex-col md:flex-row gap-6">
+              <div className="md:w-80">
+                <BrandSelect
+                  value={selectedCompanyId}
+                  onChange={(id) => setSelectedCompanyId(id)}
+                  label="Generate for brand"
+                  placeholder="Choose a brand"
+                />
+              </div>
+              <div className="flex flex-1 flex-wrap gap-6 items-end">
+                <div className="w-32">
+                  <label
+                    htmlFor="numImages"
+                    className="block text-xs font-medium text-gray-600 mb-1 uppercase tracking-wide"
+                  >
+                    Images
+                  </label>
+                  <select
+                    id="numImages"
+                    value={numImages}
+                    onChange={(e) => setNumImages(parseInt(e.target.value, 10))}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/40 focus:outline-none bg-white"
+                  >
+                    {[1, 2, 3, 4, 6, 8].map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Variants (max 8)
+                  </p>
+                </div>
+                <div className="flex-1 min-w-[220px] space-y-2">
+                  <div className="flex items-center justify-between gap-4">
+                    <p className="text-xs text-gray-500">
+                      {mode === "pro"
+                        ? "Structured fields for finer control."
+                        : "Single free-form prompt."}{" "}
+                      Ctrl/Cmd+Enter submits.
+                    </p>
+                    <div
+                      role="tablist"
+                      aria-label="Prompt mode"
+                      className="inline-flex rounded-full bg-gray-100 p-1 text-xs font-medium"
+                    >
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={mode === "simple"}
+                        onClick={() => setMode("simple")}
+                        className={`px-3 py-1 rounded-full transition ${mode === "simple" ? "bg-brand-600 text-white shadow" : "text-gray-600 hover:text-gray-900"}`}
+                      >
+                        Simple
+                      </button>
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={mode === "pro"}
+                        onClick={() => setMode("pro")}
+                        className={`px-3 py-1 rounded-full transition ${mode === "pro" ? "bg-brand-600 text-white shadow" : "text-gray-600 hover:text-gray-900"}`}
+                      >
+                        Pro
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-        <div className="grid gap-8 md:grid-cols-2">
-          <Textarea
-            label="Subject *"
-            required
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            placeholder="This 28-year-old woman with curly red hair wearing casual denim jacket; or: The dog in the foreground using this reference selfie"
-            description="Core entity: identity, pose, defining attributes. Anchors edit & prevents unintended changes to other regions."
-            name="subject"
-            rows={4}
-          />
-          <Textarea
-            label="Action *"
-            required
-            value={action}
-            onChange={(e) => setAction(e.target.value)}
-            placeholder="Make her wear this black dress after removing current outfit; then blend her with this pet on a basketball court"
-            description="Primary transformation: verbs + sequence (add, remove, replace, blend). For iterative steps describe order."
-            name="action"
-            rows={4}
-          />
-          <Textarea
-            label="Style"
-            value={style}
-            onChange={(e) => setStyle(e.target.value)}
-            placeholder="1960s beehive hairstyle & bold bullfighting costume; high-quality natural lighting; subtle film grain"
-            description="Aesthetic or reference era, textures, color grading, realism cues. Influences transfer & cohesion."
-            name="style"
-            rows={4}
-          />
-          <Textarea
-            label="Context"
-            value={context}
-            onChange={(e) => setContext(e.target.value)}
-            placeholder="Set in a neon diner at night with reflective checker floor; or: Portrait of us on a basketball court at golden hour"
-            description="Background & environment; integrate multiple uploads; maintain spatial coherence."
-            name="context"
-            rows={4}
-          />
-          <Textarea
-            label="Composition"
-            value={composition}
-            onChange={(e) => setComposition(e.target.value)}
-            placeholder="Crop to vertical smartphone aspect; blur background softly; remove stain from t‑shirt; shallow depth of field"
-            description="Framing, focus, layout adjustments; pair with action for targeted refinement."
-            name="composition"
-            rows={3}
-          />
-          <Textarea
-            label="Refinement / Constraints"
-            value={refinement}
-            onChange={(e) => setRefinement(e.target.value)}
-            placeholder="Keep face identical; no artifacts; avoid changing eye color; maintain natural proportions"
-            description="Qualifiers, negatives, and preservation instructions to ensure consistency."
-            name="refinement"
-            rows={3}
-          />
-        </div>
-        <div className="grid gap-6 md:grid-cols-2 items-start">
-          <div className="space-y-2">
-            <h3 className="text-sm font-semibold text-gray-700">
-              Assembled prompt preview
-            </h3>
-            <div className="relative">
-              <pre
-                className="whitespace-pre-wrap rounded-xl border-2 border-gray-200 bg-white p-4 pr-12 text-xs text-gray-800 min-h-[160px]"
-                aria-label="Prompt preview"
-              >
-                {assembledPrompt ||
-                  "Fill required fields to build structured edit prompt."}
-              </pre>
-              <button
-                type="button"
-                onClick={copyPrompt}
-                disabled={!assembledPrompt}
-                className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2 py-1 text-[11px] font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40"
-                aria-label="Copy prompt"
-              >
-                {copied ? (
-                  <>
-                    <Check className="h-3 w-3" /> Copied
-                  </>
-                ) : (
-                  <>
-                    <Clipboard className="h-3 w-3" /> Copy
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-          <div className="space-y-3">
-            <div className="text-xs text-gray-500 leading-relaxed bg-gray-50 border border-gray-200 rounded-xl p-4">
-              <p className="font-medium mb-1">Guidance</p>
-              <ul className="list-disc pl-4 space-y-1">
-                <li>Subject: Identity, pose, attributes.</li>
-                <li>Action: Verb-first transformations.</li>
-                <li>Style: Era / texture / grading.</li>
-                <li>Context: Environment & interactions.</li>
-                <li>Composition: Framing & focus tweaks.</li>
-                <li>Refinement: Keep / avoid directives.</li>
-              </ul>
-            </div>
-            <div className="flex gap-3 flex-wrap">
-              <Button
-                type="submit"
-                disabled={!subject.trim() || !action.trim() || submitting}
-                loading={submitting}
-              >
-                <Sparkles className="h-4 w-4" /> Generate
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={
-                  !subject &&
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-brand-600/10 ring-1 ring-brand-600/20 text-brand-700">
+                2
+              </span>
+              Craft prompt
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-8">
+            {mode === "simple" ? (
+              <div className="grid gap-6">
+                <div className="relative">
+                  <Textarea
+                    label="Prompt *"
+                    required
+                    value={simplePrompt}
+                    onChange={(e) => setSimplePrompt(e.target.value)}
+                    placeholder="Ultra-detailed description of the image you want—subject, scene, lighting, mood, style, camera, quality modifiers, constraints"
+                    description="Free-form prompt (stored as subject). Switch to Pro for structured control."
+                    name="simplePrompt"
+                    rows={8}
+                  />
+                  <div className="absolute right-2 -top-8 flex items-center gap-2">
+                    <span className="text-[10px] text-gray-400 font-medium">
+                      {simplePrompt.length} chars
+                    </span>
+                    <button
+                      type="button"
+                      onClick={copyPrompt}
+                      disabled={!simplePrompt.trim()}
+                      className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2 py-1 text-[11px] font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+                      aria-label="Copy prompt"
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="h-3 w-3" /> Copied
+                        </>
+                      ) : (
+                        <>
+                          <Clipboard className="h-3 w-3" /> Copy
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="grid gap-8 md:grid-cols-2">
+                {/* existing structured fields */}
+                <Textarea
+                  label="Subject *"
+                  required
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="This 28-year-old woman with curly red hair wearing casual denim jacket; or: The dog in the foreground using this reference selfie"
+                  description="Core entity: identity, pose, defining attributes."
+                  name="subject"
+                  rows={4}
+                />
+                <Textarea
+                  label="Action *"
+                  required
+                  value={action}
+                  onChange={(e) => setAction(e.target.value)}
+                  placeholder="Make her wear this black dress after removing current outfit; then blend her with this pet on a basketball court"
+                  description="Primary transformation verbs & sequence."
+                  name="action"
+                  rows={4}
+                />
+                <Textarea
+                  label="Style"
+                  value={style}
+                  onChange={(e) => setStyle(e.target.value)}
+                  placeholder="1960s beehive hairstyle & bold bullfighting costume; high-quality natural lighting; subtle film grain"
+                  description="Aesthetic / reference era / textures / grading."
+                  name="style"
+                  rows={4}
+                />
+                <Textarea
+                  label="Context"
+                  value={context}
+                  onChange={(e) => setContext(e.target.value)}
+                  placeholder="Set in a neon diner at night with reflective checker floor; portrait on a basketball court at golden hour"
+                  description="Environment & background integration."
+                  name="context"
+                  rows={4}
+                />
+                <Textarea
+                  label="Composition"
+                  value={composition}
+                  onChange={(e) => setComposition(e.target.value)}
+                  placeholder="Vertical crop; blur background; shallow depth of field"
+                  description="Framing & focus adjustments."
+                  name="composition"
+                  rows={3}
+                />
+                <Textarea
+                  label="Refinement / Constraints"
+                  value={refinement}
+                  onChange={(e) => setRefinement(e.target.value)}
+                  placeholder="Keep face identical; avoid artifacts; maintain natural proportions"
+                  description="Preservation + negative directives."
+                  name="refinement"
+                  rows={3}
+                />
+              </div>
+            )}
+            {mode === "pro" && (
+              <div className="grid gap-6 md:grid-cols-2 items-start">
+                <div className="space-y-2">
+                  <h3 className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                    Assembled prompt
+                  </h3>
+                  <div className="relative">
+                    <pre
+                      className="whitespace-pre-wrap rounded-lg border border-gray-200 bg-white p-4 pr-14 text-xs text-gray-800 min-h-[160px]"
+                      aria-label="Prompt preview"
+                    >
+                      {assembledPrompt ||
+                        "Fill required fields to build structured prompt."}
+                    </pre>
+                    <div className="absolute top-2 right-2 flex items-center gap-2">
+                      <span className="text-[10px] text-gray-400 font-medium">
+                        {assembledPrompt.length} chars
+                      </span>
+                      <button
+                        type="button"
+                        onClick={copyPrompt}
+                        disabled={!assembledPrompt}
+                        className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2 py-1 text-[11px] font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+                        aria-label="Copy prompt"
+                      >
+                        {copied ? (
+                          <>
+                            <Check className="h-3 w-3" /> Copied
+                          </>
+                        ) : (
+                          <>
+                            <Clipboard className="h-3 w-3" /> Copy
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="text-xs text-gray-600 leading-relaxed bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <p className="font-medium mb-1 text-gray-700">Guidance</p>
+                    <ul className="list-disc pl-4 space-y-1">
+                      <li>Subject: Identity, pose, attributes.</li>
+                      <li>Action: Verb-first transformations.</li>
+                      <li>Style: Era / texture / grading.</li>
+                      <li>Context: Environment & interactions.</li>
+                      <li>Composition: Framing & focus tweaks.</li>
+                      <li>Refinement: Keep / avoid directives.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <div className="flex gap-3 flex-wrap">
+          <Button
+            type="submit"
+            disabled={
+              submitting ||
+              (mode === "simple"
+                ? !simplePrompt.trim()
+                : !subject.trim() || !action.trim())
+            }
+            loading={submitting}
+            className="bg-brand-600 hover:bg-brand-700"
+          >
+            <Sparkles className="h-4 w-4" /> Generate
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={
+              mode === "simple"
+                ? !simplePrompt
+                : !subject &&
                   !action &&
                   !style &&
                   !context &&
                   !composition &&
                   !refinement
-                }
-                onClick={handleReset}
-              >
-                Reset
-              </Button>
-            </div>
-          </div>
+            }
+            onClick={handleReset}
+          >
+            Reset
+          </Button>
         </div>
       </form>
-      <MediaJobsList
-        companyId={selectedCompanyId ? Number(selectedCompanyId) : null}
-        highlightJobId={highlightedJob}
-      />
-    </div>
+      {/* Polished form above; removed legacy block below */}
+      <Card className="mt-10">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-brand-600/10 ring-1 ring-brand-600/20 text-brand-700">
+              3
+            </span>
+            Recent jobs
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <MediaJobsList
+            companyId={selectedCompanyId ? Number(selectedCompanyId) : null}
+            highlightJobId={highlightedJob}
+          />
+        </CardContent>
+      </Card>
+    </PageContainer>
   );
 }
 
