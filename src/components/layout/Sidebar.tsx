@@ -213,9 +213,12 @@ export function Sidebar() {
             .from("profiles")
             .select("role")
             .eq("id", user.id)
-            .single();
+            // maybeSingle() returns null (no error) when 0 rows found, avoiding 406 noise
+            .maybeSingle();
           if (!mounted) return;
 
+          // PostgREST 406 previously surfaced when using single() with 0 rows.
+          // Now: profile=null means no row (or RLS filtered out). Treat as no profile.
           if (profile && !profileError) {
             setHasProfile(true);
             const dbRole = profile.role as string | undefined;

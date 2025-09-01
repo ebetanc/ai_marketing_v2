@@ -12,7 +12,7 @@ import {
 import { Textarea } from "../components/ui/Textarea";
 import { useToast } from "../components/ui/Toast";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
-import { postToN8n } from "../lib/n8n";
+import { N8N_VIDEO_AVATAR_WEBHOOK_PATH, postToN8n } from "../lib/n8n";
 import {
   validateAndNormalizeVideoAvatarPayload,
   VIDEO_AVATAR_IDENTIFIER,
@@ -212,9 +212,7 @@ export function CreateVideoAvatar() {
         return;
       }
       const res = await postToN8n(VIDEO_AVATAR_IDENTIFIER, normalized!, {
-        path:
-          (import.meta as any)?.env?.VITE_VIDEO_AVATAR_WEBHOOK_PATH ||
-          "6255e046-c4ba-4d23-a1ec-2df556e98c9f",
+        path: N8N_VIDEO_AVATAR_WEBHOOK_PATH,
       });
       if (!res.ok) throw new Error(`Webhook responded ${res.status}`);
       push({ message: "Video generation webhook sent", variant: "success" });
@@ -272,9 +270,7 @@ export function CreateVideoAvatar() {
         },
       };
       const res = await postToN8n("videoAvatar", attachPayload, {
-        path:
-          (import.meta as any)?.env?.VITE_VIDEO_AVATAR_WEBHOOK_PATH ||
-          "6255e046-c4ba-4d23-a1ec-2df556e98c9f",
+        path: N8N_VIDEO_AVATAR_WEBHOOK_PATH,
       });
       if (!res.ok) throw new Error(`Webhook responded ${res.status}`);
       push({

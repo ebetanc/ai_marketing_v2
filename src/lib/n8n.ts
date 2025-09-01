@@ -7,11 +7,13 @@ import {
   type AnyN8nPayload,
 } from "./n8nContract";
 
-export const N8N_BASE_URL =
-  (import.meta as any)?.env?.VITE_N8N_BASE_URL ||
-  "https://n8n.srv856940.hstgr.cloud";
-export const N8N_DEFAULT_WEBHOOK_PATH =
-  (import.meta as any)?.env?.VITE_N8N_WEBHOOK_PATH || "content-saas";
+// Base URL for n8n webhooks (no fallback; always production domain as requested)
+export const N8N_BASE_URL = "https://n8n.srv856940.hstgr.cloud";
+// Default generic content webhook path
+export const N8N_DEFAULT_WEBHOOK_PATH = "content-saas";
+// Specific video avatar webhook UUID path
+export const N8N_VIDEO_AVATAR_WEBHOOK_PATH =
+  "6255e046-c4ba-4d23-a1ec-2df556e98c9f";
 
 function buildWebhookUrl(path?: string) {
   const base = N8N_BASE_URL.replace(/\/$/, "");
@@ -53,10 +55,8 @@ export async function postToN8n(
   }
 
   const envMode =
-    (import.meta as any)?.env?.MODE ||
-    (typeof process !== "undefined"
-      ? process.env.NODE_ENV || "production"
-      : "production");
+    (typeof process !== "undefined" ? process.env.NODE_ENV : undefined) ||
+    "development";
 
   if (envMode !== "production") {
     const { ok, warnings, errors, normalized } =
@@ -90,6 +90,32 @@ export async function postToN8n(
     body: JSON.stringify(merged),
     signal: options.signal,
   });
+  // If the server responded with an error, attempt to surface more diagnostics.
+  if (!res.ok) {
+    try {
+      const cloned = res.clone();
+      const text = await cloned.text();
+      // Best effort JSON parse
+      let parsed: any = null;
+      try {
+        parsed = JSON.parse(text);
+      } catch (_jsonErr) {
+        /* noop */
+      }
+      console.error("[postToN8n] Non-OK response", {
+        url,
+        status: res.status,
+        statusText: res.statusText,
+        requestHeaders: headers,
+        identifier,
+        requestBody: merged,
+        responseBody: parsed ?? text,
+      });
+      // Attach a hint header value for correlation if n8n echoes it back
+    } catch (e) {
+      console.error("[postToN8n] Failed to read error response body", e);
+    }
+  }
 
   return res;
 }
