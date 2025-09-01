@@ -68,7 +68,7 @@ const toolsNav: NavItem[] = [
   },
   { name: "Create AI Video", href: "/create-ai-video", icon: Video },
   {
-    name: "Create Video (avatar)",
+    name: "Create AI Video with Avatar",
     href: "/create-video-avatar",
     icon: UserCircle,
   },
