@@ -1,30 +1,30 @@
-import React from "react";
-import { Link, useLocation } from "react-router-dom";
-import { cn } from "../../lib/utils";
-import { supabase } from "../../lib/supabase";
-import { Button } from "../ui/Button";
-import { IconButton } from "../ui/IconButton";
 import {
-  LayoutDashboard,
   Building2,
-  FileText,
-  Lightbulb,
-  Megaphone,
-  Zap,
   Calendar as CalendarIcon,
-  Youtube,
-  TrendingUp,
-  Network,
-  Search,
-  ImagePlus,
-  Wand2,
-  Video,
   ChevronDown,
   ChevronLeft,
-  Layers,
-  UserCircle,
+  FileText,
   Home,
+  ImagePlus,
+  Layers,
+  LayoutDashboard,
+  Lightbulb,
+  Megaphone,
+  Network,
+  Search,
+  TrendingUp,
+  UserCircle,
+  Video,
+  Wand2,
+  Youtube,
+  Zap,
 } from "lucide-react";
+import React from "react";
+import { Link, useLocation } from "react-router-dom";
+import { supabase } from "../../lib/supabase";
+import { cn } from "../../lib/utils";
+import { Button } from "../ui/Button";
+import { IconButton } from "../ui/IconButton";
 
 // Types
 interface NavItem {
@@ -142,10 +142,11 @@ export function Sidebar() {
   const [userRole, setUserRole] = React.useState<Role>(null);
   const [hasProfile, setHasProfile] = React.useState<boolean | null>(null); // null = unknown/loading
   const [collapsed, setCollapsed] = React.useState<Record<GroupKey, boolean>>({
-    contentWorkflow: false,
-    tools: false,
-    seo: false,
-    realEstate: false,
+    // Default all groups to collapsed; restored user prefs will override on mount
+    contentWorkflow: true,
+    tools: true,
+    seo: true,
+    realEstate: true,
   });
   const [sidebarCollapsed, setSidebarCollapsed] =
     React.useState<boolean>(false);
