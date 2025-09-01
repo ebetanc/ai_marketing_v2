@@ -414,7 +414,7 @@ export function Sidebar() {
             onClick={toggleSidebar}
             variant="secondary"
             size="sm"
-            className="w-full justify-start gap-2"
+            className="w-full justify-start gap-2 bg-white hover:bg-gray-50"
             aria-label={
               sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
             }

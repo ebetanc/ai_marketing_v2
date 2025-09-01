@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
 import { Bell, Menu, Search, X } from "lucide-react";
-import { IconButton } from "../ui/IconButton";
+import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "../../lib/utils";
+import { IconButton } from "../ui/IconButton";
 
 type TopBarProps = React.HTMLAttributes<HTMLDivElement> & {
   onMenuClick?: () => void;
@@ -117,7 +117,7 @@ export function TopBar({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
             type="search"
-            placeholder="Search (Cmd/Ctrl+K)"
+            placeholder="Search Content... (Cmd/Ctrl+K)"
             value={searchQuery}
             onChange={(e) => {
               const v = e.target.value;
