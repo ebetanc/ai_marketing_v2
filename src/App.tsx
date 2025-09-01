@@ -30,7 +30,7 @@ import { CreateAiVideo as CreateAIVideoPage } from "./pages/CreateAiVideo";
 import { CreateAIImage } from "./pages/CreateAIImage";
 import { EditImageWithAI } from "./pages/EditImageWithAI";
 import { AnimateImageWithAI } from "./pages/AnimateImageWithAI";
-import { CreateVideoAvatar } from "./pages/CreateVideoAvatar";
+import { CreateVideoAvatar } from "./pages/CreateAiVideoWithAvatar";
 
 function App() {
   return (

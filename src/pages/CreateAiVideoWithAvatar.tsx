@@ -38,7 +38,7 @@ interface VideoPreviewItem {
 }
 
 export function CreateVideoAvatar() {
-  useDocumentTitle("Create Video (avatar) — Lighting");
+  useDocumentTitle("Create AI Videos with Avatar — Lighting");
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [videoScript, setVideoScript] = useState("");

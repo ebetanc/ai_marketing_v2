@@ -57,8 +57,7 @@ const contentWorkflowNav: NavItem[] = [
 // (SEO-related links moved to separate seoNav group below)
 // Ordered after SEO group for flow: research -> production
 const toolsNav: NavItem[] = [
-  { name: "Campaigns", href: "/campaigns", icon: Megaphone },
-  // Asset generation (images then video)
+  // Image workflow
   { name: "Create AI Image", href: "/create-ai-image", icon: ImagePlus },
   { name: "Edit Image with AI", href: "/edit-image-with-ai", icon: Wand2 },
   {
@@ -66,12 +65,15 @@ const toolsNav: NavItem[] = [
     href: "/animate-image-with-ai",
     icon: Wand2,
   },
+  // Video workflow
   { name: "Create AI Video", href: "/create-ai-video", icon: Video },
   {
     name: "Create AI Video with Avatar",
     href: "/create-video-avatar",
     icon: UserCircle,
   },
+  // Campaign orchestration (placed after asset creation tools)
+  { name: "Campaigns", href: "/campaigns", icon: Megaphone },
 ];
 
 // SEO tools (subset previously in toolsNav)
