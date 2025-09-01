@@ -1,0 +1,786 @@
+{
+  "name": "video_actions_avatar",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.goapi.ai/api/v1/task",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"Qubico/diffrhythm\",\n  \"task_type\": \"txt2audio-base\",\n  \"input\": {\n    \"lyrics\": \"NoLyrics\",\n    \"style_prompt\": \"upbeat techno music for a business video\",\n    \"style_audio\": \"\"\n  },\n  \"config\": {\n    \"webhook_config\": {\n      \"endpoint\": \"https://hooks.airtable.com/workflows/v1/genericWebhook/appSc5xBnMnl8xyB6/wflar0ISRHY2xH6jm/wtrY1fLaqf7LXPhNB\",\n      \"secret\": \"\"\n    }\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-176, 928],
+      "id": "fe1b8261-937d-469d-a961-f0ac0ec5f4fa",
+      "name": "Generate Music",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "FDdayqa6NXg9No9V",
+          "name": "retell ai API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://no-code-architects-toolkit-905445295658.europe-west1.run.app/v1/ffmpeg/compose",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"inputs\": [\n        {\n            \"file_url\": \"{{ $json.ai_video }}\"\n        },\n        {\n            \"file_url\": \"https://storage.googleapis.com/toolkit_service/5ebd0a86-5dee-478e-8d6d-0ec7d8ffb233.mp4\"\n        }\n    ],\n    \"filters\": [\n        {\n            \"filter\": \"[1:v]scale{{ $json.width }}:{{ $json.height }},setsar=1,format=rgba,trim=duration=2,setpts=PTS-STARTPTS+8/TB[s1]\",\n            \"filter\": \"[0:v][s1]overlay=enable='between(t,6,8)':x=0:y:0[outv]\"\n        }\n    ],\n    \"outputs\": [\n        {\n            \"options\": [\n                {\n                    \"option\": \"-map\",\n                    \"argument\": \"[outv]\"\n                },\n                {\n                    \"option\": \"-map\",\n                    \"argument\": \"[outa]\"\n                },\n                {\n                    \"option\": \"-c:v\",\n                    \"argument\": \"libx264\"\n                },\n                {\n                    \"option\": \"-crf\",\n                    \"argument\": \"23\"\n                },\n                {\n                    \"option\": \"-preset\",\n                    \"argument\": \"medium\"\n                },\n                {\n                    \"option\": \"-c:a\",\n                    \"argument\": \"aac\"\n                },\n                {\n                    \"option\": \"-b:a\",\n                    \"argument\": \"128k\"\n                }\n            ]\n        }\n    ],\n    \"metadata\": {\n        \"thumbnail\": true,\n        \"filesize\": true,\n        \"duration\": true,\n        \"bitrate\": true,\n        \"encoder\": true\n    },\n    \"id\": \"2323\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [112, 720],
+      "id": "8d774eee-b347-4a0c-909e-5d4c0b980674",
+      "name": "Combine Video + B-Roll",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "LZV85cG9VUtzglj9",
+          "name": "NCA Toolkit Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://sea-turtle-app-nlak2.ondigitalocean.app/v1/ffmpeg/compose",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"webhook_url\": \"https://hooks.airtable.com/workflows/v1/genericWebhook/appSc5xBnMnl8xyB6/wflNR1c6XSiKiaq49/wtrL84YwGCsJ77vyL\",\n  \"id\": \"{{ $('Get Video Data').item.json.id }}\",\n  \"inputs\": [\n    {\n      \"file_url\": \"{{ $json['Video + B-Roll'][0].url }}\"\n    },\n    {\n      \"file_url\": \"{{ $('Get Video Data').item.json.Music[0].url }}\"\n    }\n  ],\n  \"filters\": [\n    {\n      \"filter\": \"[0:a]volume=1.0[a0]\"\n    },\n    {\n      \"filter\": \"[1:a]volume=0.50[a1]\"\n    },\n    {\n      \"filter\": \"[a0][a1]amix=inputs=2:duration=shortest:dropout_transition=2[aout]\"\n    }\n  ],\n  \"outputs\": [\n    {\n      \"options\": [\n        {\n          \"option\": \"-map\",\n          \"argument\": \"0:v\"\n        },\n        {\n          \"option\": \"-map\",\n          \"argument\": \"[aout]\"\n        },\n        {\n          \"option\": \"-c:v\",\n          \"argument\": \"copy\"\n        },\n        {\n          \"option\": \"-shortest\"\n        }\n      ]\n    }\n  ]\n}\n",
+        "options": {
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-160, 1120],
+      "id": "4ec5d531-9f09-444a-a3b1-28108f5877da",
+      "name": "Combine Video + Music",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "FDdayqa6NXg9No9V",
+          "name": "retell ai API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://sea-turtle-app-nlak2.ondigitalocean.app/v1/video/caption",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"video_url\": \"{{ $('Get Video Data').item.json['Video + Music'][0].url }}\",\n    \"replace\": [\n        {\n            \"find\": \"Steven's\",\n            \"replace\": \"Stephen's\"\n        },\n        {\n            \"find\": \"Steven's\",\n            \"replace\": \"Stephen's\"\n        },\n        {\n            \"find\": \"Hagen\",\n            \"replace\": \"Heygen\"\n        },\n        {\n            \"find\": \"Mid-Jerney\",\n            \"replace\": \"Midjourney\"\n        }\n    ],\n    \"settings\": {\n        \"line_color\": \"#FFFFFF\",\n        \"word_color\": \"#FFFF00\",\n        \"all_caps\": false,\n        \"max_words_per_line\": 3,\n        \"font_size\": 40,\n        \"bold\": false,\n        \"italic\": false,\n        \"underline\": false,\n        \"strikeout\": false,\n        \"outline_width\": 3,\n        \"shadow_offset\": 4,\n        \"style\": \"highlight\",\n        \"font_family\": \"The Bold Font\",\n        \"position\": \"bottom_center\"\n    },\n    \"webhook_url\": \"https://hooks.airtable.com/workflows/v1/genericWebhook/appSc5xBnMnl8xyB6/wflvjWFffmDdP33uo/wtrtAZrFY6NcE08Y0\",\n    \"id\": \"{{ $('Get Video Data').item.json.id }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-432, 1360],
+      "id": "283ae02b-8833-498f-9ffc-3417cb190906",
+      "name": "Add Captions",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "FDdayqa6NXg9No9V",
+          "name": "retell ai API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.heygen.com/v2/video/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "x-api-key",
+              "value": "ZTliYzBjYTc5NWM0NDNhOWI0MmU4NWZlMDIzY2MzYWYtMTcwNjA0MTI2Nw=="
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"caption\": false,\n  \"dimension\": {\n    \"width\": 1280,\n    \"height\": 720\n  },\n  \"video_inputs\": [\n    {\n      \"character\": {\n        \"type\": \"talking_photo\",\n        \"scale\": 1,\n        \"talking_photo_id\": \"272b8e03711f4f4681328461bbdbd1a3\"\n      },\n      \"voice\": {\n        \"type\": \"text\",\n        \"voice_id\": \"1704ea0565c04c5188d9b67062b31a1a\",\n        \"input_text\": \"{{ $json.script }}.\"\n      }\n    }\n  ]\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [16, 16],
+      "id": "d8004db9-0f30-46a7-883d-cfcd4b4d4e04",
+      "name": "Generate Video HeyGen"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c5207cef-1b67-404d-b0da-bdc5e215027e",
+              "name": "video_id",
+              "value": "={{ $json.data.video_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [240, 16],
+      "id": "e4897d89-c8d9-4568-9fb1-710e5ced2903",
+      "name": "Set Video ID"
+    },
+    {
+      "parameters": {
+        "amount": 30
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [464, 16],
+      "id": "f3ca6469-780c-492e-94d1-fd5631714942",
+      "name": "Wait",
+      "webhookId": "0eea431a-ced4-462c-bfd2-8eb98a73cd3f"
+    },
+    {
+      "parameters": {
+        "url": "https://api.heygen.com/v1/video_status.get",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "video_id",
+              "value": "74373c0f041441259fa58fe9d0e8bbc2"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "x-api-key",
+              "value": "ZTliYzBjYTc5NWM0NDNhOWI0MmU4NWZlMDIzY2MzYWYtMTcwNjA0MTI2Nw=="
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [688, -64],
+      "id": "f4d48447-8705-4399-a324-a1fc3defe6d0",
+      "name": "Get Video URL"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "96b8a2f5-2fde-49bd-9649-2f5abc84181f",
+              "leftValue": "={{ $json.data.status }}",
+              "rightValue": "completed",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [912, 16],
+      "id": "1db59deb-6adf-4141-8a3c-08ae3a09fd6c",
+      "name": "If",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://no-code-architects-toolkit-905445295658.europe-west1.run.app/v1/media/transcribe",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"media_url\":\"{{ $json.data.video_url }}\",\n    \"task\": \"transcribe\",\n    \"include_text\": true,\n    \"include_srt\": true,\n    \"response_type\": \"cloud\",\n    \"id\": \"{{ $json.data.id }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1136, 16],
+      "id": "53e4c372-a4d6-439f-a041-95fda9e89fdf",
+      "name": "Transcribe",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "LZV85cG9VUtzglj9",
+          "name": "NCA Toolkit Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.goapi.ai/mj/v2/imagine",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{}]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"prompt\": \"{{ $json.message.content.replace(/['\"\\\\r\\\\n\\r\\n]/g, '') }}\",\n  \"skip_prompt_check\": false,\n  \"aspect_ratio\": \"16:9\",\n  \"process_mode\": \"relax\",\n\"webhook_endpoint\":\"https://hooks.airtable.com/workflows/v1/genericWebhook/appSc5xBnMnl8xyB6/wfl1LK0sn1skV92WN/wtrgcOeh2hUGlNFxk\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-192, 720],
+      "id": "cd53cdc1-13e4-44ef-be53-3b6387078644",
+      "name": "Request Image",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "FDdayqa6NXg9No9V",
+          "name": "retell ai API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.goapi.ai/mj/v2/upscale",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n\"origin_task_id\": \"{{ $('Get Segment Data').item.json['Image ID'] }}\",\n\"index\":\"{{ $('Get Segment Data').item.json['Select Image'] }}\",\n\"webhook_endpoint\":\"https://hooks.airtable.com/workflows/v1/genericWebhook/appSc5xBnMnl8xyB6/wfl5RoyqycIpmOEPH/wtrkisMfdsaLMshqe\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-432, 1808],
+      "id": "27c3f7a8-06ac-4f05-a241-9cd4f70ff10e",
+      "name": "Upscale midjourney",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "FDdayqa6NXg9No9V",
+          "name": "retell ai API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.goapi.ai/api/v1/task",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"model\": \"kling\",\n    \"task_type\": \"video_generation\",\n    \"input\": {\n        \"prompt\": \"animate the video\",\n        \"negative_prompt\": \"\",\n        \"cfg_scale\": 0.5,\n        \"duration\": 5,\n        \"aspect_ratio\": \"1:1\",\n        \"version\": \"1.6\",\n        \"camera_control\": {\n            \"type\": \"simple\",\n            \"config\": {\n                \"horizontal\": 0,\n                \"vertical\": 2,\n                \"pan\": -10,\n                \"tilt\": 0,\n                \"roll\": 0,\n                \"zoom\": 0\n            }\n        },\n        \"mode\": \"std\",\n        \"image_url\": \"{{ $('Get Segment Data').item.json['Upscale Image'][0].url }}\",\n        \"effect\": \"expansion\"\n    },\n    \"config\": {\n        \"webhook_config\": {\n            \"endpoint\": \"https://hooks.airtable.com/workflows/v1/genericWebhook/appSc5xBnMnl8xyB6/wfl5Z7YtGBCDNmGDF/wtrayv6GVDvvycJ8w\"\n        },\n        \"service_mode\": \"public\"\n    }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-432, 1584],
+      "id": "b5475ab1-16ed-4fae-9e24-e949ba9691b6",
+      "name": "Create Kling Video",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "FDdayqa6NXg9No9V",
+          "name": "retell ai API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://no-code-architects-toolkit-905445295658.europe-west1.run.app/v1/image/transform/video",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"image_url\": \"{{ $json.url }}\",\n  \"length\": 3,\n  \"frame_rate\": 25,\n  \"zoom_speed\": 3,\n  \"id\": \"{{ $('Get video Story').item.json.record_id }}\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [496, 640],
+      "id": "020ae7b7-34a6-4518-930a-470ffde419aa",
+      "name": "Zoom Image Effect",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "LZV85cG9VUtzglj9",
+          "name": "NCA Toolkit Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "dfb4e6e9-07d4-477a-8d82-213eafc0f39a",
+              "name": "script",
+              "value": "Good day, everyone! Thank you for joining us today—it's a real pleasure to welcome you on behalf of our new company, now proudly representing Nissan in this exciting new chapter",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-208, 16],
+      "id": "e01aa467-ff4b-45d3-aa8b-91d211cc8e0b",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "tableId": "video_avatar",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "ai_video",
+              "fieldValue": "={{ $('Get Video URL').item.json.data.video_url }}"
+            },
+            {
+              "fieldId": "thumbnail_url",
+              "fieldValue": "={{ $('Get Video URL').item.json.data.thumbnail_url }}"
+            },
+            {
+              "fieldId": "video_script",
+              "fieldValue": "={{ $json.data }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1584, 16],
+      "id": "66886e9b-f2e6-44bd-b7b6-2b58af3ea9fa",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "cBT6cAc8Tl86X0wU",
+          "name": "Supbase Marketing"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.response.text_url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1360, 16],
+      "id": "d8815dcc-dc10-49ef-a112-9030fbeb699b",
+      "name": "Get Script"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "",
+                    "rightValue": "generateVideo",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "1e0a7e13-2e15-47f1-82d2-9e9352d775eb"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "generateVideo"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "939d6d5f-b472-48ee-bb0f-b6914f7ca47d",
+                    "leftValue": "",
+                    "rightValue": "mixImages",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "mixImages"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [-704, 320],
+      "id": "a753c186-198f-47c7-80fd-6dd989529d88",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "path": "6255e046-c4ba-4d23-a1ec-2df556e98c9f",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-976, 320],
+      "id": "94cf3996-a640-42d7-a1b4-c2287cfa113c",
+      "name": "Webhook",
+      "webhookId": "6255e046-c4ba-4d23-a1ec-2df556e98c9f"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "video_avatar"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [-240, 336],
+      "id": "654d6bf6-e3a9-490e-bea4-b0076fd41f67",
+      "name": "Get many rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "cBT6cAc8Tl86X0wU",
+          "name": "Supbase Marketing"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Get Video URL": [
+      {
+        "json": {
+          "code": 100,
+          "data": {
+            "callback_id": null,
+            "caption_url": "",
+            "created_at": 1756636180,
+            "duration": 11.617,
+            "error": null,
+            "gif_url": "https://resource2.heygen.ai/video/74373c0f041441259fa58fe9d0e8bbc2/gif.gif",
+            "id": "74373c0f041441259fa58fe9d0e8bbc2",
+            "status": "completed",
+            "thumbnail_url": "https://files2.heygen.ai/aws_pacific/avatar_tmp/c0f8bd83e64c4eb5b0bd93811482456d/74373c0f041441259fa58fe9d0e8bbc2.jpeg?Expires=1757243789&Signature=MM7Gbsm2uWZHtKSXQojQY41wyTwbk1YDyOe8D8WtSM6Fb0CM8deDxIB~b6dyuu6ysdDien4llAwWv-Rb7t8XIMklDtTv-yWZwhI1AhkELD7~ynAI~N2UfkqO0IMgJqtJuc2biHfzhC~Z~qY9Fx-hDzzKK2irMAlM6CuA2L1qzg1XoKvh~jXNW8uTf3-Y1As3-sSgNxadRTNYNLb8H3u9I7I3lMNx4ofJ~YcAna4ZZjGUxcW0tf7KplbSzUcDC-H1i~PCD4cyT1wUUbUPRoiiwybjcD5E5kUZ~RL0gMq9ZEM54WoYXrQyqq2NKnM3F8WGu4xWtDC~sOfVAmhEvqvtyQ__&Key-Pair-Id=K38HBHX5LX3X2H",
+            "video_url": "https://files2.heygen.ai/aws_pacific/avatar_tmp/c0f8bd83e64c4eb5b0bd93811482456d/74373c0f041441259fa58fe9d0e8bbc2.mp4?Expires=1757242841&Signature=aR4oMzhpVxAs0bzGwWsX~ZmGKk9FYpxQCEAnqDTg5VBpAzq64KBtRcPg0LrkGM5D2YvnPBOCzwyVIYb1SmSYSVsvpBGm4XbsYnXvYEdARyCX5e~4AeWvv1GvS8~1gjAUwpTkKK7-2QpQ2Ox0rV8XsMFKEolfMAzFDGO2j2DWYR8rUU-M3IPhYciPiWgnTml6c1YrwdJHLqVsijBjSKSgZRoXP~3ywIAj7z~eDTf4IiLfGtVISL7cLJ97pZC8D5c8jpUtoSQsUPidYoZQoL71mrAex4W4SjOZKvIlHCGKsIqGxLZgVMcqzXu4DcX0Uce9proFdAnhOBn7YA2xC2WWGQ__&Key-Pair-Id=K38HBHX5LX3X2H",
+            "video_url_caption": null
+          },
+          "message": "Success"
+        }
+      }
+    ],
+    "Wait": [
+      {
+        "json": {
+          "video_id": "74373c0f041441259fa58fe9d0e8bbc2"
+        }
+      }
+    ],
+    "Set Video ID": [
+      {
+        "json": {
+          "video_id": "74373c0f041441259fa58fe9d0e8bbc2"
+        }
+      }
+    ],
+    "Generate Video HeyGen": [
+      {
+        "json": {
+          "error": null,
+          "data": {
+            "video_id": "74373c0f041441259fa58fe9d0e8bbc2"
+          }
+        }
+      }
+    ],
+    "Zoom Image Effect": [
+      {
+        "json": {
+          "build_number": 189,
+          "code": 200,
+          "id": "b7509031-3d1f-4d26-8683-2f3cd1872d2e",
+          "job_id": "5ebd0a86-5dee-478e-8d6d-0ec7d8ffb233",
+          "message": "success",
+          "pid": 15,
+          "queue_id": 140551255119136,
+          "queue_length": 0,
+          "queue_time": 0,
+          "response": "https://storage.googleapis.com/toolkit_service/5ebd0a86-5dee-478e-8d6d-0ec7d8ffb233.mp4",
+          "run_time": 7.161,
+          "total_time": 7.161
+        }
+      },
+      {
+        "json": {
+          "build_number": 189,
+          "code": 200,
+          "id": "b7509031-3d1f-4d26-8683-2f3cd1872d2e",
+          "job_id": "a9ae8267-59f1-440b-bb9f-6e2034fdb259",
+          "message": "success",
+          "pid": 14,
+          "queue_id": 140424079951136,
+          "queue_length": 0,
+          "queue_time": 0,
+          "response": "https://storage.googleapis.com/toolkit_service/a9ae8267-59f1-440b-bb9f-6e2034fdb259.mp4",
+          "run_time": 7.236,
+          "total_time": 7.236
+        }
+      }
+    ],
+    "Edit Fields": [
+      {
+        "json": {
+          "script": "Good day, everyone! Thank you for joining us today—it's a real pleasure to welcome you on behalf of our new company, now proudly representing Nissan in this exciting new chapter"
+        }
+      }
+    ],
+    "Transcribe": [
+      {
+        "json": {
+          "build_number": 189,
+          "code": 200,
+          "id": "74373c0f041441259fa58fe9d0e8bbc2",
+          "job_id": "cbaa8f29-c7f0-45ed-8549-dd40febe12cd",
+          "message": "success",
+          "pid": 14,
+          "queue_id": 140291693434144,
+          "queue_length": 0,
+          "queue_time": 0,
+          "response": {
+            "segments": null,
+            "segments_url": null,
+            "srt": null,
+            "srt_url": "https://storage.googleapis.com/toolkit_service/cbaa8f29-c7f0-45ed-8549-dd40febe12cd.srt",
+            "text": null,
+            "text_url": "https://storage.googleapis.com/toolkit_service/cbaa8f29-c7f0-45ed-8549-dd40febe12cd.txt"
+          },
+          "run_time": 10.29,
+          "total_time": 10.29
+        }
+      }
+    ],
+    "Get Script": [
+      {
+        "json": {
+          "data": " Good day, everyone. Thank you for joining us today. It's a real pleasure to welcome you on behalf of our new company Now proudly representing Nissan in this exciting new chapter"
+        }
+      }
+    ],
+    "Create a row": [
+      {
+        "json": {
+          "id": 1,
+          "created_at": "2025-08-31T19:28:36.473381+00:00",
+          "ai_video": "https://files2.heygen.ai/aws_pacific/avatar_tmp/c0f8bd83e64c4eb5b0bd93811482456d/74373c0f041441259fa58fe9d0e8bbc2.mp4?Expires=1757242841&Signature=aR4oMzhpVxAs0bzGwWsX~ZmGKk9FYpxQCEAnqDTg5VBpAzq64KBtRcPg0LrkGM5D2YvnPBOCzwyVIYb1SmSYSVsvpBGm4XbsYnXvYEdARyCX5e~4AeWvv1GvS8~1gjAUwpTkKK7-2QpQ2Ox0rV8XsMFKEolfMAzFDGO2j2DWYR8rUU-M3IPhYciPiWgnTml6c1YrwdJHLqVsijBjSKSgZRoXP~3ywIAj7z~eDTf4IiLfGtVISL7cLJ97pZC8D5c8jpUtoSQsUPidYoZQoL71mrAex4W4SjOZKvIlHCGKsIqGxLZgVMcqzXu4DcX0Uce9proFdAnhOBn7YA2xC2WWGQ__&Key-Pair-Id=K38HBHX5LX3X2H",
+          "thumbnail_url": "https://files2.heygen.ai/aws_pacific/avatar_tmp/c0f8bd83e64c4eb5b0bd93811482456d/74373c0f041441259fa58fe9d0e8bbc2.jpeg?Expires=1757243789&Signature=MM7Gbsm2uWZHtKSXQojQY41wyTwbk1YDyOe8D8WtSM6Fb0CM8deDxIB~b6dyuu6ysdDien4llAwWv-Rb7t8XIMklDtTv-yWZwhI1AhkELD7~ynAI~N2UfkqO0IMgJqtJuc2biHfzhC~Z~qY9Fx-hDzzKK2irMAlM6CuA2L1qzg1XoKvh~jXNW8uTf3-Y1As3-sSgNxadRTNYNLb8H3u9I7I3lMNx4ofJ~YcAna4ZZjGUxcW0tf7KplbSzUcDC-H1i~PCD4cyT1wUUbUPRoiiwybjcD5E5kUZ~RL0gMq9ZEM54WoYXrQyqq2NKnM3F8WGu4xWtDC~sOfVAmhEvqvtyQ__&Key-Pair-Id=K38HBHX5LX3X2H",
+          "video_script": " Good day, everyone. Thank you for joining us today. It's a real pleasure to welcome you on behalf of our new company Now proudly representing Nissan in this exciting new chapter"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Generate Music": {
+      "main": [[]]
+    },
+    "Generate Video HeyGen": {
+      "main": [
+        [
+          {
+            "node": "Set Video ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Video ID": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Get Video URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Video URL": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Transcribe",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe": {
+      "main": [
+        [
+          {
+            "node": "Get Script",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Request Image": {
+      "main": [[]]
+    },
+    "Upscale midjourney": {
+      "main": [[]]
+    },
+    "Create Kling Video": {
+      "main": [[]]
+    },
+    "Zoom Image Effect": {
+      "main": [[]]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Generate Video HeyGen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Script": {
+      "main": [
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2778f6e2-03a0-4155-9ef1-f965af8ceb1c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fe9d3a12f258c7c25e0241bdac4abdc1d2d4cbca003a5fd500ebff17b6038d7a"
+  },
+  "id": "5oonDWfMzj4tZt3n",
+  "tags": []
+}

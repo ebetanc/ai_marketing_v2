@@ -1,12 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
-import type { Database } from "./database.types";
+import type { Database } from "../types/database.types";
 export type {
   Tables,
   TablesInsert,
   TablesUpdate,
   Enums,
   CompositeTypes,
-} from "./database.types";
+} from "../types/database.types";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -170,18 +170,23 @@ export async function uploadFileToSupabaseStorage(
   bucketName: string,
   path?: string, // Optional path within the bucket
 ) {
-  const fileName = path || `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-  const { data, error } = await supabase.storage.from(bucketName).upload(fileName, file, {
-    cacheControl: "3600",
-    upsert: true,
-    contentType: file.type,
-  });
+  const fileName =
+    path || `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+  const { data, error } = await supabase.storage
+    .from(bucketName)
+    .upload(fileName, file, {
+      cacheControl: "3600",
+      upsert: true,
+      contentType: file.type,
+    });
 
   if (error) {
     throw new Error(`Failed to upload file to ${bucketName}: ${error.message}`);
   }
 
-  const { data: publicUrlData } = supabase.storage.from(bucketName).getPublicUrl(fileName);
+  const { data: publicUrlData } = supabase.storage
+    .from(bucketName)
+    .getPublicUrl(fileName);
   if (!publicUrlData?.publicUrl) {
     throw new Error("Failed to get public URL for uploaded file.");
   }

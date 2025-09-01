@@ -12,15 +12,18 @@ import {
 import { Textarea } from "../components/ui/Textarea";
 import { useToast } from "../components/ui/Toast";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
-import { mockPostToN8n } from "../lib/n8nMock";
-import { sendVideoAvatarWebhook } from "../api/videoAvatar";
+import { postToN8n } from "../lib/n8n";
+import {
+  validateAndNormalizeVideoAvatarPayload,
+  VIDEO_AVATAR_IDENTIFIER,
+} from "../lib/n8nAvatarContract";
 import { uploadFileToSupabaseStorage } from "../lib/supabase";
 
 interface UploadedImage {
-  id: string; // Unique ID for React keys and internal tracking
+  id: string;
   file: File;
-  localUrl: string; // URL.createObjectURL for immediate preview
-  supabaseUrl: string | null; // Public URL from Supabase after upload
+  localUrl: string;
+  supabaseUrl: string | null;
   loading: boolean;
   error: string | null;
 }
@@ -30,13 +33,12 @@ interface VideoPreviewItem {
   script: string;
   status: "processing" | "ready" | "error";
   createdAt: string;
-  thumbnailUrl: string | null; // could reuse first image
+  thumbnailUrl: string | null;
   error?: string;
 }
 
 export function CreateVideoAvatar() {
   useDocumentTitle("Create Video (avatar) — Lighting");
-  // Store uploaded images with rich metadata
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [videoScript, setVideoScript] = useState("");
@@ -44,8 +46,7 @@ export function CreateVideoAvatar() {
   const [generating, setGenerating] = useState(false);
   const [attaching, setAttaching] = useState(false);
   const [videoPreviews, setVideoPreviews] = useState<VideoPreviewItem[]>([]);
-  const [attachedImages, setAttachedImages] = useState<string[]>([]); // Supabase URLs that have been linked
-  // Section 1 webhook handled via sendVideoAvatarWebhook wrapper (see api/videoAvatar)
+  const [attachedImages, setAttachedImages] = useState<string[]>([]);
 
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
@@ -61,11 +62,10 @@ export function CreateVideoAvatar() {
         ),
       );
       try {
-        // Using a subfolder 'video-avatars' within the 'images' bucket for organization
         const publicUrl = await uploadFileToSupabaseStorage(
           imageToUpload,
-          "images",
-          `video-avatars/${tempId}-${imageToUpload.name}`,
+          "media",
+          `avatar-input/${tempId}-${imageToUpload.name}`,
         );
         setImages((prev) =>
           prev.map((img) =>
@@ -111,16 +111,15 @@ export function CreateVideoAvatar() {
           });
           continue;
         }
-        const tempId = crypto.randomUUID(); // Generate a unique ID for tracking
+        const tempId = crypto.randomUUID();
         newImages.push({
           id: tempId,
           file,
           localUrl: URL.createObjectURL(file),
           supabaseUrl: null,
-          loading: false, // Will be set to true when upload starts
+          loading: false,
           error: null,
         });
-        // Start upload immediately
         uploadImage(file, tempId);
       }
       setImages((prev) => [...prev, ...newImages]);
@@ -162,7 +161,7 @@ export function CreateVideoAvatar() {
     if (e.target.files) {
       processFiles(e.target.files);
     }
-    e.target.value = ""; // Reset input
+    e.target.value = "";
   };
 
   const removeImage = (idToRemove: string) => {
@@ -170,16 +169,14 @@ export function CreateVideoAvatar() {
       const copy = [...prev];
       const indexToRemove = prev.findIndex((img) => img.id === idToRemove);
 
-      if (indexToRemove === -1) return prev; // Image not found
+      if (indexToRemove === -1) return prev;
 
       const [removed] = copy.splice(indexToRemove, 1);
       if (removed?.localUrl) URL.revokeObjectURL(removed.localUrl);
-      // TODO: If image is already on Supabase, consider adding logic to delete it from bucket too.
       return copy;
     });
   };
 
-  // Cleanup object URLs on unmount
   useEffect(() => {
     return () => {
       images.forEach((img) => {
@@ -195,13 +192,32 @@ export function CreateVideoAvatar() {
     }
     setGenerating(true);
     try {
-      const res = await sendVideoAvatarWebhook({
+      const draftPayload = {
+        identifier: VIDEO_AVATAR_IDENTIFIER,
+        operation: "generateVideo" as const,
         script: videoScript.trim(),
-        imageCount: images.length,
+        image_count: images.length,
+        meta: {
+          source: "app",
+          ts: new Date().toISOString(),
+          contract: "avatar-v1",
+        },
+      };
+      const { ok, errors, warnings, normalized } =
+        validateAndNormalizeVideoAvatarPayload(draftPayload);
+      if (warnings.length) console.warn("[avatar-contract]", warnings);
+      if (!ok) {
+        push({ message: errors.join("; "), variant: "error" });
+        setGenerating(false);
+        return;
+      }
+      const res = await postToN8n(VIDEO_AVATAR_IDENTIFIER, normalized!, {
+        path:
+          (import.meta as any)?.env?.VITE_VIDEO_AVATAR_WEBHOOK_PATH ||
+          "6255e046-c4ba-4d23-a1ec-2df556e98c9f",
       });
       if (!res.ok) throw new Error(`Webhook responded ${res.status}`);
       push({ message: "Video generation webhook sent", variant: "success" });
-      // Insert a mock preview item
       const id = crypto.randomUUID();
       const firstImage =
         images.find((i) => i.supabaseUrl)?.supabaseUrl ||
@@ -217,7 +233,6 @@ export function CreateVideoAvatar() {
         },
         ...prev,
       ]);
-      // Simulate processing completion
       setTimeout(() => {
         setVideoPreviews((prev) =>
           prev.map((v) => (v.id === id ? { ...v, status: "ready" } : v)),
@@ -244,16 +259,26 @@ export function CreateVideoAvatar() {
         .filter((i) => i.supabaseUrl)
         .map((i) => i.supabaseUrl!)
         .filter(Boolean);
-      // Keep mock for image attachment until real workflow path defined
-      await mockPostToN8n("videoAvatar", {
+      const attachPayload = {
         identifier: "videoAvatar",
-        operation: "attach_images",
+        operation: "attach_images" as const,
         script_present: !!videoScript.trim(),
         images: uploaded,
         pendingUploads: images.filter((i) => i.loading).length,
+        meta: {
+          source: "app",
+          ts: new Date().toISOString(),
+          contract: "avatar-v1",
+        },
+      };
+      const res = await postToN8n("videoAvatar", attachPayload, {
+        path:
+          (import.meta as any)?.env?.VITE_VIDEO_AVATAR_WEBHOOK_PATH ||
+          "6255e046-c4ba-4d23-a1ec-2df556e98c9f",
       });
+      if (!res.ok) throw new Error(`Webhook responded ${res.status}`);
       push({
-        message: `(Mock) ${uploaded.length} image(s) attached`,
+        message: `${uploaded.length} image(s) attached`,
         variant: "success",
       });
       setAttachedImages(uploaded as string[]);
@@ -277,7 +302,6 @@ export function CreateVideoAvatar() {
       />
 
       <div className="max-w-4xl space-y-8">
-        {/* 1. Video Script Section */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -307,7 +331,6 @@ export function CreateVideoAvatar() {
           </CardContent>
         </Card>
 
-        {/* 2. Image Upload Section */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -356,7 +379,6 @@ export function CreateVideoAvatar() {
               )}
             </div>
 
-            {/* Image Preview Grid */}
             {images.length > 0 && (
               <div className="mt-6">
                 <h3 className="text-sm font-medium text-gray-900 mb-3">
@@ -434,7 +456,6 @@ export function CreateVideoAvatar() {
             )}
           </CardContent>
         </Card>
-        {/* Video previews (results) */}
         {videoPreviews.length > 0 && (
           <Card>
             <CardHeader>
