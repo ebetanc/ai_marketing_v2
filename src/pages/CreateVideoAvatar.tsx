@@ -1,12 +1,19 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { Video, Upload, X, Trash2, Loader2 } from "lucide-react";
-import { useDocumentTitle } from "../hooks/useDocumentTitle";
-import { PageHeader } from "../components/layout/PageHeader";
+import { Loader2, Play, Plus, Upload, Video, X } from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
 import { PageContainer } from "../components/layout/PageContainer";
+import { PageHeader } from "../components/layout/PageHeader";
 import { Button } from "../components/ui/Button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/Card";
 import { Textarea } from "../components/ui/Textarea";
 import { useToast } from "../components/ui/Toast";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/Card";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import { mockPostToN8n } from "../lib/n8nMock";
+import { sendVideoAvatarWebhook } from "../api/videoAvatar";
 import { uploadFileToSupabaseStorage } from "../lib/supabase";
 
 interface UploadedImage {
@@ -18,12 +25,27 @@ interface UploadedImage {
   error: string | null;
 }
 
+interface VideoPreviewItem {
+  id: string;
+  script: string;
+  status: "processing" | "ready" | "error";
+  createdAt: string;
+  thumbnailUrl: string | null; // could reuse first image
+  error?: string;
+}
+
 export function CreateVideoAvatar() {
   useDocumentTitle("Create Video (avatar) — Lighting");
-  const [images, setImages] = useState<{ file: File; url: string }[]>([]);
+  // Store uploaded images with rich metadata
+  const [images, setImages] = useState<UploadedImage[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [videoScript, setVideoScript] = useState("");
   const { push } = useToast();
+  const [generating, setGenerating] = useState(false);
+  const [attaching, setAttaching] = useState(false);
+  const [videoPreviews, setVideoPreviews] = useState<VideoPreviewItem[]>([]);
+  const [attachedImages, setAttachedImages] = useState<string[]>([]); // Supabase URLs that have been linked
+  // Section 1 webhook handled via sendVideoAvatarWebhook wrapper (see api/videoAvatar)
 
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
@@ -31,47 +53,80 @@ export function CreateVideoAvatar() {
     setIsDragging(true);
   };
 
-  const uploadImage = useCallback(async (imageToUpload: File, tempId: string) => {
-    setImages(prev => prev.map(img =>
-      img.id === tempId ? { ...img, loading: true, error: null } : img
-    ));
-    try {
-      // Using a subfolder 'video-avatars' within the 'images' bucket for organization
-      const publicUrl = await uploadFileToSupabaseStorage(imageToUpload, "images", `video-avatars/${tempId}-${imageToUpload.name}`);
-      setImages(prev => prev.map(img =>
-        img.id === tempId ? { ...img, supabaseUrl: publicUrl, loading: false } : img
-      ));
-      push({ message: `Image "${imageToUpload.name}" uploaded!`, variant: "success" });
-    } catch (err: any) {
-      console.error("Upload error:", err);
-      setImages(prev => prev.map(img =>
-        img.id === tempId ? { ...img, loading: false, error: err.message || "Upload failed" } : img
-      ));
-      push({ message: `Failed to upload "${imageToUpload.name}": ${err.message || "Unknown error"}`, variant: "error" });
-    }
-  }, [push]);
-
-  const processFiles = useCallback((fileList: FileList | File[]) => {
-    const newImages: UploadedImage[] = [];
-    for (const file of Array.from(fileList)) {
-      if (!file.type.startsWith('image/')) {
-        push({ message: `Skipping non-image file: ${file.name}`, variant: "warning" });
-        continue;
+  const uploadImage = useCallback(
+    async (imageToUpload: File, tempId: string) => {
+      setImages((prev) =>
+        prev.map((img) =>
+          img.id === tempId ? { ...img, loading: true, error: null } : img,
+        ),
+      );
+      try {
+        // Using a subfolder 'video-avatars' within the 'images' bucket for organization
+        const publicUrl = await uploadFileToSupabaseStorage(
+          imageToUpload,
+          "images",
+          `video-avatars/${tempId}-${imageToUpload.name}`,
+        );
+        setImages((prev) =>
+          prev.map((img) =>
+            img.id === tempId
+              ? { ...img, supabaseUrl: publicUrl, loading: false }
+              : img,
+          ),
+        );
+        push({
+          message: `Image "${imageToUpload.name}" uploaded!`,
+          variant: "success",
+        });
+      } catch (err: any) {
+        console.error("Upload error:", err);
+        setImages((prev) =>
+          prev.map((img) =>
+            img.id === tempId
+              ? {
+                  ...img,
+                  loading: false,
+                  error: err.message || "Upload failed",
+                }
+              : img,
+          ),
+        );
+        push({
+          message: `Failed to upload "${imageToUpload.name}": ${err.message || "Unknown error"}`,
+          variant: "error",
+        });
       }
-      const tempId = crypto.randomUUID(); // Generate a unique ID for tracking
-      newImages.push({
-        id: tempId,
-        file,
-        localUrl: URL.createObjectURL(file),
-        supabaseUrl: null,
-        loading: false, // Will be set to true when upload starts
-        error: null,
-      });
-      // Start upload immediately
-      uploadImage(file, tempId);
-    }
-    setImages(prev => [...prev, ...newImages]);
-  }, [push, uploadImage]);
+    },
+    [push],
+  );
+
+  const processFiles = useCallback(
+    (fileList: FileList | File[]) => {
+      const newImages: UploadedImage[] = [];
+      for (const file of Array.from(fileList)) {
+        if (!file.type.startsWith("image/")) {
+          push({
+            message: `Skipping non-image file: ${file.name}`,
+            variant: "warning",
+          });
+          continue;
+        }
+        const tempId = crypto.randomUUID(); // Generate a unique ID for tracking
+        newImages.push({
+          id: tempId,
+          file,
+          localUrl: URL.createObjectURL(file),
+          supabaseUrl: null,
+          loading: false, // Will be set to true when upload starts
+          error: null,
+        });
+        // Start upload immediately
+        uploadImage(file, tempId);
+      }
+      setImages((prev) => [...prev, ...newImages]);
+    },
+    [push, uploadImage],
+  );
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -111,15 +166,14 @@ export function CreateVideoAvatar() {
   };
 
   const removeImage = (idToRemove: string) => {
-    setImages(prev => {
+    setImages((prev) => {
       const copy = [...prev];
-      const imageToRemove = prev.find(img => img.id === idToRemove);
-      const indexToRemove = prev.findIndex(img => img.id === idToRemove);
+      const indexToRemove = prev.findIndex((img) => img.id === idToRemove);
 
       if (indexToRemove === -1) return prev; // Image not found
 
       const [removed] = copy.splice(indexToRemove, 1);
-      if (removed) URL.revokeObjectURL(removed.url);
+      if (removed?.localUrl) URL.revokeObjectURL(removed.localUrl);
       // TODO: If image is already on Supabase, consider adding logic to delete it from bucket too.
       return copy;
     });
@@ -128,23 +182,132 @@ export function CreateVideoAvatar() {
   // Cleanup object URLs on unmount
   useEffect(() => {
     return () => {
-      images.forEach(img => {
+      images.forEach((img) => {
         if (img.localUrl) URL.revokeObjectURL(img.localUrl);
       });
     };
   }, [images]);
 
+  const handleGenerateVideo = async () => {
+    if (!videoScript.trim()) {
+      push({ message: "Enter a script first", variant: "warning" });
+      return;
+    }
+    setGenerating(true);
+    try {
+      const res = await sendVideoAvatarWebhook({
+        script: videoScript.trim(),
+        imageCount: images.length,
+      });
+      if (!res.ok) throw new Error(`Webhook responded ${res.status}`);
+      push({ message: "Video generation webhook sent", variant: "success" });
+      // Insert a mock preview item
+      const id = crypto.randomUUID();
+      const firstImage =
+        images.find((i) => i.supabaseUrl)?.supabaseUrl ||
+        images[0]?.localUrl ||
+        null;
+      setVideoPreviews((prev) => [
+        {
+          id,
+          script: videoScript.trim(),
+          status: "processing",
+          createdAt: new Date().toISOString(),
+          thumbnailUrl: firstImage,
+        },
+        ...prev,
+      ]);
+      // Simulate processing completion
+      setTimeout(() => {
+        setVideoPreviews((prev) =>
+          prev.map((v) => (v.id === id ? { ...v, status: "ready" } : v)),
+        );
+      }, 1500);
+    } catch (err: any) {
+      push({
+        message: err?.message || "Failed to queue video",
+        variant: "error",
+      });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleAttachImages = async () => {
+    if (!images.length) {
+      push({ message: "Upload images first", variant: "warning" });
+      return;
+    }
+    setAttaching(true);
+    try {
+      const uploaded = images
+        .filter((i) => i.supabaseUrl)
+        .map((i) => i.supabaseUrl!)
+        .filter(Boolean);
+      // Keep mock for image attachment until real workflow path defined
+      await mockPostToN8n("videoAvatar", {
+        identifier: "videoAvatar",
+        operation: "attach_images",
+        script_present: !!videoScript.trim(),
+        images: uploaded,
+        pendingUploads: images.filter((i) => i.loading).length,
+      });
+      push({
+        message: `(Mock) ${uploaded.length} image(s) attached`,
+        variant: "success",
+      });
+      setAttachedImages(uploaded as string[]);
+    } catch (err: any) {
+      push({
+        message: err?.message || "Failed to attach images",
+        variant: "error",
+      });
+    } finally {
+      setAttaching(false);
+    }
+  };
+
   return (
     <PageContainer>
       <PageHeader
-        title="Create Video (avatar)"
+        title="Create Video with AI Avatar"
         description="Turn existing video links into reusable AI avatars."
         icon={<Video className="h-5 w-5" />}
         actions={null}
       />
 
       <div className="max-w-4xl space-y-8">
-        {/* Image Upload Section */}
+        {/* 1. Video Script Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Video className="h-5 w-5 text-brand-600" />
+              Video Script
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              label="Video Script"
+              placeholder="Enter the script for your video avatar..."
+              value={videoScript}
+              onChange={(e) => setVideoScript(e.target.value)}
+              rows={8}
+              description="Write the dialogue or narration for your video avatar."
+            />
+            <div className="mt-4 flex justify-end">
+              <Button
+                onClick={handleGenerateVideo}
+                disabled={!videoScript.trim() || generating}
+                loading={generating}
+                className="bg-brand-600 hover:bg-brand-700"
+              >
+                <Play className="h-4 w-4" /> Generate Video
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 2. Image Upload Section */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -160,8 +323,8 @@ export function CreateVideoAvatar() {
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               className={`relative rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
-                isDragging 
-                  ? "border-brand-500 bg-brand-50" 
+                isDragging
+                  ? "border-brand-500 bg-brand-50"
                   : "border-gray-300 hover:border-gray-400"
               }`}
             >
@@ -208,7 +371,7 @@ export function CreateVideoAvatar() {
                       <img
                         src={img.supabaseUrl || img.localUrl}
                         alt={`Upload ${img.file.name}`}
-                        className={`w-full h-24 object-cover ${img.loading ? 'opacity-50' : ''}`}
+                        className={`w-full h-24 object-cover ${img.loading ? "opacity-50" : ""}`}
                       />
                       {img.loading && (
                         <div className="absolute inset-0 flex items-center justify-center bg-black/50">
@@ -233,30 +396,112 @@ export function CreateVideoAvatar() {
                 </div>
               </div>
             )}
+            <div className="mt-6 flex justify-end">
+              <Button
+                onClick={handleAttachImages}
+                disabled={
+                  !images.length || attaching || images.some((i) => i.loading)
+                }
+                loading={attaching}
+                variant="outline"
+              >
+                <Plus className="h-4 w-4" /> Add Images to Video
+              </Button>
+            </div>
+            {attachedImages.length > 0 && (
+              <div className="mt-8">
+                <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-brand-600/10 text-brand-700 text-xs font-semibold">
+                    ★
+                  </span>
+                  Attached Image Set ({attachedImages.length})
+                </h3>
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                  {attachedImages.map((url) => (
+                    <div
+                      key={url}
+                      className="relative rounded-lg overflow-hidden border border-gray-200 bg-white group"
+                    >
+                      <img
+                        src={url}
+                        alt="Attached"
+                        className="w-full h-20 object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
-
-        {/* Video Script Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Video className="h-5 w-5 text-brand-600" />
-              Video Script
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              label="Video Script"
-              placeholder="Enter the script for your video avatar..."
-              value={videoScript}
-              onChange={(e) => setVideoScript(e.target.value)}
-              rows={8}
-              description="Write the dialogue or narration for your video avatar."
-            />
-          </CardContent>
-        </Card>
+        {/* Video previews (results) */}
+        {videoPreviews.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Video className="h-5 w-5 text-brand-600" />
+                Generated Videos ({videoPreviews.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-5 sm:grid-cols-2">
+                {videoPreviews.map((v) => (
+                  <div
+                    key={v.id}
+                    className="relative border border-gray-200 rounded-xl overflow-hidden bg-gray-900 text-white group"
+                  >
+                    <div className="aspect-video w-full bg-black/40 flex items-center justify-center relative">
+                      {v.thumbnailUrl ? (
+                        <img
+                          src={v.thumbnailUrl}
+                          alt="Thumbnail"
+                          className="absolute inset-0 w-full h-full object-cover opacity-60"
+                        />
+                      ) : (
+                        <div className="text-xs text-gray-400">
+                          No thumbnail
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        className="relative z-10 inline-flex items-center gap-1 rounded-full bg-white/10 backdrop-blur px-3 py-1 text-xs font-medium text-white border border-white/20 hover:bg-white/20"
+                        disabled={v.status !== "ready"}
+                      >
+                        {v.status === "processing" ? (
+                          <>
+                            <Loader2 className="h-3 w-3 animate-spin" />{" "}
+                            Processing
+                          </>
+                        ) : (
+                          <>
+                            <Play className="h-3 w-3" /> Play
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <div className="p-3 space-y-2">
+                      <p className="text-xs font-medium line-clamp-2 text-gray-100/90">
+                        {v.script}
+                      </p>
+                      <div className="flex items-center justify-between text-[10px] text-gray-400">
+                        <span>
+                          {v.status === "ready" ? "Ready" : "Processing..."}
+                        </span>
+                        <time dateTime={v.createdAt}>
+                          {new Date(v.createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </time>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
-
     </PageContainer>
   );
 }
