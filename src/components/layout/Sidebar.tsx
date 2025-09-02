@@ -73,7 +73,7 @@ const toolsNav: NavItem[] = [
     icon: UserCircle,
   },
   // Campaign orchestration (placed after asset creation tools)
-  { name: "Campaigns", href: "/campaigns", icon: Megaphone },
+  { name: "Product Campaign", href: "/campaigns", icon: Megaphone },
 ];
 
 // SEO tools (subset previously in toolsNav)
