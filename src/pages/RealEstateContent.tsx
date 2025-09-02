@@ -27,7 +27,7 @@ import {
 import { Trash2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { formatDate } from "../lib/utils";
-import { postToN8n } from "../lib/n8n";
+import { postToN8n, N8N_REAL_ESTATE_WEBHOOK_PATH } from "../lib/n8n";
 import { useToast } from "../components/ui/Toast";
 import { Skeleton } from "../components/ui/Skeleton";
 import {
@@ -206,7 +206,7 @@ export function RealEstateContent() {
             ts: new Date().toISOString(),
           },
         },
-        { path: "1776dcc3-2b3e-4cfa-abfd-0ad9cabaf6ea" },
+        { path: N8N_REAL_ESTATE_WEBHOOK_PATH },
       );
     } catch (e) {
       end();

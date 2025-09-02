@@ -14,6 +14,9 @@ export const N8N_DEFAULT_WEBHOOK_PATH = "content-saas";
 // Specific video avatar webhook UUID path
 export const N8N_VIDEO_AVATAR_WEBHOOK_PATH =
   "6255e046-c4ba-4d23-a1ec-2df556e98c9f";
+// Real estate content generation webhook UUID path
+export const N8N_REAL_ESTATE_WEBHOOK_PATH =
+  "1776dcc3-2b3e-4cfa-abfd-0ad9cabaf6ea";
 
 function buildWebhookUrl(path?: string) {
   const base = N8N_BASE_URL.replace(/\/$/, "");
