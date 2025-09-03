@@ -472,7 +472,7 @@
     },
     {
       "parameters": {
-        "path": "6255e046-c4ba-4d23-a1ec-2df556e98c9f",
+        "path": "ai-video-with-avatar",
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
@@ -776,7 +776,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "f1ce5414-6b83-4e6b-a6ed-6e5be694d5ad",
+  "versionId": "c2aabf55-6fb0-4ce0-9a5d-aca166fb904c",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "fe9d3a12f258c7c25e0241bdac4abdc1d2d4cbca003a5fd500ebff17b6038d7a"

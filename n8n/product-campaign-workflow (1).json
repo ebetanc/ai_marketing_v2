@@ -2063,7 +2063,7 @@
     },
     {
       "parameters": {
-        "path": "5c50a899-4a7e-4fdd-af08-64f97d7c42a6",
+        "path": "product-campaign-workflow",
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
@@ -2487,7 +2487,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "23c8f650-ab5f-4255-926b-0178bb749ec0",
+  "versionId": "749b470b-729a-4b30-911a-552bdd44709b",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "fe9d3a12f258c7c25e0241bdac4abdc1d2d4cbca003a5fd500ebff17b6038d7a"
