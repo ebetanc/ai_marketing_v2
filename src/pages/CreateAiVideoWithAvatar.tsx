@@ -294,11 +294,12 @@ export function CreateVideoAvatar() {
       }
       let attemptToast: string | null = null;
       const baseMsg = "Queueing video generation";
+      const actionPath = `${N8N_VIDEO_AVATAR_WEBHOOK_PATH}?action=generateVideo`;
       const res = await postToN8nWithRetry(
         VIDEO_AVATAR_IDENTIFIER,
         normalized!,
         {
-          path: N8N_VIDEO_AVATAR_WEBHOOK_PATH,
+          path: actionPath,
           attempts: 4,
           onAttempt: ({ attempt, attempts, lastStatus, lastError }) => {
             const suffix = lastStatus
@@ -417,11 +418,12 @@ export function CreateVideoAvatar() {
       }
       let attemptToast: string | null = null;
       const baseMsg = "Attaching images";
+      const actionPath = `${N8N_VIDEO_AVATAR_WEBHOOK_PATH}?action=attach_images`;
       const res = await postToN8nWithRetry(
         VIDEO_AVATAR_IDENTIFIER,
         normalized || attachPayload,
         {
-          path: N8N_VIDEO_AVATAR_WEBHOOK_PATH,
+          path: actionPath,
           attempts: 4,
           onAttempt: ({ attempt, attempts, lastStatus, lastError }) => {
             const suffix = lastStatus

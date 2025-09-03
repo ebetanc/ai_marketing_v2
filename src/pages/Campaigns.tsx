@@ -310,12 +310,13 @@ export function Campaigns() {
         push({ message: errors.join("; "), variant: "error" });
         return;
       }
+      const actionPath = `${N8N_PRODUCT_CAMPAIGN_WEBHOOK_PATH}?action=${operation}`;
       const res = await postToN8nWithRetry(
         PRODUCT_CAMPAIGN_IDENTIFIER,
         normalized!,
         {
           attempts: 4,
-          path: N8N_PRODUCT_CAMPAIGN_WEBHOOK_PATH,
+          path: actionPath,
           onAttempt: ({
             attempt,
             attempts,
