@@ -1,11 +1,22 @@
 // Centralized n8n webhook helper to standardize URL, headers, payload shape & contract validation
 // Usage: postToN8n('generateIdeas', payload) or postToN8n('...', payload, { path: 'uuid-or-custom-path' })
 import {
-  validateAndNormalizeN8nPayload,
-  normalizePlatforms,
+  validateAndNormalizeVideoAvatarPayload,
+  VIDEO_AVATAR_IDENTIFIER,
+  type AnyVideoAvatarPayload,
+} from "./n8nAvatarContract";
+import {
   N8N_PLATFORM_ORDER,
+  normalizePlatforms,
+  validateAndNormalizeN8nPayload,
   type AnyN8nPayload,
 } from "./n8nContract";
+import {
+  PRODUCT_CAMPAIGN_IDENTIFIER,
+  validateAndNormalizeProductCampaignPayload,
+  type AnyProductCampaignPayload,
+} from "./n8nProductCampaignContract";
+import { supabase } from "./supabase";
 
 // Base URL for n8n webhooks.
 // In development we allow overriding via VITE_N8N_BASE_URL so the Vite dev proxy
@@ -44,20 +55,31 @@ export type N8nPostOptions = {
   headers?: Record<string, string>;
 };
 
+// Default contract inference table (extend as needed)
+const CONTRACT_MAP: Record<string, string> = {
+  generateAngles: "core-v1",
+  generateIdeas: "core-v1",
+  generateContent: "core-v1",
+  autofill: "core-v1",
+  content_saas: "core-v1",
+  videoAvatar: "avatar-v1",
+};
 function determineDefaultContract(identifier: string) {
-  switch (identifier) {
-    case "generateAngles":
-    case "generateIdeas":
-    case "generateContent":
-    case "autofill":
-    case "content_saas":
-      return "core-v1";
-    case "videoAvatar":
-      return "avatar-v1"; // avatar pages already set explicitly but fallback here
-    default:
-      return "generic-v1";
-  }
+  return CONTRACT_MAP[identifier] || "generic-v1";
 }
+
+// Validator registry (identifier -> validator fn)
+type ValidatorFn = (
+  p: any,
+) => ReturnType<typeof validateAndNormalizeN8nPayload>;
+const VALIDATORS: Record<string, ValidatorFn> = {
+  [VIDEO_AVATAR_IDENTIFIER]: (p) =>
+    validateAndNormalizeVideoAvatarPayload(p as AnyVideoAvatarPayload) as any,
+  [PRODUCT_CAMPAIGN_IDENTIFIER]: (p) =>
+    validateAndNormalizeProductCampaignPayload(
+      p as AnyProductCampaignPayload,
+    ) as any,
+};
 
 export async function postToN8n(
   identifier: string,
@@ -115,19 +137,28 @@ export async function postToN8n(
   // envMode already computed above
 
   if (envMode !== "production") {
-    const { ok, warnings, errors, normalized } =
-      validateAndNormalizeN8nPayload(merged);
-    if (warnings.length) {
-      console.warn(
-        `[n8n-contract] Warnings for ${identifier}:\n - ${warnings.join("\n - ")}`,
-      );
+    try {
+      const validator =
+        VALIDATORS[identifier] || validateAndNormalizeN8nPayload;
+      const { ok, warnings, errors, normalized } = validator(merged) as any;
+      if (warnings?.length) {
+        console.warn(
+          `[n8n-contract] Warnings for ${identifier}:\n - ${warnings.join(
+            "\n - ",
+          )}`,
+        );
+      }
+      if (!ok) {
+        console.error(
+          `[n8n-contract] Errors for ${identifier}:\n - ${errors.join(
+            "\n - ",
+          )}`,
+        );
+      }
+      if (normalized) Object.assign(merged, normalized);
+    } catch (e) {
+      console.warn("[n8n-contract] Validation failed", e);
     }
-    if (!ok) {
-      console.error(
-        `[n8n-contract] Errors for ${identifier}:\n - ${errors.join("\n - ")}`,
-      );
-    }
-    if (normalized) Object.assign(merged, normalized);
   }
 
   const headers: Record<string, string> = {
@@ -183,6 +214,164 @@ export function prepareSlottedPlatforms(raw?: string[] | null) {
 }
 
 export { N8N_PLATFORM_ORDER };
+
+// ---------------------------------------------------------------------------
+// Standardized high-level helpers
+// ---------------------------------------------------------------------------
+
+export interface StandardN8nPayloadOptions {
+  autoUser?: boolean; // inject current user id if absent (default true)
+  contract?: string; // override inferred contract
+  platforms?: string[]; // free-form platform list; normalized if provided
+}
+
+export async function getCurrentUserId(): Promise<string | null> {
+  try {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.user.id || null;
+  } catch {
+    return null;
+  }
+}
+
+// Build a standardized payload merging identifier / operation / meta / user / platforms
+export async function createN8nPayload<Extra extends Record<string, any>>(
+  identifier: string,
+  operation: string,
+  extra: Extra = {} as Extra,
+  opts: StandardN8nPayloadOptions = {},
+): Promise<AnyN8nPayload & Extra> {
+  const { autoUser = true, contract, platforms } = opts;
+  const userId = autoUser ? await getCurrentUserId() : null;
+  const meta = {
+    user_id: userId ?? undefined,
+    source: "app",
+    ts: new Date().toISOString(),
+    contract: contract || (extra as any)?.meta?.contract,
+    ...(extra as any)?.meta,
+  };
+  const base: AnyN8nPayload & Extra = {
+    identifier,
+    operation,
+    user_id: (extra as any).user_id ?? userId ?? undefined,
+    ...extra,
+    meta,
+  } as any;
+  if (platforms && !base.platforms) {
+    (base as any).platforms = normalizePlatforms(platforms);
+  } else if (Array.isArray((base as any).platforms)) {
+    (base as any).platforms = normalizePlatforms(
+      (base as any).platforms as string[],
+    );
+  }
+  return base;
+}
+
+export interface SendN8nResult<T = any> {
+  ok: boolean;
+  status: number;
+  requestId?: string;
+  data: T | null;
+  rawText: string;
+  response: Response;
+}
+
+export async function sendN8n<T = any>(
+  payload: AnyN8nPayload,
+  options: N8nPostOptions = {},
+): Promise<SendN8nResult<T>> {
+  const res = await postToN8n(payload.identifier, payload as any, options);
+  let rawText = "";
+  let data: any = null;
+  try {
+    rawText = await res.text();
+    if (rawText.trim()) {
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        // leave as null, caller can inspect rawText
+      }
+    }
+  } catch (e) {
+    console.warn("[sendN8n] Failed reading body", e);
+  }
+  return {
+    ok: res.ok,
+    status: res.status,
+    requestId: (res as any).requestId,
+    data,
+    rawText,
+    response: res,
+  };
+}
+
+// Internal generic builder to reduce duplication
+async function buildAndSend(
+  identifier: string,
+  operation: string,
+  params: Record<string, any>,
+  opts: { platforms?: string[]; autoUser?: boolean; path?: string } = {},
+) {
+  const payload = await createN8nPayload(
+    identifier,
+    operation,
+    { ...params },
+    { platforms: opts.platforms, autoUser: opts.autoUser },
+  );
+  return sendN8n(payload, opts.path ? { path: opts.path } : undefined);
+}
+
+// Convenience per-operation builders (public API unchanged)
+export async function n8nAutofill(params: {
+  website: string;
+  brand?: Record<string, any>;
+  [k: string]: any;
+}) {
+  return buildAndSend("autofill", "company_autofill", params);
+}
+
+export async function n8nGenerateAngles(params: {
+  company_id: number | string;
+  brand: any;
+  platforms: string[];
+  [k: string]: any;
+}) {
+  return buildAndSend("generateAngles", "create_strategy_angles", params, {
+    platforms: params.platforms,
+  });
+}
+
+export async function n8nGenerateIdeas(params: {
+  company_id: number | string;
+  strategy_id: number | string;
+  angle_number: number;
+  platforms: string[];
+  [k: string]: any;
+}) {
+  return buildAndSend("generateIdeas", "create_ideas_from_angle", params, {
+    platforms: params.platforms,
+  });
+}
+
+export async function n8nGenerateContent(params: {
+  company_id: number | string;
+  strategy_id: number | string;
+  idea_id: number | string;
+  topic: any;
+  platforms: string[];
+  [k: string]: any;
+}) {
+  return buildAndSend("generateContent", "generate_content_from_idea", params, {
+    platforms: params.platforms,
+  });
+}
+
+export async function n8nRealEstateIngest(params: { url: string }) {
+  return buildAndSend("content_saas", "real_estate_ingest", params, {
+    autoUser: true,
+    path: N8N_REAL_ESTATE_WEBHOOK_PATH,
+  });
+}
 
 // Simple exponential backoff retry wrapper for transient failures
 export interface RetryOptions {

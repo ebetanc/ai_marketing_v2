@@ -27,7 +27,7 @@ import {
 import { Trash2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { formatDate } from "../lib/utils";
-import { postToN8n, N8N_REAL_ESTATE_WEBHOOK_PATH } from "../lib/n8n";
+import { n8nRealEstateIngest, N8N_REAL_ESTATE_WEBHOOK_PATH } from "../lib/n8n";
 import { useToast } from "../components/ui/Toast";
 import { Skeleton } from "../components/ui/Skeleton";
 import {
@@ -192,33 +192,20 @@ export function RealEstateContent() {
     console.log("Sending URL to n8n webhook:", normalizedUrl);
     const { data: sessionData } = await supabase.auth.getSession();
     const userId = sessionData.session?.user.id;
-    let response: Response;
+    let response: Response; // legacy variable retained for scope; now using result
+    let result: any;
     try {
-      response = await postToN8n(
-        "content_saas",
-        {
-          operation: "real_estate_ingest",
-          url: normalizedUrl,
-          user_id: userId,
-          meta: {
-            user_id: userId,
-            source: "app",
-            ts: new Date().toISOString(),
-          },
-        },
-        { path: N8N_REAL_ESTATE_WEBHOOK_PATH },
-      );
+      result = await n8nRealEstateIngest({ url: normalizedUrl });
     } catch (e) {
       end();
       throw e;
     }
-    console.log("Webhook response status:", response.status);
-    if (!response.ok) {
+    console.log("Webhook response status:", result.status);
+    if (!result.ok) {
       end();
-      throw new Error(`Webhook request failed with status: ${response.status}`);
+      throw new Error(`Webhook request failed with status: ${result.status}`);
     }
-    const result = await response.text();
-    console.log("Webhook response:", result);
+    console.log("Webhook response raw:", result.rawText);
     end();
     push({
       message: "Ingestion queued. Check back soon",

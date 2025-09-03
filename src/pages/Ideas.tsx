@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { postToN8n } from "../lib/n8n";
+import { n8nGenerateContent, n8nGenerateIdeas } from "../lib/n8n";
 import {
   FileText,
   Lightbulb,
@@ -817,37 +817,30 @@ export function Ideas() {
     console.log(JSON.stringify(webhookPayload, null, 2));
 
     console.log("=== MAKING WEBHOOK REQUEST ===");
-    let response: Response;
+    let result;
     try {
-      response = await postToN8n("generateContent", webhookPayload);
+      const { company_id, strategy_id, idea_id, topic, platforms, ...rest } =
+        webhookPayload as any;
+      result = await n8nGenerateContent({
+        company_id,
+        strategy_id,
+        idea_id,
+        topic,
+        platforms,
+        ...rest,
+      });
     } catch (e) {
       throw e;
     }
-
-    console.log("Webhook response status:", response.status);
-    console.log(
-      "Webhook response headers:",
-      Object.fromEntries(response.headers.entries()),
-    );
-
-    if (!response.ok) {
-      throw new Error(`Webhook failed with status: ${response.status}`);
+    console.log("Webhook response status:", result.status);
+    if (!result.ok) {
+      throw new Error(`Webhook failed with status: ${result.status}`);
     }
-
-    const responseText = await response.text();
-    console.log("Raw webhook response:", responseText);
-
-    let result;
-    try {
-      result = JSON.parse(responseText);
-    } catch (parseError) {
-      console.error("Failed to parse JSON response:", parseError);
-      console.error("Raw response text:", responseText);
-      // If JSON parsing fails, treat as success if status is ok
-      result = { message: "Content generation started" };
+    if (result.data) {
+      console.log("Webhook JSON response:", result.data);
+    } else {
+      console.log("Webhook raw response:", result.rawText);
     }
-
-    console.log("Webhook response:", result);
   });
 
   // Unified generation logic for both modal button and inline topic buttons
@@ -1209,7 +1202,15 @@ export function Ideas() {
             strategy: { id: strategy.id, platforms: strategy.platforms },
           },
         };
-        const resp = await postToN8n("generateIdeas", payload);
+        const { company_id, strategy_id, angle_number, platforms, ...rest } =
+          payload as any;
+        const resp = await n8nGenerateIdeas({
+          company_id,
+          strategy_id,
+          angle_number,
+          platforms,
+          ...rest,
+        });
         if (!resp.ok) throw new Error(`Retry failed (${resp.status})`);
         push({
           title: "Queued",

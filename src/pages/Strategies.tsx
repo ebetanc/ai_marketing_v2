@@ -26,7 +26,7 @@ import { Modal } from "../components/ui/Modal";
 import { ModalBrandHeader } from "../components/ui/ModalBrandHeader";
 import { Skeleton } from "../components/ui/Skeleton";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
-import { postToN8n } from "../lib/n8n";
+import { n8nGenerateIdeas } from "../lib/n8n";
 import { useAsyncCallback } from "../hooks/useAsync";
 import { PageHeader } from "../components/layout/PageHeader";
 import { PageContainer } from "../components/layout/PageContainer";
@@ -380,7 +380,15 @@ export function Strategies() {
           strategy: { id: strategy.id, platforms: strategy.platforms },
         },
       };
-      const response = await postToN8n("generateIdeas", payload);
+      const { company_id, strategy_id, angle_number, platforms, ...rest } =
+        payload as any;
+      const response = await n8nGenerateIdeas({
+        company_id,
+        strategy_id,
+        angle_number,
+        platforms,
+        ...rest,
+      });
       if (!response.ok) throw new Error("Failed to generate ideas");
       console.log("Ideas generation started successfully");
     },

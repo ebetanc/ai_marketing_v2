@@ -2,7 +2,7 @@ import { ArrowLeft, ArrowRight, Globe, Sparkles, X } from "lucide-react";
 import React, { useState } from "react";
 import { z } from "zod";
 import { useAsyncCallback } from "../../hooks/useAsync";
-import { postToN8n } from "../../lib/n8n";
+import { n8nAutofill } from "../../lib/n8n";
 import { supabase, type TablesInsert } from "../../lib/supabase";
 import { Button } from "../ui/Button";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
@@ -97,34 +97,22 @@ export function CreateBrandModal({
       console.log("=== AUTOFILL WEBHOOK REQUEST ===");
       console.log("Sending autofill request for website:", normalizedWebsite);
 
-      let response: Response;
+      let result;
       try {
-        response = await postToN8n("autofill", {
-          // Operation identifier (current contract)
-          operation: "company_autofill",
-          // Primary inputs (legacy contract fields still referenced in some n8n nodes)
+        result = await n8nAutofill({
           website: normalizedWebsite,
           brandName: formData.name,
           additionalInfo: formData.additionalInfo,
-          // New unified brand object (newer contract expects body.brand.* for cross-operation reuse)
           brand: {
             name: formData.name,
             website: normalizedWebsite,
             additionalInfo: formData.additionalInfo,
-            // Provide any existing (possibly empty) values so downstream chains can choose to skip missing ones
             targetAudience: formData.targetAudience || undefined,
             brandTone: formData.brandTone || undefined,
             keyOffer: formData.keyOffer || undefined,
             imageGuidelines: formData.imageGuidelines || undefined,
           },
-          // Meta for observability/debugging
-          meta: {
-            user_id:
-              (await supabase.auth.getSession()).data.session?.user.id || null,
-            source: "app",
-            ts: new Date().toISOString(),
-            contract: "dual-v1+brand-object", // trace which shape we sent
-          },
+          meta: { contract: "dual-v1+brand-object" },
         });
       } catch (err) {
         console.error("Autofill network error:", err);
@@ -137,13 +125,8 @@ export function CreateBrandModal({
         return;
       }
 
-      console.log("Autofill webhook response status:", response.status);
-      console.log(
-        "Autofill webhook response headers:",
-        Object.fromEntries(response.headers.entries()),
-      );
-
-      if (!response.ok) {
+      console.log("Autofill webhook response status:", result.status);
+      if (!result.ok) {
         // Try fallback from Supabase if server didn't return body but may have saved data
         console.warn("Autofill server returned non-OK. Trying DB fallback...");
         const filled = await tryDbFallback(normalizedWebsite);
@@ -151,7 +134,7 @@ export function CreateBrandModal({
           endLoading();
           push({
             title: "Autofill failed",
-            message: `Server error ${response.status}.`,
+            message: `Server error ${result.status}.`,
             variant: "error",
           });
         } else {
@@ -160,7 +143,7 @@ export function CreateBrandModal({
         return;
       }
 
-      const responseText = await response.text();
+      const responseText = result.rawText || "";
       console.log("Raw autofill webhook response:", responseText);
 
       if (!responseText) {

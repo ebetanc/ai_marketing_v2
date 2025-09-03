@@ -12,7 +12,7 @@ import {
 import { useRef, useState } from "react";
 import { z } from "zod";
 import { useAsyncCallback } from "../../hooks/useAsync";
-import { postToN8n } from "../../lib/n8n";
+import { n8nGenerateAngles } from "../../lib/n8n";
 import { supabase } from "../../lib/supabase";
 import { cn } from "../../lib/utils";
 import { Button } from "../ui/Button";
@@ -72,8 +72,8 @@ export function GenerateStrategyModal({
   companies,
   onStrategyGenerated,
 }: GenerateStrategyModalProps) {
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [selectedCompany, setSelectedCompany] = useState<any>(null);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const companyListRef = useRef<HTMLDivElement | null>(null);
   const loadingToastRef = useRef<string | null>(null);
   const [errors, setErrors] = useState<{
@@ -107,35 +107,23 @@ export function GenerateStrategyModal({
         });
         return;
       }
-      setErrors({});
 
       // Show persistent loading toast (removed when finished)
       if (!loadingToastRef.current) {
         loadingToastRef.current = push({
           message: "Generating strategy set…",
           variant: "info",
-          duration: 600000, // 10 min safety window
+          duration: 60000,
         });
       }
 
-      // Identify current user to pass ownership for backend CRUD
-      const { data: sessionData } = await supabase.auth.getSession();
-      const userId = sessionData.session?.user.id || null;
-      // Derive normalized-first brand fields with safe fallbacks
-      const brandName: string =
-        selectedCompany.brand_name || selectedCompany.name || "Unknown Brand";
-      const website: string = selectedCompany.website || "";
-      const tone: string =
-        selectedCompany.brand_voice?.tone || selectedCompany.brand_tone || "";
-      const style: string =
-        selectedCompany.brand_voice?.style || selectedCompany.key_offer || "";
-      const keywords: string[] = selectedCompany.brand_voice?.keywords || [];
+      const userId = (await supabase.auth.getSession()).data.session?.user.id;
 
-      // Target audience as string (raw) and object (normalized)
-      const targetAudienceStr: string =
-        typeof selectedCompany.target_audience === "string"
-          ? selectedCompany.target_audience
-          : selectedCompany.target_audience?.demographics || "";
+      // use current state
+      const targetAudienceStr =
+        (selectedCompany as any).target_audience_raw ||
+        selectedCompany?.target_audience?.demographics ||
+        "";
       const targetAudienceObj: {
         demographics: string;
         interests: string[];
@@ -174,31 +162,22 @@ export function GenerateStrategyModal({
 
       // Prepare comprehensive brand data payload
       const comprehensiveBrandData = {
-        // Basic brand information
         id: selectedCompany.id,
-        name: brandName,
-        website,
-
-        // Brand voice and tone
-        brandTone: tone,
-        keyOffer: style,
+        name: selectedCompany.brand_name || selectedCompany.name,
+        website: selectedCompany.website || "",
+        brandTone: (selectedCompany as any).brand_tone || "",
+        keyOffer: (selectedCompany as any).key_offer || "",
         brandVoice: {
-          tone,
-          style,
-          keywords,
+          tone: (selectedCompany as any).brand_tone || "",
+          style: (selectedCompany as any).key_offer || "",
+          keywords: [],
         },
-
-        // Target audience information
         targetAudience: targetAudienceStr,
         target_audience: targetAudienceObj,
-
-        // Additional information
         additionalInfo,
         imageGuidelines,
-
-        // Metadata
         createdAt,
-      };
+      } as any;
 
       const webhookPayload = {
         identifier: "generateAngles",
@@ -218,41 +197,25 @@ export function GenerateStrategyModal({
           requestType: "content_strategy_generation",
           timestamp: new Date().toISOString(),
           platformCount: selectedPlatforms.length,
-          brandHasWebsite: !!website,
+          brandHasWebsite: !!selectedCompany.website,
           brandHasAdditionalInfo: !!additionalInfo,
           brandHasImageGuidelines: !!imageGuidelines,
         },
       };
 
       try {
-        const response = await postToN8n("generateAngles", webhookPayload);
-
-        if (!response.ok) {
-          throw new Error("Failed to generate Strategy Set");
-        }
-
-        // Read response as text first to handle empty or malformed JSON
-        const responseText = await response.text();
-
-        let result;
-        if (!responseText.trim()) {
-          result = {};
-        } else {
-          try {
-            result = JSON.parse(responseText);
-          } catch (parseError) {
-            console.error("Failed to parse JSON response:", parseError);
-            console.log("Raw response:", responseText);
-            result = {
-              content: {
-                title: "Generated Content Strategy",
-                body: responseText,
-              },
-            };
-          }
-        }
-
-        console.log("Content strategy generation result:\n", result);
+        const { company_id, brand, platforms, ...rest } = webhookPayload as any;
+        const response = await n8nGenerateAngles({
+          company_id,
+          brand,
+          platforms,
+          ...rest,
+        });
+        if (!response.ok) throw new Error("Failed to generate Strategy Set");
+        console.log(
+          "Content strategy generation result:\n",
+          response.data || response.rawText,
+        );
         console.log("Strategy generation and save completed successfully");
         if (loadingToastRef.current) remove(loadingToastRef.current);
         loadingToastRef.current = null;
