@@ -27,7 +27,7 @@ import {
 import { Trash2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { formatDate } from "../lib/utils";
-import { n8nRealEstateIngest, N8N_REAL_ESTATE_WEBHOOK_PATH } from "../lib/n8n";
+import { n8nRealEstateIngest } from "../lib/n8n"; // path resolved via workflow registry
 import { useToast } from "../components/ui/Toast";
 import { Skeleton } from "../components/ui/Skeleton";
 import {

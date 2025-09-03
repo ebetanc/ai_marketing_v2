@@ -19,7 +19,7 @@ import {
   postToN8n,
   postToN8nWithRetry,
   N8N_PRODUCT_CAMPAIGN_WEBHOOK_PATH,
-} from "../lib/n8n";
+} from "../lib/n8n"; // path centralized in workflow registry
 import {
   PRODUCT_CAMPAIGN_IDENTIFIER,
   validateAndNormalizeProductCampaignPayload,
@@ -310,6 +310,7 @@ export function Campaigns() {
         push({ message: errors.join("; "), variant: "error" });
         return;
       }
+      // Append action query (workflow base path resolved from constant; registry holds same value)
       const actionPath = `${N8N_PRODUCT_CAMPAIGN_WEBHOOK_PATH}?action=${operation}`;
       const res = await postToN8nWithRetry(
         PRODUCT_CAMPAIGN_IDENTIFIER,

@@ -12,7 +12,7 @@ import {
 import { Textarea } from "../components/ui/Textarea";
 import { useToast } from "../components/ui/Toast";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
-import { N8N_VIDEO_AVATAR_WEBHOOK_PATH, postToN8nWithRetry } from "../lib/n8n";
+import { N8N_VIDEO_AVATAR_WEBHOOK_PATH, postToN8nWithRetry } from "../lib/n8n"; // path centralized in workflow registry
 import {
   validateAndNormalizeVideoAvatarPayload,
   VIDEO_AVATAR_IDENTIFIER,
@@ -294,6 +294,7 @@ export function CreateVideoAvatar() {
       }
       let attemptToast: string | null = null;
       const baseMsg = "Queueing video generation";
+      // Base path from constant (registry has same) + action discriminator
       const actionPath = `${N8N_VIDEO_AVATAR_WEBHOOK_PATH}?action=generateVideo`;
       const res = await postToN8nWithRetry(
         VIDEO_AVATAR_IDENTIFIER,
@@ -418,6 +419,7 @@ export function CreateVideoAvatar() {
       }
       let attemptToast: string | null = null;
       const baseMsg = "Attaching images";
+      // Compose attach action URL
       const actionPath = `${N8N_VIDEO_AVATAR_WEBHOOK_PATH}?action=attach_images`;
       const res = await postToN8nWithRetry(
         VIDEO_AVATAR_IDENTIFIER,

@@ -1,5 +1,5 @@
 {
-  "name": "Veo3 Video Concept Generation",
+  "name": "product-campaign-workflow",
   "nodes": [
     {
       "parameters": {
@@ -12,13 +12,13 @@
           "cachedResultName": "CHATGPT-4O-LATEST"
         },
         "text": "Describe the product and brand in this image in full detail. Fully ignore the background. Focus ONLY on the product.",
-        "imageUrls": "={{ $json.image_url }}",
+        "imageUrls": "={{ $json.upload_assets }}",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
-      "position": [544, 496],
-      "id": "8c023deb-d13c-4ef6-9f4a-b4f7a5694fd6",
+      "position": [1328, 448],
+      "id": "20cdb32b-701a-422a-8957-27c9a8418d8b",
       "name": "Analyze image",
       "credentials": {
         "openAiApi": {
@@ -29,12 +29,33 @@
     },
     {
       "parameters": {
-        "jsCode": "// Get the URL string from the aggregate node\nconst urlString = $json.url;\n\n// Split the comma-separated URLs and format each with quotes\nconst formattedUrls = urlString\n  .flatMap(urlString => {\n    if (typeof urlString === \"string\") {\n      return urlString.split(',');\n    }\n    return [];\n  })\n  .map(url => `\"${url.trim()}\"`)\n  .join(',\\n');\n\n// Return the formatted result\nreturn {\n  formattedUrls: formattedUrls\n};"
+        "fieldToSplitOut": "upload_assets",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [928, 400],
+      "id": "e2e129f5-6b33-472a-a490-c8e7dfc00e6e",
+      "name": "Split Out Uploaded Asset"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [1152, 400],
+      "id": "5fafd103-6983-4c1f-a3ec-9954ec992d6d",
+      "name": "Loop Over Image Asset"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get upload_assets (can be string or array)\nconst upload = $input.first().json.upload_assets;\n\n// Normalize to an array\nconst parts = Array.isArray(upload) ? upload : [upload];\n\n// Build a flat list of URLs\nconst urls = parts\n  .filter(v => typeof v === 'string')\n  .flatMap(s => s.split(','))        // if your env complains about flatMap, use the reduce version below\n  .map(s => s.trim())\n  .filter(Boolean);\n\n// Format with quotes + new lines\nconst formattedUrls = urls.map(u => `\"${u}\"`).join(',\\n');\n\nreturn { formattedUrls, urls };\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1792, 464],
-      "id": "b56680f1-71c7-4614-a75b-7583646218e0",
+      "position": [2272, 400],
+      "id": "a7a0f654-471e-4735-b0a1-3c4516275049",
       "name": "Code"
     },
     {
@@ -48,7 +69,7 @@
         "messages": {
           "values": [
             {
-              "content": "=Here is the user request for the Images to be created:\n{{ $('Get Concept Record ID - Image Generation - 2').item.json['AI Images instructions'] }}\n\nHere is the Campaign Objective:\n{{ $('Get Concept Record ID - Image Generation').first().json.Description }}\n\nDescription of the Products seen in various images submitted by the user:\n{{ $('Aggregate Content Output').item.json.content }}\n\nUse the Think tool to double check your output"
+              "content": "=Here is the user request for the Images to be created:\n{{ $('Get many rows1').item.json.ai_images_instructions }}\n\nHere is the Campaign Objective:\n{{ $('Get many rows1').item.json.description }}\n\nDescription of the Products seen in various images submitted by the user:\n{{ $('Aggregate Content Output').item.json.content }}\n\nUse the Think tool to double check your output"
             },
             {
               "content": "=You are an expert image generation prompt engineer specializing in OpenAI's GPT-4o image generation capabilities. Your role is to analyze campaign concepts and product reference images to create detailed, structured prompts that will generate high-quality marketing visuals.\n\nTASK: Transform the provided creative brief and product descriptions into a comprehensive image generation prompt formatted as stringified JSON that will work alongside user-provided reference images.\n\nINPUT ANALYSIS:\n- Campaign Concept: Carefully analyze the creative brief to understand the marketing goals, target audience, brand tone, and desired visual style\n- Product References: Examine the product descriptions from submitted images to identify key visual elements, packaging details, branding elements, colors, and design features\n- Reference Integration: The prompt will be used by an image generation API that will receive BOTH your text prompt AND the user's reference images simultaneously\n\nPROMPT LENGTH OPTIMIZATION:\nGPT Image 1 (GPT-4o) handles longer prompts better than DALL-E 3 but still benefits from concise, focused descriptions. Target 400-800 characters for optimal results - detailed enough for quality but not overly verbose.\n\nESSENTIAL ELEMENTS (prioritize in order):\n1. CORE SCENE: Main subject + setting + reference integration\n2. VISUAL STYLE: Photography style, lighting, composition  \n3. QUALITY SPECIFICATIONS: Technical details (realistic, sharp, etc.)\n4. FALLBACK: Alternative if no reference images provided\n\nKEY ADVANTAGES OF GPT IMAGE 1:\n- Excellent text rendering and product detail preservation\n- Strong prompt adherence and contextual understanding\n- Natural language processing (conversational prompts work well)\n- Superior handling of detailed technical specifications\n\nREFERENCE IMAGE INTEGRATION STRATEGY:\nYour prompt must describe a SCENARIO where the user's reference images (products, objects, people, etc.) will be seamlessly integrated. Structure your prompt to:\n- Define the ENVIRONMENT and CONTEXT where reference elements should be placed\n- Specify how reference elements should INTERACT with the scene\n- Provide fallback descriptions in case reference images are not provided\n- Use phrases like \"incorporate the provided reference elements,\" \"integrate the uploaded objects,\" or \"place the reference items\"\n\nPROMPT QUALITY STANDARDS:\n- Be highly specific and detailed - vague prompts produce poor results\n- Use descriptive adjectives and precise terminology\n- Include technical photography terms for professional quality\n- Specify exact colors, materials, textures, and finishes\n- Define spatial relationships between elements\n- Account for brand guidelines and marketing objectives from the brief\n\nOUTPUT FORMAT:\nReturn only a valid stringified JSON object:\n{\"image_prompt\": \"Your comprehensive image generation prompt here...\"}\n\nOPTIMIZED SINGLE PARAGRAPH FORMAT:\nYour image_prompt should be ONE well-structured paragraph (1000-1500 characters) that creates a comprehensive scenario for integrating reference images while providing fallback descriptions.\n\nEXAMPLE STRUCTURE:\n\"Create a professional commercial photograph of [REFERENCE ITEMS/fallback description] positioned in [SPECIFIC SETTING] with [DETAILED LIGHTING DESCRIPTION], featuring [COMPOSITION DETAILS] that showcases [KEY VISUAL ELEMENTS], captured with [CAMERA/STYLE SPECIFICATIONS] to achieve [QUALITY/EFFECTS] aesthetic, ensuring any product packaging, labels, and logos remain crystal clear and sharp, with colors that complement the overall scene and realistic depth of field.\"\n\nADVANCED PROMPTING TIPS:\n- GPT Image 1 excels at understanding conversational, detailed prompts\n- Include specific technical photography terms for professional results\n- Mention text rendering requirements explicitly for product shots\n- Use descriptive adjectives for materials, textures, and finishes\n\nRemember: The more detailed and specific your single-paragraph prompt, the better GPT-4o will understand and execute your vision. Ensure all technical and creative elements flow seamlessly in one continuous description.",
@@ -61,8 +82,8 @@
       },
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
-      "position": [1952, 464],
-      "id": "14569357-08af-4ac9-a764-d7a9698b98ce",
+      "position": [2432, 400],
+      "id": "5e50d565-80b5-45f8-8812-0ed0bfd494bc",
       "name": "Generate System Prompt Images GPT-Image",
       "credentials": {
         "openAiApi": {
@@ -73,38 +94,13 @@
     },
     {
       "parameters": {
-        "base": {
-          "__rl": true,
-          "value": "appH2OEGW78g0qSOw",
-          "mode": "list",
-          "cachedResultName": "AI-powered campaign concept generation",
-          "cachedResultUrl": "https://airtable.com/appH2OEGW78g0qSOw"
-        },
-        "table": {
-          "__rl": true,
-          "value": "tbliQfQHTLEw6henQ",
-          "mode": "list",
-          "cachedResultName": "Concept Generation",
-          "cachedResultUrl": "https://airtable.com/appH2OEGW78g0qSOw/tbliQfQHTLEw6henQ"
-        },
-        "id": "={{ $('Get Concept Record ID - Image Generation').first().json.id }}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.airtable",
-      "typeVersion": 2.1,
-      "position": [1232, 464],
-      "id": "3ae726dc-9798-454a-bba2-78bb955c27fd",
-      "name": "Get Concept Record ID - Image Generation - 2"
-    },
-    {
-      "parameters": {
-        "fieldToSplitOut": "['Upload Assets']",
+        "fieldToSplitOut": "upload_assets",
         "options": {}
       },
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
-      "position": [1440, 464],
-      "id": "79153e7d-072e-4311-8984-1dc03f0e35ac",
+      "position": [1920, 400],
+      "id": "e14be100-c72f-40b0-8c95-4e1760a11db5",
       "name": "Split Out - Upload Assets"
     },
     {
@@ -123,8 +119,8 @@
       },
       "type": "n8n-nodes-base.aggregate",
       "typeVersion": 1,
-      "position": [1040, 464],
-      "id": "dbd85b74-b61e-4c8b-9d18-583324ae2ea8",
+      "position": [1520, 400],
+      "id": "cbba049e-137f-4363-be53-8c4b6ed99647",
       "name": "Aggregate Content Output"
     },
     {
@@ -132,7 +128,7 @@
         "fieldsToAggregate": {
           "fieldToAggregate": [
             {
-              "fieldToAggregate": "url"
+              "fieldToAggregate": "upload_assets"
             }
           ]
         },
@@ -140,8 +136,8 @@
       },
       "type": "n8n-nodes-base.aggregate",
       "typeVersion": 1,
-      "position": [1632, 464],
-      "id": "a2ed6c01-37bb-467e-906b-9cdff339b180",
+      "position": [2112, 400],
+      "id": "3be59d8b-6025-4920-9b24-ef52a267faeb",
       "name": "Aggregate Image URLs"
     },
     {
@@ -169,8 +165,8 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2816, 464],
-      "id": "979ec612-e407-4951-95bb-7a1c1f09af1c",
+      "position": [3296, 400],
+      "id": "33fb5514-eafc-43b5-a445-d76b76aca267",
       "name": "Retrieve 4o Image"
     },
     {
@@ -199,454 +195,9 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [2464, 464],
-      "id": "80773c72-8f8a-469c-a59d-c7e5bbfde1b1",
+      "position": [2944, 400],
+      "id": "dd8c8c49-c9da-4e05-84b3-ff05259d42ad",
       "name": "If Success"
-    },
-    {
-      "parameters": {
-        "operation": "upsert",
-        "base": {
-          "__rl": true,
-          "value": "appH2OEGW78g0qSOw",
-          "mode": "list",
-          "cachedResultName": "AI-powered campaign concept generation",
-          "cachedResultUrl": "https://airtable.com/appH2OEGW78g0qSOw"
-        },
-        "table": {
-          "__rl": true,
-          "value": "tbliQfQHTLEw6henQ",
-          "mode": "list",
-          "cachedResultName": "Concept Generation",
-          "cachedResultUrl": "https://airtable.com/appH2OEGW78g0qSOw/tbliQfQHTLEw6henQ"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "Run": false,
-            "id": "={{ $('Get Concept Record ID - Image Generation - 2').first().json.id }}",
-            "Images Assets": "={{ $json.data.response.resultUrls.map(url => ({ url })) }}",
-            "Image Status": "Success",
-            "Images Prompt ": "={{ $('Generate System Prompt Images GPT-Image').item.json.message.content.image_prompt }}",
-            "Images Description": "={{ String($('Aggregate Content Output').item.json.content) }}"
-          },
-          "matchingColumns": ["id"],
-          "schema": [
-            {
-              "id": "id",
-              "displayName": "id",
-              "required": false,
-              "defaultMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": true,
-              "removed": false
-            },
-            {
-              "id": "Campaign",
-              "displayName": "Campaign",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Description",
-              "displayName": "Description",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Upload Assets",
-              "displayName": "Upload Assets",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "array",
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Images Description",
-              "displayName": "Images Description",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": false,
-              "removed": false
-            },
-            {
-              "id": "Run",
-              "displayName": "Run",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "boolean",
-              "readOnly": false,
-              "removed": false
-            },
-            {
-              "id": "Details Status",
-              "displayName": "Details Status",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "options",
-              "options": [
-                {
-                  "name": "Start",
-                  "value": "Start"
-                },
-                {
-                  "name": "Generating",
-                  "value": "Generating"
-                },
-                {
-                  "name": "Completed",
-                  "value": "Completed"
-                },
-                {
-                  "name": "Error",
-                  "value": "Error"
-                }
-              ],
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Personas",
-              "displayName": "Personas",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Key messages",
-              "displayName": "Key messages",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Brand touchpoints",
-              "displayName": "Brand touchpoints",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "array",
-              "options": [],
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "AI Images instructions",
-              "displayName": "AI Images instructions",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "AI Videos instructions",
-              "displayName": "AI Videos instructions",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Number of Images",
-              "displayName": "Number of Images",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "options",
-              "options": [
-                {
-                  "name": "1",
-                  "value": "1"
-                },
-                {
-                  "name": "2",
-                  "value": "2"
-                },
-                {
-                  "name": "4",
-                  "value": "4"
-                },
-                {
-                  "name": "choose number",
-                  "value": "choose number"
-                }
-              ],
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Image Size",
-              "displayName": "Image Size",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "options",
-              "options": [
-                {
-                  "name": "1:1",
-                  "value": "1:1"
-                },
-                {
-                  "name": "3:2",
-                  "value": "3:2"
-                },
-                {
-                  "name": "2:3",
-                  "value": "2:3"
-                },
-                {
-                  "name": "choose size",
-                  "value": "choose size"
-                }
-              ],
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Image Status",
-              "displayName": "Image Status",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "options",
-              "options": [
-                {
-                  "name": "Generating",
-                  "value": "Generating"
-                },
-                {
-                  "name": "Failed",
-                  "value": "Failed"
-                },
-                {
-                  "name": "Success",
-                  "value": "Success"
-                },
-                {
-                  "name": "waiting",
-                  "value": "waiting"
-                }
-              ],
-              "readOnly": false,
-              "removed": false
-            },
-            {
-              "id": "Images Prompt ",
-              "displayName": "Images Prompt ",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": false,
-              "removed": false
-            },
-            {
-              "id": "Images Assets",
-              "displayName": "Images Assets",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "array",
-              "readOnly": false,
-              "removed": false
-            },
-            {
-              "id": "AI Model",
-              "displayName": "AI Model",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "options",
-              "options": [
-                {
-                  "name": "veo3",
-                  "value": "veo3"
-                },
-                {
-                  "name": "veo3_fast",
-                  "value": "veo3_fast"
-                },
-                {
-                  "name": "choose model",
-                  "value": "choose model"
-                }
-              ],
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Aspect Ratio",
-              "displayName": "Aspect Ratio",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "options",
-              "options": [
-                {
-                  "name": "16:9",
-                  "value": "16:9"
-                },
-                {
-                  "name": "9:16",
-                  "value": "9:16"
-                },
-                {
-                  "name": "choose aspect ratio",
-                  "value": "choose aspect ratio"
-                }
-              ],
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Video Status",
-              "displayName": "Video Status",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "options",
-              "options": [
-                {
-                  "name": "waiting",
-                  "value": "waiting"
-                },
-                {
-                  "name": "generating",
-                  "value": "generating"
-                },
-                {
-                  "name": "failed",
-                  "value": "failed"
-                },
-                {
-                  "name": "success",
-                  "value": "success"
-                }
-              ],
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Videos Assets",
-              "displayName": "Videos Assets",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "array",
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Record ID",
-              "displayName": "Record ID",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": true,
-              "removed": true
-            },
-            {
-              "id": "Agency",
-              "displayName": "Agency",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "array",
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Created Time",
-              "displayName": "Created Time",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": true,
-              "removed": true
-            },
-            {
-              "id": "Last Modified Time",
-              "displayName": "Last Modified Time",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": true,
-              "removed": true
-            },
-            {
-              "id": "API Key (from API Services) (from Agency)",
-              "displayName": "API Key (from API Services) (from Agency)",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": true,
-              "removed": true
-            }
-          ],
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": false
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.airtable",
-      "typeVersion": 2.1,
-      "position": [3008, 464],
-      "id": "571fea50-ac97-45d7-8501-e6680dadfd8f",
-      "name": "Create or update a record"
     },
     {
       "parameters": {
@@ -669,457 +220,9 @@
       },
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.1,
-      "position": [32, 768],
-      "id": "26642351-b768-439d-8d2b-f4519276404a",
-      "name": "Get a Concept Record ID - Video Generation",
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "BPl1dVuD6w4ccv7q",
-          "name": "Airtable Personal Access Token account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "update",
-        "base": {
-          "__rl": true,
-          "value": "appH2OEGW78g0qSOw",
-          "mode": "list",
-          "cachedResultName": "AI-powered campaign concept generation",
-          "cachedResultUrl": "https://airtable.com/appH2OEGW78g0qSOw"
-        },
-        "table": {
-          "__rl": true,
-          "value": "tbliQfQHTLEw6henQ",
-          "mode": "list",
-          "cachedResultName": "Concept Generation",
-          "cachedResultUrl": "https://airtable.com/appH2OEGW78g0qSOw/tbliQfQHTLEw6henQ"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "id": "={{ $('Webhook').item.json.query.recordId }}",
-            "Image Status": "Failed",
-            "Run": false
-          },
-          "matchingColumns": ["id"],
-          "schema": [
-            {
-              "id": "id",
-              "displayName": "id",
-              "required": false,
-              "defaultMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": true,
-              "removed": false
-            },
-            {
-              "id": "Campaign",
-              "displayName": "Campaign",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Description",
-              "displayName": "Description",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Upload Assets",
-              "displayName": "Upload Assets",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "array",
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Images Description",
-              "displayName": "Images Description",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Run",
-              "displayName": "Run",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "boolean",
-              "readOnly": false,
-              "removed": false
-            },
-            {
-              "id": "Details Status",
-              "displayName": "Details Status",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "options",
-              "options": [
-                {
-                  "name": "Start",
-                  "value": "Start"
-                },
-                {
-                  "name": "Generating",
-                  "value": "Generating"
-                },
-                {
-                  "name": "Completed",
-                  "value": "Completed"
-                },
-                {
-                  "name": "Error",
-                  "value": "Error"
-                }
-              ],
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Personas",
-              "displayName": "Personas",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Key messages",
-              "displayName": "Key messages",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Brand touchpoints",
-              "displayName": "Brand touchpoints",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "array",
-              "options": [],
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "AI Images instructions",
-              "displayName": "AI Images instructions",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "AI Videos instructions",
-              "displayName": "AI Videos instructions",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Number of Images",
-              "displayName": "Number of Images",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "options",
-              "options": [
-                {
-                  "name": "1",
-                  "value": "1"
-                },
-                {
-                  "name": "2",
-                  "value": "2"
-                },
-                {
-                  "name": "4",
-                  "value": "4"
-                },
-                {
-                  "name": "choose number",
-                  "value": "choose number"
-                }
-              ],
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Image Size",
-              "displayName": "Image Size",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "options",
-              "options": [
-                {
-                  "name": "1:1",
-                  "value": "1:1"
-                },
-                {
-                  "name": "3:2",
-                  "value": "3:2"
-                },
-                {
-                  "name": "2:3",
-                  "value": "2:3"
-                },
-                {
-                  "name": "choose size",
-                  "value": "choose size"
-                }
-              ],
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Image Status",
-              "displayName": "Image Status",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "options",
-              "options": [
-                {
-                  "name": "Generating",
-                  "value": "Generating"
-                },
-                {
-                  "name": "Failed",
-                  "value": "Failed"
-                },
-                {
-                  "name": "Success",
-                  "value": "Success"
-                },
-                {
-                  "name": "waiting",
-                  "value": "waiting"
-                }
-              ],
-              "readOnly": false,
-              "removed": false
-            },
-            {
-              "id": "Images Prompt ",
-              "displayName": "Images Prompt ",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Images Assets",
-              "displayName": "Images Assets",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "array",
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "AI Model",
-              "displayName": "AI Model",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "options",
-              "options": [
-                {
-                  "name": "veo3",
-                  "value": "veo3"
-                },
-                {
-                  "name": "veo3_fast",
-                  "value": "veo3_fast"
-                },
-                {
-                  "name": "choose model",
-                  "value": "choose model"
-                }
-              ],
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Aspect Ratio",
-              "displayName": "Aspect Ratio",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "options",
-              "options": [
-                {
-                  "name": "16:9",
-                  "value": "16:9"
-                },
-                {
-                  "name": "9:16",
-                  "value": "9:16"
-                },
-                {
-                  "name": "choose aspect ratio",
-                  "value": "choose aspect ratio"
-                }
-              ],
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Video Status",
-              "displayName": "Video Status",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "options",
-              "options": [
-                {
-                  "name": "waiting",
-                  "value": "waiting"
-                },
-                {
-                  "name": "generating",
-                  "value": "generating"
-                },
-                {
-                  "name": "failed",
-                  "value": "failed"
-                },
-                {
-                  "name": "success",
-                  "value": "success"
-                }
-              ],
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Videos Assets",
-              "displayName": "Videos Assets",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "array",
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Record ID",
-              "displayName": "Record ID",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": true,
-              "removed": true
-            },
-            {
-              "id": "Agency",
-              "displayName": "Agency",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "array",
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Created Time",
-              "displayName": "Created Time",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": true,
-              "removed": true
-            },
-            {
-              "id": "Last Modified Time",
-              "displayName": "Last Modified Time",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": true,
-              "removed": true
-            },
-            {
-              "id": "API Key (from API Services) (from Agency)",
-              "displayName": "API Key (from API Services) (from Agency)",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": true,
-              "removed": true
-            }
-          ],
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": false
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.airtable",
-      "typeVersion": 2.1,
-      "position": [3200, 464],
-      "id": "a9552831-b762-4d08-b47c-0fe36f14498c",
-      "name": "Update Image Generation Failed"
+      "position": [720, 704],
+      "id": "777f9de3-2ea2-4479-bac5-acfd0ba64e42",
+      "name": "Get a Concept Record ID - Video Generation"
     },
     {
       "parameters": {
@@ -1128,8 +231,8 @@
       },
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
-      "position": [240, 768],
-      "id": "cf2c77f4-c7dc-43a8-8e2d-a7a8be3b074a",
+      "position": [928, 704],
+      "id": "ffb05d15-2b30-4593-9148-d11e76fe2217",
       "name": "Split Out - Images Assets"
     },
     {
@@ -1145,8 +248,8 @@
       },
       "type": "n8n-nodes-base.aggregate",
       "typeVersion": 1,
-      "position": [640, 768],
-      "id": "fa3645ff-eda6-4568-a432-4988ea2f3bf1",
+      "position": [1328, 704],
+      "id": "49711ac9-b42c-4652-b00b-579cb564e8b0",
       "name": "Aggregate - Images URLs"
     },
     {
@@ -1155,8 +258,8 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [848, 768],
-      "id": "98413eb7-f502-4fa8-831e-5b51a0a72222",
+      "position": [1536, 704],
+      "id": "dce5da5f-9826-43d9-83a2-7e8acdfd66da",
       "name": "Code - Format URLs"
     },
     {
@@ -1183,30 +286,24 @@
       },
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
-      "position": [1056, 768],
-      "id": "fb792d27-b0ad-46ca-bb42-21fc3ca72a6f",
-      "name": "Generate System Prompt Video VEO3",
-      "credentials": {
-        "openAiApi": {
-          "id": "U46LK5mxeA2mY2dB",
-          "name": "OpenAi account"
-        }
-      }
+      "position": [1744, 704],
+      "id": "b3cfb3c0-9f4f-407c-a87e-55302ed8e276",
+      "name": "Generate System Prompt Video VEO3"
     },
     {
       "parameters": {},
       "type": "@n8n/n8n-nodes-langchain.toolThink",
       "typeVersion": 1.1,
-      "position": [1136, 880],
-      "id": "a31a7c41-f711-46c5-a95b-f899531bf612",
+      "position": [1824, 816],
+      "id": "3abea4b3-766c-42de-b3a0-32c0da892ce6",
       "name": "Think - VEO3"
     },
     {
       "parameters": {},
       "type": "@n8n/n8n-nodes-langchain.toolThink",
       "typeVersion": 1.1,
-      "position": [2032, 576],
-      "id": "28d6e10f-0fd8-41b4-862d-53db8d42990c",
+      "position": [2432, 544],
+      "id": "c0b42458-064f-4977-a999-d89555ad7c4f",
       "name": "Think - GPT IMAG1"
     },
     {
@@ -1235,16 +332,16 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [1616, 768],
-      "id": "a84cb438-401e-4318-8f4b-1defc4da6378",
+      "position": [2304, 704],
+      "id": "0b85e1da-c8d4-4eb9-aa62-5de163743608",
       "name": "If success"
     },
     {
       "parameters": {},
       "type": "n8n-nodes-base.limit",
       "typeVersion": 1,
-      "position": [448, 768],
-      "id": "308124c1-4ad2-443a-b5cb-e44eebcee9a6",
+      "position": [1136, 704],
+      "id": "8f5d6631-f74b-4272-a6fb-2e45ac58cc74",
       "name": "Limit 1 Image - API Limit"
     },
     {
@@ -1264,7 +361,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer 82a77dac40a54697562f882bac975454"
+              "value": "=Bearer {{ $('Get a Concept Record ID - Video Generation').item.json['API Key (from API Services) (from Agency)'][0] }}"
             }
           ]
         },
@@ -1272,8 +369,8 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2000, 768],
-      "id": "783ff68b-0cfa-4ef9-b131-0db1a0f234f5",
+      "position": [2688, 704],
+      "id": "6a1f31d4-ec7c-4e14-8663-08293c21b456",
       "name": "Retrieve Video - 1080p - video"
     },
     {
@@ -1715,8 +812,8 @@
       },
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.1,
-      "position": [2384, 768],
-      "id": "0a475ded-019b-40ee-bcf4-d71ea5a71a5d",
+      "position": [3072, 704],
+      "id": "38baafcb-220a-40c6-b294-9ca8eb7a5cba",
       "name": "Update Video Assets Results"
     },
     {
@@ -1745,8 +842,8 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [2192, 768],
-      "id": "03cf5a02-ab4e-4bda-bc7d-3cf02e90cd5f",
+      "position": [2880, 704],
+      "id": "3377c7f2-6b86-4ccb-afc5-864f721044bd",
       "name": "If Success Video"
     },
     {
@@ -2187,8 +1284,8 @@
       },
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.1,
-      "position": [2192, 896],
-      "id": "030f6116-cc92-4a67-a6fd-bda93bfebe12",
+      "position": [2880, 832],
+      "id": "e21f8113-ee9f-4b2f-9c30-585c4f9c3f8c",
       "name": "Update Getting Failed"
     },
     {
@@ -2629,8 +1726,8 @@
       },
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.1,
-      "position": [1616, 896],
-      "id": "70e60f60-8094-4e9b-9405-b1920c9f2829",
+      "position": [2304, 832],
+      "id": "87b3127e-df49-4aba-836a-22be88919975",
       "name": "Update Status Video Generation Failed"
     },
     {
@@ -2639,8 +1736,8 @@
       },
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
-      "position": [2640, 464],
-      "id": "d27c307e-b346-4ac0-9d83-f54b860d9b13",
+      "position": [3088, 272],
+      "id": "9db0eac7-e63c-4215-940b-dba395f50aca",
       "name": "Wait 180s",
       "webhookId": "8f6a7bec-abd2-48b8-b79d-4235051beda1"
     },
@@ -2650,8 +1747,8 @@
       },
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
-      "position": [1808, 768],
-      "id": "239d2ebd-15a5-434d-a390-667c54c01bc9",
+      "position": [2496, 704],
+      "id": "c931ad3f-1476-4120-ac2e-8f39ef6c3cb9",
       "name": "Wait 300s Videos",
       "webhookId": "8f6a7bec-abd2-48b8-b79d-4235051beda1"
     },
@@ -2663,9 +1760,9 @@
         "color": 4
       },
       "type": "n8n-nodes-base.stickyNote",
-      "position": [400, 400],
+      "position": [1088, 336],
       "typeVersion": 1,
-      "id": "b9d23c00-ddd2-4934-8333-6ebb4d23fe06",
+      "id": "1fc08416-b341-4785-af3a-a94b3adf68b4",
       "name": "Sticky Note"
     },
     {
@@ -2676,9 +1773,9 @@
         "color": 6
       },
       "type": "n8n-nodes-base.stickyNote",
-      "position": [1728, 400],
+      "position": [2416, 336],
       "typeVersion": 1,
-      "id": "f9b83267-5afc-4417-a199-8b17acf86df7",
+      "id": "0ddfa726-b275-4c5d-83c9-99c45f40dd00",
       "name": "Sticky Note1"
     },
     {
@@ -2689,9 +1786,9 @@
         "color": 5
       },
       "type": "n8n-nodes-base.stickyNote",
-      "position": [2000, 400],
+      "position": [2688, 336],
       "typeVersion": 1,
-      "id": "b65a5d34-d613-42e1-b79b-8097280a563f",
+      "id": "913d9f1c-5e77-48c7-bfdf-4339361ff694",
       "name": "Sticky Note2"
     },
     {
@@ -2702,9 +1799,9 @@
         "color": 5
       },
       "type": "n8n-nodes-base.stickyNote",
-      "position": [2544, 384],
+      "position": [3232, 320],
       "typeVersion": 1,
-      "id": "3623758a-819c-438c-90f3-bf842f7be741",
+      "id": "1143de97-5c2a-4fef-8f49-d30cbd0ad395",
       "name": "Sticky Note3"
     },
     {
@@ -2715,9 +1812,9 @@
         "color": 6
       },
       "type": "n8n-nodes-base.stickyNote",
-      "position": [1040, 688],
+      "position": [1728, 624],
       "typeVersion": 1,
-      "id": "de88aa04-aeff-4252-861b-6340a6d083c9",
+      "id": "ac6a5cb7-ff0d-4e68-96bd-7cf21be91056",
       "name": "Sticky Note4"
     },
     {
@@ -2728,9 +1825,9 @@
         "color": 5
       },
       "type": "n8n-nodes-base.stickyNote",
-      "position": [1344, 688],
+      "position": [2032, 624],
       "typeVersion": 1,
-      "id": "6eab7fd0-844a-459b-a955-e3727df3ac52",
+      "id": "cec7f215-2623-49f2-851a-cf4b5dc67117",
       "name": "Sticky Note5"
     },
     {
@@ -2741,9 +1838,9 @@
         "color": 5
       },
       "type": "n8n-nodes-base.stickyNote",
-      "position": [1936, 704],
+      "position": [2624, 640],
       "typeVersion": 1,
-      "id": "bef11595-d645-41f1-8dcb-64b88b83df20",
+      "id": "0cd4bb81-f826-45bf-b032-d6a2b1fc3e54",
       "name": "Sticky Note6"
     },
     {
@@ -2754,9 +1851,9 @@
         "color": 7
       },
       "type": "n8n-nodes-base.stickyNote",
-      "position": [176, 704],
+      "position": [864, 640],
       "typeVersion": 1,
-      "id": "b5fdf14d-bd0f-4d7d-9033-25cc2a611df8",
+      "id": "4d564fe1-d8e7-4652-aba9-e9198c333428",
       "name": "Sticky Note7"
     },
     {
@@ -2767,9 +1864,9 @@
         "color": 7
       },
       "type": "n8n-nodes-base.stickyNote",
-      "position": [800, 400],
+      "position": [1488, 336],
       "typeVersion": 1,
-      "id": "174a9305-5b13-443c-adfb-f0e38912867a",
+      "id": "d3bb619d-0cf1-41bd-9447-5af2eb7704ee",
       "name": "Sticky Note8"
     },
     {
@@ -2796,8 +1893,8 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2784, 768],
-      "id": "52431163-1a68-4d6e-b7a0-f6d2f1c1a44d",
+      "position": [3472, 704],
+      "id": "bc97cd0a-c5d9-4ab6-bf40-049675d37c01",
       "name": "Generate 4o Images -",
       "alwaysOutputData": false,
       "disabled": true
@@ -2828,11 +1925,11 @@
             },
             {
               "name": "size",
-              "value": "={{ $('Get Concept Record ID - Image Generation - 2').item.json['Image Size'] }}"
+              "value": "={{ $('Get many rows').item.json.image_size }}"
             },
             {
               "name": "nVariants",
-              "value": "={{ $('Get Concept Record ID - Image Generation - 2').item.json['Number of Images'] }}"
+              "value": "={{ $('Get many rows').item.json.number_of_images }}"
             }
           ]
         },
@@ -2844,8 +1941,8 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2256, 464],
-      "id": "491a0fa0-2b01-4b2d-8b05-19fc7f82d033",
+      "position": [2736, 400],
+      "id": "ea27aeb3-a133-4901-9623-0c6f395a18bd",
       "name": "Generate 4o Images",
       "alwaysOutputData": false
     },
@@ -2858,7 +1955,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer 82a77dac40a54697562f882bac975454"
+              "value": "=Bearer {{ $('Get a Concept Record ID - Video Generation').item.json['API Key (from API Services) (from Agency)'][0] }}"
             },
             {
               "name": "Content-Type",
@@ -2873,8 +1970,8 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1408, 768],
-      "id": "3967a4c6-707d-4b91-b63c-3ff574af1dcb",
+      "position": [2096, 704],
+      "id": "506cbbda-8653-41bc-999a-d2c4e1dab05c",
       "name": "Generate Videos VEO 3"
     },
     {
@@ -2915,47 +2012,167 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2608, 768],
-      "id": "1f368ecc-2d2b-4577-b404-5d49ff299ebb",
+      "position": [3296, 704],
+      "id": "9177b217-cabb-4ba4-a150-778e397db348",
       "name": "Generate Videos VEO3",
       "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "concept_generation",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [720, 400],
+      "id": "674d2af6-6386-440f-a0e2-8cd1f19fa12f",
+      "name": "Get many rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "DGHvrTDlfvkwgp8u",
+          "name": "Supabase Avatar"
+        }
+      }
     },
     {
       "parameters": {},
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [16, 448],
-      "id": "c5f925a3-47ec-4612-8a7b-9dd1d2d667ec",
+      "position": [160, 752],
+      "id": "97d96335-fc23-4da5-8f7e-1c7a4daf8590",
       "name": "When clicking ‘Execute workflow’"
     },
     {
       "parameters": {
-        "assignments": {
-          "assignments": [
+        "operation": "getAll",
+        "tableId": "concept_generation",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1712, 400],
+      "id": "50660080-d0ab-45d8-8f94-8ec1d560e4ad",
+      "name": "Get many rows1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "DGHvrTDlfvkwgp8u",
+          "name": "Supabase Avatar"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "5c50a899-4a7e-4fdd-af08-64f97d7c42a6",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [160, 560],
+      "id": "d1b5fbc2-f469-49df-91ed-5d165cd5eddf",
+      "name": "Webhook1",
+      "webhookId": "5c50a899-4a7e-4fdd-af08-64f97d7c42a6"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
             {
-              "id": "3969f2b9-a1ed-4d07-8e82-83e0969a04db",
-              "name": "image_url",
-              "value": "https://gbiujmsevpfruhcolrug.supabase.co/storage/v1/object/public/images/IMG_7871.jpg",
-              "type": "string"
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "e9d22a6c-8f79-4eec-918a-e7f2e2097f55"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "generateImages"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "4c514d81-8d1e-4317-8991-de718b06d4e4",
+                    "leftValue": "",
+                    "rightValue": "generateVideo",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "generateVideo"
             }
           ]
         },
         "options": {}
       },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [224, 448],
-      "id": "9e5b0eb1-a0a4-4eec-a1c1-be6e317f2238",
-      "name": "Edit Fields"
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [448, 560],
+      "id": "8142ac28-6e32-482e-8e6b-b0a03dd5004f",
+      "name": "Switch"
     }
   ],
   "pinData": {},
   "connections": {
-    "Analyze image": {
+    "Split Out Uploaded Asset": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Image Asset",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Image Asset": {
       "main": [
         [
           {
             "node": "Aggregate Content Output",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Analyze image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze image": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Image Asset",
             "type": "main",
             "index": 0
           }
@@ -2984,17 +2201,6 @@
         ]
       ]
     },
-    "Get Concept Record ID - Image Generation - 2": {
-      "main": [
-        [
-          {
-            "node": "Split Out - Upload Assets",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Split Out - Upload Assets": {
       "main": [
         [
@@ -3010,7 +2216,7 @@
       "main": [
         [
           {
-            "node": "Get Concept Record ID - Image Generation - 2",
+            "node": "Get many rows1",
             "type": "main",
             "index": 0
           }
@@ -3037,25 +2243,11 @@
             "index": 0
           }
         ],
-        [
-          {
-            "node": "Update Image Generation Failed",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     },
     "Retrieve 4o Image": {
-      "main": [
-        [
-          {
-            "node": "Create or update a record",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+      "main": [[]]
     },
     "Get a Concept Record ID - Video Generation": {
       "main": [
@@ -3236,22 +2428,54 @@
         ]
       ]
     },
-    "When clicking ‘Execute workflow’": {
+    "Get many rows": {
       "main": [
         [
           {
-            "node": "Edit Fields",
+            "node": "Split Out Uploaded Asset",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Edit Fields": {
+    "When clicking ‘Execute workflow’": {
+      "main": [[]]
+    },
+    "Get many rows1": {
       "main": [
         [
           {
-            "node": "Analyze image",
+            "node": "Split Out - Upload Assets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a Concept Record ID - Video Generation",
             "type": "main",
             "index": 0
           }
@@ -3259,15 +2483,15 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "56185278-b913-43a3-846c-27b9c7fd6b57",
+  "versionId": "23c8f650-ab5f-4255-926b-0178bb749ec0",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "fe9d3a12f258c7c25e0241bdac4abdc1d2d4cbca003a5fd500ebff17b6038d7a"
   },
-  "id": "UzI3PhKZcrm4u1hY",
+  "id": "Pv5nijxvHk0OP9vY",
   "tags": []
 }

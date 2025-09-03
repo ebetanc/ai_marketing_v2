@@ -26,17 +26,12 @@ export const N8N_BASE_URL =
   (typeof import.meta !== "undefined" &&
     (import.meta as any).env?.VITE_N8N_BASE_URL) ||
   "https://n8n.srv856940.hstgr.cloud";
-// Default generic content webhook path
-export const N8N_DEFAULT_WEBHOOK_PATH = "content-saas";
-// Specific video avatar webhook UUID path
-export const N8N_VIDEO_AVATAR_WEBHOOK_PATH =
-  "b7774650-a050-421b-bb73-fa302946f8c6";
-// Real estate content generation webhook UUID path
+// Primary content workflow path (replaces older internal "content-saas" path)
+export const N8N_DEFAULT_WEBHOOK_PATH = "content-workflow";
+export const N8N_VIDEO_AVATAR_WEBHOOK_PATH = "ai-video-with-avatar";
 export const N8N_REAL_ESTATE_WEBHOOK_PATH =
-  "1776dcc3-2b3e-4cfa-abfd-0ad9cabaf6ea";
-// Product campaign workflow webhook path
-export const N8N_PRODUCT_CAMPAIGN_WEBHOOK_PATH =
-  "5c50a899-4a7e-4fdd-af08-64f97d7c42a6";
+  "real-estate-content-generation-workflow";
+export const N8N_PRODUCT_CAMPAIGN_WEBHOOK_PATH = "product-campaign-workflow";
 
 function buildWebhookUrl(path?: string, opts?: { wait?: boolean }) {
   const base = N8N_BASE_URL.replace(/\/$/, "");
@@ -65,28 +60,42 @@ const WORKFLOWS: Record<string, WorkflowConfig> = {
   generateAngles: {
     contract: "core-v1",
     defaultOperation: "create_strategy_angles",
+    path: N8N_DEFAULT_WEBHOOK_PATH,
   },
   generateIdeas: {
     contract: "core-v1",
     defaultOperation: "create_ideas_from_angle",
+    path: N8N_DEFAULT_WEBHOOK_PATH,
   },
   generateContent: {
     contract: "core-v1",
     defaultOperation: "generate_content_from_idea",
+    path: N8N_DEFAULT_WEBHOOK_PATH,
   },
-  autofill: { contract: "core-v1", defaultOperation: "company_autofill" },
-  content_saas: { contract: "core-v1", defaultOperation: "real_estate_ingest" },
+  autofill: {
+    contract: "core-v1",
+    defaultOperation: "company_autofill",
+    path: N8N_DEFAULT_WEBHOOK_PATH,
+  },
   videoAvatar: {
     contract: "avatar-v1",
+    path: N8N_VIDEO_AVATAR_WEBHOOK_PATH,
     validator: (p) =>
       validateAndNormalizeVideoAvatarPayload(p as AnyVideoAvatarPayload) as any,
   },
   [PRODUCT_CAMPAIGN_IDENTIFIER]: {
     contract: "core-v1",
+    path: N8N_PRODUCT_CAMPAIGN_WEBHOOK_PATH,
     validator: (p) =>
       validateAndNormalizeProductCampaignPayload(
         p as AnyProductCampaignPayload,
       ) as any,
+  },
+  // Real estate ingest (identifier content_saas) can also centralize its slug path here
+  content_saas: {
+    contract: "core-v1",
+    defaultOperation: "real_estate_ingest",
+    path: N8N_REAL_ESTATE_WEBHOOK_PATH,
   },
 };
 function determineDefaultContract(identifier: string) {
@@ -398,10 +407,8 @@ export async function n8nGenerateContent(params: {
 }
 
 export async function n8nRealEstateIngest(params: { url: string }) {
-  return buildAndSend("content_saas", undefined, params, {
-    autoUser: true,
-    path: N8N_REAL_ESTATE_WEBHOOK_PATH,
-  });
+  // content_saas identifier retained for backend compatibility; path centralized in WORKFLOWS
+  return buildAndSend("content_saas", undefined, params, { autoUser: true });
 }
 
 // Simple exponential backoff retry wrapper for transient failures

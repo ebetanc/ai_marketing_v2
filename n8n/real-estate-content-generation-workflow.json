@@ -1,5 +1,5 @@
 {
-  "name": "Real Estate Content Generator",
+  "name": "real-estate-content-generation-workflow",
   "nodes": [
     {
       "parameters": {
@@ -816,7 +816,9 @@
       "position": [-1008, 512],
       "id": "f84101e7-3e06-4772-8014-ba99f3ed4bac",
       "name": "Webhook",
-      "webhookId": "1776dcc3-2b3e-4cfa-abfd-0ad9cabaf6ea"
+      "webhookId": "1776dcc3-2b3e-4cfa-abfd-0ad9cabaf6ea",
+      "alwaysOutputData": false,
+      "notesInFlow": false
     },
     {
       "parameters": {
@@ -835,11 +837,15 @@
           "fieldValues": [
             {
               "fieldId": "link_origin",
-              "fieldValue": "={{ $('Webhook').item.json.body.url }}"
+              "fieldValue": "=url tes"
             },
             {
               "fieldId": "link_final",
-              "fieldValue": "={{ $json.response[0].file_url }}"
+              "fieldValue": "=url final"
+            },
+            {
+              "fieldId": "owner_id",
+              "fieldValue": "a28483ef-f236-468e-b114-3b2527076b20"
             }
           ]
         }
@@ -863,7 +869,7 @@
         "json": {
           "headers": {
             "host": "n8n.srv856940.hstgr.cloud",
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
             "content-length": "314",
             "accept": "*/*",
             "accept-encoding": "gzip, deflate, br, zstd",
@@ -872,21 +878,21 @@
             "origin": "https://zp1v56uxy8rdx5ypatb0ockcb9tr6a-oci3--5173--96435430.local-credentialless.webcontainer-api.io",
             "priority": "u=1, i",
             "referer": "https://zp1v56uxy8rdx5ypatb0ockcb9tr6a-oci3--5173--96435430.local-credentialless.webcontainer-api.io/",
-            "sec-ch-ua": "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\", \"Google Chrome\";v=\"138\"",
+            "sec-ch-ua": "\"Not;A=Brand\";v=\"99\", \"Google Chrome\";v=\"139\", \"Chromium\";v=\"139\"",
             "sec-ch-ua-mobile": "?0",
             "sec-ch-ua-platform": "\"Windows\"",
             "sec-fetch-dest": "empty",
             "sec-fetch-mode": "cors",
             "sec-fetch-site": "cross-site",
             "x-client": "ai_marketing_v2",
-            "x-env": "production",
+            "x-env": "development",
             "x-forwarded-for": "92.145.49.28",
             "x-forwarded-host": "n8n.srv856940.hstgr.cloud",
             "x-forwarded-port": "443",
             "x-forwarded-proto": "https",
             "x-forwarded-server": "1e777b048e49",
             "x-real-ip": "92.145.49.28",
-            "x-request-id": "ab042ba1-3f97-40bd-a9fe-a35ffc2f297c"
+            "x-request-id": "2cb8fc92-ea96-4d37-b84a-500e99c3f6e5"
           },
           "params": {},
           "query": {},
@@ -898,107 +904,11 @@
             "meta": {
               "user_id": "a28483ef-f236-468e-b114-3b2527076b20",
               "source": "app",
-              "ts": "2025-09-01T20:14:50.221Z"
+              "ts": "2025-09-02T16:50:07.038Z"
             }
           },
           "webhookUrl": "https://n8n.srv856940.hstgr.cloud/webhook/1776dcc3-2b3e-4cfa-abfd-0ad9cabaf6ea",
           "executionMode": "production"
-        }
-      }
-    ],
-    "Set Video URLs": [
-      {
-        "json": {
-          "videoURL": "https://storage.googleapis.com/toolkit_service/d916cd04-e01c-4729-b4c7-04c8644220a8_output_0.mp4"
-        }
-      },
-      {
-        "json": {
-          "videoURL": "https://storage.googleapis.com/toolkit_service/3f0be48c-43d1-4768-a0bb-cdcfcc9023ee_output_0.mp4"
-        }
-      },
-      {
-        "json": {
-          "videoURL": "https://storage.googleapis.com/toolkit_service/b208bc83-374c-4e66-97dc-9c2d383ab46f_output_0.mp4"
-        }
-      },
-      {
-        "json": {
-          "videoURL": "https://storage.googleapis.com/toolkit_service/51d5522e-93f1-4add-a4bc-f060a9a8957d_output_0.mp4"
-        }
-      },
-      {
-        "json": {
-          "videoURL": "https://storage.googleapis.com/toolkit_service/123eb6c1-e612-4e20-a107-31e4c81b16e3_output_0.mp4"
-        }
-      },
-      {
-        "json": {
-          "videoURL": "https://storage.googleapis.com/toolkit_service/4a2b3446-818f-4d8d-b114-10f6d0463f24_output_0.mp4"
-        }
-      }
-    ],
-    "Text Overlay": [
-      {
-        "json": {
-          "textOverlay": "Las Vegas, NV"
-        }
-      },
-      {
-        "json": {
-          "textOverlay": "Elegant Living"
-        }
-      },
-      {
-        "json": {
-          "textOverlay": "Gourmet Kitchen"
-        }
-      },
-      {
-        "json": {
-          "textOverlay": "Five Bedrooms"
-        }
-      },
-      {
-        "json": {
-          "textOverlay": "Five Bathrooms"
-        }
-      },
-      {
-        "json": {
-          "textOverlay": "$1,249,990"
-        }
-      }
-    ],
-    "Set Audio URLs": [
-      {
-        "json": {
-          "audioURL": "https://drive.google.com/uc?export=download&id=17cC42HJFkUTXI9ZgBojCMA5FawInhyr_"
-        }
-      },
-      {
-        "json": {
-          "audioURL": "https://drive.google.com/uc?export=download&id=1eXkh60abE1QBt9J0gkpfhSfoVFyqX1uc"
-        }
-      },
-      {
-        "json": {
-          "audioURL": "https://drive.google.com/uc?export=download&id=12YhcTl-VQdQ6qXgeB5uT2MNPqWcNniDb"
-        }
-      },
-      {
-        "json": {
-          "audioURL": "https://drive.google.com/uc?export=download&id=1DL8v_z92c2ZTdk9T9Gy2pSU8yp3O0HSZ"
-        }
-      },
-      {
-        "json": {
-          "audioURL": "https://drive.google.com/uc?export=download&id=1vevTgyvcW2wFZWWTGGevwD99bySW3j5-"
-        }
-      },
-      {
-        "json": {
-          "audioURL": "https://drive.google.com/uc?export=download&id=1TwvRNC-75-3vhpntGrDuyYLRTxPZ27I-"
         }
       }
     ]
@@ -1407,7 +1317,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "ce59bf3e-5302-40c9-8e37-0368d55136e1",
+  "versionId": "63000420-9bf4-4fb5-bc72-bfc555272a56",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "fe9d3a12f258c7c25e0241bdac4abdc1d2d4cbca003a5fd500ebff17b6038d7a"

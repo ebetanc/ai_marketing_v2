@@ -1,5 +1,5 @@
 {
-  "name": "Content Workflow",
+  "name": "content-workflow",
   "nodes": [
     {
       "parameters": {
@@ -3763,7 +3763,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "3719cc09-8098-439e-b02e-8df23285d41b",
+  "versionId": "b9013b99-d2c8-4f55-8814-a7a0c880f200",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "fe9d3a12f258c7c25e0241bdac4abdc1d2d4cbca003a5fd500ebff17b6038d7a"
