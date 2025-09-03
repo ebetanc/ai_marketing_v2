@@ -9,6 +9,7 @@ import {
   normalizePlatforms,
   validateAndNormalizeN8nPayload,
   type AnyN8nPayload,
+  type BaseMeta,
 } from "./n8nContract";
 import {
   PRODUCT_CAMPAIGN_IDENTIFIER,
@@ -237,6 +238,248 @@ export function prepareSlottedPlatforms(raw?: string[] | null) {
 }
 
 export { N8N_PLATFORM_ORDER };
+
+// ---------------------------------------------------------------------------
+// Specialized high-level helpers for advanced workflows (avatar & product campaign)
+// Centralizing these ensures pages don't manually craft payload shapes, keeping
+// alignment with validator logic and future contract changes.
+// ---------------------------------------------------------------------------
+
+export interface ContractValidationMeta {
+  ok: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
+export interface ContractSendResult<T = any> extends SendN8nResult<T> {
+  validation: ContractValidationMeta;
+}
+
+function buildValidationResult(v: any): ContractValidationMeta {
+  return {
+    ok: !!v.ok,
+    errors: Array.isArray(v.errors) ? v.errors : [],
+    warnings: Array.isArray(v.warnings) ? v.warnings : [],
+  };
+}
+
+async function parseResponseToSendResult<T = any>(
+  res: Response,
+): Promise<SendN8nResult<T>> {
+  let rawText = "";
+  let data: any = null;
+  try {
+    rawText = await res.text();
+    if (rawText.trim()) {
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        /* leave data null */
+      }
+    }
+  } catch (e) {
+    console.warn("[n8n-wrapper] Failed to read response body", e);
+  }
+  return {
+    ok: res.ok,
+    status: res.status,
+    requestId: (res as any).requestId,
+    data,
+    rawText,
+    response: res,
+  };
+}
+
+// ---------------- Avatar Workflow Helpers ----------------
+export interface VideoAvatarGenerateParams {
+  script: string;
+  image_count?: number;
+  meta?: Partial<BaseMeta>;
+  user_id?: string | null;
+}
+export async function n8nVideoAvatarGenerateVideo(
+  params: VideoAvatarGenerateParams,
+  retry: RetryOptions = {},
+): Promise<ContractSendResult> {
+  const draft: AnyVideoAvatarPayload = {
+    identifier: "videoAvatar",
+    operation: "generateVideo",
+    script: params.script,
+    image_count: params.image_count,
+    user_id: params.user_id ?? undefined,
+    meta: {
+      user_id: params.user_id ?? undefined,
+      source: "app",
+      ts: new Date().toISOString(),
+      contract: "avatar-v1",
+      ...(params.meta || {}),
+    },
+  } as any;
+  const validated = validateAndNormalizeVideoAvatarPayload(draft);
+  const validation = buildValidationResult(validated);
+  if (!validation.ok) {
+    return {
+      ok: false,
+      status: 0,
+      data: null,
+      rawText: "",
+      requestId: undefined,
+      response: undefined as any,
+      validation,
+    };
+  }
+  const path = `${N8N_VIDEO_AVATAR_WEBHOOK_PATH}?action=generateVideo`;
+  const res = await postToN8nWithRetry(
+    "videoAvatar",
+    validated.normalized as any,
+    {
+      path,
+      ...retry,
+    },
+  );
+  const sendResult = await parseResponseToSendResult(res);
+  return { ...sendResult, validation };
+}
+
+export interface VideoAvatarAttachImagesParams {
+  images: string[]; // public URLs
+  script_present: boolean;
+  pendingUploads?: number;
+  user_id?: string | null;
+  meta?: Partial<BaseMeta>;
+}
+export async function n8nVideoAvatarAttachImages(
+  params: VideoAvatarAttachImagesParams,
+  retry: RetryOptions = {},
+): Promise<ContractSendResult> {
+  const draft: AnyVideoAvatarPayload = {
+    identifier: "videoAvatar",
+    operation: "attach_images",
+    images: params.images,
+    script_present: params.script_present,
+    pendingUploads: params.pendingUploads,
+    user_id: params.user_id ?? undefined,
+    meta: {
+      user_id: params.user_id ?? undefined,
+      source: "app",
+      ts: new Date().toISOString(),
+      contract: "avatar-v1",
+      ...(params.meta || {}),
+    },
+  } as any;
+  const validated = validateAndNormalizeVideoAvatarPayload(draft);
+  const validation = buildValidationResult(validated);
+  if (!validation.ok) {
+    return {
+      ok: false,
+      status: 0,
+      data: null,
+      rawText: "",
+      requestId: undefined,
+      response: undefined as any,
+      validation,
+    };
+  }
+  const path = `${N8N_VIDEO_AVATAR_WEBHOOK_PATH}?action=attach_images`;
+  const res = await postToN8nWithRetry(
+    "videoAvatar",
+    validated.normalized as any,
+    {
+      path,
+      ...retry,
+    },
+  );
+  const sendResult = await parseResponseToSendResult(res);
+  return { ...sendResult, validation };
+}
+
+// ---------------- Product Campaign Workflow Helpers ----------------
+export interface ProductCampaignCommonFields {
+  campaign?: {
+    objective?: string;
+    description?: string;
+    aspectRatio?: string;
+    model?: string;
+  };
+  upload_assets?: string[]; // array form; will be normalized
+  campaign_id?: string; // stored into meta.campaign_id
+  user_id?: string | null;
+  meta?: Partial<BaseMeta>;
+}
+export interface ProductCampaignGenerateImagesParams
+  extends ProductCampaignCommonFields {
+  user_request: string;
+}
+export interface ProductCampaignGenerateVideoParams
+  extends ProductCampaignCommonFields {
+  user_request: string;
+}
+
+function normalizeUploadAssets(maybe: string[] | undefined) {
+  return maybe && maybe.length
+    ? maybe.filter((u) => typeof u === "string" && u.trim())
+    : undefined;
+}
+
+async function sendProductCampaign(
+  operation: "generateImages" | "generateVideo",
+  params:
+    | ProductCampaignGenerateImagesParams
+    | ProductCampaignGenerateVideoParams,
+  retry: RetryOptions,
+): Promise<ContractSendResult> {
+  const draft: AnyProductCampaignPayload = {
+    identifier: PRODUCT_CAMPAIGN_IDENTIFIER,
+    operation,
+    campaign: params.campaign,
+    user_request: params.user_request,
+    upload_assets: normalizeUploadAssets(params.upload_assets),
+    user_id: params.user_id ?? undefined,
+    meta: {
+      user_id: params.user_id ?? undefined,
+      source: "app",
+      ts: new Date().toISOString(),
+      contract: "product-campaign-v1",
+      campaign_id: params.campaign_id,
+      ...(params.meta || {}),
+    },
+  } as any;
+  const validated = validateAndNormalizeProductCampaignPayload(draft);
+  const validation = buildValidationResult(validated);
+  if (!validation.ok) {
+    return {
+      ok: false,
+      status: 0,
+      data: null,
+      rawText: "",
+      requestId: undefined,
+      response: undefined as any,
+      validation,
+    };
+  }
+  const path = `${N8N_PRODUCT_CAMPAIGN_WEBHOOK_PATH}?action=${operation}`;
+  const res = await postToN8nWithRetry(
+    PRODUCT_CAMPAIGN_IDENTIFIER,
+    validated.normalized as any,
+    { path, ...retry },
+  );
+  const sendResult = await parseResponseToSendResult(res);
+  return { ...sendResult, validation };
+}
+
+export async function n8nProductCampaignGenerateImages(
+  params: ProductCampaignGenerateImagesParams,
+  retry: RetryOptions = {},
+): Promise<ContractSendResult> {
+  return sendProductCampaign("generateImages", params, retry);
+}
+
+export async function n8nProductCampaignGenerateVideo(
+  params: ProductCampaignGenerateVideoParams,
+  retry: RetryOptions = {},
+): Promise<ContractSendResult> {
+  return sendProductCampaign("generateVideo", params, retry);
+}
 
 // ---------------------------------------------------------------------------
 // Standardized high-level helpers

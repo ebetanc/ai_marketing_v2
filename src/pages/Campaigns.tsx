@@ -16,10 +16,9 @@ import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { supabase, uploadFileToSupabaseStorage } from "../lib/supabase";
 import { MEDIA_BUCKET, campaignAssetPath } from "../lib/mediaBuckets";
 import {
-  postToN8n,
-  postToN8nWithRetry,
-  N8N_PRODUCT_CAMPAIGN_WEBHOOK_PATH,
-} from "../lib/n8n"; // path centralized in workflow registry
+  n8nProductCampaignGenerateImages,
+  n8nProductCampaignGenerateVideo,
+} from "../lib/n8n"; // centralized contract helpers
 import {
   PRODUCT_CAMPAIGN_IDENTIFIER,
   validateAndNormalizeProductCampaignPayload,
@@ -284,51 +283,25 @@ export function Campaigns() {
       const uploadedUrls = assets
         .filter((a) => a.publicUrl)
         .map((a) => a.publicUrl!) as string[];
-      const payload = {
-        identifier: PRODUCT_CAMPAIGN_IDENTIFIER,
-        operation,
-        user_id: userId,
-        meta: {
-          user_id: userId,
-          source: "app",
-          ts: new Date().toISOString(),
-          contract: "product-campaign-v1",
+      const user_request =
+        operation === "generateImages"
+          ? imageInstructions.trim()
+          : videoInstructions.trim();
+      const run =
+        operation === "generateImages"
+          ? n8nProductCampaignGenerateImages
+          : n8nProductCampaignGenerateVideo;
+      const res = await run(
+        {
+          user_request,
+          campaign: buildBaseCampaignObject(),
+          upload_assets: uploadedUrls,
           campaign_id: campaignId,
+          user_id: userId,
         },
-        campaign: buildBaseCampaignObject(),
-        user_request:
-          operation === "generateImages"
-            ? imageInstructions.trim()
-            : videoInstructions.trim(),
-        upload_assets: uploadedUrls,
-      } as const;
-      const { ok, errors, warnings, normalized } =
-        validateAndNormalizeProductCampaignPayload(payload as any);
-      if (warnings.length)
-        console.warn("[product-campaign-contract]", warnings);
-      if (!ok) {
-        push({ message: errors.join("; "), variant: "error" });
-        return;
-      }
-      // Append action query (workflow base path resolved from constant; registry holds same value)
-      const actionPath = `${N8N_PRODUCT_CAMPAIGN_WEBHOOK_PATH}?action=${operation}`;
-      const res = await postToN8nWithRetry(
-        PRODUCT_CAMPAIGN_IDENTIFIER,
-        normalized!,
         {
           attempts: 4,
-          path: actionPath,
-          onAttempt: ({
-            attempt,
-            attempts,
-            lastStatus,
-            lastError,
-          }: {
-            attempt: number;
-            attempts: number;
-            lastStatus?: number;
-            lastError?: any;
-          }) => {
+          onAttempt: ({ attempt, attempts, lastStatus, lastError }) => {
             const suffix = lastStatus
               ? ` (retry after ${lastStatus})`
               : lastError
@@ -341,8 +314,12 @@ export function Campaigns() {
               duration: 60000,
             });
           },
-        } as any,
+        },
       );
+      if (!res.validation.ok) {
+        push({ message: res.validation.errors.join("; "), variant: "error" });
+        return;
+      }
       if (!res.ok) throw new Error(`Webhook responded ${res.status}`);
       push({
         message:
@@ -359,7 +336,7 @@ export function Campaigns() {
           id: crypto.randomUUID(),
           type: operation === "generateImages" ? "images" : "video",
           ts: new Date().toISOString(),
-          requestId: (res as any).requestId,
+          requestId: res.requestId,
           assetCount: uploadedUrls.length,
           status: "queued",
           scriptChars: instructionText.length || undefined,

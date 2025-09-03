@@ -12,7 +12,10 @@ import {
 import { Textarea } from "../components/ui/Textarea";
 import { useToast } from "../components/ui/Toast";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
-import { N8N_VIDEO_AVATAR_WEBHOOK_PATH, postToN8nWithRetry } from "../lib/n8n"; // path centralized in workflow registry
+import {
+  n8nVideoAvatarAttachImages,
+  n8nVideoAvatarGenerateVideo,
+} from "../lib/n8n"; // centralized contract helpers
 import {
   validateAndNormalizeVideoAvatarPayload,
   VIDEO_AVATAR_IDENTIFIER,
@@ -271,36 +274,15 @@ export function CreateVideoAvatar() {
       // Fetch current user id (nullable if not authenticated)
       const { data: sessionData } = await supabase.auth.getSession();
       const userId = sessionData.session?.user.id || null;
-      const draftPayload = {
-        identifier: VIDEO_AVATAR_IDENTIFIER,
-        operation: "generateVideo" as const,
-        script: videoScript.trim(),
-        image_count: images.length,
-        user_id: userId,
-        meta: {
-          user_id: userId,
-          source: "app",
-          ts: new Date().toISOString(),
-          contract: "avatar-v1",
-        },
-      };
-      const { ok, errors, warnings, normalized } =
-        validateAndNormalizeVideoAvatarPayload(draftPayload);
-      if (warnings.length) console.warn("[avatar-contract]", warnings);
-      if (!ok) {
-        push({ message: errors.join("; "), variant: "error" });
-        setGenerating(false);
-        return;
-      }
       let attemptToast: string | null = null;
       const baseMsg = "Queueing video generation";
-      // Base path from constant (registry has same) + action discriminator
-      const actionPath = `${N8N_VIDEO_AVATAR_WEBHOOK_PATH}?action=generateVideo`;
-      const res = await postToN8nWithRetry(
-        VIDEO_AVATAR_IDENTIFIER,
-        normalized!,
+      const res = await n8nVideoAvatarGenerateVideo(
         {
-          path: actionPath,
+          script: videoScript.trim(),
+          image_count: images.length,
+          user_id: userId,
+        },
+        {
           attempts: 4,
           onAttempt: ({ attempt, attempts, lastStatus, lastError }) => {
             const suffix = lastStatus
@@ -317,8 +299,13 @@ export function CreateVideoAvatar() {
           },
         },
       );
+      if (!res.validation.ok) {
+        push({ message: res.validation.errors.join("; "), variant: "error" });
+        setGenerating(false);
+        return;
+      }
       if (!res.ok) throw new Error(`Webhook responded ${res.status}`);
-      const requestId = (res as any).requestId as string | undefined;
+      const requestId = res.requestId;
       push({ message: "Video generation queued", variant: "success" });
       const id = crypto.randomUUID();
       const firstImage =
@@ -389,43 +376,16 @@ export function CreateVideoAvatar() {
         .filter(Boolean);
       const { data: sessionData } = await supabase.auth.getSession();
       const userId = sessionData.session?.user.id || null;
-      const attachPayload = {
-        identifier: VIDEO_AVATAR_IDENTIFIER,
-        operation: "attach_images" as const,
-        script_present: !!videoScript.trim(),
-        images: uploaded,
-        pendingUploads: images.filter((i) => i.loading).length,
-        user_id: userId,
-        meta: {
-          user_id: userId,
-          source: "app",
-          ts: new Date().toISOString(),
-          contract: "avatar-v1",
-        },
-      };
-      const { ok, errors, warnings, normalized } =
-        validateAndNormalizeVideoAvatarPayload(attachPayload as any);
-      if (warnings.length) {
-        console.warn(
-          `[avatar-contract] Warnings for attach_images:\n - ${warnings.join(
-            "\n - ",
-          )}`,
-        );
-      }
-      if (!ok) {
-        push({ message: errors.join("; "), variant: "error" });
-        setAttaching(false);
-        return;
-      }
       let attemptToast: string | null = null;
       const baseMsg = "Attaching images";
-      // Compose attach action URL
-      const actionPath = `${N8N_VIDEO_AVATAR_WEBHOOK_PATH}?action=attach_images`;
-      const res = await postToN8nWithRetry(
-        VIDEO_AVATAR_IDENTIFIER,
-        normalized || attachPayload,
+      const res = await n8nVideoAvatarAttachImages(
         {
-          path: actionPath,
+          images: uploaded,
+          script_present: !!videoScript.trim(),
+          pendingUploads: images.filter((i) => i.loading).length,
+          user_id: userId,
+        },
+        {
           attempts: 4,
           onAttempt: ({ attempt, attempts, lastStatus, lastError }) => {
             const suffix = lastStatus
@@ -442,8 +402,13 @@ export function CreateVideoAvatar() {
           },
         },
       );
+      if (!res.validation.ok) {
+        push({ message: res.validation.errors.join("; "), variant: "error" });
+        setAttaching(false);
+        return;
+      }
       if (!res.ok) throw new Error(`Webhook responded ${res.status}`);
-      const requestId = (res as any).requestId as string | undefined;
+      const requestId = res.requestId;
       push({
         message: `${uploaded.length} image(s) attached`,
         variant: "success",
