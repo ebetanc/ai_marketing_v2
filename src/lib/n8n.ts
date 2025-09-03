@@ -2,7 +2,6 @@
 // Usage: postToN8n('generateIdeas', payload) or postToN8n('...', payload, { path: 'uuid-or-custom-path' })
 import {
   validateAndNormalizeVideoAvatarPayload,
-  VIDEO_AVATAR_IDENTIFIER,
   type AnyVideoAvatarPayload,
 } from "./n8nAvatarContract";
 import {
@@ -29,7 +28,7 @@ export const N8N_BASE_URL =
   "https://n8n.srv856940.hstgr.cloud";
 // Default generic content webhook path
 export const N8N_DEFAULT_WEBHOOK_PATH = "content-saas";
-// Specific video avatar webhook UUID path (updated production value)
+// Specific video avatar webhook UUID path
 export const N8N_VIDEO_AVATAR_WEBHOOK_PATH =
   "b7774650-a050-421b-bb73-fa302946f8c6";
 // Real estate content generation webhook UUID path
@@ -55,31 +54,47 @@ export type N8nPostOptions = {
   headers?: Record<string, string>;
 };
 
-// Default contract inference table (extend as needed)
-const CONTRACT_MAP: Record<string, string> = {
-  generateAngles: "core-v1",
-  generateIdeas: "core-v1",
-  generateContent: "core-v1",
-  autofill: "core-v1",
-  content_saas: "core-v1",
-  videoAvatar: "avatar-v1",
+// Unified workflow registry: contract, default operation, optional validator & fixed path
+interface WorkflowConfig {
+  contract?: string;
+  defaultOperation?: string;
+  validator?: (p: any) => ReturnType<typeof validateAndNormalizeN8nPayload>;
+  path?: string;
+}
+const WORKFLOWS: Record<string, WorkflowConfig> = {
+  generateAngles: {
+    contract: "core-v1",
+    defaultOperation: "create_strategy_angles",
+  },
+  generateIdeas: {
+    contract: "core-v1",
+    defaultOperation: "create_ideas_from_angle",
+  },
+  generateContent: {
+    contract: "core-v1",
+    defaultOperation: "generate_content_from_idea",
+  },
+  autofill: { contract: "core-v1", defaultOperation: "company_autofill" },
+  content_saas: { contract: "core-v1", defaultOperation: "real_estate_ingest" },
+  videoAvatar: {
+    contract: "avatar-v1",
+    validator: (p) =>
+      validateAndNormalizeVideoAvatarPayload(p as AnyVideoAvatarPayload) as any,
+  },
+  [PRODUCT_CAMPAIGN_IDENTIFIER]: {
+    contract: "core-v1",
+    validator: (p) =>
+      validateAndNormalizeProductCampaignPayload(
+        p as AnyProductCampaignPayload,
+      ) as any,
+  },
 };
 function determineDefaultContract(identifier: string) {
-  return CONTRACT_MAP[identifier] || "generic-v1";
+  return WORKFLOWS[identifier]?.contract || "generic-v1";
 }
-
-// Validator registry (identifier -> validator fn)
-type ValidatorFn = (
-  p: any,
-) => ReturnType<typeof validateAndNormalizeN8nPayload>;
-const VALIDATORS: Record<string, ValidatorFn> = {
-  [VIDEO_AVATAR_IDENTIFIER]: (p) =>
-    validateAndNormalizeVideoAvatarPayload(p as AnyVideoAvatarPayload) as any,
-  [PRODUCT_CAMPAIGN_IDENTIFIER]: (p) =>
-    validateAndNormalizeProductCampaignPayload(
-      p as AnyProductCampaignPayload,
-    ) as any,
-};
+function getWorkflowValidator(identifier: string) {
+  return WORKFLOWS[identifier]?.validator || validateAndNormalizeN8nPayload;
+}
 
 export async function postToN8n(
   identifier: string,
@@ -138,8 +153,7 @@ export async function postToN8n(
 
   if (envMode !== "production") {
     try {
-      const validator =
-        VALIDATORS[identifier] || validateAndNormalizeN8nPayload;
+      const validator = getWorkflowValidator(identifier);
       const { ok, warnings, errors, normalized } = validator(merged) as any;
       if (warnings?.length) {
         console.warn(
@@ -305,20 +319,37 @@ export async function sendN8n<T = any>(
   };
 }
 
-// Internal generic builder to reduce duplication
+// Internal generic builder infers operation & path when omitted
 async function buildAndSend(
   identifier: string,
-  operation: string,
+  operation: string | undefined,
   params: Record<string, any>,
   opts: { platforms?: string[]; autoUser?: boolean; path?: string } = {},
 ) {
+  const wf = WORKFLOWS[identifier];
+  const op = operation || params.operation || wf?.defaultOperation || "unknown";
   const payload = await createN8nPayload(
     identifier,
-    operation,
+    op,
     { ...params },
     { platforms: opts.platforms, autoUser: opts.autoUser },
   );
-  return sendN8n(payload, opts.path ? { path: opts.path } : undefined);
+  const path = opts.path || wf?.path;
+  return sendN8n(payload, path ? { path } : undefined);
+}
+
+// Generic catch-all public helper
+export async function n8nCall(
+  identifier: string,
+  params: Record<string, any>,
+  opts: {
+    operation?: string;
+    platforms?: string[];
+    autoUser?: boolean;
+    path?: string;
+  } = {},
+) {
+  return buildAndSend(identifier, opts.operation, params, opts);
 }
 
 // Convenience per-operation builders (public API unchanged)
@@ -327,7 +358,7 @@ export async function n8nAutofill(params: {
   brand?: Record<string, any>;
   [k: string]: any;
 }) {
-  return buildAndSend("autofill", "company_autofill", params);
+  return buildAndSend("autofill", undefined, params);
 }
 
 export async function n8nGenerateAngles(params: {
@@ -336,7 +367,7 @@ export async function n8nGenerateAngles(params: {
   platforms: string[];
   [k: string]: any;
 }) {
-  return buildAndSend("generateAngles", "create_strategy_angles", params, {
+  return buildAndSend("generateAngles", undefined, params, {
     platforms: params.platforms,
   });
 }
@@ -348,7 +379,7 @@ export async function n8nGenerateIdeas(params: {
   platforms: string[];
   [k: string]: any;
 }) {
-  return buildAndSend("generateIdeas", "create_ideas_from_angle", params, {
+  return buildAndSend("generateIdeas", undefined, params, {
     platforms: params.platforms,
   });
 }
@@ -361,13 +392,13 @@ export async function n8nGenerateContent(params: {
   platforms: string[];
   [k: string]: any;
 }) {
-  return buildAndSend("generateContent", "generate_content_from_idea", params, {
+  return buildAndSend("generateContent", undefined, params, {
     platforms: params.platforms,
   });
 }
 
 export async function n8nRealEstateIngest(params: { url: string }) {
-  return buildAndSend("content_saas", "real_estate_ingest", params, {
+  return buildAndSend("content_saas", undefined, params, {
     autoUser: true,
     path: N8N_REAL_ESTATE_WEBHOOK_PATH,
   });
