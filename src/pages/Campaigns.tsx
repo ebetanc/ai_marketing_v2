@@ -638,9 +638,10 @@ export function Campaigns() {
       />
 
       <div className="grid gap-8 max-w-6xl">
+        {/* Step 1: Campaign Brief */}
         <Card>
           <CardHeader>
-            <CardTitle>Campaign Brief</CardTitle>
+            <CardTitle>Step 1 — Campaign Brief</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
@@ -710,74 +711,12 @@ export function Campaigns() {
           </CardContent>
         </Card>
 
-        {activity.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto -mx-2 px-2">
-                <table className="w-full text-left text-xs">
-                  <thead className="text-[11px] uppercase text-gray-500">
-                    <tr className="border-b">
-                      <th className="py-2 pr-3 font-medium">Time</th>
-                      <th className="py-2 pr-3 font-medium">Operation</th>
-                      <th className="py-2 pr-3 font-medium">Instr Chars</th>
-                      <th className="py-2 pr-3 font-medium">Assets</th>
-                      <th className="py-2 pr-3 font-medium">Status</th>
-                      <th className="py-2 pr-3 font-medium">Req ID</th>
-                      <th className="py-2 pr-3 font-medium">Message</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {activity.slice(0, 50).map((a) => (
-                      <tr key={a.id} className="border-b last:border-none">
-                        <td className="py-1 pr-3 whitespace-nowrap">
-                          {new Date(a.ts).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            second: "2-digit",
-                          })}
-                        </td>
-                        <td className="py-1 pr-3 capitalize">{a.type}</td>
-                        <td className="py-1 pr-3 text-center">
-                          {a.scriptChars ?? "-"}
-                        </td>
-                        <td className="py-1 pr-3 text-center">
-                          {a.assetCount}
-                        </td>
-                        <td className="py-1 pr-3">
-                          <span
-                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${a.status === "queued" ? "bg-amber-100 text-amber-700" : a.status === "ok" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}
-                          >
-                            {a.status}
-                          </span>
-                        </td>
-                        <td
-                          className="py-1 pr-3 max-w-[120px] truncate"
-                          title={a.requestId}
-                        >
-                          {a.requestId || ""}
-                        </td>
-                        <td
-                          className="py-1 pr-3 max-w-[220px] truncate"
-                          title={a.message}
-                        >
-                          {a.message}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
+        {/* Step 2: Reference Assets */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Upload className="h-5 w-5 text-brand-600" /> Reference Assets
+              <Upload className="h-5 w-5 text-brand-600" /> Step 2 — Reference
+              Assets
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -861,7 +800,7 @@ export function Campaigns() {
                   loading={submitting}
                   className="bg-brand-600 hover:bg-brand-700"
                 >
-                  <ImagePlus className="h-4 w-4" /> Generate Images
+                  <ImagePlus className="h-4 w-4" /> Step 3 — Generate Images
                 </Button>
               )}
               {tab === "video" && (
@@ -871,16 +810,16 @@ export function Campaigns() {
                   loading={submitting}
                   className="bg-brand-600 hover:bg-brand-700"
                 >
-                  <Video className="h-4 w-4" /> Generate Video Prompt
+                  <Video className="h-4 w-4" /> Step 3 — Generate Video Prompt
                 </Button>
               )}
             </div>
           </CardContent>
         </Card>
-
+        {/* Step 4: Generation Jobs */}
         <Card>
           <CardHeader>
-            <CardTitle>Recent Generation Jobs</CardTitle>
+            <CardTitle>Step 4 — Generation Jobs</CardTitle>
           </CardHeader>
           <CardContent>
             {jobs.length === 0 ? (
@@ -1012,6 +951,71 @@ export function Campaigns() {
             )}
           </CardContent>
         </Card>
+
+        {/* Step 5: Recent Activity */}
+        {activity.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Step 5 — Recent Activity</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto -mx-2 px-2">
+                <table className="w-full text-left text-xs">
+                  <thead className="text-[11px] uppercase text-gray-500">
+                    <tr className="border-b">
+                      <th className="py-2 pr-3 font-medium">Time</th>
+                      <th className="py-2 pr-3 font-medium">Operation</th>
+                      <th className="py-2 pr-3 font-medium">Instr Chars</th>
+                      <th className="py-2 pr-3 font-medium">Assets</th>
+                      <th className="py-2 pr-3 font-medium">Status</th>
+                      <th className="py-2 pr-3 font-medium">Req ID</th>
+                      <th className="py-2 pr-3 font-medium">Message</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activity.slice(0, 50).map((a) => (
+                      <tr key={a.id} className="border-b last:border-none">
+                        <td className="py-1 pr-3 whitespace-nowrap">
+                          {new Date(a.ts).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            second: "2-digit",
+                          })}
+                        </td>
+                        <td className="py-1 pr-3 capitalize">{a.type}</td>
+                        <td className="py-1 pr-3 text-center">
+                          {a.scriptChars ?? "-"}
+                        </td>
+                        <td className="py-1 pr-3 text-center">
+                          {a.assetCount}
+                        </td>
+                        <td className="py-1 pr-3">
+                          <span
+                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${a.status === "queued" ? "bg-amber-100 text-amber-700" : a.status === "ok" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}
+                          >
+                            {a.status}
+                          </span>
+                        </td>
+                        <td
+                          className="py-1 pr-3 max-w-[120px] truncate"
+                          title={a.requestId}
+                        >
+                          {a.requestId || ""}
+                        </td>
+                        <td
+                          className="py-1 pr-3 max-w-[220px] truncate"
+                          title={a.message}
+                        >
+                          {a.message}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </PageContainer>
   );

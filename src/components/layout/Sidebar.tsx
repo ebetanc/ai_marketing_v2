@@ -85,13 +85,13 @@ const toolsNav: NavItem[] = [
   },
   // Video workflow (hidden)
   {
-    name: "Create AI Video",
+    name: "AI Video",
     href: "/create-ai-video",
     icon: Video,
     show: () => false,
   },
   {
-    name: "Create AI Video with Avatar",
+    name: "AI Video with Avatar",
     href: "/create-video-avatar",
     icon: UserCircle,
   },

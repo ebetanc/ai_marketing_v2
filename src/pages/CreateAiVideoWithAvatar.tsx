@@ -623,159 +623,12 @@ export function CreateVideoAvatar() {
       />
 
       <div className="max-w-6xl space-y-8">
+        {/* Step 1: Upload & Attach Images */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Video className="h-5 w-5 text-brand-600" />
-              Video Script
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              label="Video Script"
-              placeholder="Enter the script for your video avatar..."
-              value={videoScript}
-              onChange={(e) => setVideoScript(e.target.value)}
-              rows={8}
-              description="Write the dialogue or narration for your video avatar."
-            />
-            <p className="mt-2 text-[11px] text-gray-500 flex items-center gap-2">
-              <span>{videoScript.length.toLocaleString()} chars</span>
-              {videoScript.length > 1500 && (
-                <span className="text-amber-600">
-                  Long scripts may take longer to process.
-                </span>
-              )}
-            </p>
-            <div className="mt-4 flex justify-end">
-              <Button
-                onClick={handleGenerateVideo}
-                disabled={!videoScript.trim() || generating}
-                loading={generating}
-                className="bg-brand-600 hover:bg-brand-700"
-              >
-                <Play className="h-4 w-4" /> Generate Video
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        {jobs.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                Recent Video Jobs
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto -mx-2 md:mx-0">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-gray-600 border-b">
-                      <th className="py-2 pr-4 font-medium">Status</th>
-                      <th className="py-2 pr-4 font-medium">Created</th>
-                      <th className="py-2 pr-4 font-medium">Completed</th>
-                      <th className="py-2 pr-4 font-medium">Duration</th>
-                      <th className="py-2 pr-4 font-medium">Error</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {jobs.map((j) => (
-                      <React.Fragment key={j.id}>
-                        <tr
-                          className="border-b last:border-none cursor-pointer"
-                          onClick={() => toggleExpandJob(j.id)}
-                        >
-                          <td className="py-2 pr-4">
-                            <span
-                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${j.status === "completed" ? "bg-emerald-100 text-emerald-700" : j.status === "failed" ? "bg-red-100 text-red-700" : j.status === "processing" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-700"}`}
-                            >
-                              {j.status}
-                            </span>
-                          </td>
-                          <td className="py-2 pr-4 whitespace-nowrap tabular-nums">
-                            {new Date(j.created_at).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </td>
-                          <td className="py-2 pr-4 whitespace-nowrap tabular-nums">
-                            {j.completed_at
-                              ? new Date(j.completed_at).toLocaleTimeString(
-                                  [],
-                                  { hour: "2-digit", minute: "2-digit" },
-                                )
-                              : "—"}
-                          </td>
-                          <td className="py-2 pr-4 text-xs text-gray-600">
-                            {j.duration_seconds
-                              ? `${j.duration_seconds}s`
-                              : "—"}
-                          </td>
-                          <td
-                            className="py-2 pr-4 text-xs max-w-[160px] truncate"
-                            title={j.error_message || undefined}
-                          >
-                            {j.error_message || ""}
-                          </td>
-                        </tr>
-                        {expandedJob === j.id && (
-                          <tr className="bg-gray-50">
-                            <td colSpan={5} className="p-4">
-                              <div className="space-y-3">
-                                <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                                  Assets
-                                </div>
-                                {jobAssets[j.id]?.length ? (
-                                  <div className="grid gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-                                    {jobAssets[j.id].map((a) => (
-                                      <div
-                                        key={a.id}
-                                        className="group relative border border-gray-200 rounded-md overflow-hidden bg-white"
-                                      >
-                                        <img
-                                          src={a.url}
-                                          alt={`Asset ${a.asset_index}`}
-                                          className="w-full h-28 object-cover"
-                                        />
-                                        <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-[10px] text-white px-1 py-0.5 flex justify-between">
-                                          <span>#{a.asset_index}</span>
-                                          {a.width && a.height && (
-                                            <span>
-                                              {a.width}×{a.height}
-                                            </span>
-                                          )}
-                                          {a.duration_seconds && (
-                                            <span>{a.duration_seconds}s</span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <div className="text-xs text-gray-500">
-                                    {j.status === "completed"
-                                      ? "No assets stored"
-                                      : "Waiting for assets..."}
-                                  </div>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                      </React.Fragment>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Upload className="h-5 w-5 text-brand-600" />
-              Upload Images
+              <Upload className="h-5 w-5 text-brand-600" /> Step 1 — Upload
+              Images
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -940,12 +793,57 @@ export function CreateVideoAvatar() {
             )}
           </CardContent>
         </Card>
+        {/* Step 2: Script & Generate */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Video className="h-5 w-5 text-brand-600" /> Step 2 — Video Script
+              & Generate
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              label="Video Script"
+              placeholder="Enter the script for your video avatar..."
+              value={videoScript}
+              onChange={(e) => setVideoScript(e.target.value)}
+              rows={8}
+              description="Write the dialogue or narration for your avatar video. Upload at least 3 images first for best results."
+            />
+            <p className="mt-2 text-[11px] text-gray-500 flex items-center gap-2">
+              <span>{videoScript.length.toLocaleString()} chars</span>
+              {videoScript.length > 1500 && (
+                <span className="text-amber-600">
+                  Long scripts may take longer to process.
+                </span>
+              )}
+              {images.length < 3 && (
+                <span className="text-red-600">
+                  Need at least 3 images (currently {images.length})
+                </span>
+              )}
+            </p>
+            <div className="mt-4 flex justify-end">
+              <Button
+                onClick={handleGenerateVideo}
+                disabled={
+                  !videoScript.trim() || generating || images.length < 3
+                }
+                loading={generating}
+                className="bg-brand-600 hover:bg-brand-700"
+              >
+                <Play className="h-4 w-4" /> Generate Video
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        {/* Step 3: Generated Videos */}
         {videoPreviews.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Video className="h-5 w-5 text-brand-600" />
-                Generated Videos ({videoPreviews.length})
+                <Video className="h-5 w-5 text-brand-600" /> Step 3 — Generated
+                Videos ({videoPreviews.length})
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -1006,11 +904,127 @@ export function CreateVideoAvatar() {
             </CardContent>
           </Card>
         )}
+        {/* Step 4: Video Jobs (technical details) */}
+        {jobs.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                Step 4 — Video Jobs
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto -mx-2 md:mx-0">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-gray-600 border-b">
+                      <th className="py-2 pr-4 font-medium">Status</th>
+                      <th className="py-2 pr-4 font-medium">Created</th>
+                      <th className="py-2 pr-4 font-medium">Completed</th>
+                      <th className="py-2 pr-4 font-medium">Duration</th>
+                      <th className="py-2 pr-4 font-medium">Error</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {jobs.map((j) => (
+                      <React.Fragment key={j.id}>
+                        <tr
+                          className="border-b last:border-none cursor-pointer"
+                          onClick={() => toggleExpandJob(j.id)}
+                        >
+                          <td className="py-2 pr-4">
+                            <span
+                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${j.status === "completed" ? "bg-emerald-100 text-emerald-700" : j.status === "failed" ? "bg-red-100 text-red-700" : j.status === "processing" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-700"}`}
+                            >
+                              {j.status}
+                            </span>
+                          </td>
+                          <td className="py-2 pr-4 whitespace-nowrap tabular-nums">
+                            {new Date(j.created_at).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </td>
+                          <td className="py-2 pr-4 whitespace-nowrap tabular-nums">
+                            {j.completed_at
+                              ? new Date(j.completed_at).toLocaleTimeString(
+                                  [],
+                                  {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  },
+                                )
+                              : "—"}
+                          </td>
+                          <td className="py-2 pr-4 text-xs text-gray-600">
+                            {j.duration_seconds
+                              ? `${j.duration_seconds}s`
+                              : "—"}
+                          </td>
+                          <td
+                            className="py-2 pr-4 text-xs max-w-[160px] truncate"
+                            title={j.error_message || undefined}
+                          >
+                            {j.error_message || ""}
+                          </td>
+                        </tr>
+                        {expandedJob === j.id && (
+                          <tr className="bg-gray-50">
+                            <td colSpan={5} className="p-4">
+                              <div className="space-y-3">
+                                <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                                  Assets
+                                </div>
+                                {jobAssets[j.id]?.length ? (
+                                  <div className="grid gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+                                    {jobAssets[j.id].map((a) => (
+                                      <div
+                                        key={a.id}
+                                        className="group relative border border-gray-200 rounded-md overflow-hidden bg-white"
+                                      >
+                                        <img
+                                          src={a.url}
+                                          alt={`Asset ${a.asset_index}`}
+                                          className="w-full h-28 object-cover"
+                                        />
+                                        <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-[10px] text-white px-1 py-0.5 flex justify-between">
+                                          <span>#{a.asset_index}</span>
+                                          {a.width && a.height && (
+                                            <span>
+                                              {a.width}×{a.height}
+                                            </span>
+                                          )}
+                                          {a.duration_seconds && (
+                                            <span>{a.duration_seconds}s</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="text-xs text-gray-500">
+                                    {j.status === "completed"
+                                      ? "No assets stored"
+                                      : "Waiting for assets..."}
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        {/* Step 5: Activity */}
         {activity.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                Recent Activity
+                Step 5 — Recent Activity
               </CardTitle>
             </CardHeader>
             <CardContent>
