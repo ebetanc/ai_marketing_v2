@@ -17,6 +17,7 @@ import {
   validateAndNormalizeVideoAvatarPayload,
   VIDEO_AVATAR_IDENTIFIER,
 } from "../lib/n8nAvatarContract";
+import { supabase } from "../lib/supabase";
 import { uploadFileToSupabaseStorage } from "../lib/supabase";
 
 interface UploadedImage {
@@ -192,12 +193,17 @@ export function CreateVideoAvatar() {
     }
     setGenerating(true);
     try {
+      // Fetch current user id (nullable if not authenticated)
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user.id || null;
       const draftPayload = {
         identifier: VIDEO_AVATAR_IDENTIFIER,
         operation: "generateVideo" as const,
         script: videoScript.trim(),
         image_count: images.length,
+        user_id: userId,
         meta: {
+          user_id: userId,
           source: "app",
           ts: new Date().toISOString(),
           contract: "avatar-v1",
@@ -257,21 +263,43 @@ export function CreateVideoAvatar() {
         .filter((i) => i.supabaseUrl)
         .map((i) => i.supabaseUrl!)
         .filter(Boolean);
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user.id || null;
       const attachPayload = {
-        identifier: "videoAvatar",
+        identifier: VIDEO_AVATAR_IDENTIFIER,
         operation: "attach_images" as const,
         script_present: !!videoScript.trim(),
         images: uploaded,
         pendingUploads: images.filter((i) => i.loading).length,
+        user_id: userId,
         meta: {
+          user_id: userId,
           source: "app",
           ts: new Date().toISOString(),
           contract: "avatar-v1",
         },
       };
-      const res = await postToN8n("videoAvatar", attachPayload, {
-        path: N8N_VIDEO_AVATAR_WEBHOOK_PATH,
-      });
+      const { ok, errors, warnings, normalized } =
+        validateAndNormalizeVideoAvatarPayload(attachPayload as any);
+      if (warnings.length) {
+        console.warn(
+          `[avatar-contract] Warnings for attach_images:\n - ${warnings.join(
+            "\n - ",
+          )}`,
+        );
+      }
+      if (!ok) {
+        push({ message: errors.join("; "), variant: "error" });
+        setAttaching(false);
+        return;
+      }
+      const res = await postToN8n(
+        VIDEO_AVATAR_IDENTIFIER,
+        normalized || attachPayload,
+        {
+          path: N8N_VIDEO_AVATAR_WEBHOOK_PATH,
+        },
+      );
       if (!res.ok) throw new Error(`Webhook responded ${res.status}`);
       push({
         message: `${uploaded.length} image(s) attached`,

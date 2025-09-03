@@ -163,6 +163,9 @@ export function validateAndNormalizeN8nPayload(
     case "content_saas":
       requireKeys(["url"]);
       break;
+    case "videoAvatar":
+      // Handled by specialized avatar contract validator; no required fields here
+      break;
     default:
       warnings.push(`Unknown identifier '${id}'`);
   }

@@ -1,0 +1,3273 @@
+{
+  "name": "Veo3 Video Concept Generation",
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "chatgpt-4o-latest",
+          "mode": "list",
+          "cachedResultName": "CHATGPT-4O-LATEST"
+        },
+        "text": "Describe the product and brand in this image in full detail. Fully ignore the background. Focus ONLY on the product.",
+        "imageUrls": "={{ $json.image_url }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [544, 496],
+      "id": "8c023deb-d13c-4ef6-9f4a-b4f7a5694fd6",
+      "name": "Analyze image",
+      "credentials": {
+        "openAiApi": {
+          "id": "U46LK5mxeA2mY2dB",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the URL string from the aggregate node\nconst urlString = $json.url;\n\n// Split the comma-separated URLs and format each with quotes\nconst formattedUrls = urlString\n  .flatMap(urlString => {\n    if (typeof urlString === \"string\") {\n      return urlString.split(',');\n    }\n    return [];\n  })\n  .map(url => `\"${url.trim()}\"`)\n  .join(',\\n');\n\n// Return the formatted result\nreturn {\n  formattedUrls: formattedUrls\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1792, 464],
+      "id": "b56680f1-71c7-4614-a75b-7583646218e0",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5",
+          "mode": "list",
+          "cachedResultName": "GPT-5"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Here is the user request for the Images to be created:\n{{ $('Get Concept Record ID - Image Generation - 2').item.json['AI Images instructions'] }}\n\nHere is the Campaign Objective:\n{{ $('Get Concept Record ID - Image Generation').first().json.Description }}\n\nDescription of the Products seen in various images submitted by the user:\n{{ $('Aggregate Content Output').item.json.content }}\n\nUse the Think tool to double check your output"
+            },
+            {
+              "content": "=You are an expert image generation prompt engineer specializing in OpenAI's GPT-4o image generation capabilities. Your role is to analyze campaign concepts and product reference images to create detailed, structured prompts that will generate high-quality marketing visuals.\n\nTASK: Transform the provided creative brief and product descriptions into a comprehensive image generation prompt formatted as stringified JSON that will work alongside user-provided reference images.\n\nINPUT ANALYSIS:\n- Campaign Concept: Carefully analyze the creative brief to understand the marketing goals, target audience, brand tone, and desired visual style\n- Product References: Examine the product descriptions from submitted images to identify key visual elements, packaging details, branding elements, colors, and design features\n- Reference Integration: The prompt will be used by an image generation API that will receive BOTH your text prompt AND the user's reference images simultaneously\n\nPROMPT LENGTH OPTIMIZATION:\nGPT Image 1 (GPT-4o) handles longer prompts better than DALL-E 3 but still benefits from concise, focused descriptions. Target 400-800 characters for optimal results - detailed enough for quality but not overly verbose.\n\nESSENTIAL ELEMENTS (prioritize in order):\n1. CORE SCENE: Main subject + setting + reference integration\n2. VISUAL STYLE: Photography style, lighting, composition  \n3. QUALITY SPECIFICATIONS: Technical details (realistic, sharp, etc.)\n4. FALLBACK: Alternative if no reference images provided\n\nKEY ADVANTAGES OF GPT IMAGE 1:\n- Excellent text rendering and product detail preservation\n- Strong prompt adherence and contextual understanding\n- Natural language processing (conversational prompts work well)\n- Superior handling of detailed technical specifications\n\nREFERENCE IMAGE INTEGRATION STRATEGY:\nYour prompt must describe a SCENARIO where the user's reference images (products, objects, people, etc.) will be seamlessly integrated. Structure your prompt to:\n- Define the ENVIRONMENT and CONTEXT where reference elements should be placed\n- Specify how reference elements should INTERACT with the scene\n- Provide fallback descriptions in case reference images are not provided\n- Use phrases like \"incorporate the provided reference elements,\" \"integrate the uploaded objects,\" or \"place the reference items\"\n\nPROMPT QUALITY STANDARDS:\n- Be highly specific and detailed - vague prompts produce poor results\n- Use descriptive adjectives and precise terminology\n- Include technical photography terms for professional quality\n- Specify exact colors, materials, textures, and finishes\n- Define spatial relationships between elements\n- Account for brand guidelines and marketing objectives from the brief\n\nOUTPUT FORMAT:\nReturn only a valid stringified JSON object:\n{\"image_prompt\": \"Your comprehensive image generation prompt here...\"}\n\nOPTIMIZED SINGLE PARAGRAPH FORMAT:\nYour image_prompt should be ONE well-structured paragraph (1000-1500 characters) that creates a comprehensive scenario for integrating reference images while providing fallback descriptions.\n\nEXAMPLE STRUCTURE:\n\"Create a professional commercial photograph of [REFERENCE ITEMS/fallback description] positioned in [SPECIFIC SETTING] with [DETAILED LIGHTING DESCRIPTION], featuring [COMPOSITION DETAILS] that showcases [KEY VISUAL ELEMENTS], captured with [CAMERA/STYLE SPECIFICATIONS] to achieve [QUALITY/EFFECTS] aesthetic, ensuring any product packaging, labels, and logos remain crystal clear and sharp, with colors that complement the overall scene and realistic depth of field.\"\n\nADVANCED PROMPTING TIPS:\n- GPT Image 1 excels at understanding conversational, detailed prompts\n- Include specific technical photography terms for professional results\n- Mention text rendering requirements explicitly for product shots\n- Use descriptive adjectives for materials, textures, and finishes\n\nRemember: The more detailed and specific your single-paragraph prompt, the better GPT-4o will understand and execute your vision. Ensure all technical and creative elements flow seamlessly in one continuous description.",
+              "role": "system"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [1952, 464],
+      "id": "14569357-08af-4ac9-a764-d7a9698b98ce",
+      "name": "Generate System Prompt Images GPT-Image",
+      "credentials": {
+        "openAiApi": {
+          "id": "U46LK5mxeA2mY2dB",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "base": {
+          "__rl": true,
+          "value": "appH2OEGW78g0qSOw",
+          "mode": "list",
+          "cachedResultName": "AI-powered campaign concept generation",
+          "cachedResultUrl": "https://airtable.com/appH2OEGW78g0qSOw"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbliQfQHTLEw6henQ",
+          "mode": "list",
+          "cachedResultName": "Concept Generation",
+          "cachedResultUrl": "https://airtable.com/appH2OEGW78g0qSOw/tbliQfQHTLEw6henQ"
+        },
+        "id": "={{ $('Get Concept Record ID - Image Generation').first().json.id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [1232, 464],
+      "id": "3ae726dc-9798-454a-bba2-78bb955c27fd",
+      "name": "Get Concept Record ID - Image Generation - 2"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "['Upload Assets']",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [1440, 464],
+      "id": "79153e7d-072e-4311-8984-1dc03f0e35ac",
+      "name": "Split Out - Upload Assets"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "content"
+            },
+            {
+              "fieldToAggregate": "url"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1040, 464],
+      "id": "dbd85b74-b61e-4c8b-9d18-583324ae2ea8",
+      "name": "Aggregate Content Output"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "url"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1632, 464],
+      "id": "a2ed6c01-37bb-467e-906b-9cdff339b180",
+      "name": "Aggregate Image URLs"
+    },
+    {
+      "parameters": {
+        "url": "https://api.kie.ai/api/v1/gpt4o-image/record-info",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "taskId",
+              "value": "={{ $json.data.taskId }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer 82a77dac40a54697562f882bac975454"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2816, 464],
+      "id": "979ec612-e407-4951-95bb-7a1c1f09af1c",
+      "name": "Retrieve 4o Image"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f8fc1069-c56a-483d-9257-6669d9eb9031",
+              "leftValue": "={{ $json.code }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [2464, 464],
+      "id": "80773c72-8f8a-469c-a59d-c7e5bbfde1b1",
+      "name": "If Success"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "value": "appH2OEGW78g0qSOw",
+          "mode": "list",
+          "cachedResultName": "AI-powered campaign concept generation",
+          "cachedResultUrl": "https://airtable.com/appH2OEGW78g0qSOw"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbliQfQHTLEw6henQ",
+          "mode": "list",
+          "cachedResultName": "Concept Generation",
+          "cachedResultUrl": "https://airtable.com/appH2OEGW78g0qSOw/tbliQfQHTLEw6henQ"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Run": false,
+            "id": "={{ $('Get Concept Record ID - Image Generation - 2').first().json.id }}",
+            "Images Assets": "={{ $json.data.response.resultUrls.map(url => ({ url })) }}",
+            "Image Status": "Success",
+            "Images Prompt ": "={{ $('Generate System Prompt Images GPT-Image').item.json.message.content.image_prompt }}",
+            "Images Description": "={{ String($('Aggregate Content Output').item.json.content) }}"
+          },
+          "matchingColumns": ["id"],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Campaign",
+              "displayName": "Campaign",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Upload Assets",
+              "displayName": "Upload Assets",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Images Description",
+              "displayName": "Images Description",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Run",
+              "displayName": "Run",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Details Status",
+              "displayName": "Details Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Start",
+                  "value": "Start"
+                },
+                {
+                  "name": "Generating",
+                  "value": "Generating"
+                },
+                {
+                  "name": "Completed",
+                  "value": "Completed"
+                },
+                {
+                  "name": "Error",
+                  "value": "Error"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Personas",
+              "displayName": "Personas",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Key messages",
+              "displayName": "Key messages",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Brand touchpoints",
+              "displayName": "Brand touchpoints",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "options": [],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "AI Images instructions",
+              "displayName": "AI Images instructions",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "AI Videos instructions",
+              "displayName": "AI Videos instructions",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Number of Images",
+              "displayName": "Number of Images",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "1",
+                  "value": "1"
+                },
+                {
+                  "name": "2",
+                  "value": "2"
+                },
+                {
+                  "name": "4",
+                  "value": "4"
+                },
+                {
+                  "name": "choose number",
+                  "value": "choose number"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Image Size",
+              "displayName": "Image Size",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "1:1",
+                  "value": "1:1"
+                },
+                {
+                  "name": "3:2",
+                  "value": "3:2"
+                },
+                {
+                  "name": "2:3",
+                  "value": "2:3"
+                },
+                {
+                  "name": "choose size",
+                  "value": "choose size"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Image Status",
+              "displayName": "Image Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Generating",
+                  "value": "Generating"
+                },
+                {
+                  "name": "Failed",
+                  "value": "Failed"
+                },
+                {
+                  "name": "Success",
+                  "value": "Success"
+                },
+                {
+                  "name": "waiting",
+                  "value": "waiting"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Images Prompt ",
+              "displayName": "Images Prompt ",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Images Assets",
+              "displayName": "Images Assets",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "AI Model",
+              "displayName": "AI Model",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "veo3",
+                  "value": "veo3"
+                },
+                {
+                  "name": "veo3_fast",
+                  "value": "veo3_fast"
+                },
+                {
+                  "name": "choose model",
+                  "value": "choose model"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Aspect Ratio",
+              "displayName": "Aspect Ratio",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "16:9",
+                  "value": "16:9"
+                },
+                {
+                  "name": "9:16",
+                  "value": "9:16"
+                },
+                {
+                  "name": "choose aspect ratio",
+                  "value": "choose aspect ratio"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Video Status",
+              "displayName": "Video Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "waiting",
+                  "value": "waiting"
+                },
+                {
+                  "name": "generating",
+                  "value": "generating"
+                },
+                {
+                  "name": "failed",
+                  "value": "failed"
+                },
+                {
+                  "name": "success",
+                  "value": "success"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Videos Assets",
+              "displayName": "Videos Assets",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Record ID",
+              "displayName": "Record ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Agency",
+              "displayName": "Agency",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Created Time",
+              "displayName": "Created Time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Last Modified Time",
+              "displayName": "Last Modified Time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "API Key (from API Services) (from Agency)",
+              "displayName": "API Key (from API Services) (from Agency)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [3008, 464],
+      "id": "571fea50-ac97-45d7-8501-e6680dadfd8f",
+      "name": "Create or update a record"
+    },
+    {
+      "parameters": {
+        "base": {
+          "__rl": true,
+          "value": "appH2OEGW78g0qSOw",
+          "mode": "list",
+          "cachedResultName": "AI-powered campaign concept generation",
+          "cachedResultUrl": "https://airtable.com/appH2OEGW78g0qSOw"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbliQfQHTLEw6henQ",
+          "mode": "list",
+          "cachedResultName": "Concept Generation",
+          "cachedResultUrl": "https://airtable.com/appH2OEGW78g0qSOw/tbliQfQHTLEw6henQ"
+        },
+        "id": "={{ $json.query.recordId }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [32, 768],
+      "id": "26642351-b768-439d-8d2b-f4519276404a",
+      "name": "Get a Concept Record ID - Video Generation",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "BPl1dVuD6w4ccv7q",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appH2OEGW78g0qSOw",
+          "mode": "list",
+          "cachedResultName": "AI-powered campaign concept generation",
+          "cachedResultUrl": "https://airtable.com/appH2OEGW78g0qSOw"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbliQfQHTLEw6henQ",
+          "mode": "list",
+          "cachedResultName": "Concept Generation",
+          "cachedResultUrl": "https://airtable.com/appH2OEGW78g0qSOw/tbliQfQHTLEw6henQ"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Webhook').item.json.query.recordId }}",
+            "Image Status": "Failed",
+            "Run": false
+          },
+          "matchingColumns": ["id"],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Campaign",
+              "displayName": "Campaign",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Upload Assets",
+              "displayName": "Upload Assets",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Images Description",
+              "displayName": "Images Description",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Run",
+              "displayName": "Run",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Details Status",
+              "displayName": "Details Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Start",
+                  "value": "Start"
+                },
+                {
+                  "name": "Generating",
+                  "value": "Generating"
+                },
+                {
+                  "name": "Completed",
+                  "value": "Completed"
+                },
+                {
+                  "name": "Error",
+                  "value": "Error"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Personas",
+              "displayName": "Personas",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Key messages",
+              "displayName": "Key messages",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Brand touchpoints",
+              "displayName": "Brand touchpoints",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "options": [],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "AI Images instructions",
+              "displayName": "AI Images instructions",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "AI Videos instructions",
+              "displayName": "AI Videos instructions",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Number of Images",
+              "displayName": "Number of Images",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "1",
+                  "value": "1"
+                },
+                {
+                  "name": "2",
+                  "value": "2"
+                },
+                {
+                  "name": "4",
+                  "value": "4"
+                },
+                {
+                  "name": "choose number",
+                  "value": "choose number"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Image Size",
+              "displayName": "Image Size",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "1:1",
+                  "value": "1:1"
+                },
+                {
+                  "name": "3:2",
+                  "value": "3:2"
+                },
+                {
+                  "name": "2:3",
+                  "value": "2:3"
+                },
+                {
+                  "name": "choose size",
+                  "value": "choose size"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Image Status",
+              "displayName": "Image Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Generating",
+                  "value": "Generating"
+                },
+                {
+                  "name": "Failed",
+                  "value": "Failed"
+                },
+                {
+                  "name": "Success",
+                  "value": "Success"
+                },
+                {
+                  "name": "waiting",
+                  "value": "waiting"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Images Prompt ",
+              "displayName": "Images Prompt ",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Images Assets",
+              "displayName": "Images Assets",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "AI Model",
+              "displayName": "AI Model",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "veo3",
+                  "value": "veo3"
+                },
+                {
+                  "name": "veo3_fast",
+                  "value": "veo3_fast"
+                },
+                {
+                  "name": "choose model",
+                  "value": "choose model"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Aspect Ratio",
+              "displayName": "Aspect Ratio",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "16:9",
+                  "value": "16:9"
+                },
+                {
+                  "name": "9:16",
+                  "value": "9:16"
+                },
+                {
+                  "name": "choose aspect ratio",
+                  "value": "choose aspect ratio"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Video Status",
+              "displayName": "Video Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "waiting",
+                  "value": "waiting"
+                },
+                {
+                  "name": "generating",
+                  "value": "generating"
+                },
+                {
+                  "name": "failed",
+                  "value": "failed"
+                },
+                {
+                  "name": "success",
+                  "value": "success"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Videos Assets",
+              "displayName": "Videos Assets",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Record ID",
+              "displayName": "Record ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Agency",
+              "displayName": "Agency",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Created Time",
+              "displayName": "Created Time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Last Modified Time",
+              "displayName": "Last Modified Time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "API Key (from API Services) (from Agency)",
+              "displayName": "API Key (from API Services) (from Agency)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [3200, 464],
+      "id": "a9552831-b762-4d08-b47c-0fe36f14498c",
+      "name": "Update Image Generation Failed"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "['Images Assets']",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [240, 768],
+      "id": "cf2c77f4-c7dc-43a8-8e2d-a7a8be3b074a",
+      "name": "Split Out - Images Assets"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "url"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [640, 768],
+      "id": "fa3645ff-eda6-4568-a432-4988ea2f3bf1",
+      "name": "Aggregate - Images URLs"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the URL string from the aggregate node\nconst urlString = $json.url;\n\n// Split the comma-separated URLs and format each with quotes\nconst formattedUrls = urlString\n  .flatMap(urlString => {\n    if (typeof urlString === \"string\") {\n      return urlString.split(',');\n    }\n    return [];\n  })\n  .map(url => `\"${url.trim()}\"`)\n  .join(',\\n');\n\n// Return the formatted result\nreturn {\n  formattedUrls: formattedUrls\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [848, 768],
+      "id": "98413eb7-f502-4fa8-831e-5b51a0a72222",
+      "name": "Code - Format URLs"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5-2025-08-07",
+          "mode": "list",
+          "cachedResultName": "GPT-5-2025-08-07"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Here is the user request of the video generation:\n{{ $('Get a Concept Record ID - Video Generation').item.json['AI Videos instructions'] }}\n\nHere is the Campaign objectives:\n{{ $('Get a Concept Record ID - Video Generation').item.json.Campaign }}\n\n{{ $('Get a Concept Record ID - Video Generation').item.json.Description }}\n\nHere is the Images Description inputed by the user:\n{{ $('Get a Concept Record ID - Video Generation').item.json['Images Description'] }}\n\nHere is the requested aspect ratio by the user:\n{{ $('Get a Concept Record ID - Video Generation').item.json['Aspect Ratio'] }}\n\nUse the Think tool to double check your output"
+            },
+            {
+              "content": "=# Veo3 Video Generation System Prompt\n\nYou are an expert video prompt engineer specializing in creating detailed, cinematic prompts for Veo3 video generation. Your role is to analyze user inputs and transform them into comprehensive video generation instructions that produce high-quality, engaging content.\n\n## Input Analysis\nYou will receive the following user inputs:\n- **AI Videos instructions**: The core user request for video generation\n- **Campaign objectives**: The marketing campaign goals and description\n- **Images Description**: Visual context provided by the user\n- **Aspect Ratio**: Requested video dimensions\n\n## Output Format\nYou must output ONLY a stringified JSON object with this exact structure:\n```json\n{\"Video_prompt\": \"{\\\"description\\\": \\\"your detailed scene description here\\\", \\\"setting\\\": \\\"environment and background details\\\", \\\"camera_type\\\": \\\"technical camera specifications\\\", \\\"camera_movement\\\": \\\"camera motion and framing\\\", \\\"action\\\": \\\"specific movements and timing\\\", \\\"lighting\\\": \\\"lighting setup and mood\\\", \\\"other_details\\\": \\\"additional production notes\\\", \\\"ending\\\": \\\"final shot and resolution\\\", \\\"keywords\\\": [\\\"relevant\\\", \\\"search\\\", \\\"terms\\\"]}\"}\n```\n\n**CRITICAL**: The Video_prompt value must be a stringified JSON object (JSON within JSON as a string). Ensure all quotes inside the stringified JSON are properly escaped with backslashes.\n\n## Prompt Construction Guidelines\n\n### Core Elements to Include:\n1. **Visual Description**: Detailed scene composition, subjects, and visual elements\n2. **Setting/Environment**: Location, atmosphere, and background details\n3. **Camera Work**: Shot type, movement, angles, and technical specifications\n4. **Lighting**: Mood, direction, and quality of light\n5. **Motion/Action**: Specific movements, transitions, and timing\n6. **Style**: Cinematic approach, visual aesthetic, and production quality\n7. **Technical Details**: Frame rate, resolution hints, and aspect ratio integration\n\n### Quality Standards:\n- Use cinematic, professional language\n- Include specific technical details (camera specs, lighting setup)\n- Describe motion and timing precisely\n- Maintain brand consistency with campaign objectives\n- Ensure visual coherence with provided image descriptions\n- Incorporate the requested aspect ratio naturally\n\n### Example Prompt Patterns:\nReference these successful structures:\n\n**High-Quality Commercial Example (Kellogg's Nutri-Grain) - Expected Output Format:**\n```json\n{\"Video_prompt\": \"{\\\"description\\\": \\\"Open on the Kellogg's Nutri-Grain Choc Malt Flavour box, placed centrally and heroically on a glossy surface. Product box is 100% sharp, all labels clear. Instantly, bursts of chocolate pieces, malt balls, cereal flakes, and dramatic milk splashes explode upward and outward from behind and around the box in cinematic slow motion, emphasizing the natural flavours and ingredients. Pieces freeze and suspend at peak motion, reveling in vibrant energy.\\\", \\\"setting\\\": \\\"Commercial studio scene matching the image, vibrant gold-red gradient background reflecting the packaging color scheme.\\\", \\\"camera_type\\\": \\\"Cinematic 4K broadcast camera, 50mm lens, 120fps slow-motion, f/5.6, ISO 200.\\\", \\\"camera_movement\\\": \\\"Slow, controlled dolly-in toward the box as ingredients explode, ending in a tight hero shot.\\\", \\\"action\\\": \\\"Bursts of real chocolate, malt, flakes, and milk erupt in slow motion from the background, swirling around before freezing midair, creating a spectacle around the box.\\\", \\\"lighting\\\": \\\"Bold studio lighting with bright frontal illumination, strong backlights to make the splashes pop and add glossy highlights.\\\", \\\"other_details\\\": \\\"All text on the box always kept readable; the explosion is energetic pop soundtrack underscoring the explosive freshness and power.\\\", \\\"ending\\\": \\\"The video ends with the suspended explosion around the box, tagline \\\\\\\"Fuels Active Bodies\\\\\\\" animating on-screen, all in sync with the music hit.\\\", \\\"keywords\\\": [\\\"Kellogg's Nutri-Grain Choc Malt\\\", \\\"explosive ingredients\\\", \\\"slow motion\\\", \\\"dynamic commercial\\\", \\\"16:9\\\", \\\"commercial lighting\\\"]}\"}\n```\n\n**Commercial Product Focus Pattern:**\n\"Cinematic 4K shot of [PRODUCT] placed heroically on [SURFACE]. [DYNAMIC ELEMENTS] explode/burst/emerge in slow motion, creating [VISUAL SPECTACLE]. Camera: [TECHNICAL SPECS]. Lighting: [SETUP]. Motion: [DETAILED ACTION]. Ending: [RESOLUTION].\"\n\n**Transformation/Assembly Pattern:**\n\"Fixed wide-angle shot of [ENVIRONMENT]. [CONTAINER/BOX] sits centrally and [INITIAL ACTION]. [TRANSFORMATION SEQUENCE] with precise timing. Elements: [LIST]. Motion: [ASSEMBLY DETAILS]. Style: cinematic, photorealistic.\"\n\n**Epic Reveal Pattern:**\n\"Epic cinematic shot in [LOCATION]. [CONTAINER] mechanically opens revealing [HERO PRODUCT]. Camera: [MOVEMENT]. Lighting: [DRAMATIC SETUP]. Environment: [ATMOSPHERE]. Motion: [REVEAL SEQUENCE].\"\n\n## Processing Instructions:\n1. Analyze the campaign objectives to understand the brand message and tone\n2. Incorporate the user's video instructions as the core creative direction\n3. Use the images description to inform visual style and composition\n4. Integrate the aspect ratio requirement seamlessly into camera and framing descriptions\n5. Create a cohesive narrative that serves the campaign goals\n6. Ensure all technical specifications support professional video production quality\n\n## Output Requirements:\n- Maximum prompt length: 500 words\n- Include specific technical details (camera, lighting, motion)\n- Maintain cinematic language and professional terminology\n- Ensure brand alignment with campaign objectives\n- Specify aspect ratio integration\n- Include timing and sequence details for complex actions\n- End with clear resolution or call-to-action alignment\n\n## Quality Checklist:\n- [ ] Cinematic and professional language used\n- [ ] Technical camera specifications included\n- [ ] Lighting setup described\n- [ ] Motion/action clearly detailed\n- [ ] Aspect ratio properly integrated\n- [ ] Campaign objectives reflected\n- [ ] Visual coherence with image descriptions\n- [ ] Professional production quality indicators included\n- [ ] Timing and sequence properly structured\n- [ ] Brand-appropriate tone maintained\n\nRemember: Your output must be ONLY the stringified JSON object with the Video_prompt containing a stringified JSON structure. Do not include any other text, explanations, or formatting outside of the required JSON structure. The Video_prompt value should be a complete JSON object converted to a string with properly escaped quotes.",
+              "role": "system"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [1056, 768],
+      "id": "fb792d27-b0ad-46ca-bb42-21fc3ca72a6f",
+      "name": "Generate System Prompt Video VEO3",
+      "credentials": {
+        "openAiApi": {
+          "id": "U46LK5mxeA2mY2dB",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1.1,
+      "position": [1136, 880],
+      "id": "a31a7c41-f711-46c5-a95b-f899531bf612",
+      "name": "Think - VEO3"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1.1,
+      "position": [2032, 576],
+      "id": "28d6e10f-0fd8-41b4-862d-53db8d42990c",
+      "name": "Think - GPT IMAG1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "42ce1435-74b7-41c6-9a20-1017dc048a35",
+              "leftValue": "={{ $json.code }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1616, 768],
+      "id": "a84cb438-401e-4318-8f4b-1defc4da6378",
+      "name": "If success"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [448, 768],
+      "id": "308124c1-4ad2-443a-b5cb-e44eebcee9a6",
+      "name": "Limit 1 Image - API Limit"
+    },
+    {
+      "parameters": {
+        "url": "https://api.kie.ai/api/v1/veo/record-info",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "taskId",
+              "value": "={{ $json.data.taskId }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer 82a77dac40a54697562f882bac975454"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2000, 768],
+      "id": "783ff68b-0cfa-4ef9-b131-0db1a0f234f5",
+      "name": "Retrieve Video - 1080p - video"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appH2OEGW78g0qSOw",
+          "mode": "list",
+          "cachedResultName": "AI-powered campaign concept generation",
+          "cachedResultUrl": "https://airtable.com/appH2OEGW78g0qSOw"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbliQfQHTLEw6henQ",
+          "mode": "list",
+          "cachedResultName": "Concept Generation",
+          "cachedResultUrl": "https://airtable.com/appH2OEGW78g0qSOw/tbliQfQHTLEw6henQ"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Run": false,
+            "id": "={{ $('Webhook').item.json.query.recordId }}",
+            "Video Status": "success",
+            "Videos Assets": "={{ [ { \"url\": $json.data.response.resultUrls[0] } ] }}"
+          },
+          "matchingColumns": ["id"],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Campaign",
+              "displayName": "Campaign",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Upload Assets",
+              "displayName": "Upload Assets",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Images Description",
+              "displayName": "Images Description",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Run",
+              "displayName": "Run",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Details Status",
+              "displayName": "Details Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Start",
+                  "value": "Start"
+                },
+                {
+                  "name": "Generating",
+                  "value": "Generating"
+                },
+                {
+                  "name": "Completed",
+                  "value": "Completed"
+                },
+                {
+                  "name": "Error",
+                  "value": "Error"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Personas",
+              "displayName": "Personas",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Key messages",
+              "displayName": "Key messages",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Brand touchpoints",
+              "displayName": "Brand touchpoints",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "options": [],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "AI Images instructions",
+              "displayName": "AI Images instructions",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "AI Videos instructions",
+              "displayName": "AI Videos instructions",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Number of Images",
+              "displayName": "Number of Images",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "1",
+                  "value": "1"
+                },
+                {
+                  "name": "2",
+                  "value": "2"
+                },
+                {
+                  "name": "4",
+                  "value": "4"
+                },
+                {
+                  "name": "choose number",
+                  "value": "choose number"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Image Size",
+              "displayName": "Image Size",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "1:1",
+                  "value": "1:1"
+                },
+                {
+                  "name": "3:2",
+                  "value": "3:2"
+                },
+                {
+                  "name": "2:3",
+                  "value": "2:3"
+                },
+                {
+                  "name": "choose size",
+                  "value": "choose size"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Image Status",
+              "displayName": "Image Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Generating",
+                  "value": "Generating"
+                },
+                {
+                  "name": "Failed",
+                  "value": "Failed"
+                },
+                {
+                  "name": "Success",
+                  "value": "Success"
+                },
+                {
+                  "name": "waiting",
+                  "value": "waiting"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Images Prompt ",
+              "displayName": "Images Prompt ",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Images Assets",
+              "displayName": "Images Assets",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "AI Model",
+              "displayName": "AI Model",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "veo3",
+                  "value": "veo3"
+                },
+                {
+                  "name": "veo3_fast",
+                  "value": "veo3_fast"
+                },
+                {
+                  "name": "choose model",
+                  "value": "choose model"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Aspect Ratio",
+              "displayName": "Aspect Ratio",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "16:9",
+                  "value": "16:9"
+                },
+                {
+                  "name": "9:16",
+                  "value": "9:16"
+                },
+                {
+                  "name": "choose aspect ratio",
+                  "value": "choose aspect ratio"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Video Status",
+              "displayName": "Video Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "waiting",
+                  "value": "waiting"
+                },
+                {
+                  "name": "generating",
+                  "value": "generating"
+                },
+                {
+                  "name": "failed",
+                  "value": "failed"
+                },
+                {
+                  "name": "success",
+                  "value": "success"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Videos Assets",
+              "displayName": "Videos Assets",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Record ID",
+              "displayName": "Record ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Agency",
+              "displayName": "Agency",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Created Time",
+              "displayName": "Created Time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Last Modified Time",
+              "displayName": "Last Modified Time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "API Key (from API Services) (from Agency)",
+              "displayName": "API Key (from API Services) (from Agency)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [2384, 768],
+      "id": "0a475ded-019b-40ee-bcf4-d71ea5a71a5d",
+      "name": "Update Video Assets Results"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1a499eb-dfc2-4da3-ac3c-064daa941f46",
+              "leftValue": "={{ $json.code }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [2192, 768],
+      "id": "03cf5a02-ab4e-4bda-bc7d-3cf02e90cd5f",
+      "name": "If Success Video"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appH2OEGW78g0qSOw",
+          "mode": "list",
+          "cachedResultName": "AI-powered campaign concept generation",
+          "cachedResultUrl": "https://airtable.com/appH2OEGW78g0qSOw"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbliQfQHTLEw6henQ",
+          "mode": "list",
+          "cachedResultName": "Concept Generation",
+          "cachedResultUrl": "https://airtable.com/appH2OEGW78g0qSOw/tbliQfQHTLEw6henQ"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Run": false,
+            "id": "={{ $('Webhook').item.json.query.recordId }}",
+            "Video Status": "failed"
+          },
+          "matchingColumns": ["id"],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Campaign",
+              "displayName": "Campaign",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Upload Assets",
+              "displayName": "Upload Assets",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Images Description",
+              "displayName": "Images Description",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Run",
+              "displayName": "Run",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Details Status",
+              "displayName": "Details Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Start",
+                  "value": "Start"
+                },
+                {
+                  "name": "Generating",
+                  "value": "Generating"
+                },
+                {
+                  "name": "Completed",
+                  "value": "Completed"
+                },
+                {
+                  "name": "Error",
+                  "value": "Error"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Personas",
+              "displayName": "Personas",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Key messages",
+              "displayName": "Key messages",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Brand touchpoints",
+              "displayName": "Brand touchpoints",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "options": [],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "AI Images instructions",
+              "displayName": "AI Images instructions",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "AI Videos instructions",
+              "displayName": "AI Videos instructions",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Number of Images",
+              "displayName": "Number of Images",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "1",
+                  "value": "1"
+                },
+                {
+                  "name": "2",
+                  "value": "2"
+                },
+                {
+                  "name": "4",
+                  "value": "4"
+                },
+                {
+                  "name": "choose number",
+                  "value": "choose number"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Image Size",
+              "displayName": "Image Size",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "1:1",
+                  "value": "1:1"
+                },
+                {
+                  "name": "3:2",
+                  "value": "3:2"
+                },
+                {
+                  "name": "2:3",
+                  "value": "2:3"
+                },
+                {
+                  "name": "choose size",
+                  "value": "choose size"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Image Status",
+              "displayName": "Image Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Generating",
+                  "value": "Generating"
+                },
+                {
+                  "name": "Failed",
+                  "value": "Failed"
+                },
+                {
+                  "name": "Success",
+                  "value": "Success"
+                },
+                {
+                  "name": "waiting",
+                  "value": "waiting"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Images Prompt ",
+              "displayName": "Images Prompt ",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Images Assets",
+              "displayName": "Images Assets",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "AI Model",
+              "displayName": "AI Model",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "veo3",
+                  "value": "veo3"
+                },
+                {
+                  "name": "veo3_fast",
+                  "value": "veo3_fast"
+                },
+                {
+                  "name": "choose model",
+                  "value": "choose model"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Aspect Ratio",
+              "displayName": "Aspect Ratio",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "16:9",
+                  "value": "16:9"
+                },
+                {
+                  "name": "9:16",
+                  "value": "9:16"
+                },
+                {
+                  "name": "choose aspect ratio",
+                  "value": "choose aspect ratio"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Video Status",
+              "displayName": "Video Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "waiting",
+                  "value": "waiting"
+                },
+                {
+                  "name": "generating",
+                  "value": "generating"
+                },
+                {
+                  "name": "failed",
+                  "value": "failed"
+                },
+                {
+                  "name": "success",
+                  "value": "success"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Videos Assets",
+              "displayName": "Videos Assets",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Record ID",
+              "displayName": "Record ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Agency",
+              "displayName": "Agency",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Created Time",
+              "displayName": "Created Time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Last Modified Time",
+              "displayName": "Last Modified Time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "API Key (from API Services) (from Agency)",
+              "displayName": "API Key (from API Services) (from Agency)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [2192, 896],
+      "id": "030f6116-cc92-4a67-a6fd-bda93bfebe12",
+      "name": "Update Getting Failed"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appH2OEGW78g0qSOw",
+          "mode": "list",
+          "cachedResultName": "AI-powered campaign concept generation",
+          "cachedResultUrl": "https://airtable.com/appH2OEGW78g0qSOw"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbliQfQHTLEw6henQ",
+          "mode": "list",
+          "cachedResultName": "Concept Generation",
+          "cachedResultUrl": "https://airtable.com/appH2OEGW78g0qSOw/tbliQfQHTLEw6henQ"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Webhook').item.json.query.recordId }}",
+            "Run": false,
+            "Video Status": "failed"
+          },
+          "matchingColumns": ["id"],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Campaign",
+              "displayName": "Campaign",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Upload Assets",
+              "displayName": "Upload Assets",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Images Description",
+              "displayName": "Images Description",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Run",
+              "displayName": "Run",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Details Status",
+              "displayName": "Details Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Start",
+                  "value": "Start"
+                },
+                {
+                  "name": "Generating",
+                  "value": "Generating"
+                },
+                {
+                  "name": "Completed",
+                  "value": "Completed"
+                },
+                {
+                  "name": "Error",
+                  "value": "Error"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Personas",
+              "displayName": "Personas",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Key messages",
+              "displayName": "Key messages",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Brand touchpoints",
+              "displayName": "Brand touchpoints",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "options": [],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "AI Images instructions",
+              "displayName": "AI Images instructions",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "AI Videos instructions",
+              "displayName": "AI Videos instructions",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Number of Images",
+              "displayName": "Number of Images",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "1",
+                  "value": "1"
+                },
+                {
+                  "name": "2",
+                  "value": "2"
+                },
+                {
+                  "name": "4",
+                  "value": "4"
+                },
+                {
+                  "name": "choose number",
+                  "value": "choose number"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Image Size",
+              "displayName": "Image Size",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "1:1",
+                  "value": "1:1"
+                },
+                {
+                  "name": "3:2",
+                  "value": "3:2"
+                },
+                {
+                  "name": "2:3",
+                  "value": "2:3"
+                },
+                {
+                  "name": "choose size",
+                  "value": "choose size"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Image Status",
+              "displayName": "Image Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Generating",
+                  "value": "Generating"
+                },
+                {
+                  "name": "Failed",
+                  "value": "Failed"
+                },
+                {
+                  "name": "Success",
+                  "value": "Success"
+                },
+                {
+                  "name": "waiting",
+                  "value": "waiting"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Images Prompt ",
+              "displayName": "Images Prompt ",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Images Assets",
+              "displayName": "Images Assets",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "AI Model",
+              "displayName": "AI Model",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "veo3",
+                  "value": "veo3"
+                },
+                {
+                  "name": "veo3_fast",
+                  "value": "veo3_fast"
+                },
+                {
+                  "name": "choose model",
+                  "value": "choose model"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Aspect Ratio",
+              "displayName": "Aspect Ratio",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "16:9",
+                  "value": "16:9"
+                },
+                {
+                  "name": "9:16",
+                  "value": "9:16"
+                },
+                {
+                  "name": "choose aspect ratio",
+                  "value": "choose aspect ratio"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Video Status",
+              "displayName": "Video Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "waiting",
+                  "value": "waiting"
+                },
+                {
+                  "name": "generating",
+                  "value": "generating"
+                },
+                {
+                  "name": "failed",
+                  "value": "failed"
+                },
+                {
+                  "name": "success",
+                  "value": "success"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Videos Assets",
+              "displayName": "Videos Assets",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Record ID",
+              "displayName": "Record ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Agency",
+              "displayName": "Agency",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Created Time",
+              "displayName": "Created Time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Last Modified Time",
+              "displayName": "Last Modified Time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "API Key (from API Services) (from Agency)",
+              "displayName": "API Key (from API Services) (from Agency)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [1616, 896],
+      "id": "70e60f60-8094-4e9b-9405-b1920c9f2829",
+      "name": "Update Status Video Generation Failed"
+    },
+    {
+      "parameters": {
+        "amount": 180
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [2640, 464],
+      "id": "d27c307e-b346-4ac0-9d83-f54b860d9b13",
+      "name": "Wait 180s",
+      "webhookId": "8f6a7bec-abd2-48b8-b79d-4235051beda1"
+    },
+    {
+      "parameters": {
+        "amount": 240
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1808, 768],
+      "id": "239d2ebd-15a5-434d-a390-667c54c01bc9",
+      "name": "Wait 300s Videos",
+      "webhookId": "8f6a7bec-abd2-48b8-b79d-4235051beda1"
+    },
+    {
+      "parameters": {
+        "content": "          Image Analyst LLM",
+        "height": 288,
+        "width": 400,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [400, 400],
+      "typeVersion": 1,
+      "id": "b9d23c00-ddd2-4934-8333-6ebb4d23fe06",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "    Image Prompt Generator",
+        "height": 288,
+        "width": 256,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [1728, 400],
+      "typeVersion": 1,
+      "id": "f9b83267-5afc-4417-a199-8b17acf86df7",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "    KIE AI Image",
+        "height": 288,
+        "width": 192,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [2000, 400],
+      "typeVersion": 1,
+      "id": "b65a5d34-d613-42e1-b79b-8097280a563f",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "    KIE AI Image",
+        "height": 320,
+        "width": 208,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [2544, 384],
+      "typeVersion": 1,
+      "id": "3623758a-819c-438c-90f3-bf842f7be741",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "    Video Prompt Generator",
+        "height": 320,
+        "width": 272,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [1040, 688],
+      "typeVersion": 1,
+      "id": "de88aa04-aeff-4252-861b-6340a6d083c9",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "     KIE AI Video",
+        "height": 256,
+        "width": 224,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [1344, 688],
+      "typeVersion": 1,
+      "id": "6eab7fd0-844a-459b-a955-e3727df3ac52",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "    KIE AI Video",
+        "height": 240,
+        "width": 224,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [1936, 704],
+      "typeVersion": 1,
+      "id": "bef11595-d645-41f1-8dcb-64b88b83df20",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "                        Image File Processing",
+        "height": 224,
+        "width": 816,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [176, 704],
+      "typeVersion": 1,
+      "id": "b5fdf14d-bd0f-4d7d-9033-25cc2a611df8",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "content": "                        Image File Processing",
+        "height": 224,
+        "width": 928,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [800, 400],
+      "typeVersion": 1,
+      "id": "174a9305-5b13-443c-adfb-f0e38912867a",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.kie.ai/api/v1/gpt4o-image/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Get Concept Record ID - Image Generation - 2').item.json['API Key (from API Services) (from Agency)'][0] }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"filesUrl\": [\n{{ $('Code').item.json.formattedUrls }}\n  ],\n  \"prompt\": \"Take the product in the image and place it in this scenario: {{ $json.message.content.image_prompt }}\",\n  \"size\": \"{{ $('Get Concept Record ID - Image Generation - 2').item.json['Image Size'] }}\",\n  \"nVariants\": {{ $('Get Concept Record ID - Image Generation - 2').item.json['Number of Images'] }}\n}",
+        "options": {
+          "response": {
+            "response": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2784, 768],
+      "id": "52431163-1a68-4d6e-b7a0-f6d2f1c1a44d",
+      "name": "Generate 4o Images -",
+      "alwaysOutputData": false,
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.kie.ai/api/v1/gpt4o-image/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer 82a77dac40a54697562f882bac975454"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "filesUrl",
+              "value": "={{ $('Code').item.json.formattedUrls }}"
+            },
+            {
+              "name": "prompt",
+              "value": "=Take the product in the image and place it in this scenario: {{ $json.message.content.image_prompt }}"
+            },
+            {
+              "name": "size",
+              "value": "={{ $('Get Concept Record ID - Image Generation - 2').item.json['Image Size'] }}"
+            },
+            {
+              "name": "nVariants",
+              "value": "={{ $('Get Concept Record ID - Image Generation - 2').item.json['Number of Images'] }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2256, 464],
+      "id": "491a0fa0-2b01-4b2d-8b05-19fc7f82d033",
+      "name": "Generate 4o Images",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.kie.ai/api/v1/veo/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer 82a77dac40a54697562f882bac975454"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"prompt\": {{ $json.message.content.Video_prompt }},\n  \"imageUrls\": [\n{{ $('Code - Format URLs').item.json.formattedUrls }}\n  ],\n  \"model\": \"{{ $('Get a Concept Record ID - Video Generation').item.json['AI Model'] }}\",\n  \"watermark\": \"agenia\",\n  \"aspectRatio\": \"{{ $('Get a Concept Record ID - Video Generation').item.json['Aspect Ratio'] }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1408, 768],
+      "id": "3967a4c6-707d-4b91-b63c-3ff574af1dcb",
+      "name": "Generate Videos VEO 3"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.kie.ai/api/v1/veo/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Get a Concept Record ID - Video Generation').item.json['API Key (from API Services) (from Agency)'][0] }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "={{ $json.message.content.Video_Prompt }}"
+            },
+            {
+              "name": "imageUrls",
+              "value": "={{ $('Code - Format URLs').item.json.formattedUrls }}"
+            },
+            {
+              "name": "model",
+              "value": "={{ $('Get a Concept Record ID - Video Generation').item.json['AI Model'] }}"
+            },
+            {
+              "name": "aspectRatio",
+              "value": "={{ $('Get a Concept Record ID - Video Generation').item.json['Aspect Ratio'] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2608, 768],
+      "id": "1f368ecc-2d2b-4577-b404-5d49ff299ebb",
+      "name": "Generate Videos VEO3",
+      "disabled": true
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [16, 448],
+      "id": "c5f925a3-47ec-4612-8a7b-9dd1d2d667ec",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3969f2b9-a1ed-4d07-8e82-83e0969a04db",
+              "name": "image_url",
+              "value": "https://gbiujmsevpfruhcolrug.supabase.co/storage/v1/object/public/images/IMG_7871.jpg",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [224, 448],
+      "id": "9e5b0eb1-a0a4-4eec-a1c1-be6e317f2238",
+      "name": "Edit Fields"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Analyze image": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Content Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Generate System Prompt Images GPT-Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate System Prompt Images GPT-Image": {
+      "main": [
+        [
+          {
+            "node": "Generate 4o Images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Concept Record ID - Image Generation - 2": {
+      "main": [
+        [
+          {
+            "node": "Split Out - Upload Assets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out - Upload Assets": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Image URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Content Output": {
+      "main": [
+        [
+          {
+            "node": "Get Concept Record ID - Image Generation - 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Image URLs": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Success": {
+      "main": [
+        [
+          {
+            "node": "Wait 180s",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Image Generation Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retrieve 4o Image": {
+      "main": [
+        [
+          {
+            "node": "Create or update a record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a Concept Record ID - Video Generation": {
+      "main": [
+        [
+          {
+            "node": "Split Out - Images Assets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out - Images Assets": {
+      "main": [
+        [
+          {
+            "node": "Limit 1 Image - API Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate - Images URLs": {
+      "main": [
+        [
+          {
+            "node": "Code - Format URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Format URLs": {
+      "main": [
+        [
+          {
+            "node": "Generate System Prompt Video VEO3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think - VEO3": {
+      "ai_tool": [
+        [
+          {
+            "node": "Generate System Prompt Video VEO3",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think - GPT IMAG1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Generate System Prompt Images GPT-Image",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate System Prompt Video VEO3": {
+      "main": [
+        [
+          {
+            "node": "Generate Videos VEO 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If success": {
+      "main": [
+        [
+          {
+            "node": "Wait 300s Videos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Status Video Generation Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit 1 Image - API Limit": {
+      "main": [
+        [
+          {
+            "node": "Aggregate - Images URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retrieve Video - 1080p - video": {
+      "main": [
+        [
+          {
+            "node": "If Success Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Success Video": {
+      "main": [
+        [
+          {
+            "node": "Update Video Assets Results",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Getting Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 180s": {
+      "main": [
+        [
+          {
+            "node": "Retrieve 4o Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 300s Videos": {
+      "main": [
+        [
+          {
+            "node": "Retrieve Video - 1080p - video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate 4o Images": {
+      "main": [
+        [
+          {
+            "node": "If Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Videos VEO 3": {
+      "main": [
+        [
+          {
+            "node": "If success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Analyze image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "56185278-b913-43a3-846c-27b9c7fd6b57",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fe9d3a12f258c7c25e0241bdac4abdc1d2d4cbca003a5fd500ebff17b6038d7a"
+  },
+  "id": "UzI3PhKZcrm4u1hY",
+  "tags": []
+}

@@ -31,6 +31,13 @@ interface NavItem {
   name: string;
   href: string;
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  /**
+   * Optional visibility predicate. If provided and returns false, the nav item
+   * will be hidden. If omitted the item is shown by default.
+   * Usage example:
+   * { name: 'Admin Only', href: '/admin', icon: Shield, show: ({ role }) => role === 'admin' }
+   */
+  show?: (ctx: VisibilityContext) => boolean;
 }
 
 interface NavGroupConfig {
@@ -58,15 +65,31 @@ const contentWorkflowNav: NavItem[] = [
 // Ordered after SEO group for flow: research -> production
 const toolsNav: NavItem[] = [
   // Image workflow
-  { name: "Create AI Image", href: "/create-ai-image", icon: ImagePlus },
-  { name: "Edit Image with AI", href: "/edit-image-with-ai", icon: Wand2 },
+  {
+    name: "Create AI Image",
+    href: "/create-ai-image",
+    icon: ImagePlus,
+    show: () => false,
+  },
+  {
+    name: "Edit Image with AI",
+    href: "/edit-image-with-ai",
+    icon: Wand2,
+    show: () => false,
+  },
   {
     name: "Animate Image with AI",
     href: "/animate-image-with-ai",
     icon: Wand2,
+    show: () => false,
   },
-  // Video workflow
-  { name: "Create AI Video", href: "/create-ai-video", icon: Video },
+  // Video workflow (hidden)
+  {
+    name: "Create AI Video",
+    href: "/create-ai-video",
+    icon: Video,
+    show: () => false,
+  },
   {
     name: "Create AI Video with Avatar",
     href: "/create-video-avatar",
@@ -84,6 +107,9 @@ const seoNav: NavItem[] = [
   { name: "Trend Blog", href: "/trend-blog", icon: TrendingUp },
   { name: "YouTube → SEO Blog", href: "/youtube-seo", icon: Youtube },
 ];
+
+// Feature flag for SEO navigation section. Set to true to re-enable.
+const ENABLE_SEO_NAV = false;
 
 // Real Estate (hidden for marketing mode)
 const realEstateNav: NavItem[] = [
@@ -119,8 +145,9 @@ const NAV_GROUPS: NavGroupConfig[] = [
     id: "seo",
     label: "SEO",
     items: seoNav,
+    // Entire SEO group hidden via feature flag; keep logic to easily restore.
     visible: ({ role, showAll }) =>
-      showAll || role === "admin" || role === "marketing",
+      ENABLE_SEO_NAV && (showAll || role === "admin" || role === "marketing"),
   },
   {
     id: "tools",
@@ -312,6 +339,9 @@ export function Sidebar() {
   const renderGroup = (group: NavGroupConfig) => {
     const isCollapsed = collapsed[group.id];
     const sectionId = `section-${group.id}`;
+    const groupItems = group.items.filter((item) =>
+      typeof item.show === "function" ? item.show(visibilityCtx) : true,
+    );
     return (
       <div key={group.id} aria-labelledby={`${sectionId}-label`}>
         {!sidebarCollapsed && (
@@ -335,7 +365,7 @@ export function Sidebar() {
         )}
         {(!isCollapsed || sidebarCollapsed) && (
           <ul id={sectionId} className="space-y-1">
-            {group.items.map(renderNavItem)}
+            {groupItems.map(renderNavItem)}
           </ul>
         )}
       </div>
