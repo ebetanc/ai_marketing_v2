@@ -84,7 +84,7 @@ const WORKFLOWS: Record<string, WorkflowConfig> = {
       validateAndNormalizeVideoAvatarPayload(p as AnyVideoAvatarPayload) as any,
   },
   [PRODUCT_CAMPAIGN_IDENTIFIER]: {
-    contract: "core-v1",
+    contract: "product-campaign-v1",
     path: N8N_PRODUCT_CAMPAIGN_WEBHOOK_PATH,
     validator: (p) =>
       validateAndNormalizeProductCampaignPayload(
@@ -93,7 +93,7 @@ const WORKFLOWS: Record<string, WorkflowConfig> = {
   },
   // Real estate ingest (identifier content_saas) can also centralize its slug path here
   content_saas: {
-    contract: "core-v1",
+    contract: "real-estate-v1",
     defaultOperation: "real_estate_ingest",
     path: N8N_REAL_ESTATE_WEBHOOK_PATH,
   },
