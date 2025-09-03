@@ -1,0 +1,4 @@
+-- Placeholder for remote migration 20250822123000
+-- Remote already applied this migration; contents unknown or intentionally reverted.
+-- This file satisfies Supabase migration history alignment.
+-- No-op.

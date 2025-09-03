@@ -337,11 +337,15 @@ export function Sidebar() {
   };
 
   const renderGroup = (group: NavGroupConfig) => {
-    const isCollapsed = collapsed[group.id];
-    const sectionId = `section-${group.id}`;
+    // Determine if any item in this group matches current location; if so, force expansion
     const groupItems = group.items.filter((item) =>
       typeof item.show === "function" ? item.show(visibilityCtx) : true,
     );
+    const hasActiveRoute = groupItems.some((item) =>
+      location.pathname.startsWith(item.href),
+    );
+    const isCollapsed = hasActiveRoute ? false : collapsed[group.id];
+    const sectionId = `section-${group.id}`;
     return (
       <div key={group.id} aria-labelledby={`${sectionId}-label`}>
         {!sidebarCollapsed && (
