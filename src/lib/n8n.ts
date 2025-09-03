@@ -27,6 +27,20 @@ export const N8N_BASE_URL =
   (typeof import.meta !== "undefined" &&
     (import.meta as any).env?.VITE_N8N_BASE_URL) ||
   "https://n8n.srv856940.hstgr.cloud";
+
+// Dev helper warning: if we're in development and not using the proxy path, highlight CORS risk.
+if (
+  typeof window !== "undefined" &&
+  ((import.meta as any).env?.MODE === "development" ||
+    (import.meta as any).env?.DEV) &&
+  N8N_BASE_URL.startsWith("http") &&
+  /localhost|127\.0\.0\.1/.test(window.location.host)
+) {
+  console.warn(
+    `[n8n] VITE_N8N_BASE_URL not set to '/n8n' in development. Requests will go cross-origin and may hit CORS.\n` +
+      `Create .env.development with VITE_N8N_BASE_URL=/n8n (see .env.development.example).`,
+  );
+}
 // Primary content workflow path (replaces older internal "content-saas" path)
 export const N8N_DEFAULT_WEBHOOK_PATH = "content-workflow";
 export const N8N_VIDEO_AVATAR_WEBHOOK_PATH = "ai-video-with-avatar";
@@ -213,6 +227,15 @@ export async function postToN8n(
       } catch (_jsonErr) {
         /* noop */
       }
+      // Capture response headers for deeper diagnostics
+      const responseHeaders: Record<string, string> = {};
+      try {
+        res.headers.forEach((value, key) => {
+          responseHeaders[key] = value;
+        });
+      } catch {
+        /* ignore header iteration errors */
+      }
       console.error("[postToN8n] Non-OK response", {
         url,
         status: res.status,
@@ -221,6 +244,7 @@ export async function postToN8n(
         identifier,
         requestBody: merged,
         responseBody: parsed ?? text,
+        responseHeaders,
       });
       // Attach a hint header value for correlation if n8n echoes it back
     } catch (e) {
@@ -312,6 +336,7 @@ export async function n8nVideoAvatarGenerateVideo(
       source: "app",
       ts: new Date().toISOString(),
       contract: "avatar-v1",
+      script_char_count: params.script?.length || 0,
       ...(params.meta || {}),
     },
   } as any;
@@ -328,17 +353,84 @@ export async function n8nVideoAvatarGenerateVideo(
       validation,
     };
   }
-  const path = `${N8N_VIDEO_AVATAR_WEBHOOK_PATH}?action=generateVideo`;
-  const res = await postToN8nWithRetry(
-    "videoAvatar",
-    validated.normalized as any,
-    {
+  // Primary path variant (query action pattern)
+  const primaryPath = `${N8N_VIDEO_AVATAR_WEBHOOK_PATH}?action=generateVideo`;
+  // Secondary variants we can probe if primary returns opaque HTML 500 (common when path style mismatched)
+  const fallbackVariants = [
+    // plain base without query param
+    `${N8N_VIDEO_AVATAR_WEBHOOK_PATH}`,
+    // REST-style sub-path (some n8n setups may map function style)
+    `${N8N_VIDEO_AVATAR_WEBHOOK_PATH}/generateVideo`,
+  ];
+  // Decide whether to try variants (dev only by default unless explicitly opted in via meta flag)
+  const devMode =
+    (typeof import.meta !== "undefined" && (import.meta as any).env?.DEV) ||
+    (typeof process !== "undefined" && process.env.NODE_ENV !== "production");
+  const allowVariants = devMode && !(params.meta as any)?.disable_path_probe;
+
+  // Always attempt primary first with provided retry config
+  const attemptSend = async (path: string, variantIndex: number) => {
+    if (devMode) {
+      console.info(
+        `[avatar] attempting path variant index=${variantIndex} value='${path}'`,
+      );
+    }
+    const enriched = {
+      ...(validated.normalized as any),
+      meta: {
+        ...(validated.normalized as any).meta,
+        path_variant_index: variantIndex,
+        path_variant_value: path,
+      },
+    };
+    const res = await postToN8nWithRetry("videoAvatar", enriched, {
       path,
-      ...retry,
-    },
-  );
-  const sendResult = await parseResponseToSendResult(res);
-  return { ...sendResult, validation };
+      // For variant attempts reduce attempts to 1 to avoid multiplying server load
+      attempts: variantIndex === 0 ? (retry.attempts ?? 3) : 1,
+      baseDelayMs: retry.baseDelayMs,
+      maxDelayMs: retry.maxDelayMs,
+      retryOnStatus: retry.retryOnStatus,
+      onAttempt: retry.onAttempt,
+    });
+    return res;
+  };
+  let primaryRes = await attemptSend(primaryPath, 0);
+  // Heuristic: if primary returned 500 AND body is HTML "Internal Server Error" page, probe variants
+  let primaryParsed = await parseResponseToSendResult(primaryRes);
+  if (
+    allowVariants &&
+    !primaryParsed.ok &&
+    primaryParsed.status === 500 &&
+    /<html|<pre>Internal Server Error/i.test(primaryParsed.rawText || "")
+  ) {
+    for (let i = 0; i < fallbackVariants.length; i++) {
+      try {
+        const variantPath = fallbackVariants[i];
+        const variantRes = await attemptSend(variantPath, i + 1);
+        const variantParsed = await parseResponseToSendResult(variantRes);
+        if (variantParsed.ok) {
+          if (devMode) {
+            console.info(
+              `[avatar] generateVideo succeeded via fallback path variant '${variantPath}' (index ${i + 1})`,
+            );
+          }
+          return { ...variantParsed, validation };
+        } else if (devMode) {
+          console.warn(
+            `[avatar] fallback path variant '${variantPath}' also failed (${variantParsed.status}).`,
+          );
+        }
+      } catch (e) {
+        if (devMode) {
+          console.warn(
+            `[avatar] exception attempting fallback path variant '${fallbackVariants[i]}'`,
+            e,
+          );
+        }
+      }
+    }
+  }
+  return { ...primaryParsed, validation };
 }
 
 export interface VideoAvatarAttachImagesParams {

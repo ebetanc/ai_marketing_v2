@@ -55,6 +55,7 @@ interface AvatarActivityEntry {
 
 export function CreateVideoAvatar() {
   useDocumentTitle("Create AI Videos with Avatar — Lighting");
+  // After refactor: initial video is generated from script only; user can then remix with images
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [videoScript, setVideoScript] = useState(() => {
@@ -69,6 +70,10 @@ export function CreateVideoAvatar() {
   const [attaching, setAttaching] = useState(false);
   const [videoPreviews, setVideoPreviews] = useState<VideoPreviewItem[]>([]);
   const [attachedImages, setAttachedImages] = useState<string[]>([]);
+  const [hasGeneratedInitial, setHasGeneratedInitial] = useState(false);
+  const [lastVideoRequestId, setLastVideoRequestId] = useState<string | null>(
+    null,
+  );
   const [activity, setActivity] = useState<AvatarActivityEntry[]>(() => {
     try {
       const raw = localStorage.getItem("avatar:activity");
@@ -262,25 +267,74 @@ export function CreateVideoAvatar() {
       push({ message: "Enter a script first", variant: "warning" });
       return;
     }
-    if (images.length < 3) {
-      push({
-        message: "Upload at least 3 images for best avatar quality",
-        variant: "warning",
-      });
-      return;
-    }
     setGenerating(true);
     try {
       // Fetch current user id (nullable if not authenticated)
       const { data: sessionData } = await supabase.auth.getSession();
       const userId = sessionData.session?.user.id || null;
+      // If this is the first generation and user already uploaded images but hasn't attached them yet, auto attach to reduce friction
+      if (
+        !hasGeneratedInitial &&
+        images.length &&
+        attachedImages.length === 0
+      ) {
+        try {
+          const uploaded = images
+            .filter((i) => i.supabaseUrl)
+            .map((i) => i.supabaseUrl!)
+            .filter(Boolean);
+          if (uploaded.length) {
+            const attachRes = await n8nVideoAvatarAttachImages({
+              images: uploaded,
+              script_present: true,
+              pendingUploads: images.filter((i) => i.loading).length,
+              user_id: userId,
+            });
+            if (attachRes.ok && attachRes.validation.ok) {
+              setAttachedImages(uploaded as string[]);
+              setActivity((prev) => [
+                {
+                  id: crypto.randomUUID(),
+                  ts: new Date().toISOString(),
+                  op: "attach_images",
+                  imagesAttached: uploaded.length,
+                  scriptChars: videoScript.trim().length || undefined,
+                  requestId: attachRes.requestId,
+                  status: attachRes.ok ? "queued" : "error",
+                  message: attachRes.ok
+                    ? "Auto-attached"
+                    : "Auto-attach failed",
+                },
+                ...prev,
+              ]);
+            } else {
+              console.warn("[avatar] auto-attach failed", attachRes);
+            }
+          }
+        } catch (e) {
+          console.warn("[avatar] auto-attach exception", e);
+        }
+      }
+      const remixing = hasGeneratedInitial && attachedImages.length > 0;
+      if (remixing && attachedImages.length < 3) {
+        push({
+          message: "Consider attaching 3+ images for better remix quality",
+          variant: "warning",
+        });
+      }
       let attemptToast: string | null = null;
-      const baseMsg = "Queueing video generation";
+      const baseMsg = remixing
+        ? "Queueing remix video"
+        : "Queueing initial video";
       const res = await n8nVideoAvatarGenerateVideo(
         {
           script: videoScript.trim(),
-          image_count: images.length,
+          image_count: remixing ? attachedImages.length : undefined,
           user_id: userId,
+          meta:
+            remixing && lastVideoRequestId
+              ? { remix_of: lastVideoRequestId }
+              : undefined,
         },
         {
           attempts: 4,
@@ -304,9 +358,18 @@ export function CreateVideoAvatar() {
         setGenerating(false);
         return;
       }
-      if (!res.ok) throw new Error(`Webhook responded ${res.status}`);
+      if (!res.ok) {
+        const snippet =
+          (res.rawText || "").trim().slice(0, 180) || `HTTP ${res.status}`;
+        throw new Error(`n8n ${res.status}: ${snippet}`);
+      }
       const requestId = res.requestId;
-      push({ message: "Video generation queued", variant: "success" });
+      push({
+        message: remixing
+          ? "Remix video generation queued"
+          : "Initial video generation queued",
+        variant: "success",
+      });
       const id = crypto.randomUUID();
       const firstImage =
         images.find((i) => i.supabaseUrl)?.supabaseUrl ||
@@ -331,10 +394,12 @@ export function CreateVideoAvatar() {
           imagesAttached: attachedImages.length,
           requestId,
           status: "queued",
-          message: "Queued",
+          message: remixing ? "Remix queued" : "Queued",
         },
         ...prev,
       ]);
+      if (!hasGeneratedInitial) setHasGeneratedInitial(true);
+      if (requestId) setLastVideoRequestId(requestId);
       setTimeout(() => {
         setVideoPreviews((prev) =>
           prev.map((v) => (v.id === id ? { ...v, status: "ready" } : v)),
@@ -407,7 +472,11 @@ export function CreateVideoAvatar() {
         setAttaching(false);
         return;
       }
-      if (!res.ok) throw new Error(`Webhook responded ${res.status}`);
+      if (!res.ok) {
+        const snippet =
+          (res.rawText || "").trim().slice(0, 180) || `HTTP ${res.status}`;
+        throw new Error(`n8n ${res.status}: ${snippet}`);
+      }
       const requestId = res.requestId;
       push({
         message: `${uploaded.length} image(s) attached`,
@@ -586,188 +655,18 @@ export function CreateVideoAvatar() {
     <PageContainer>
       <PageHeader
         title="Create Video with AI Avatar"
-        description="Turn existing video links into reusable AI avatars."
+        description="Enter a script to generate a base video. Then optionally upload images to remix/improve the avatar."
         icon={<Video className="h-5 w-5" />}
         actions={null}
       />
 
       <div className="max-w-6xl space-y-8">
-        {/* Step 1: Upload & Attach Images */}
+        {/* Step 1: Script & Initial Generation */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Upload className="h-5 w-5 text-brand-600" /> Step 1 — Upload
-              Images
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div
-              id="image-dropzone"
-              onDragEnter={handleDragEnter}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              className={`relative rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
-                isDragging
-                  ? "border-brand-500 bg-brand-50"
-                  : "border-gray-300 hover:border-gray-400"
-              }`}
-            >
-              <div className="space-y-4">
-                <Upload className="h-12 w-12 text-gray-400 mx-auto" />
-                <div>
-                  <p className="text-lg font-medium text-gray-900 mb-2">
-                    Drop images here or click to upload
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Support for PNG, JPG, JPEG, WebP files
-                  </p>
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleFileChange}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  aria-label="Upload images"
-                />
-              </div>
-              {isDragging && (
-                <div className="absolute inset-0 rounded-lg bg-brand-500/10 backdrop-blur-sm flex items-center justify-center pointer-events-none">
-                  <span className="text-lg font-medium text-brand-700">
-                    Release to upload images
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {images.length > 0 && (
-              <div className="mt-6">
-                <h3 className="text-sm font-medium text-gray-900 mb-3">
-                  Uploaded Images ({images.length})
-                </h3>
-                <p className="text-[11px] text-gray-500 mb-3 flex flex-wrap gap-2">
-                  <span>Recommended: 6–12 varied facial images.</span>
-                  {images.length > 15 && (
-                    <span className="text-amber-600">
-                      Large sets can slow processing.
-                    </span>
-                  )}
-                </p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {images.map((img) => (
-                    <div
-                      key={img.id}
-                      className="relative group border border-gray-200 rounded-lg overflow-hidden bg-gray-50"
-                    >
-                      <img
-                        src={img.supabaseUrl || img.localUrl}
-                        alt={`Upload ${img.file.name}`}
-                        className={`w-full h-24 object-cover ${img.loading ? "opacity-50" : ""}`}
-                      />
-                      {img.loading && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                          <Loader2 className="h-6 w-6 animate-spin text-white" />
-                        </div>
-                      )}
-                      {img.error && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-red-500/70 text-white text-xs p-1 text-center">
-                          Error: {img.error}
-                        </div>
-                      )}
-                      <div className="absolute bottom-1 left-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          type="button"
-                          onClick={() => moveImage(img.id, -1)}
-                          className="bg-white/70 hover:bg-white text-[10px] px-1 rounded shadow disabled:opacity-30"
-                          disabled={images[0].id === img.id}
-                        >
-                          ↑
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => moveImage(img.id, 1)}
-                          className="bg-white/70 hover:bg-white text-[10px] px-1 rounded shadow disabled:opacity-30"
-                          disabled={images[images.length - 1].id === img.id}
-                        >
-                          ↓
-                        </button>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeImage(img.id)}
-                        className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                        aria-label={`Remove image ${img.file.name}`}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div className="mt-6 flex justify-end">
-              <div className="text-[11px] text-gray-500">
-                {images.length === 0 &&
-                  "Upload clear, front-facing images with varied expressions."}
-                {images.length > 0 &&
-                  `${images.length} image${images.length === 1 ? "" : "s"} ready`}
-              </div>
-              <div className="flex gap-2">
-                {images.length > 0 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={clearAllImages}
-                    disabled={attaching || generating}
-                  >
-                    <X className="h-4 w-4" /> Clear All
-                  </Button>
-                )}
-                <Button
-                  onClick={handleAttachImages}
-                  disabled={
-                    !images.length || attaching || images.some((i) => i.loading)
-                  }
-                  loading={attaching}
-                  variant="outline"
-                >
-                  <Plus className="h-4 w-4" /> Add Images to Video
-                </Button>
-              </div>
-            </div>
-            {attachedImages.length > 0 && (
-              <div className="mt-8">
-                <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
-                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-brand-600/10 text-brand-700 text-xs font-semibold">
-                    ★
-                  </span>
-                  Attached Image Set ({attachedImages.length})
-                </h3>
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                  {attachedImages.map((url) => (
-                    <div
-                      key={url}
-                      className="relative rounded-lg overflow-hidden border border-gray-200 bg-white group"
-                    >
-                      <img
-                        src={url}
-                        alt="Attached"
-                        className="w-full h-20 object-cover"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-        {/* Step 2: Script & Generate */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Video className="h-5 w-5 text-brand-600" /> Step 2 — Video Script
-              & Generate
+              <Video className="h-5 w-5 text-brand-600" /> Step 1 — Script &
+              Generate
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -777,7 +676,7 @@ export function CreateVideoAvatar() {
               value={videoScript}
               onChange={(e) => setVideoScript(e.target.value)}
               rows={8}
-              description="Write the dialogue or narration for your avatar video. Upload at least 3 images first for best results."
+              description="Provide dialogue or narration. You'll be able to remix with images after the first generation."
             />
             <p className="mt-2 text-[11px] text-gray-500 flex items-center gap-2">
               <span>{videoScript.length.toLocaleString()} chars</span>
@@ -786,26 +685,206 @@ export function CreateVideoAvatar() {
                   Long scripts may take longer to process.
                 </span>
               )}
-              {images.length < 3 && (
-                <span className="text-red-600">
-                  Need at least 3 images (currently {images.length})
-                </span>
-              )}
             </p>
-            <div className="mt-4 flex justify-end">
+            <div className="mt-4 flex justify-end gap-2">
               <Button
                 onClick={handleGenerateVideo}
-                disabled={
-                  !videoScript.trim() || generating || images.length < 3
-                }
+                disabled={!videoScript.trim() || generating}
                 loading={generating}
                 className="bg-brand-600 hover:bg-brand-700"
               >
-                <Play className="h-4 w-4" /> Generate Video
+                <Play className="h-4 w-4" />
+                {hasGeneratedInitial
+                  ? "Generate Remix Video"
+                  : "Generate Initial Video"}
               </Button>
             </div>
+            <p className="mt-3 text-[11px] text-gray-500">
+              {!hasGeneratedInitial
+                ? images.length < 3
+                  ? "You can generate a video now or optionally add images below for improved avatar consistency (3+ recommended)."
+                  : "Optional: Add more images below to improve avatar fidelity before or after generation."
+                : "Add or attach images below and generate again to create a remix."}
+            </p>
           </CardContent>
         </Card>
+
+        {/* Step 2: Upload & Attach Images */}
+        {
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Upload className="h-5 w-5 text-brand-600" /> Step 2 — Optional
+                Images (Improve / Remix)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div
+                id="image-dropzone"
+                onDragEnter={handleDragEnter}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`relative rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
+                  isDragging
+                    ? "border-brand-500 bg-brand-50"
+                    : "border-gray-300 hover:border-gray-400"
+                }`}
+              >
+                <div className="space-y-4">
+                  <Upload className="h-12 w-12 text-gray-400 mx-auto" />
+                  <div>
+                    <p className="text-lg font-medium text-gray-900 mb-2">
+                      Drop images here or click to upload
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Support for PNG, JPG, JPEG, WebP files
+                    </p>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleFileChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    aria-label="Upload images"
+                  />
+                </div>
+                {isDragging && (
+                  <div className="absolute inset-0 rounded-lg bg-brand-500/10 backdrop-blur-sm flex items-center justify-center pointer-events-none">
+                    <span className="text-lg font-medium text-brand-700">
+                      Release to upload images
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {images.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-sm font-medium text-gray-900 mb-3">
+                    Uploaded Remix Images ({images.length})
+                  </h3>
+                  <p className="text-[11px] text-gray-500 mb-3 flex flex-wrap gap-2">
+                    <span>
+                      Recommended for remix: 6–12 varied facial images.
+                    </span>
+                    {images.length > 15 && (
+                      <span className="text-amber-600">
+                        Large sets can slow processing.
+                      </span>
+                    )}
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {images.map((img) => (
+                      <div
+                        key={img.id}
+                        className="relative group border border-gray-200 rounded-lg overflow-hidden bg-gray-50"
+                      >
+                        <img
+                          src={img.supabaseUrl || img.localUrl}
+                          alt={`Upload ${img.file.name}`}
+                          className={`w-full h-24 object-cover ${img.loading ? "opacity-50" : ""}`}
+                        />
+                        {img.loading && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                            <Loader2 className="h-6 w-6 animate-spin text-white" />
+                          </div>
+                        )}
+                        {img.error && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-red-500/70 text-white text-xs p-1 text-center">
+                            Error: {img.error}
+                          </div>
+                        )}
+                        <div className="absolute bottom-1 left-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            type="button"
+                            onClick={() => moveImage(img.id, -1)}
+                            className="bg-white/70 hover:bg-white text-[10px] px-1 rounded shadow disabled:opacity-30"
+                            disabled={images[0].id === img.id}
+                          >
+                            ↑
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => moveImage(img.id, 1)}
+                            className="bg-white/70 hover:bg-white text-[10px] px-1 rounded shadow disabled:opacity-30"
+                            disabled={images[images.length - 1].id === img.id}
+                          >
+                            ↓
+                          </button>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeImage(img.id)}
+                          className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          aria-label={`Remove image ${img.file.name}`}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="mt-6 flex justify-end">
+                <div className="text-[11px] text-gray-500">
+                  {images.length === 0 &&
+                    "Upload clear, front-facing images with varied expressions to remix."}
+                  {images.length > 0 &&
+                    `${images.length} image${images.length === 1 ? "" : "s"} ready`}
+                </div>
+                <div className="flex gap-2">
+                  {images.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={clearAllImages}
+                      disabled={attaching || generating}
+                    >
+                      <X className="h-4 w-4" /> Clear All
+                    </Button>
+                  )}
+                  <Button
+                    onClick={handleAttachImages}
+                    disabled={
+                      !images.length ||
+                      attaching ||
+                      images.some((i) => i.loading)
+                    }
+                    loading={attaching}
+                    variant="outline"
+                  >
+                    <Plus className="h-4 w-4" /> Add Images to Video
+                  </Button>
+                </div>
+              </div>
+              {attachedImages.length > 0 && (
+                <div className="mt-8">
+                  <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
+                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-brand-600/10 text-brand-700 text-xs font-semibold">
+                      ★
+                    </span>
+                    Attached Remix Image Set ({attachedImages.length})
+                  </h3>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                    {attachedImages.map((url) => (
+                      <div
+                        key={url}
+                        className="relative rounded-lg overflow-hidden border border-gray-200 bg-white group"
+                      >
+                        <img
+                          src={url}
+                          alt="Attached"
+                          className="w-full h-20 object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        }
         {/* Step 3: Generated Videos */}
         {videoPreviews.length > 0 && (
           <Card>
