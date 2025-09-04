@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
-import { GenerateStrategyModal } from "../components/content/GenerateStrategyModal";
+import { GenerateStrategyModal } from "@/features/content/components";
 import { supabase, type Tables } from "../lib/supabase";
 import {
   FileText,
@@ -20,7 +20,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { formatDate } from "../lib/utils";
-import StrategyListItem from "../components/strategies/StrategyListItem";
+import { StrategyListItem } from "@/features/strategies/components";
 // removed unused IconButton import
 import { Modal } from "../components/ui/Modal";
 import { ModalBrandHeader } from "../components/ui/ModalBrandHeader";

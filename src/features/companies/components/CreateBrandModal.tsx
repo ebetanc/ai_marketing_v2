@@ -1,17 +1,17 @@
 import { ArrowLeft, ArrowRight, Globe, Sparkles, X } from "lucide-react";
 import React, { useState } from "react";
 import { z } from "zod";
-import { useAsyncCallback } from "../../hooks/useAsync";
-import { n8nAutofill } from "../../lib/n8n";
-import { supabase, type TablesInsert } from "../../lib/supabase";
-import { Button } from "../ui/Button";
-import { ConfirmDialog } from "../ui/ConfirmDialog";
-import { IconButton } from "../ui/IconButton";
-import { Input } from "../ui/Input";
-import { Modal, ModalBody } from "../ui/Modal";
-import { ModalBrandHeader } from "../ui/ModalBrandHeader";
-import { Textarea } from "../ui/Textarea";
-import { useToast } from "../ui/Toast";
+import { useAsyncCallback } from "@/hooks/useAsync";
+import { n8nAutofill } from "@/lib/n8n";
+import { supabase, type TablesInsert } from "@/lib/supabase";
+import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { IconButton } from "@/components/ui/IconButton";
+import { Input } from "@/components/ui/Input";
+import { Modal, ModalBody } from "@/components/ui/Modal";
+import { ModalBrandHeader } from "@/components/ui/ModalBrandHeader";
+import { Textarea } from "@/components/ui/Textarea";
+import { useToast } from "@/components/ui/Toast";
 
 interface CreateBrandModalProps {
   isOpen: boolean;

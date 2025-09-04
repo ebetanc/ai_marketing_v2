@@ -1,25 +1,29 @@
 import React from "react";
-import { useCompanies } from "../../hooks/useCompanies"; // underlying data table remains companies
-import { cn } from "../../lib/utils";
+import { useCompanies } from "@/features/companies";
+import { cn } from "@/lib/utils";
 
-interface BrandSelectProps {
+interface CompanySelectProps {
   value?: string | number | null;
-  onChange?: (brandId: string | number | null) => void;
+  onChange?: (companyId: string | number | null) => void;
   placeholder?: string;
   className?: string;
   label?: string;
   required?: boolean;
 }
 
-export function BrandSelect({
+/**
+ * CompanySelect
+ * Lightweight dropdown for picking a company context for generation tools.
+ */
+export function CompanySelect({
   value,
   onChange,
-  placeholder = "Select a brand...",
+  placeholder = "Select a company...",
   className,
-  label = "Brand",
+  label = "Company",
   required = false,
-}: BrandSelectProps) {
-  const { companies: brands, loading, error } = useCompanies();
+}: CompanySelectProps) {
+  const { companies, loading, error } = useCompanies();
 
   return (
     <div className={cn("space-y-1", className)}>
@@ -34,20 +38,20 @@ export function BrandSelect({
             error && "border-red-500",
           )}
           value={value ?? ""}
-          disabled={loading || brands.length === 0}
+          disabled={loading || companies.length === 0}
           aria-invalid={!!error || undefined}
           onChange={(e) => onChange?.(e.target.value || null)}
         >
           <option value="" disabled>
             {loading
-              ? "Loading brands..."
-              : brands.length === 0
-                ? "No brands found"
+              ? "Loading companies..."
+              : companies.length === 0
+                ? "No companies found"
                 : placeholder}
           </option>
-          {brands.map((b) => (
-            <option key={b.id} value={b.id}>
-              {b.brand_name || b.name || "Unnamed"}
+          {companies.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.brand_name || c.name || "Unnamed"}
             </option>
           ))}
         </select>
@@ -57,4 +61,4 @@ export function BrandSelect({
   );
 }
 
-export default BrandSelect;
+export default CompanySelect;

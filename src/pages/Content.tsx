@@ -9,8 +9,11 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ViewContentModal } from "../components/content/ViewContentModal";
-import ContentListItem from "../components/content/ContentListItem";
+import {
+  ViewContentModal,
+  ContentListItem,
+  GenerateStrategyModal,
+} from "@/features/content/components";
 import { PageHeader } from "../components/layout/PageHeader";
 import { PageContainer } from "../components/layout/PageContainer";
 import { Badge } from "../components/ui/Badge";

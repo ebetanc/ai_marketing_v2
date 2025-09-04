@@ -1,7 +1,7 @@
 import { Calendar, Eye, Share2, Trash2 } from "lucide-react";
-import { Badge } from "../ui/Badge";
-import { IconButton } from "../ui/IconButton";
-import { formatDate, truncateText, relativeTime } from "../../lib/utils";
+import { Badge } from "@/components/ui/Badge";
+import { IconButton } from "@/components/ui/IconButton";
+import { formatDate, truncateText, relativeTime } from "@/lib/utils";
 
 interface ContentListItemProps {
   content: any;

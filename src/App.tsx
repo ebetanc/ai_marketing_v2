@@ -6,31 +6,12 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
-import { Layout } from "./components/layout/Layout";
-import { AuthProvider, ProtectedLayout } from "./lib/auth";
-import Login from "./pages/Login";
-import SignUp from "./pages/SignUp";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import { Dashboard } from "./pages/Dashboard";
-import { Brands } from "./pages/Brands";
-import { Strategies } from "./pages/Strategies";
-import { Ideas } from "./pages/Ideas";
-import { Content } from "./pages/Content";
-import { Calendar } from "./pages/Calendar";
-import { Campaigns } from "./pages/Campaigns";
-import { YouTubeSEO } from "./pages/YouTubeSEO";
-import { TrendBlog } from "./pages/TrendBlog";
-import { SemanticSEO } from "./pages/SemanticSEO";
-import { KeywordResearch } from "./pages/KeywordResearch";
-import { RealEstateContent } from "./pages/RealEstateContent";
-import { ToastProvider } from "./components/ui/Toast";
-import { Account } from "./pages/Account";
-import { CreateAiVideo as CreateAIVideoPage } from "./pages/CreateAiVideo";
-import { CreateAIImage } from "./pages/CreateAIImage";
-import { EditImageWithAI } from "./pages/EditImageWithAI";
-import { AnimateImageWithAI } from "./pages/AnimateImageWithAI";
-import { CreateVideoAvatar } from "./pages/CreateAiVideoWithAvatar";
+import { Layout } from "@/components/layout/Layout";
+import { AuthProvider, ProtectedLayout } from "@/lib/auth";
+import { ToastProvider } from "@/components/ui/Toast";
+import { publicRoutes, protectedRoutes } from "@/app/routes/config";
+import { Suspense } from "react";
+import { ErrorBoundary } from "@/components/errors/ErrorBoundary";
 
 function App() {
   return (
@@ -45,40 +26,61 @@ function App() {
 }
 
 function AppRoutes() {
+  const location = useLocation();
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<SignUp />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route element={<ProtectedLayout />}>
-        <Route element={<Layout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/companies" element={<Brands />} />
-          <Route path="/brands" element={<Brands />} />
-          <Route path="/strategies" element={<Strategies />} />
-          <Route path="/ideas" element={<Ideas />} />
-          <Route path="/content" element={<Content />} />
-          <Route path="/calendar" element={<Calendar />} />
-          <Route path="/campaigns" element={<Campaigns />} />
-          <Route path="/youtube-seo" element={<YouTubeSEO />} />
-          <Route path="/trend-blog" element={<TrendBlog />} />
-          <Route path="/semantic-seo" element={<SemanticSEO />} />
-          <Route path="/keyword-research" element={<KeywordResearch />} />
-          <Route path="/create-ai-video" element={<CreateAIVideoPage />} />
-          <Route path="/create-ai-image" element={<CreateAIImage />} />
-          <Route path="/edit-image-with-ai" element={<EditImageWithAI />} />
-          <Route
-            path="/animate-image-with-ai"
-            element={<AnimateImageWithAI />}
-          />
-          <Route path="/real-estate-content" element={<RealEstateContent />} />
-          <Route path="/create-video-avatar" element={<CreateVideoAvatar />} />
-          <Route path="/account" element={<Account />} />
-          <Route path="/" element={<RootRedirector />} />
-        </Route>
-      </Route>
-    </Routes>
+    <ErrorBoundary
+      resetKeys={[location.key]}
+      fallback={({ error, reset }) => (
+        <div className="min-h-screen flex flex-col items-center justify-center p-6 gap-6 bg-gray-50 text-center">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900 mb-2">
+              App Error
+            </h1>
+            <p className="text-sm text-gray-600 max-w-md break-words">
+              {error.message}
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={reset}
+              className="inline-flex items-center justify-center rounded-md bg-brand-600 px-4 py-2 text-white text-sm font-medium hover:bg-brand-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            >
+              Retry
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            >
+              Reload
+            </button>
+          </div>
+        </div>
+      )}
+    >
+      <Suspense
+        fallback={
+          <div className="flex items-center justify-center min-h-screen text-gray-600">
+            Loading…
+          </div>
+        }
+      >
+        <Routes>
+          {publicRoutes.map((r) => {
+            const C = r.component;
+            return <Route key={r.path} path={r.path} element={<C />} />;
+          })}
+          <Route element={<ProtectedLayout />}>
+            <Route element={<Layout />}>
+              {protectedRoutes.map((r) => {
+                const C = r.component;
+                return <Route key={r.path} path={r.path} element={<C />} />;
+              })}
+              <Route path="/" element={<RootRedirector />} />
+            </Route>
+          </Route>
+        </Routes>
+      </Suspense>
+    </ErrorBoundary>
   );
 }
 

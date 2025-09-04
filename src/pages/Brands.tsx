@@ -1,9 +1,16 @@
 import React, { useCallback, useState } from "react";
 import { Card, CardContent, CardHeader } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
-import { CreateBrandModal } from "../components/companies/CreateBrandModal";
-import { ViewBrandModal } from "../components/brands/ViewBrandModal";
-import { useCompanies } from "../hooks/useCompanies";
+import {
+  CreateBrandModal,
+  ViewCompanyModal,
+} from "@/features/companies/components";
+import {
+  ViewBrandModal,
+  BrandListItem,
+  BrandSelect,
+} from "@/features/brands/components";
+import { useCompanies } from "@/features/companies";
 import { Plus, Building2, RefreshCw, Database, Search, X } from "lucide-react";
 import { useToast } from "../components/ui/Toast";
 import { Skeleton } from "../components/ui/Skeleton";
@@ -11,7 +18,6 @@ import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { PageHeader } from "../components/layout/PageHeader";
 import { PageContainer } from "../components/layout/PageContainer";
 import { EmptyState } from "../components/ui/EmptyState";
-import BrandListItem from "../components/brands/BrandListItem";
 import { ErrorState } from "../components/ui/ErrorState";
 
 export function Brands() {

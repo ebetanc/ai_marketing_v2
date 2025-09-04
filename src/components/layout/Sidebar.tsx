@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
+import { routeDynamicImports } from "@/app/routes/config";
 import { supabase } from "../../lib/supabase";
 import { cn } from "../../lib/utils";
 import { Button } from "../ui/Button";
@@ -295,6 +296,22 @@ export function Sidebar() {
   );
 
   // Helper to render nav item (ensures accessible name when collapsed)
+  const prefetchOnIntent = (path: string) => {
+    if (!(prefetchOnIntent as any)._done) {
+      (prefetchOnIntent as any)._done = new Set<string>();
+    }
+    const done: Set<string> = (prefetchOnIntent as any)._done;
+    if (done.has(path)) return;
+    const loader = routeDynamicImports[path];
+    if (!loader) return;
+    queueMicrotask(() => {
+      loader().catch(() => {
+        /* ignore */
+      });
+      done.add(path);
+    });
+  };
+
   const renderNavItem = (item: NavItem) => {
     const isActive = location.pathname.startsWith(item.href);
     const linkLabelId = `nav-${item.href.replace(/[^a-z0-9]+/gi, "-")}`;
@@ -302,6 +319,8 @@ export function Sidebar() {
       <li key={item.name} className="list-none">
         <Link
           to={item.href}
+          onMouseEnter={() => prefetchOnIntent(item.href)}
+          onFocus={() => prefetchOnIntent(item.href)}
           className={cn(
             "group flex items-center px-2 sm:px-3 py-2.5 text-base font-medium rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",
             sidebarCollapsed && "justify-center",
@@ -379,11 +398,14 @@ export function Sidebar() {
   return (
     <div
       className={cn(
-        "flex w-full flex-col bg-white border-r border-gray-200 lg:sticky lg:top-0 lg:h-screen transition-all duration-300",
-        sidebarCollapsed ? "lg:w-20" : "lg:w-64",
+        // Base layout
+        "flex flex-col h-full w-72 max-w-full bg-white border-r border-gray-200 shadow-sm",
+        // Collapsed state shrinks width (parent containers already handle overflow)
+        sidebarCollapsed && "w-16",
       )}
-      aria-label="Sidebar"
+      aria-label="Sidebar navigation"
     >
+      {/* Product / brand header */}
       <div
         className={cn(
           "flex items-center h-[var(--app-header-h)] border-b border-gray-200 px-3 sm:px-4",
@@ -410,6 +432,7 @@ export function Sidebar() {
         </div>
       </div>
 
+      {/* Scrollable navigation */}
       <nav
         className={cn(
           "flex-1 min-h-0 overflow-y-auto py-4 sm:py-6 space-y-4",
@@ -424,7 +447,7 @@ export function Sidebar() {
         {visibleGroups.map(renderGroup)}
       </nav>
 
-      {/* Global collapse toggle moved here (above profile) */}
+      {/* Global collapse toggle */}
       <div
         className={cn(
           "px-2 sm:px-4 py-2",
@@ -470,6 +493,7 @@ export function Sidebar() {
         )}
       </div>
 
+      {/* Account / profile */}
       <div
         className={cn(
           "border-t border-gray-200 p-2 sm:p-4 transition-all",
@@ -483,6 +507,8 @@ export function Sidebar() {
             "flex items-center rounded-xl px-2 py-2 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",
             sidebarCollapsed && "justify-center",
           )}
+          onMouseEnter={() => prefetchOnIntent("/account")}
+          onFocus={() => prefetchOnIntent("/account")}
         >
           <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
             <span className="text-base font-medium text-gray-600">

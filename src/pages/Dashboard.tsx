@@ -8,12 +8,12 @@ import {
 } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
-import { ViewCompanyModal } from "../components/companies/ViewCompanyModal";
+import { ViewCompanyModal } from "@/features/companies/components";
 import { TrendingUp, FileText, Users, Target, Clock, Eye } from "lucide-react";
-import { useCompanies } from "../hooks/useCompanies";
-import { useContentPieces } from "../hooks/useContentPieces";
+import { useCompanies } from "@/features/companies";
+import { useContentPieces } from "@/features/content";
 import { formatDate, formatTime, relativeTime, cn } from "../lib/utils";
-import type { CompanyUI } from "../hooks/useCompanies";
+import type { CompanyUI } from "@/features/companies";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { PageHeader } from "../components/layout/PageHeader";
 import { PageContainer } from "../components/layout/PageContainer";

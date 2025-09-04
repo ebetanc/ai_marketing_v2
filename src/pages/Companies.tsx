@@ -1,9 +1,12 @@
 import React, { useCallback, useState } from "react";
 import { Card, CardContent, CardHeader } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
-import { CreateBrandModal } from "../components/companies/CreateBrandModal";
-import { ViewCompanyModal } from "../components/companies/ViewCompanyModal";
-import { useCompanies } from "../hooks/useCompanies";
+import {
+  CreateBrandModal,
+  ViewCompanyModal,
+  CompanyListItem,
+} from "@/features/companies/components";
+import { useCompanies } from "@/features/companies";
 import { Plus, Building2, RefreshCw, Database, Search } from "lucide-react";
 // removed truncateText usage after refactor
 import { useToast } from "../components/ui/Toast";
@@ -12,7 +15,6 @@ import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { PageHeader } from "../components/layout/PageHeader";
 import { PageContainer } from "../components/layout/PageContainer";
 import { EmptyState } from "../components/ui/EmptyState";
-import CompanyListItem from "../components/companies/CompanyListItem";
 import { ErrorState } from "../components/ui/ErrorState";
 
 export function Companies() {

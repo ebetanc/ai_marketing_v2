@@ -6,10 +6,10 @@ import {
   Trash2,
   Lightbulb,
 } from "lucide-react";
-import { Button } from "../ui/Button";
-import { Badge } from "../ui/Badge";
-import { IconButton } from "../ui/IconButton";
-import { formatDate } from "../../lib/utils";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { IconButton } from "@/components/ui/IconButton";
+import { formatDate } from "@/lib/utils";
 
 interface AngleSummary {
   number: number;

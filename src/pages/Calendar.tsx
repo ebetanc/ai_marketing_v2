@@ -7,10 +7,10 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { useContentPieces } from "../hooks/useContentPieces";
+import { useContentPieces } from "@/features/content";
 import { Button } from "../components/ui/Button";
 import { cn, truncateText } from "../lib/utils";
-import { ViewContentModal } from "../components/content/ViewContentModal";
+import { ViewContentModal } from "@/features/content/components";
 import { supabase } from "../lib/supabase";
 
 function startOfMonth(d: Date) {

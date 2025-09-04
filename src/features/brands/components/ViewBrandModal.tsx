@@ -9,18 +9,18 @@ import {
   Zap,
 } from "lucide-react";
 import React from "react";
-import { useAsyncCallback } from "../../hooks/useAsync";
-import type { CompanyUI } from "../../hooks/useCompanies";
-import { supabase } from "../../lib/supabase";
-import { formatDate } from "../../lib/utils";
-import { Badge } from "../ui/Badge";
-import { Button } from "../ui/Button";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/Card";
-import { ConfirmDialog } from "../ui/ConfirmDialog";
-import { IconButton } from "../ui/IconButton";
-import { Modal, ModalBody } from "../ui/Modal";
-import { ModalBrandHeader } from "../ui/ModalBrandHeader";
-import { useToast } from "../ui/Toast";
+import { useAsyncCallback } from "@/hooks/useAsync";
+import type { CompanyUI } from "@/features/companies";
+import { supabase } from "@/lib/supabase";
+import { formatDate } from "@/lib/utils";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { IconButton } from "@/components/ui/IconButton";
+import { Modal, ModalBody } from "@/components/ui/Modal";
+import { ModalBrandHeader } from "@/components/ui/ModalBrandHeader";
+import { useToast } from "@/components/ui/Toast";
 
 interface ViewBrandModalProps {
   isOpen: boolean;

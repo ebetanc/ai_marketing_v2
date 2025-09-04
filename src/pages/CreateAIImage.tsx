@@ -11,7 +11,7 @@ import {
   CardContent,
   CardTitle,
 } from "../components/ui/Card";
-import { BrandSelect } from "../components/brands/BrandSelect";
+import { BrandSelect } from "@/features/brands/components";
 import { useToast } from "../components/ui/Toast";
 import { createImageJob } from "../lib/media";
 import { MediaJobsList } from "../components/media/MediaJobsList";

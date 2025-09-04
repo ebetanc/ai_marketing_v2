@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Button } from "../ui/Button";
-import { Badge } from "../ui/Badge";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import {
   X,
   FileText,
@@ -16,13 +16,13 @@ import {
   ChevronRight,
   Clock,
 } from "lucide-react";
-import { formatDate } from "../../lib/utils";
-import { Modal, ModalBody, ModalFooter } from "../ui/Modal"; // Footer still used; header replaced
-import { IconButton } from "../ui/IconButton";
-import { useToast } from "../ui/Toast";
-import { ModalBrandHeader } from "../ui/ModalBrandHeader";
-import type { Tables } from "../../lib/supabase";
-import { useAsyncCallback } from "../../hooks/useAsync";
+import { formatDate } from "@/lib/utils";
+import { Modal, ModalBody, ModalFooter } from "@/components/ui/Modal"; // Footer still used; header replaced
+import { IconButton } from "@/components/ui/IconButton";
+import { useToast } from "@/components/ui/Toast";
+import { ModalBrandHeader } from "@/components/ui/ModalBrandHeader";
+import type { Tables } from "@/lib/supabase";
+import { useAsyncCallback } from "@/hooks/useAsync";
 
 type CompanyRow = Tables<"companies">;
 type StrategyRow = Tables<"strategies">;
@@ -67,7 +67,7 @@ interface ViewContentModalProps {
   onUpdated?: (updated: ModalContent) => void;
 }
 
-import { supabase } from "../../lib/supabase";
+import { supabase } from "@/lib/supabase";
 // Helper: safely format a subset of markdown-like text without using innerHTML
 const formatContentBody = (content: string) => {
   if (!content) return content;

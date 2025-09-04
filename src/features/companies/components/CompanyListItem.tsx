@@ -1,6 +1,6 @@
 import { Calendar, Eye, Building2, Target, FileText } from "lucide-react";
-import { Button } from "../ui/Button";
-import { formatDate, truncateText } from "../../lib/utils";
+import { Button } from "@/components/ui/Button";
+import { formatDate, truncateText } from "@/lib/utils";
 
 interface CompanyListItemProps {
   company: any;
@@ -65,7 +65,7 @@ export function CompanyListItem({ company, onView }: CompanyListItemProps) {
           <Button
             variant="outline"
             size="sm"
-            onClick={(e) => {
+            onClick={(e: React.MouseEvent) => {
               e.stopPropagation();
               onView(company);
             }}

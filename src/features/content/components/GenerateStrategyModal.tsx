@@ -11,14 +11,14 @@ import {
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { z } from "zod";
-import { useAsyncCallback } from "../../hooks/useAsync";
-import { n8nGenerateAngles } from "../../lib/n8n";
-import { supabase } from "../../lib/supabase";
-import { cn } from "../../lib/utils";
-import { Button } from "../ui/Button";
-import { Modal, ModalBody } from "../ui/Modal";
-import { ModalBrandHeader } from "../ui/ModalBrandHeader";
-import { useToast } from "../ui/Toast";
+import { useAsyncCallback } from "@/hooks/useAsync";
+import { n8nGenerateAngles } from "@/lib/n8n";
+import { supabase } from "@/lib/supabase";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/Button";
+import { Modal, ModalBody } from "@/components/ui/Modal";
+import { ModalBrandHeader } from "@/components/ui/ModalBrandHeader";
+import { useToast } from "@/components/ui/Toast";
 
 interface GenerateStrategyModalProps {
   isOpen: boolean;

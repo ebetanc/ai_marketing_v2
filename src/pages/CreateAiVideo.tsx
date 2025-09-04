@@ -15,7 +15,7 @@ import { PageContainer } from "../components/layout/PageContainer";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Textarea } from "../components/ui/Textarea";
-import { BrandSelect } from "../components/brands/BrandSelect";
+import { BrandSelect } from "@/features/brands/components";
 import { useToast } from "../components/ui/Toast";
 import { createVideoJob } from "../lib/media";
 import { MediaJobsList } from "../components/media/MediaJobsList";

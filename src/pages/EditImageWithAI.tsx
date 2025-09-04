@@ -5,7 +5,7 @@ import { PageHeader } from "../components/layout/PageHeader";
 import { PageContainer } from "../components/layout/PageContainer";
 // Removed legacy EmptyState block in favor of inline guidance and recent jobs card
 import { Button } from "../components/ui/Button";
-import { BrandSelect } from "../components/brands/BrandSelect";
+import { BrandSelect } from "@/features/brands/components";
 import { Input } from "../components/ui/Input";
 import { useToast } from "../components/ui/Toast";
 import { createImageEditJob } from "../lib/media";
