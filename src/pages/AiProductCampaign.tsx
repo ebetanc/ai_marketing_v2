@@ -99,6 +99,13 @@ export function AiProductCampaign() {
   }
 
   async function send(operation: "generateImages" | "generateVideo") {
+    console.log("=== GENERATE IMAGES/VIDEO BUTTON CLICKED ===");
+    console.log("Operation:", operation);
+    console.log("User request:", userRequest);
+    console.log("Campaign data:", campaign);
+    console.log("Assets count:", assets.length);
+    console.log("Assets URLs:", assets);
+    
     setSending(true);
     setResult(null);
     setError(null);
@@ -110,7 +117,10 @@ export function AiProductCampaign() {
         upload_assets: assets,
       };
 
-      console.log("Sending product campaign request with payload:", payload);
+      console.log("=== SENDING TO N8N ===");
+      console.log("Identifier:", PRODUCT_CAMPAIGN_IDENTIFIER);
+      console.log("Full payload:", JSON.stringify(payload, null, 2));
+      console.log("Operation for n8nCall:", operation);
 
       const resp = await n8nCall(
         PRODUCT_CAMPAIGN_IDENTIFIER,
@@ -118,14 +128,28 @@ export function AiProductCampaign() {
         { operation: operation }
       );
 
+      console.log("=== N8N RESPONSE ===");
+      console.log("Response OK:", resp.ok);
+      console.log("Response status:", resp.status);
+      console.log("Response data:", resp.data);
+      console.log("Response raw text:", resp.rawText);
+      console.log("Full response object:", resp);
+      
       setResult(resp.data || resp.rawText || { ok: resp.ok });
       if (!resp.ok) {
         throw new Error(`Request failed with status ${resp.status}`);
       }
     } catch (e: any) {
+      console.log("=== ERROR OCCURRED ===");
       console.error("Product campaign request failed:", e);
+      console.error("Error type:", typeof e);
+      console.error("Error constructor:", e?.constructor?.name);
+      console.error("Error message:", e?.message);
+      console.error("Error stack:", e?.stack);
       setError(e?.message || "Request failed. Check your connection and try again.");
     } finally {
+      console.log("=== REQUEST COMPLETED ===");
+      console.log("Setting sending to false");
       setSending(false);
     }
   }
