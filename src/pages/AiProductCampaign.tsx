@@ -104,14 +104,14 @@ export function AiProductCampaign() {
     setError(null);
     try {
       const simplePayload = {
-        identifier: "productCampaign",
+        test: "hello world",
         operation: operation,
         user_request: userRequest.trim(),
       };
 
       console.log("Sending simple payload:", simplePayload);
 
-      const response = await fetch("http://localhost:5678/webhook/content-workflow", {
+      const response = await fetch("https://n8n.srv856940.hstgr.cloud/webhook/2eab9df2-79f4-486e-abcd-0d6833cd86b3", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
