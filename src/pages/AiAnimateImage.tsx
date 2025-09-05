@@ -1,18 +1,20 @@
 import React from "react";
-import { Video } from "lucide-react";
+import { PlayCircle } from "lucide-react";
 import { PageContainer } from "../components/layout/PageContainer";
 import { PageHeader } from "../components/layout/PageHeader";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
-// Placeholder implementation for AI video with avatar generation page
-export function CreateVideoAvatar() {
-  useDocumentTitle("Create Video Avatar — Lighting");
+/**
+ * Placeholder page for AI Image animation. Replace with real implementation.
+ */
+export function AnimateImageWithAI() {
+  useDocumentTitle("Animate Image with AI — Lighting");
   return (
     <PageContainer>
       <PageHeader
-        title="Create Video Avatar"
-        description="Generate an avatar video from a script and voice."
-        icon={<Video className="h-5 w-5" />}
+        title="Animate Image with AI"
+        description="Animate an image using AI motion models."
+        icon={<PlayCircle className="h-5 w-5" />}
       />
       <div className="mt-6 text-sm text-gray-600 space-y-4">
         <p>
@@ -20,11 +22,11 @@ export function CreateVideoAvatar() {
           yet.
         </p>
         <p className="text-gray-500">
-          Add your script editor, voice selection, and render job status here.
+          Add your animation controls, preview canvas, and export options here.
         </p>
       </div>
     </PageContainer>
   );
 }
 
-export default CreateVideoAvatar;
+export default AnimateImageWithAI;

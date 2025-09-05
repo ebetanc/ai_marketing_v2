@@ -58,18 +58,18 @@ const Account = lazy(() =>
   import("@/pages/Account").then((m) => ({ default: m.Account })),
 );
 const CreateAIVideoPage = lazy(() =>
-  import("@/pages/CreateAiVideo").then((m) => ({ default: m.CreateAiVideo })),
+  import("@/pages/AiCreateVideo").then((m) => ({ default: m.CreateAiVideo })),
 );
 const CreateAIImage = lazy(() =>
-  import("@/pages/CreateAiImage").then((m) => ({ default: m.CreateAIImage })),
+  import("@/pages/AiCreateImage").then((m) => ({ default: m.CreateAIImage })),
 );
 const EditImageWithAI = lazy(() =>
-  import("@/pages/EditImageWithAI").then((m) => ({
+  import("@/pages/AiEditImage").then((m) => ({
     default: m.EditImageWithAI,
   })),
 );
 const AnimateImageWithAI = lazy(() =>
-  import("@/pages/AnimateImageWithAI").then((m) => ({
+  import("@/pages/AiAnimateImage").then((m) => ({
     default: m.AnimateImageWithAI,
   })),
 );
@@ -98,10 +98,10 @@ export const routeDynamicImports: Record<string, () => Promise<any>> = {
   "/trend-blog": () => import("@/pages/TrendBlog"),
   "/semantic-seo": () => import("@/pages/SemanticSEO"),
   "/keyword-research": () => import("@/pages/KeywordResearch"),
-  "/create-ai-video": () => import("@/pages/CreateAiVideo"),
-  "/create-ai-image": () => import("@/pages/CreateAiImage"),
-  "/edit-image-with-ai": () => import("@/pages/EditImageWithAI"),
-  "/animate-image-with-ai": () => import("@/pages/AnimateImageWithAI"),
+  "/create-ai-video": () => import("@/pages/AiCreateVideo"),
+  "/create-ai-image": () => import("@/pages/AiCreateImage"),
+  "/edit-image-with-ai": () => import("@/pages/AiEditImage"),
+  "/animate-image-with-ai": () => import("@/pages/AiAnimateImage"),
   "/real-estate-content": () => import("@/pages/RealEstateContent"),
   "/create-video-avatar": () => import("@/pages/AiVideoWithAvatar"),
   "/account": () => import("@/pages/Account"),
