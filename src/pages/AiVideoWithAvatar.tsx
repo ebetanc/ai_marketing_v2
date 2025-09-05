@@ -102,20 +102,10 @@ export function CreateVideoAvatar() {
       if (images.length > 0) {
         const imageUrls = images;
         
-        if (imageUrls.length > 0) {
-          await n8nCall(VIDEO_AVATAR_IDENTIFIER, {
-            operation: "attach_images",
-            images: imageUrls,
-            script_present: Boolean(script.trim()),
-            pendingUploads: 0,
-          });
-        }
-      }
-
-      // Then generate the video
       const resp = await n8nCall(VIDEO_AVATAR_IDENTIFIER, {
         operation: "generateVideo",
         script: script.trim(),
+        images: images.length > 0 ? images : undefined,
         image_count: images.length || undefined,
       });
       
