@@ -98,11 +98,6 @@ export function CreateVideoAvatar() {
     setError(null);
     setResult(null);
     try {
-      // First notify n8n about attached images if any
-      if (images.length > 0) {
-        const imageUrls = images;
-      }
-        
       const resp = await n8nCall(VIDEO_AVATAR_IDENTIFIER, {
         operation: "generateVideo",
         script: script.trim(),
