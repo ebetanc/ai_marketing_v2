@@ -99,57 +99,41 @@ export function AiProductCampaign() {
   }
 
   async function send(operation: "generateImages" | "generateVideo") {
-    console.log("=== GENERATE IMAGES/VIDEO BUTTON CLICKED ===");
-    console.log("Operation:", operation);
-    console.log("User request:", userRequest);
-    console.log("Campaign data:", campaign);
-    console.log("Assets count:", assets.length);
-    console.log("Assets URLs:", assets);
-    
     setSending(true);
     setResult(null);
     setError(null);
     try {
-      const payload = {
-        process: operation,
+      const simplePayload = {
+        identifier: "productCampaign",
+        operation: operation,
         user_request: userRequest.trim(),
-        campaign: campaign,
-        upload_assets: assets,
       };
 
-      console.log("=== SENDING TO N8N ===");
-      console.log("Identifier:", PRODUCT_CAMPAIGN_IDENTIFIER);
-      console.log("Full payload:", JSON.stringify(payload, null, 2));
-      console.log("Operation for n8nCall:", operation);
+      console.log("Sending simple payload:", simplePayload);
 
-      const resp = await n8nCall(
-        PRODUCT_CAMPAIGN_IDENTIFIER,
-        payload,
-        { operation: operation }
-      );
+      const response = await fetch("http://localhost:5678/webhook/content-workflow", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(simplePayload),
+      });
 
-      console.log("=== N8N RESPONSE ===");
-      console.log("Response OK:", resp.ok);
-      console.log("Response status:", resp.status);
-      console.log("Response data:", resp.data);
-      console.log("Response raw text:", resp.rawText);
-      console.log("Full response object:", resp);
+      const responseText = await response.text();
+      console.log("Response status:", response.status);
+      console.log("Response text:", responseText);
       
-      setResult(resp.data || resp.rawText || { ok: resp.ok });
-      if (!resp.ok) {
-        throw new Error(`Request failed with status ${resp.status}`);
+      setResult(
+        responseText ? JSON.parse(responseText) : { status: response.status }
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
       }
     } catch (e: any) {
-      console.log("=== ERROR OCCURRED ===");
-      console.error("Product campaign request failed:", e);
-      console.error("Error type:", typeof e);
-      console.error("Error constructor:", e?.constructor?.name);
-      console.error("Error message:", e?.message);
-      console.error("Error stack:", e?.stack);
+      console.error("Simple request failed:", e);
       setError(e?.message || "Request failed. Check your connection and try again.");
     } finally {
-      console.log("=== REQUEST COMPLETED ===");
-      console.log("Setting sending to false");
       setSending(false);
     }
   }
