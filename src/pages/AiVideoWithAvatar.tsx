@@ -100,9 +100,7 @@ export function CreateVideoAvatar() {
     try {
       // First notify n8n about attached images if any
       if (images.length > 0) {
-        const imageUrls = images
-          .filter(img => img.supabaseUrl)
-          .map(img => img.supabaseUrl!);
+        const imageUrls = images;
         
         if (imageUrls.length > 0) {
           await n8nCall(VIDEO_AVATAR_IDENTIFIER, {
