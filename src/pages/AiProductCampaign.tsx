@@ -103,20 +103,50 @@ export function AiProductCampaign() {
     setResult(null);
     setError(null);
     try {
-      const resp = await n8nCall(
-        PRODUCT_CAMPAIGN_IDENTIFIER,
-        {
-          process: operation,
-          user_request: userRequest.trim(),
-          campaign: campaign,
-          upload_assets: assets, // string[] OK per contract
+      // Direct fetch to the specific webhook URL
+      const webhookUrl = "https://n8n.srv856940.hstgr.cloud/webhook/product-campaign";
+      
+      const payload = {
+        process: operation,
+        user_request: userRequest.trim(),
+        campaign: campaign,
+        upload_assets: assets,
+      };
+
+      console.log("Sending to webhook:", webhookUrl);
+      console.log("Payload:", payload);
+
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
         },
-        { path: N8N_PRODUCT_CAMPAIGN_WEBHOOK_PATH },
-      );
+        body: JSON.stringify(payload),
+      });
+
+      const responseText = await response.text();
+      let responseData = null;
+      
+      try {
+        responseData = JSON.parse(responseText);
+      } catch {
+        // If not JSON, keep as text
+        responseData = responseText;
+      }
+
+      const resp = {
+        ok: response.ok,
+        status: response.status,
+        data: responseData,
+        rawText: responseText,
+      };
+
       setResult(resp.data || resp.rawText || { ok: resp.ok });
       if (!resp.ok) setError("n8n returned an error (see console)");
     } catch (e: any) {
-      setError(e?.message || "Request failed");
+      console.error("Product campaign request failed:", e);
+      setError(e?.message || "Network request failed. Check if the n8n server is accessible.");
     } finally {
       setSending(false);
     }
