@@ -73,7 +73,7 @@ const AnimateImageWithAI = lazy(() =>
   })),
 );
 const CreateVideoAvatar = lazy(() =>
-  import("@/pages/AiVideoWithAvatar").then((m) => ({
+  import("@/pages/CreateVideoAvatar").then((m) => ({
     default: m.CreateVideoAvatar,
   })),
 );

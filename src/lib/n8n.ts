@@ -185,27 +185,13 @@ import { supabase } from "./supabase";
 
 export const N8N_BASE_URL = "https://n8n.srv856940.hstgr.cloud";
 
-// Fallback URL for development/testing
-export const N8N_FALLBACK_URL = "http://localhost:5678";
-
-// Mock response for when n8n is unavailable
-const MOCK_N8N_RESPONSE = {
-  success: true,
-  message: "Mock response - n8n server unavailable",
-  video_url: "https://example.com/mock-video.mp4",
-  status: "processing",
-  request_id: "mock-request-id"
-};
-
 export const N8N_DEFAULT_WEBHOOK_PATH = "content-workflow";
 export const N8N_VIDEO_AVATAR_WEBHOOK_PATH = "ai-video-with-avatar";
 export const N8N_REAL_ESTATE_WEBHOOK_PATH = "real-estate-content";
 export const N8N_PRODUCT_CAMPAIGN_WEBHOOK_PATH = "product-campaign";
 
 function buildWebhookUrl(path?: string, opts?: { wait?: boolean }) {
-  // Try to use environment variable first, then fallback to hardcoded URL
-  const baseUrl = import.meta.env?.VITE_N8N_BASE_URL || N8N_BASE_URL;
-  const base = baseUrl.replace(/\/$/, "");
+  const base = N8N_BASE_URL.replace(/\/$/, "");
   const segment = (path ?? N8N_DEFAULT_WEBHOOK_PATH).replace(/^\//, "");
   let url = `${base}/webhook/${segment}`;
   if (opts?.wait) {
@@ -324,73 +310,15 @@ export async function postToN8n(
     "X-Client": "ai_marketing_v2",
     "X-Env": envMode,
     "X-Request-Id": (merged.meta as any).request_id,
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client, X-Env, X-Request-Id",
     ...options.headers,
   };
 
-  let res: Response;
-  try {
-    res = await fetch(url, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(merged),
-      signal: options.signal,
-      mode: 'cors',
-    });
-  } catch (networkError: any) {
-    // If primary URL fails, try fallback for development
-    if (envMode !== "production" && url.includes(N8N_BASE_URL)) {
-      console.warn(`Primary n8n URL failed (${url}), trying fallback...`);
-      const fallbackUrl = url.replace(N8N_BASE_URL, N8N_FALLBACK_URL);
-      try {
-        res = await fetch(fallbackUrl, {
-          method: "POST",
-          headers,
-          body: JSON.stringify(merged),
-          signal: options.signal,
-          mode: 'cors',
-        });
-      } catch (fallbackError: any) {
-        console.error("[postToN8n] Both primary and fallback URLs failed", {
-          primaryUrl: url,
-          fallbackUrl,
-          primaryError: networkError.message,
-          fallbackError: fallbackError.message,
-        });
-        
-        // In development, return a mock response instead of throwing
-        if (envMode !== "production") {
-          console.warn("[postToN8n] Using mock response due to connection failure");
-          return new Response(JSON.stringify(MOCK_N8N_RESPONSE), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-        
-        throw new Error(`Network connection failed. Please check if n8n server is running and accessible. Primary error: ${networkError.message}`);
-      }
-    } else {
-      console.error("[postToN8n] Network request failed", {
-        url,
-        error: networkError.message,
-        stack: networkError.stack,
-      });
-      
-      // In development, return a mock response instead of throwing
-      if (envMode !== "production") {
-        console.warn("[postToN8n] Using mock response due to connection failure");
-        return new Response(JSON.stringify(MOCK_N8N_RESPONSE), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-      
-      throw new Error(`Failed to connect to n8n server at ${url}. Please check your network connection and ensure the server is running.`);
-    }
-  }
-  
+  const res = await fetch(url, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(merged),
+    signal: options.signal,
+  });
   if (!res.ok) {
     try {
       const cloned = res.clone();

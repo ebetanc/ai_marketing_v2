@@ -1,4 +1,3 @@
-import React, { useState, useEffect, useCallback } from "react";
 import { uploadFileToSupabaseStorage, supabase } from "../lib/supabase";
 import { n8nCall, VIDEO_AVATAR_IDENTIFIER } from "../lib/n8n";
 

@@ -101,15 +101,12 @@ export function CreateVideoAvatar() {
       const resp = await n8nCall(VIDEO_AVATAR_IDENTIFIER, {
         operation: "generateVideo",
         script: script.trim(),
-        images: images.length > 0 ? images : undefined,
         image_count: images.length || undefined,
       });
-      
       setResult(resp.data || resp.rawText || { ok: resp.ok });
       if (!resp.ok) setError("n8n returned an error (see console)");
     } catch (e: any) {
-      console.error("Video generation error:", e);
-      setError(e?.message || "Network request failed. Check your connection and try again.");
+      setError(e?.message || "Request failed");
     } finally {
       setSending(false);
     }
