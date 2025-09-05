@@ -73,7 +73,7 @@ const AnimateImageWithAI = lazy(() =>
   })),
 );
 const CreateVideoAvatar = lazy(() =>
-  import("@/pages/AiVideoWithAvatar").then((m) => ({
+  import("@/pages/CreateVideoAvatar").then((m) => ({
     default: m.CreateVideoAvatar,
   })),
 );
@@ -102,7 +102,7 @@ export const routeDynamicImports: Record<string, () => Promise<any>> = {
   "/edit-image-with-ai": () => import("@/pages/AiEditImage"),
   "/animate-image-with-ai": () => import("@/pages/AiAnimateImage"),
   "/real-estate-content": () => import("@/pages/RealEstateContent"),
-  "/create-video-avatar": () => import("@/pages/AiVideoWithAvatar"),
+  "/create-video-avatar": () => import("@/pages/CreateVideoAvatar"),
   "/account": () => import("@/pages/Account"),
 };
 
