@@ -183,7 +183,7 @@ export function validateAndNormalizeProductCampaignPayload(
 }
 import { supabase } from "./supabase";
 
-export const N8N_BASE_URL = "https://n8n.srv856940.hstgr.cloud";
+export const N8N_BASE_URL = "http://localhost:5678";
 
 export const N8N_DEFAULT_WEBHOOK_PATH = "content-workflow";
 export const N8N_VIDEO_AVATAR_WEBHOOK_PATH = "ai-video-with-avatar";
