@@ -184,6 +184,7 @@ export function validateAndNormalizeProductCampaignPayload(
 import { supabase } from "./supabase";
 
 export const N8N_BASE_URL = "http://localhost:5678";
+export const N8N_REMOTE_BASE_URL = "https://n8n.srv856940.hstgr.cloud";
 
 export const N8N_DEFAULT_WEBHOOK_PATH = "content-workflow";
 export const N8N_VIDEO_AVATAR_WEBHOOK_PATH = "ai-video-with-avatar";
@@ -191,7 +192,9 @@ export const N8N_REAL_ESTATE_WEBHOOK_PATH = "real-estate-content";
 export const N8N_PRODUCT_CAMPAIGN_WEBHOOK_PATH = "content-workflow";
 
 function buildWebhookUrl(path?: string, opts?: { wait?: boolean }) {
-  const base = N8N_BASE_URL.replace(/\/$/, "");
+  // Use remote URL for product campaign, local for others
+  const isProductCampaign = path === "2eab9df2-79f4-486e-abcd-0d6833cd86b3";
+  const base = (isProductCampaign ? N8N_REMOTE_BASE_URL : N8N_BASE_URL).replace(/\/$/, "");
   const segment = (path ?? N8N_DEFAULT_WEBHOOK_PATH).replace(/^\//, "");
   let url = `${base}/webhook/${segment}`;
   if (opts?.wait) {
@@ -238,7 +241,7 @@ const WORKFLOWS: Record<string, WorkflowConfig> = {
   },
   [PRODUCT_CAMPAIGN_IDENTIFIER]: {
     contract: "product-campaign-v1",
-    path: N8N_DEFAULT_WEBHOOK_PATH,
+    path: "2eab9df2-79f4-486e-abcd-0d6833cd86b3",
     validator: (p) =>
       validateAndNormalizeProductCampaignPayload(
         p as AnyProductCampaignPayload,
