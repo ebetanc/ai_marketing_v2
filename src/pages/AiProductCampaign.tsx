@@ -7,6 +7,7 @@ import { Textarea } from "../components/ui/Textarea";
 import { Input } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
 import { n8nCall, PRODUCT_CAMPAIGN_IDENTIFIER } from "../lib/n8n";
+import { N8N_PRODUCT_CAMPAIGN_WEBHOOK_PATH } from "../lib/n8n";
 import {
   uploadFileToSupabaseStorage,
   isSupabaseConfigured,
@@ -105,12 +106,12 @@ export function AiProductCampaign() {
       const resp = await n8nCall(
         PRODUCT_CAMPAIGN_IDENTIFIER,
         {
-          operation,
+          process: operation,
           user_request: userRequest.trim(),
           campaign: campaign,
           upload_assets: assets, // string[] OK per contract
         },
-        { path: undefined },
+        { path: N8N_PRODUCT_CAMPAIGN_WEBHOOK_PATH },
       );
       setResult(resp.data || resp.rawText || { ok: resp.ok });
       if (!resp.ok) setError("n8n returned an error (see console)");
@@ -255,7 +256,7 @@ export function AiProductCampaign() {
             </h3>
             <ul className="text-sm text-gray-600 space-y-1 list-disc pl-5">
               <li>identifier: productCampaign</li>
-              <li>operation: generateImages | generateVideo</li>
+              <li>process: generateImages | generateVideo</li>
               <li>campaign.objective / description / aspectRatio / model</li>
               <li>user_request (prompt)</li>
               <li>upload_assets: string[] (urls)</li>
