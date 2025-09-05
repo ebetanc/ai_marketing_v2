@@ -98,15 +98,34 @@ export function CreateVideoAvatar() {
     setError(null);
     setResult(null);
     try {
+      // First notify n8n about attached images if any
+      if (images.length > 0) {
+        const imageUrls = images
+          .filter(img => img.supabaseUrl)
+          .map(img => img.supabaseUrl!);
+        
+        if (imageUrls.length > 0) {
+          await n8nCall(VIDEO_AVATAR_IDENTIFIER, {
+            operation: "attach_images",
+            images: imageUrls,
+            script_present: Boolean(script.trim()),
+            pendingUploads: 0,
+          });
+        }
+      }
+
+      // Then generate the video
       const resp = await n8nCall(VIDEO_AVATAR_IDENTIFIER, {
         operation: "generateVideo",
         script: script.trim(),
         image_count: images.length || undefined,
       });
+      
       setResult(resp.data || resp.rawText || { ok: resp.ok });
       if (!resp.ok) setError("n8n returned an error (see console)");
     } catch (e: any) {
-      setError(e?.message || "Request failed");
+      console.error("Video generation error:", e);
+      setError(e?.message || "Network request failed. Check your connection and try again.");
     } finally {
       setSending(false);
     }
