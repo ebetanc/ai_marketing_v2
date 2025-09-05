@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev-ui": "vite",
     "dev-db": "npx supabase start",
-    "dev-full": "npx supabase start & vite",
+    "dev": "npx supabase start & vite",
     "types:gen": "node scripts/generate-types.mjs",
     "build": "vite build",
     "vite-build": "vite build",
@@ -18,13 +18,13 @@
     "check": "npm run -s lint && npm run -s typecheck && npm run -s vite-build",
     "preview": "vite preview",
     "preview-https": "vite preview --host --https",
-    "db-gen-types-local": "supabase gen types typescript --local --schema public > src/lib/types/database.types.ts",
-    "db-gen-types-remote": "supabase gen types typescript --project-id $env:SUPABASE_PROJECT_ID --schema public > src/lib/types/database.types.ts",
     "db-reset-local": "npx supabase db reset --local",
-    "prepare": "npx husky",
+    "db-gen-types-local": "supabase gen types typescript --local --schema public > src/lib/types/database.types.ts",
+    "db-gen-types-prod": "supabase gen types typescript --project-id $env:SUPABASE_PROJECT_ID --schema public > src/lib/types/database.types.ts",
     "db-push-local": "npx supabase db push --local",
     "db-push-prod": "npx supabase db push",
-    "db-push-all": "npx supabase db push --local && npx supabase db push"
+    "db-push-all": "npx supabase db push --local && npx supabase db push",
+    "prepare": "npx husky"
   },
   "dependencies": {
     "@fontsource/geist-mono": "^5.2.6",
@@ -76,5 +76,8 @@
     "*.{json,md,css,html}": [
       "prettier --write"
     ]
+  },
+  "prettier": {
+    "endOfLine": "auto"
   }
 }

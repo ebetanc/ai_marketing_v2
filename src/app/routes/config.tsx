@@ -33,7 +33,7 @@ const Calendar = lazy(() =>
   import("@/pages/Calendar").then((m) => ({ default: m.Calendar })),
 );
 const Campaigns = lazy(() =>
-  import("@/pages/Campaigns").then((m) => ({ default: m.Campaigns })),
+  import("@/pages/AiProductCampaign").then((m) => ({ default: m.Campaigns })),
 );
 const YouTubeSEO = lazy(() =>
   import("@/pages/YouTubeSEO").then((m) => ({ default: m.YouTubeSEO })),
@@ -61,7 +61,7 @@ const CreateAIVideoPage = lazy(() =>
   import("@/pages/CreateAiVideo").then((m) => ({ default: m.CreateAiVideo })),
 );
 const CreateAIImage = lazy(() =>
-  import("@/pages/CreateAIImage").then((m) => ({ default: m.CreateAIImage })),
+  import("@/pages/CreateAiImage").then((m) => ({ default: m.CreateAIImage })),
 );
 const EditImageWithAI = lazy(() =>
   import("@/pages/EditImageWithAI").then((m) => ({
@@ -74,7 +74,7 @@ const AnimateImageWithAI = lazy(() =>
   })),
 );
 const CreateVideoAvatar = lazy(() =>
-  import("@/pages/CreateAiVideoWithAvatar").then((m) => ({
+  import("@/pages/AiVideoWithAvatar").then((m) => ({
     default: m.CreateVideoAvatar,
   })),
 );
@@ -93,17 +93,17 @@ export const routeDynamicImports: Record<string, () => Promise<any>> = {
   "/ideas": () => import("@/pages/Ideas"),
   "/content": () => import("@/pages/Content"),
   "/calendar": () => import("@/pages/Calendar"),
-  "/campaigns": () => import("@/pages/Campaigns"),
+  "/campaigns": () => import("@/pages/AiProductCampaign"),
   "/youtube-seo": () => import("@/pages/YouTubeSEO"),
   "/trend-blog": () => import("@/pages/TrendBlog"),
   "/semantic-seo": () => import("@/pages/SemanticSEO"),
   "/keyword-research": () => import("@/pages/KeywordResearch"),
   "/create-ai-video": () => import("@/pages/CreateAiVideo"),
-  "/create-ai-image": () => import("@/pages/CreateAIImage"),
+  "/create-ai-image": () => import("@/pages/CreateAiImage"),
   "/edit-image-with-ai": () => import("@/pages/EditImageWithAI"),
   "/animate-image-with-ai": () => import("@/pages/AnimateImageWithAI"),
   "/real-estate-content": () => import("@/pages/RealEstateContent"),
-  "/create-video-avatar": () => import("@/pages/CreateAiVideoWithAvatar"),
+  "/create-video-avatar": () => import("@/pages/AiVideoWithAvatar"),
   "/account": () => import("@/pages/Account"),
 };
 
