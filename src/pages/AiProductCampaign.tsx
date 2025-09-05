@@ -112,75 +112,19 @@ export function AiProductCampaign() {
 
       console.log("Sending product campaign request with payload:", payload);
 
-      // Try the n8n helper first (which may handle CORS better)
       const resp = await n8nCall(
         PRODUCT_CAMPAIGN_IDENTIFIER,
-        {
-          process: operation,
-          user_request: userRequest.trim(),
-          campaign: campaign,
-          upload_assets: assets,
-        },
-        { 
-          operation: operation,
-          path: N8N_PRODUCT_CAMPAIGN_WEBHOOK_PATH 
-        }
+        payload,
+        { operation: operation }
       );
 
       setResult(resp.data || resp.rawText || { ok: resp.ok });
       if (!resp.ok) {
-        setError(`Request failed with status ${resp.status}: ${resp.rawText || 'Unknown error'}`);
+        throw new Error(`Request failed with status ${resp.status}`);
       }
     } catch (e: any) {
       console.error("Product campaign request failed:", e);
-      
-      // If the n8n helper fails, try direct fetch as fallback
-      if (e.message?.includes('fetch') || e.message?.includes('CORS')) {
-        console.log("Trying direct webhook call as fallback...");
-        try {
-          const webhookUrl = "https://n8n.srv856940.hstgr.cloud/webhook/product-campaign";
-          
-          const payload = {
-            process: operation,
-            user_request: userRequest.trim(),
-            campaign: campaign,
-            upload_assets: assets,
-          };
-
-          console.log("Direct webhook payload:", payload);
-
-          const response = await fetch(webhookUrl, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Accept": "application/json, text/plain, */*",
-              "X-Requested-With": "XMLHttpRequest",
-            },
-            body: JSON.stringify(payload),
-            mode: 'cors',
-          });
-
-          const responseText = await response.text();
-          let responseData = null;
-          
-          try {
-            responseData = JSON.parse(responseText);
-          } catch {
-            responseData = responseText;
-          }
-
-          setResult(responseData || { ok: response.ok, status: response.status });
-          
-          if (!response.ok) {
-            setError(`Webhook returned status ${response.status}: ${responseText || 'Unknown error'}`);
-          }
-        } catch (fallbackError: any) {
-          console.error("Both n8n helper and direct fetch failed:", fallbackError);
-          setError(`Network error: ${fallbackError?.message || 'Unable to reach webhook'}. Check if the n8n server is accessible and CORS is configured.`);
-        }
-      } else {
-        setError(e?.message || "Request failed. Check your connection and try again.");
-      }
+      setError(e?.message || "Request failed. Check your connection and try again.");
     } finally {
       setSending(false);
     }
@@ -316,16 +260,16 @@ export function AiProductCampaign() {
         <div className="md:col-span-2 space-y-4">
           <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-3">
             <h3 className="text-base font-semibold text-gray-800">
-              Webhook Details
+              Workflow Contract
             </h3>
             <ul className="text-sm text-gray-600 space-y-1 list-disc pl-5">
-              <li>URL: https://n8n.srv856940.hstgr.cloud/webhook/product-campaign</li>
-              <li>Method: POST</li>
-              <li>Field: process (generateImages | generateVideo)</li>
-              <li>Payload includes: user_request, campaign, upload_assets</li>
+              <li>identifier: productCampaign</li>
+              <li>process: generateImages | generateVideo</li>
+              <li>user_request, campaign, upload_assets</li>
+              <li>meta.contract: product-campaign-v1</li>
             </ul>
             <p className="text-xs text-gray-500">
-              Direct webhook call with fallback error handling for CORS issues.
+              This UI calls n8n webhooks via unified helper ensuring request_id & contract are attached automatically.
             </p>
           </div>
         </div>
