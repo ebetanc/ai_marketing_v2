@@ -4,14 +4,16 @@ import { PageContainer } from "../components/layout/PageContainer";
 import { PageHeader } from "../components/layout/PageHeader";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
-// Placeholder implementation for AI video with avatar generation page
-export function AiProductCampaign() {
-  useDocumentTitle("AI Product Campaign — Lighting");
+/**
+ * Placeholder page for AI Video creation. Replace with real implementation.
+ */
+export function CreateAiVideo() {
+  useDocumentTitle("Create AI Video — Lighting");
   return (
     <PageContainer>
       <PageHeader
-        title="AI Product Campaign"
-        description="Generate an avatar video from a script and voice."
+        title="Create AI Video"
+        description="Generate a marketing video with AI."
         icon={<Video className="h-5 w-5" />}
       />
       <div className="mt-6 text-sm text-gray-600 space-y-4">
@@ -20,12 +22,11 @@ export function AiProductCampaign() {
           yet.
         </p>
         <p className="text-gray-500">
-          Add your script editor, voice selection, and render job status here.
+          Add your form, media preview and generation workflow here.
         </p>
-        cop
       </div>
     </PageContainer>
   );
 }
 
-export default AiProductCampaign;
+export default CreateAiVideo;

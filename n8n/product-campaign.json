@@ -1,5 +1,5 @@
 {
-  "name": "product-campaign-workflow",
+  "name": "product-campaign",
   "nodes": [
     {
       "parameters": {
@@ -2036,14 +2036,6 @@
       }
     },
     {
-      "parameters": {},
-      "type": "n8n-nodes-base.manualTrigger",
-      "typeVersion": 1,
-      "position": [160, 752],
-      "id": "97d96335-fc23-4da5-8f7e-1c7a4daf8590",
-      "name": "When clicking ‘Execute workflow’"
-    },
-    {
       "parameters": {
         "operation": "getAll",
         "tableId": "concept_generation",
@@ -2063,7 +2055,7 @@
     },
     {
       "parameters": {
-        "path": "product-campaign-workflow",
+        "path": "product-campaign",
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
@@ -2439,9 +2431,6 @@
         ]
       ]
     },
-    "When clicking ‘Execute workflow’": {
-      "main": [[]]
-    },
     "Get many rows1": {
       "main": [
         [
@@ -2487,7 +2476,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "749b470b-729a-4b30-911a-552bdd44709b",
+  "versionId": "07082cb9-9016-4cdd-ab06-b9cb13d5f5ad",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "fe9d3a12f258c7c25e0241bdac4abdc1d2d4cbca003a5fd500ebff17b6038d7a"

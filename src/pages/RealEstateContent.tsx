@@ -27,7 +27,7 @@ import {
 import { Trash2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { formatDate } from "../lib/utils";
-import { n8nRealEstateIngest } from "../lib/n8n"; // path resolved via workflow registry
+import { n8nCall } from "../lib/n8n"; // unified n8n entry
 import { useToast } from "../components/ui/Toast";
 import { Skeleton } from "../components/ui/Skeleton";
 import {
@@ -195,7 +195,7 @@ export function RealEstateContent() {
     let response: Response; // legacy variable retained for scope; now using result
     let result: any;
     try {
-      result = await n8nRealEstateIngest({ url: normalizedUrl });
+      result = await n8nCall("content_saas", { url: normalizedUrl });
     } catch (e) {
       end();
       throw e;

@@ -26,7 +26,6 @@ import { Modal } from "../components/ui/Modal";
 import { ModalBrandHeader } from "../components/ui/ModalBrandHeader";
 import { Skeleton } from "../components/ui/Skeleton";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
-import { n8nGenerateIdeas } from "../lib/n8n";
 import { useAsyncCallback } from "../hooks/useAsync";
 import { PageHeader } from "../components/layout/PageHeader";
 import { PageContainer } from "../components/layout/PageContainer";
@@ -34,6 +33,7 @@ import { ErrorState } from "../components/ui/ErrorState";
 import { EmptyState } from "../components/ui/EmptyState";
 import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 import { useToast } from "../components/ui/Toast";
+import { n8nCall } from "../lib/n8n";
 
 type Strategy = Tables<"strategies"> & {
   company?: { id: number; brand_name: string; created_at: string };
@@ -382,13 +382,11 @@ export function Strategies() {
       };
       const { company_id, strategy_id, angle_number, platforms, ...rest } =
         payload as any;
-      const response = await n8nGenerateIdeas({
-        company_id,
-        strategy_id,
-        angle_number,
-        platforms,
-        ...rest,
-      });
+      const response = await n8nCall(
+        "generateIdeas",
+        { company_id, strategy_id, angle_number, platforms, ...rest },
+        { platforms },
+      );
       if (!response.ok) throw new Error("Failed to generate ideas");
       console.log("Ideas generation started successfully");
     },

@@ -1,52 +1,194 @@
-// Centralized n8n webhook helper to standardize URL, headers, payload shape & contract validation
-// Usage: postToN8n('generateIdeas', payload) or postToN8n('...', payload, { path: 'uuid-or-custom-path' })
-import {
-  validateAndNormalizeVideoAvatarPayload,
-  type AnyVideoAvatarPayload,
-} from "./n8nAvatarContract";
-import {
-  N8N_PLATFORM_ORDER,
-  normalizePlatforms,
-  validateAndNormalizeN8nPayload,
-  type AnyN8nPayload,
-  type BaseMeta,
-} from "./n8nContract";
-import {
-  PRODUCT_CAMPAIGN_IDENTIFIER,
-  validateAndNormalizeProductCampaignPayload,
-  type AnyProductCampaignPayload,
-} from "./n8nProductCampaignContract";
+export const N8N_PLATFORM_ORDER = [
+  "twitter",
+  "linkedin",
+  "newsletter",
+  "facebook",
+  "instagram",
+  "youtube",
+  "tiktok",
+  "blog",
+] as const;
+export type PlatformName = (typeof N8N_PLATFORM_ORDER)[number];
+export type SlottedPlatforms = [
+  string,
+  string,
+  string,
+  string,
+  string,
+  string,
+  string,
+  string,
+];
+export interface BaseMeta {
+  user_id?: string | null;
+  source?: string;
+  ts?: string;
+  contract?: string;
+  [k: string]: any;
+}
+export interface BasePayload {
+  identifier: string;
+  operation: string;
+  meta?: BaseMeta;
+  user_id?: string | null;
+  platforms?: SlottedPlatforms | string[];
+  [k: string]: any;
+}
+export interface GenerateAnglesPayload extends BasePayload {
+  identifier: "generateAngles";
+  operation: string;
+  company_id: number | string;
+  brand: Record<string, any>;
+  platforms: SlottedPlatforms;
+}
+export interface GenerateIdeasPayload extends BasePayload {
+  identifier: "generateIdeas";
+  operation: "create_ideas_from_angle";
+  company_id: number | string;
+  strategy_id: number | string;
+  angle_number: number;
+  platforms: SlottedPlatforms;
+}
+export interface GenerateContentPayload extends BasePayload {
+  identifier: "generateContent";
+  operation: string;
+  company_id: number | string;
+  strategy_id: number | string;
+  idea_id: number | string;
+  topic: Record<string, any>;
+  platforms: SlottedPlatforms;
+}
+export interface AutofillPayload extends BasePayload {
+  identifier: "autofill";
+  operation: string;
+  website: string;
+  brand?: Record<string, any>;
+}
+export interface RealEstateIngestPayload extends BasePayload {
+  identifier: "content_saas";
+  operation: "real_estate_ingest";
+  url: string;
+}
+export type KnownWebhookPayload =
+  | GenerateAnglesPayload
+  | GenerateIdeasPayload
+  | GenerateContentPayload
+  | AutofillPayload
+  | RealEstateIngestPayload;
+export type AnyN8nPayload = KnownWebhookPayload | BasePayload;
+export function normalizePlatforms(raw?: string[] | null): SlottedPlatforms {
+  const slots: string[] = Array(8).fill("");
+  if (!raw) return slots as SlottedPlatforms;
+  raw
+    .map((p) => (p || "").trim().toLowerCase())
+    .filter(Boolean)
+    .forEach((p) => {
+      const idx = N8N_PLATFORM_ORDER.indexOf(p as PlatformName);
+      if (idx !== -1) slots[idx] = p;
+    });
+  return slots as SlottedPlatforms;
+}
+export interface ContractCheckResult {
+  ok: boolean;
+  errors: string[];
+  warnings: string[];
+  normalized?: any;
+}
+export function validateAndNormalizeN8nPayload(
+  payload: AnyN8nPayload,
+): ContractCheckResult {
+  if (!payload.meta) payload.meta = {};
+  if (!payload.meta!.ts) payload.meta!.ts = new Date().toISOString();
+  if (!payload.meta!.source) payload.meta!.source = "app";
+  if (Array.isArray((payload as any).platforms)) {
+    (payload as any).platforms = normalizePlatforms(
+      (payload as any).platforms as string[],
+    );
+  }
+  return { ok: true, errors: [], warnings: [], normalized: payload };
+}
+
+export const VIDEO_AVATAR_IDENTIFIER = "videoAvatar" as const;
+export type VideoAvatarOperation = "generateVideo" | "attach_images" | string;
+export interface VideoAvatarBasePayload extends BasePayload {
+  identifier: typeof VIDEO_AVATAR_IDENTIFIER;
+  operation: VideoAvatarOperation | string;
+  meta?: BaseMeta;
+}
+export interface VideoAvatarGeneratePayload extends VideoAvatarBasePayload {
+  operation: "generateVideo";
+  script: string;
+  image_count?: number;
+}
+export interface VideoAvatarAttachImagesPayload extends VideoAvatarBasePayload {
+  operation: "attach_images";
+  images: string[];
+  script_present: boolean;
+  pendingUploads?: number;
+}
+export type AnyVideoAvatarPayload =
+  | VideoAvatarGeneratePayload
+  | VideoAvatarAttachImagesPayload
+  | VideoAvatarBasePayload;
+export function validateAndNormalizeVideoAvatarPayload(
+  payload: AnyVideoAvatarPayload,
+): ContractCheckResult {
+  if (!payload.meta) payload.meta = {};
+  if (!payload.meta!.ts) payload.meta!.ts = new Date().toISOString();
+  if (!payload.meta!.source) payload.meta!.source = "app";
+  return { ok: true, errors: [], warnings: [], normalized: payload };
+}
+
+export const PRODUCT_CAMPAIGN_IDENTIFIER = "productCampaign" as const;
+export type ProductCampaignOperation =
+  | "generateImages"
+  | "generateVideo"
+  | string;
+export interface ProductCampaignBasePayload extends BasePayload {
+  identifier: typeof PRODUCT_CAMPAIGN_IDENTIFIER;
+  operation: ProductCampaignOperation;
+  meta?: BaseMeta;
+  campaign?: {
+    objective?: string;
+    description?: string;
+    aspectRatio?: string;
+    model?: string;
+  };
+  user_request?: string;
+  upload_assets?: string[] | string;
+}
+export interface ProductCampaignGenerateImagesPayload
+  extends ProductCampaignBasePayload {
+  operation: "generateImages";
+  user_request: string;
+  upload_assets?: string[] | string;
+}
+export interface ProductCampaignGenerateVideoPayload
+  extends ProductCampaignBasePayload {
+  operation: "generateVideo";
+  user_request: string;
+  upload_assets?: string[] | string;
+}
+export type AnyProductCampaignPayload =
+  | ProductCampaignGenerateImagesPayload
+  | ProductCampaignGenerateVideoPayload
+  | ProductCampaignBasePayload;
+export function validateAndNormalizeProductCampaignPayload(
+  payload: AnyProductCampaignPayload,
+): ContractCheckResult {
+  if (!payload.meta) payload.meta = { source: "app" } as any;
+  if (!payload.meta!.ts) payload.meta!.ts = new Date().toISOString();
+  if (!payload.meta!.source) payload.meta!.source = "app";
+  return { ok: true, errors: [], warnings: [], normalized: payload };
+}
 import { supabase } from "./supabase";
 
-// Base URL for n8n webhooks.
-// In development we allow overriding via VITE_N8N_BASE_URL so the Vite dev proxy
-// (see vite.config.ts mapping /n8n -> remote host) can avoid browser CORS preflights.
-// Create a .env.development with: VITE_N8N_BASE_URL=/n8n
-// Production will normally leave this undefined so we fall back to the full domain.
-export const N8N_BASE_URL =
-  (typeof import.meta !== "undefined" &&
-    (import.meta as any).env?.VITE_N8N_BASE_URL) ||
-  "https://n8n.srv856940.hstgr.cloud";
+export const N8N_BASE_URL = "https://n8n.srv856940.hstgr.cloud";
 
-// Dev helper warning: if we're in development and not using the proxy path, highlight CORS risk.
-if (
-  typeof window !== "undefined" &&
-  ((import.meta as any).env?.MODE === "development" ||
-    (import.meta as any).env?.DEV) &&
-  N8N_BASE_URL.startsWith("http") &&
-  /localhost|127\.0\.0\.1/.test(window.location.host)
-) {
-  console.warn(
-    `[n8n] VITE_N8N_BASE_URL not set to '/n8n' in development. Requests will go cross-origin and may hit CORS.\n` +
-      `Create .env.development with VITE_N8N_BASE_URL=/n8n (see .env.development.example).`,
-  );
-}
-// Primary content workflow path (replaces older internal "content-saas" path)
 export const N8N_DEFAULT_WEBHOOK_PATH = "content-workflow";
 export const N8N_VIDEO_AVATAR_WEBHOOK_PATH = "ai-video-with-avatar";
-export const N8N_REAL_ESTATE_WEBHOOK_PATH =
-  "real-estate-content-generation-workflow";
-export const N8N_PRODUCT_CAMPAIGN_WEBHOOK_PATH = "product-campaign-workflow";
+export const N8N_REAL_ESTATE_WEBHOOK_PATH = "real-estate-content";
+export const N8N_PRODUCT_CAMPAIGN_WEBHOOK_PATH = "product-campaign";
 
 function buildWebhookUrl(path?: string, opts?: { wait?: boolean }) {
   const base = N8N_BASE_URL.replace(/\/$/, "");
@@ -64,7 +206,6 @@ export type N8nPostOptions = {
   headers?: Record<string, string>;
 };
 
-// Unified workflow registry: contract, default operation, optional validator & fixed path
 interface WorkflowConfig {
   contract?: string;
   defaultOperation?: string;
@@ -74,7 +215,6 @@ interface WorkflowConfig {
 const WORKFLOWS: Record<string, WorkflowConfig> = {
   generateAngles: {
     contract: "core-v1",
-    defaultOperation: "create_strategy_angles",
     path: N8N_DEFAULT_WEBHOOK_PATH,
   },
   generateIdeas: {
@@ -84,12 +224,10 @@ const WORKFLOWS: Record<string, WorkflowConfig> = {
   },
   generateContent: {
     contract: "core-v1",
-    defaultOperation: "generate_content_from_idea",
     path: N8N_DEFAULT_WEBHOOK_PATH,
   },
   autofill: {
     contract: "core-v1",
-    defaultOperation: "company_autofill",
     path: N8N_DEFAULT_WEBHOOK_PATH,
   },
   videoAvatar: {
@@ -106,7 +244,6 @@ const WORKFLOWS: Record<string, WorkflowConfig> = {
         p as AnyProductCampaignPayload,
       ) as any,
   },
-  // Real estate ingest (identifier content_saas) can also centralize its slug path here
   content_saas: {
     contract: "real-estate-v1",
     defaultOperation: "real_estate_ingest",
@@ -129,8 +266,6 @@ export async function postToN8n(
     (typeof process !== "undefined" ? process.env.NODE_ENV : undefined) ||
     "development";
 
-  // In dev you can set VITE_N8N_WAIT=1 to force n8n to respond after execution
-  // which often returns a richer JSON body instead of a generic 204/HTML.
   const waitFlag =
     envMode !== "production" &&
     typeof import.meta !== "undefined" &&
@@ -149,22 +284,18 @@ export async function postToN8n(
     ...body,
   } as AnyN8nPayload;
 
-  // Ensure meta exists early for enrichment
   if (!merged.meta) merged.meta = {} as any;
 
-  // Generate a stable request id for correlation across headers, meta & logs
   const requestId = (globalThis as any)?.crypto?.randomUUID
     ? (globalThis as any).crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   if (!(merged.meta as any).request_id) {
     (merged.meta as any).request_id = requestId;
   }
-  // Backfill contract if caller did not specify
   if (!(merged.meta as any).contract) {
     (merged.meta as any).contract = determineDefaultContract(identifier);
   }
 
-  // Pre-normalize platforms if free-form list length not equal to 8
   if (
     Array.isArray((merged as any).platforms) &&
     (merged as any).platforms.length > 0 &&
@@ -173,38 +304,11 @@ export async function postToN8n(
     (merged as any).platforms = normalizePlatforms((merged as any).platforms);
   }
 
-  // envMode already computed above
-
-  if (envMode !== "production") {
-    try {
-      const validator = getWorkflowValidator(identifier);
-      const { ok, warnings, errors, normalized } = validator(merged) as any;
-      if (warnings?.length) {
-        console.warn(
-          `[n8n-contract] Warnings for ${identifier}:\n - ${warnings.join(
-            "\n - ",
-          )}`,
-        );
-      }
-      if (!ok) {
-        console.error(
-          `[n8n-contract] Errors for ${identifier}:\n - ${errors.join(
-            "\n - ",
-          )}`,
-        );
-      }
-      if (normalized) Object.assign(merged, normalized);
-    } catch (e) {
-      console.warn("[n8n-contract] Validation failed", e);
-    }
-  }
-
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     Accept: "application/json, text/plain, */*",
     "X-Client": "ai_marketing_v2",
     "X-Env": envMode,
-    // Use same request id we injected into meta for downstream correlation
     "X-Request-Id": (merged.meta as any).request_id,
     ...options.headers,
   };
@@ -215,19 +319,16 @@ export async function postToN8n(
     body: JSON.stringify(merged),
     signal: options.signal,
   });
-  // If the server responded with an error, attempt to surface more diagnostics.
   if (!res.ok) {
     try {
       const cloned = res.clone();
       const text = await cloned.text();
-      // Best effort JSON parse
       let parsed: any = null;
       try {
         parsed = JSON.parse(text);
       } catch (_jsonErr) {
         /* noop */
       }
-      // Capture response headers for deeper diagnostics
       const responseHeaders: Record<string, string> = {};
       try {
         res.headers.forEach((value, key) => {
@@ -246,13 +347,11 @@ export async function postToN8n(
         responseBody: parsed ?? text,
         responseHeaders,
       });
-      // Attach a hint header value for correlation if n8n echoes it back
     } catch (e) {
       console.error("[postToN8n] Failed to read error response body", e);
     }
   }
 
-  // Attach requestId for caller convenience (non-standard augmentation)
   (res as any).requestId = (merged.meta as any).request_id;
   return res;
 }
@@ -261,24 +360,14 @@ export function prepareSlottedPlatforms(raw?: string[] | null) {
   return normalizePlatforms(raw);
 }
 
-export { N8N_PLATFORM_ORDER };
-
-// ---------------------------------------------------------------------------
-// Specialized high-level helpers for advanced workflows (avatar & product campaign)
-// Centralizing these ensures pages don't manually craft payload shapes, keeping
-// alignment with validator logic and future contract changes.
-// ---------------------------------------------------------------------------
-
 export interface ContractValidationMeta {
   ok: boolean;
   errors: string[];
   warnings: string[];
 }
-
 export interface ContractSendResult<T = any> extends SendN8nResult<T> {
   validation: ContractValidationMeta;
 }
-
 function buildValidationResult(v: any): ContractValidationMeta {
   return {
     ok: !!v.ok,
@@ -314,273 +403,97 @@ async function parseResponseToSendResult<T = any>(
   };
 }
 
-// ---------------- Avatar Workflow Helpers ----------------
+interface N8nRequestOptions {
+  operation?: string;
+  body?: Record<string, any>;
+  platforms?: string[];
+  autoUser?: boolean;
+  path?: string;
+  actionParam?: boolean;
+  pathVariants?: string[];
+  disablePathProbe?: boolean;
+  meta?: Partial<BaseMeta>;
+}
+
+export async function n8nRequest(
+  identifier: string,
+  options: N8nRequestOptions = {},
+): Promise<ContractSendResult> {
+  const wf = WORKFLOWS[identifier];
+  const op =
+    options.operation ||
+    options.body?.operation ||
+    wf?.defaultOperation ||
+    identifier;
+  const payload = await createN8nPayload(
+    identifier,
+    op,
+    {
+      ...(options.body || {}),
+      meta: { ...(options.body?.meta || {}), ...(options.meta || {}) },
+    },
+    { platforms: options.platforms, autoUser: options.autoUser },
+  );
+  const validator = getWorkflowValidator(identifier);
+  const validated = validator(payload as any);
+  const validation = buildValidationResult(validated);
+  const basePath = options.path || wf?.path || N8N_DEFAULT_WEBHOOK_PATH;
+  const primaryPath = options.actionParam
+    ? `${basePath}?action=${op}`
+    : basePath;
+  const devMode =
+    (typeof import.meta !== "undefined" && (import.meta as any).env?.DEV) ||
+    (typeof process !== "undefined" && process.env.NODE_ENV !== "production");
+  const allowVariants =
+    devMode && !options.disablePathProbe && options.pathVariants?.length;
+  if (!allowVariants) {
+    const res = await postToN8n(identifier, validated.normalized, {
+      path: primaryPath,
+    });
+    const sendResult = await parseResponseToSendResult(res);
+    return { ...sendResult, validation };
+  }
+  const attempt = async (path: string, index: number) => {
+    const enriched = {
+      ...(validated.normalized as any),
+      meta: {
+        ...(validated.normalized as any).meta,
+        path_variant_index: index,
+        path_variant_value: path,
+      },
+    };
+    return await postToN8n(identifier, enriched, { path });
+  };
+  const variants = [primaryPath, ...(options.pathVariants || [])];
+  let firstRes = await attempt(variants[0], 0);
+  let firstParsed = await parseResponseToSendResult(firstRes);
+  if (
+    !firstParsed.ok &&
+    firstParsed.status === 500 &&
+    /<html|<pre>Internal Server Error/i.test(firstParsed.rawText || "")
+  ) {
+    for (let i = 1; i < variants.length; i++) {
+      try {
+        const vr = await attempt(variants[i], i);
+        const vp = await parseResponseToSendResult(vr);
+        if (vp.ok) return { ...vp, validation };
+      } catch {}
+    }
+  }
+  return { ...firstParsed, validation };
+}
+
 export interface VideoAvatarGenerateParams {
   script: string;
   image_count?: number;
   meta?: Partial<BaseMeta>;
   user_id?: string | null;
 }
-export async function n8nVideoAvatarGenerateVideo(
-  params: VideoAvatarGenerateParams,
-  retry: RetryOptions = {},
-): Promise<ContractSendResult> {
-  const draft: AnyVideoAvatarPayload = {
-    identifier: "videoAvatar",
-    operation: "generateVideo",
-    script: params.script,
-    image_count: params.image_count,
-    user_id: params.user_id ?? undefined,
-    meta: {
-      user_id: params.user_id ?? undefined,
-      source: "app",
-      ts: new Date().toISOString(),
-      contract: "avatar-v1",
-      script_char_count: params.script?.length || 0,
-      ...(params.meta || {}),
-    },
-  } as any;
-  const validated = validateAndNormalizeVideoAvatarPayload(draft);
-  const validation = buildValidationResult(validated);
-  if (!validation.ok) {
-    return {
-      ok: false,
-      status: 0,
-      data: null,
-      rawText: "",
-      requestId: undefined,
-      response: undefined as any,
-      validation,
-    };
-  }
-  // Primary path variant (query action pattern)
-  const primaryPath = `${N8N_VIDEO_AVATAR_WEBHOOK_PATH}?action=generateVideo`;
-  // Secondary variants we can probe if primary returns opaque HTML 500 (common when path style mismatched)
-  const fallbackVariants = [
-    // plain base without query param
-    `${N8N_VIDEO_AVATAR_WEBHOOK_PATH}`,
-    // REST-style sub-path (some n8n setups may map function style)
-    `${N8N_VIDEO_AVATAR_WEBHOOK_PATH}/generateVideo`,
-  ];
-  // Decide whether to try variants (dev only by default unless explicitly opted in via meta flag)
-  const devMode =
-    (typeof import.meta !== "undefined" && (import.meta as any).env?.DEV) ||
-    (typeof process !== "undefined" && process.env.NODE_ENV !== "production");
-  const allowVariants = devMode && !(params.meta as any)?.disable_path_probe;
-
-  // Always attempt primary first with provided retry config
-  const attemptSend = async (path: string, variantIndex: number) => {
-    if (devMode) {
-      console.info(
-        `[avatar] attempting path variant index=${variantIndex} value='${path}'`,
-      );
-    }
-    const enriched = {
-      ...(validated.normalized as any),
-      meta: {
-        ...(validated.normalized as any).meta,
-        path_variant_index: variantIndex,
-        path_variant_value: path,
-      },
-    };
-    const res = await postToN8nWithRetry("videoAvatar", enriched, {
-      path,
-      // For variant attempts reduce attempts to 1 to avoid multiplying server load
-      attempts: variantIndex === 0 ? (retry.attempts ?? 3) : 1,
-      baseDelayMs: retry.baseDelayMs,
-      maxDelayMs: retry.maxDelayMs,
-      retryOnStatus: retry.retryOnStatus,
-      onAttempt: retry.onAttempt,
-    });
-    return res;
-  };
-  let primaryRes = await attemptSend(primaryPath, 0);
-  // Heuristic: if primary returned 500 AND body is HTML "Internal Server Error" page, probe variants
-  let primaryParsed = await parseResponseToSendResult(primaryRes);
-  if (
-    allowVariants &&
-    !primaryParsed.ok &&
-    primaryParsed.status === 500 &&
-    /<html|<pre>Internal Server Error/i.test(primaryParsed.rawText || "")
-  ) {
-    for (let i = 0; i < fallbackVariants.length; i++) {
-      try {
-        const variantPath = fallbackVariants[i];
-        const variantRes = await attemptSend(variantPath, i + 1);
-        const variantParsed = await parseResponseToSendResult(variantRes);
-        if (variantParsed.ok) {
-          if (devMode) {
-            console.info(
-              `[avatar] generateVideo succeeded via fallback path variant '${variantPath}' (index ${i + 1})`,
-            );
-          }
-          return { ...variantParsed, validation };
-        } else if (devMode) {
-          console.warn(
-            `[avatar] fallback path variant '${variantPath}' also failed (${variantParsed.status}).`,
-          );
-        }
-      } catch (e) {
-        if (devMode) {
-          console.warn(
-            `[avatar] exception attempting fallback path variant '${fallbackVariants[i]}'`,
-            e,
-          );
-        }
-      }
-    }
-  }
-  return { ...primaryParsed, validation };
-}
-
-export interface VideoAvatarAttachImagesParams {
-  images: string[]; // public URLs
-  script_present: boolean;
-  pendingUploads?: number;
-  user_id?: string | null;
-  meta?: Partial<BaseMeta>;
-}
-export async function n8nVideoAvatarAttachImages(
-  params: VideoAvatarAttachImagesParams,
-  retry: RetryOptions = {},
-): Promise<ContractSendResult> {
-  const draft: AnyVideoAvatarPayload = {
-    identifier: "videoAvatar",
-    operation: "attach_images",
-    images: params.images,
-    script_present: params.script_present,
-    pendingUploads: params.pendingUploads,
-    user_id: params.user_id ?? undefined,
-    meta: {
-      user_id: params.user_id ?? undefined,
-      source: "app",
-      ts: new Date().toISOString(),
-      contract: "avatar-v1",
-      ...(params.meta || {}),
-    },
-  } as any;
-  const validated = validateAndNormalizeVideoAvatarPayload(draft);
-  const validation = buildValidationResult(validated);
-  if (!validation.ok) {
-    return {
-      ok: false,
-      status: 0,
-      data: null,
-      rawText: "",
-      requestId: undefined,
-      response: undefined as any,
-      validation,
-    };
-  }
-  const path = `${N8N_VIDEO_AVATAR_WEBHOOK_PATH}?action=attach_images`;
-  const res = await postToN8nWithRetry(
-    "videoAvatar",
-    validated.normalized as any,
-    {
-      path,
-      ...retry,
-    },
-  );
-  const sendResult = await parseResponseToSendResult(res);
-  return { ...sendResult, validation };
-}
-
-// ---------------- Product Campaign Workflow Helpers ----------------
-export interface ProductCampaignCommonFields {
-  campaign?: {
-    objective?: string;
-    description?: string;
-    aspectRatio?: string;
-    model?: string;
-  };
-  upload_assets?: string[]; // array form; will be normalized
-  campaign_id?: string; // stored into meta.campaign_id
-  user_id?: string | null;
-  meta?: Partial<BaseMeta>;
-}
-export interface ProductCampaignGenerateImagesParams
-  extends ProductCampaignCommonFields {
-  user_request: string;
-}
-export interface ProductCampaignGenerateVideoParams
-  extends ProductCampaignCommonFields {
-  user_request: string;
-}
-
-function normalizeUploadAssets(maybe: string[] | undefined) {
-  return maybe && maybe.length
-    ? maybe.filter((u) => typeof u === "string" && u.trim())
-    : undefined;
-}
-
-async function sendProductCampaign(
-  operation: "generateImages" | "generateVideo",
-  params:
-    | ProductCampaignGenerateImagesParams
-    | ProductCampaignGenerateVideoParams,
-  retry: RetryOptions,
-): Promise<ContractSendResult> {
-  const draft: AnyProductCampaignPayload = {
-    identifier: PRODUCT_CAMPAIGN_IDENTIFIER,
-    operation,
-    campaign: params.campaign,
-    user_request: params.user_request,
-    upload_assets: normalizeUploadAssets(params.upload_assets),
-    user_id: params.user_id ?? undefined,
-    meta: {
-      user_id: params.user_id ?? undefined,
-      source: "app",
-      ts: new Date().toISOString(),
-      contract: "product-campaign-v1",
-      campaign_id: params.campaign_id,
-      ...(params.meta || {}),
-    },
-  } as any;
-  const validated = validateAndNormalizeProductCampaignPayload(draft);
-  const validation = buildValidationResult(validated);
-  if (!validation.ok) {
-    return {
-      ok: false,
-      status: 0,
-      data: null,
-      rawText: "",
-      requestId: undefined,
-      response: undefined as any,
-      validation,
-    };
-  }
-  const path = `${N8N_PRODUCT_CAMPAIGN_WEBHOOK_PATH}?action=${operation}`;
-  const res = await postToN8nWithRetry(
-    PRODUCT_CAMPAIGN_IDENTIFIER,
-    validated.normalized as any,
-    { path, ...retry },
-  );
-  const sendResult = await parseResponseToSendResult(res);
-  return { ...sendResult, validation };
-}
-
-export async function n8nProductCampaignGenerateImages(
-  params: ProductCampaignGenerateImagesParams,
-  retry: RetryOptions = {},
-): Promise<ContractSendResult> {
-  return sendProductCampaign("generateImages", params, retry);
-}
-
-export async function n8nProductCampaignGenerateVideo(
-  params: ProductCampaignGenerateVideoParams,
-  retry: RetryOptions = {},
-): Promise<ContractSendResult> {
-  return sendProductCampaign("generateVideo", params, retry);
-}
-
-// ---------------------------------------------------------------------------
-// Standardized high-level helpers
-// ---------------------------------------------------------------------------
 
 export interface StandardN8nPayloadOptions {
-  autoUser?: boolean; // inject current user id if absent (default true)
-  contract?: string; // override inferred contract
-  platforms?: string[]; // free-form platform list; normalized if provided
+  autoUser?: boolean;
+  contract?: string;
+  platforms?: string[];
 }
 
 export async function getCurrentUserId(): Promise<string | null> {
@@ -592,7 +505,6 @@ export async function getCurrentUserId(): Promise<string | null> {
   }
 }
 
-// Build a standardized payload merging identifier / operation / meta / user / platforms
 export async function createN8nPayload<Extra extends Record<string, any>>(
   identifier: string,
   operation: string,
@@ -646,9 +558,7 @@ export async function sendN8n<T = any>(
     if (rawText.trim()) {
       try {
         data = JSON.parse(rawText);
-      } catch {
-        // leave as null, caller can inspect rawText
-      }
+      } catch {}
     }
   } catch (e) {
     console.warn("[sendN8n] Failed reading body", e);
@@ -662,27 +572,6 @@ export async function sendN8n<T = any>(
     response: res,
   };
 }
-
-// Internal generic builder infers operation & path when omitted
-async function buildAndSend(
-  identifier: string,
-  operation: string | undefined,
-  params: Record<string, any>,
-  opts: { platforms?: string[]; autoUser?: boolean; path?: string } = {},
-) {
-  const wf = WORKFLOWS[identifier];
-  const op = operation || params.operation || wf?.defaultOperation || "unknown";
-  const payload = await createN8nPayload(
-    identifier,
-    op,
-    { ...params },
-    { platforms: opts.platforms, autoUser: opts.autoUser },
-  );
-  const path = opts.path || wf?.path;
-  return sendN8n(payload, path ? { path } : undefined);
-}
-
-// Generic catch-all public helper
 export async function n8nCall(
   identifier: string,
   params: Record<string, any>,
@@ -693,121 +582,15 @@ export async function n8nCall(
     path?: string;
   } = {},
 ) {
-  return buildAndSend(identifier, opts.operation, params, opts);
-}
-
-// Convenience per-operation builders (public API unchanged)
-export async function n8nAutofill(params: {
-  website: string;
-  brand?: Record<string, any>;
-  [k: string]: any;
-}) {
-  return buildAndSend("autofill", undefined, params);
-}
-
-export async function n8nGenerateAngles(params: {
-  company_id: number | string;
-  brand: any;
-  platforms: string[];
-  [k: string]: any;
-}) {
-  return buildAndSend("generateAngles", undefined, params, {
-    platforms: params.platforms,
-  });
-}
-
-export async function n8nGenerateIdeas(params: {
-  company_id: number | string;
-  strategy_id: number | string;
-  angle_number: number;
-  platforms: string[];
-  [k: string]: any;
-}) {
-  return buildAndSend("generateIdeas", undefined, params, {
-    platforms: params.platforms,
-  });
-}
-
-export async function n8nGenerateContent(params: {
-  company_id: number | string;
-  strategy_id: number | string;
-  idea_id: number | string;
-  topic: any;
-  platforms: string[];
-  [k: string]: any;
-}) {
-  return buildAndSend("generateContent", undefined, params, {
-    platforms: params.platforms,
-  });
-}
-
-export async function n8nRealEstateIngest(params: { url: string }) {
-  // content_saas identifier retained for backend compatibility; path centralized in WORKFLOWS
-  return buildAndSend("content_saas", undefined, params, { autoUser: true });
-}
-
-// Simple exponential backoff retry wrapper for transient failures
-export interface RetryOptions {
-  attempts?: number; // total attempts including first (default 3)
-  baseDelayMs?: number; // initial delay (default 500)
-  maxDelayMs?: number; // cap delay (default 4000)
-  retryOnStatus?: number[]; // explicit statuses to retry (default 429 + 5xx)
-  onAttempt?: (info: {
-    attempt: number;
-    attempts: number;
-    lastStatus?: number;
-    lastError?: any;
-    delayMs?: number;
-  }) => void; // callback for UI progress
-}
-
-export async function postToN8nWithRetry(
-  identifier: string,
-  body: Record<string, any>,
-  options: N8nPostOptions & RetryOptions = {},
-) {
-  const {
-    attempts = 3,
-    baseDelayMs = 500,
-    maxDelayMs = 4000,
-    retryOnStatus,
-    onAttempt,
-    ...rest
-  } = options;
-  const statuses = retryOnStatus || [429, 500, 502, 503, 504, 522, 524];
-  let lastError: any = null;
-  for (let attempt = 1; attempt <= attempts; attempt++) {
-    try {
-      onAttempt?.({ attempt, attempts });
-      const res = await postToN8n(identifier, body, rest);
-      if (!res.ok && statuses.includes(res.status) && attempt < attempts) {
-        const delay = Math.min(
-          maxDelayMs,
-          baseDelayMs * Math.pow(2, attempt - 1) + Math.random() * 100,
-        );
-        onAttempt?.({
-          attempt,
-          attempts,
-          lastStatus: res.status,
-          delayMs: delay,
-        });
-        await new Promise((r) => setTimeout(r, delay));
-        continue;
-      }
-      return res;
-    } catch (e: any) {
-      lastError = e;
-      if (attempt < attempts) {
-        const delay = Math.min(
-          maxDelayMs,
-          baseDelayMs * Math.pow(2, attempt - 1) + Math.random() * 100,
-        );
-        onAttempt?.({ attempt, attempts, lastError: e, delayMs: delay });
-        await new Promise((r) => setTimeout(r, delay));
-        continue;
-      }
-      throw e;
-    }
-  }
-  throw lastError || new Error("postToN8nWithRetry failed");
+  const wf = WORKFLOWS[identifier];
+  const op =
+    opts.operation || params.operation || wf?.defaultOperation || identifier;
+  const payload = await createN8nPayload(
+    identifier,
+    op,
+    { ...params },
+    { platforms: opts.platforms, autoUser: opts.autoUser },
+  );
+  const path = opts.path || wf?.path;
+  return sendN8n(payload, path ? { path } : undefined);
 }

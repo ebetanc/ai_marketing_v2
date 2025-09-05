@@ -12,7 +12,7 @@ import {
 import { useRef, useState } from "react";
 import { z } from "zod";
 import { useAsyncCallback } from "@/hooks/useAsync";
-import { n8nGenerateAngles } from "@/lib/n8n";
+import { n8nCall } from "@/lib/n8n";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
@@ -181,7 +181,6 @@ export function GenerateStrategyModal({
 
       const webhookPayload = {
         identifier: "generateAngles",
-        operation: "create_strategy_angles",
         // Core identifiers used for CRUD
         company_id: selectedCompany.id,
         meta: {
@@ -205,12 +204,11 @@ export function GenerateStrategyModal({
 
       try {
         const { company_id, brand, platforms, ...rest } = webhookPayload as any;
-        const response = await n8nGenerateAngles({
-          company_id,
-          brand,
-          platforms,
-          ...rest,
-        });
+        const response = await n8nCall(
+          "generateAngles",
+          { company_id, brand, platforms, ...rest },
+          { platforms },
+        );
         if (!response.ok) throw new Error("Failed to generate Strategy Set");
         console.log(
           "Content strategy generation result:\n",

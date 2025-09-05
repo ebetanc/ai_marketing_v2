@@ -2,7 +2,7 @@ import { ArrowLeft, ArrowRight, Globe, Sparkles, X } from "lucide-react";
 import React, { useState } from "react";
 import { z } from "zod";
 import { useAsyncCallback } from "@/hooks/useAsync";
-import { n8nAutofill } from "@/lib/n8n";
+import { n8nCall } from "@/lib/n8n";
 import { supabase, type TablesInsert } from "@/lib/supabase";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -99,7 +99,7 @@ export function CreateBrandModal({
 
       let result;
       try {
-        result = await n8nAutofill({
+        result = await n8nCall("autofill", {
           website: normalizedWebsite,
           brandName: formData.name,
           additionalInfo: formData.additionalInfo,

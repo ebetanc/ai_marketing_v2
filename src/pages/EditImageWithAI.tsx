@@ -1,18 +1,20 @@
 import React from "react";
-import { Video } from "lucide-react";
+import { Wand2 } from "lucide-react";
 import { PageContainer } from "../components/layout/PageContainer";
 import { PageHeader } from "../components/layout/PageHeader";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
-// Placeholder implementation for AI video with avatar generation page
-export function AiProductCampaign() {
-  useDocumentTitle("AI Product Campaign — Lighting");
+/**
+ * Placeholder page for AI Image editing. Replace with real implementation.
+ */
+export function EditImageWithAI() {
+  useDocumentTitle("Edit Image with AI — Lighting");
   return (
     <PageContainer>
       <PageHeader
-        title="AI Product Campaign"
-        description="Generate an avatar video from a script and voice."
-        icon={<Video className="h-5 w-5" />}
+        title="Edit Image with AI"
+        description="Apply AI transformations to an existing image."
+        icon={<Wand2 className="h-5 w-5" />}
       />
       <div className="mt-6 text-sm text-gray-600 space-y-4">
         <p>
@@ -20,12 +22,11 @@ export function AiProductCampaign() {
           yet.
         </p>
         <p className="text-gray-500">
-          Add your script editor, voice selection, and render job status here.
+          Add your image upload, mask tools, and variation gallery here.
         </p>
-        cop
       </div>
     </PageContainer>
   );
 }
 
-export default AiProductCampaign;
+export default EditImageWithAI;

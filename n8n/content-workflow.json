@@ -4,7 +4,7 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "content-saas",
+        "path": "content-workflow",
         "responseMode": "responseNode",
         "options": {}
       },
@@ -3763,7 +3763,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "b9013b99-d2c8-4f55-8814-a7a0c880f200",
+  "versionId": "7eef84c6-d8b4-480d-8270-785e5e0a19cb",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "fe9d3a12f258c7c25e0241bdac4abdc1d2d4cbca003a5fd500ebff17b6038d7a"

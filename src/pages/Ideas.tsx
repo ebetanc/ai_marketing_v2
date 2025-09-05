@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { n8nGenerateContent, n8nGenerateIdeas } from "../lib/n8n";
+import { n8nCall } from "../lib/n8n";
 import {
   FileText,
   Lightbulb,
@@ -821,14 +821,18 @@ export function Ideas() {
     try {
       const { company_id, strategy_id, idea_id, topic, platforms, ...rest } =
         webhookPayload as any;
-      result = await n8nGenerateContent({
-        company_id,
-        strategy_id,
-        idea_id,
-        topic,
-        platforms,
-        ...rest,
-      });
+      result = await n8nCall(
+        "generateContent",
+        {
+          company_id,
+          strategy_id,
+          idea_id,
+          topic,
+          platforms,
+          ...rest,
+        },
+        { platforms },
+      );
     } catch (e) {
       throw e;
     }
@@ -1204,13 +1208,17 @@ export function Ideas() {
         };
         const { company_id, strategy_id, angle_number, platforms, ...rest } =
           payload as any;
-        const resp = await n8nGenerateIdeas({
-          company_id,
-          strategy_id,
-          angle_number,
-          platforms,
-          ...rest,
-        });
+        const resp = await n8nCall(
+          "generateIdeas",
+          {
+            company_id,
+            strategy_id,
+            angle_number,
+            platforms,
+            ...rest,
+          },
+          { platforms },
+        );
         if (!resp.ok) throw new Error(`Retry failed (${resp.status})`);
         push({
           title: "Queued",
