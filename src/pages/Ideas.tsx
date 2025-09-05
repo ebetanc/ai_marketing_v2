@@ -516,336 +516,340 @@ export function Ideas() {
     })();
   };
 
-  const { call: generateContentCall } = useAsyncCallback(async () => {
-    // Toasts handled exclusively in runTopicGeneration to avoid duplicates
-    if (!viewIdeaModal.idea || !viewIdeaModal.topic) return;
+  // Refactored: allow passing idea/topic directly (inline button) without relying on modal state timing.
+  const { call: generateContentCall } = useAsyncCallback(
+    async (ideaOverride?: IdeaJoined, topicOverride?: Topic) => {
+      // Determine active context
+      const activeIdea = ideaOverride ?? viewIdeaModal.idea;
+      const activeTopic = topicOverride ?? viewIdeaModal.topic;
+      if (!activeIdea || !activeTopic) return;
 
-    // Prevent duplicate generation: check if content already exists for this idea/topic
-    try {
-      const topicLowerCheck = (viewIdeaModal.topic.topic || "").toLowerCase();
-      const { data: existingContent, error: existingErr } = await supabase
-        .from("content")
-        .select("content_body, idea_id")
-        .eq("idea_id", viewIdeaModal.idea.id);
-      if (!existingErr && Array.isArray(existingContent)) {
-        const duplicate = existingContent.some((row: any) =>
-          (row?.content_body || "").toLowerCase().includes(topicLowerCheck),
-        );
-        if (duplicate) {
-          throw new Error("Content already generated for this topic.");
+      // Prevent duplicate generation: check if content already exists for this idea/topic
+      try {
+        const topicLowerCheck = (activeTopic.topic || "").toLowerCase();
+        const { data: existingContent, error: existingErr } = await supabase
+          .from("content")
+          .select("content_body, idea_id")
+          .eq("idea_id", activeIdea.id);
+        if (!existingErr && Array.isArray(existingContent)) {
+          const duplicate = existingContent.some((row: any) =>
+            (row?.content_body || "").toLowerCase().includes(topicLowerCheck),
+          );
+          if (duplicate) {
+            throw new Error("Content already generated for this topic.");
+          }
+        }
+      } catch (dupCheckErr) {
+        throw dupCheckErr;
+      }
+
+      console.log("=== FETCHING COMPANY DETAILS ===");
+      console.log("Idea company_id:", activeIdea.company_id);
+
+      let companyData: CompanyRow | null = null;
+      let companyError: unknown = null;
+      if (activeIdea.company_id) {
+        const res = await supabase
+          .from("companies")
+          .select("*")
+          .eq("id", activeIdea.company_id)
+          .single();
+        companyData = res.data as CompanyRow | null;
+        companyError = res.error;
+      }
+
+      if (companyError) {
+        console.error("Error fetching company details:", companyError);
+        console.log("Continuing without company details...");
+      }
+
+      console.log("Company data fetched:", companyData);
+
+      console.log("=== FETCHING STRATEGY AND ANGLE DETAILS ===");
+      console.log("Strategy ID:", activeIdea.strategy_id);
+      console.log("Angle Number:", activeIdea.angle_number);
+
+      let strategyData: StrategyRow | null = null;
+      let angleDetails: {
+        number: number;
+        header: string;
+        description: string;
+        objective: string;
+        tonality: string;
+      } | null = null;
+
+      if (activeIdea.strategy_id && activeIdea.angle_number) {
+        const { data: strategy, error: strategyError } = await supabase
+          .from("strategies")
+          .select("*")
+          .eq("id", activeIdea.strategy_id)
+          .single();
+
+        if (strategyError) {
+          console.error("Error fetching strategy details:", strategyError);
+          console.log("Continuing without strategy details...");
+        } else {
+          strategyData = strategy as StrategyRow;
+
+          const angleNumber = activeIdea.angle_number;
+          angleDetails = {
+            number: angleNumber,
+            header: (strategy as any)[`angle${angleNumber}_header`] || "",
+            description:
+              (strategy as any)[`angle${angleNumber}_description`] || "",
+            objective: (strategy as any)[`angle${angleNumber}_objective`] || "",
+            tonality: (strategy as any)[`angle${angleNumber}_tonality`] || "",
+          };
+
+          console.log("Strategy data fetched:", strategyData);
+          console.log("Angle details extracted:", angleDetails);
         }
       }
-    } catch (dupCheckErr) {
-      // Rethrow so upstream handler can surface a friendly toast & prevent webhook call
-      throw dupCheckErr;
-    }
 
-    console.log("=== FETCHING COMPANY DETAILS ===");
-    console.log("Idea company_id:", viewIdeaModal.idea.company_id);
-
-    let companyData: CompanyRow | null = null;
-    let companyError: unknown = null;
-    if (viewIdeaModal.idea.company_id) {
-      const res = await supabase
-        .from("companies")
-        .select("*")
-        .eq("id", viewIdeaModal.idea.company_id)
-        .single();
-      companyData = res.data as CompanyRow | null;
-      companyError = res.error;
-    }
-
-    if (companyError) {
-      console.error("Error fetching company details:", companyError);
-      console.log("Continuing without company details...");
-    }
-
-    console.log("Company data fetched:", companyData);
-
-    console.log("=== FETCHING STRATEGY AND ANGLE DETAILS ===");
-    console.log("Strategy ID:", viewIdeaModal.idea.strategy_id);
-    console.log("Angle Number:", viewIdeaModal.idea.angle_number);
-
-    let strategyData: StrategyRow | null = null;
-    let angleDetails: {
-      number: number;
-      header: string;
-      description: string;
-      objective: string;
-      tonality: string;
-    } | null = null;
-
-    if (viewIdeaModal.idea.strategy_id && viewIdeaModal.idea.angle_number) {
-      const { data: strategy, error: strategyError } = await supabase
-        .from("strategies")
-        .select("*")
-        .eq("id", viewIdeaModal.idea.strategy_id)
-        .single();
-
-      if (strategyError) {
-        console.error("Error fetching strategy details:", strategyError);
-        console.log("Continuing without strategy details...");
-      } else {
-        strategyData = strategy as StrategyRow;
-
-        const angleNumber = viewIdeaModal.idea.angle_number;
+      // n8n contract safeguard: ensure angleDetails object always exists for template fields
+      if (!angleDetails) {
         angleDetails = {
-          number: angleNumber,
-          header: (strategy as any)[`angle${angleNumber}_header`] || "",
-          description:
-            (strategy as any)[`angle${angleNumber}_description`] || "",
-          objective: (strategy as any)[`angle${angleNumber}_objective`] || "",
-          tonality: (strategy as any)[`angle${angleNumber}_tonality`] || "",
+          number: activeIdea.angle_number ?? 0,
+          header: "Unknown Strategy",
+          description: "",
+          objective: "",
+          tonality: "",
         };
-
-        console.log("Strategy data fetched:", strategyData);
-        console.log("Angle details extracted:", angleDetails);
+        console.log("Applied fallback angleDetails", angleDetails);
       }
-    }
 
-    // n8n contract safeguard: ensure angleDetails object always exists for template fields
-    if (!angleDetails) {
-      angleDetails = {
-        number: viewIdeaModal.idea.angle_number ?? 0,
-        header: "Unknown Strategy",
-        description: "",
-        objective: "",
-        tonality: "",
+      const topicData = {
+        topicNumber: activeTopic.number,
+        topic: activeTopic.topic,
+        description: activeTopic.description,
+        image_prompt: activeTopic.image_prompt,
+        idea: {
+          id: activeIdea.id,
+          brand:
+            companyData?.brand_name ||
+            activeIdea.company?.brand_name ||
+            "Unknown Brand",
+          strategy_id: activeIdea.strategy_id,
+          angle_number: activeIdea.angle_number,
+          created_at: activeIdea.created_at,
+        },
       };
-      console.log("Applied fallback angleDetails", angleDetails);
-    }
 
-    const topicData = {
-      topicNumber: viewIdeaModal.topic.number,
-      topic: viewIdeaModal.topic.topic,
-      description: viewIdeaModal.topic.description,
-      image_prompt: viewIdeaModal.topic.image_prompt,
-      idea: {
-        id: viewIdeaModal.idea.id,
-        brand:
-          companyData?.brand_name ||
-          viewIdeaModal.idea.company?.brand_name ||
-          "Unknown Brand",
-        strategy_id: viewIdeaModal.idea.strategy_id,
-        angle_number: viewIdeaModal.idea.angle_number,
-        created_at: viewIdeaModal.idea.created_at,
-      },
-    };
+      // Derive normalized-first fields from companyData for consistent payloads
+      const brandName: string =
+        companyData?.brand_name ||
+        activeIdea.company?.brand_name ||
+        "Unknown Brand";
+      const website: string = companyData?.website || "";
+      const tone: string = companyData?.brand_tone || "";
+      const style: string = companyData?.key_offer || "";
+      const targetAudienceStr: string = companyData?.target_audience || "";
+      const additionalInfo: string = companyData?.additional_information || "";
 
-    // Derive normalized-first fields from companyData for consistent payloads
-    const brandName: string =
-      companyData?.brand_name ||
-      viewIdeaModal.idea.company?.brand_name ||
-      "Unknown Brand";
-    const website: string = companyData?.website || "";
-    const tone: string = companyData?.brand_tone || "";
-    const style: string = companyData?.key_offer || "";
-    const targetAudienceStr: string = companyData?.target_audience || "";
-    const additionalInfo: string = companyData?.additional_information || "";
+      const { data: genSession } = await supabase.auth.getSession();
+      const userId = genSession.session?.user.id || null;
 
-    const { data: genSession } = await supabase.auth.getSession();
-    const userId = genSession.session?.user.id || null;
+      // Normalize platforms from strategy or use a sensible default. n8n Switch expects
+      // string items at fixed indices (platforms[0]..platforms[7]).
+      const normalizePlatforms = (
+        platforms: string | null | undefined,
+      ): string[] => {
+        if (!platforms) return [];
+        try {
+          const parsed = JSON.parse(platforms);
+          if (Array.isArray(parsed)) return parsed;
+        } catch {
+          /* not JSON */
+        }
+        return String(platforms)
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+      };
 
-    // Normalize platforms from strategy or use a sensible default. n8n Switch expects
-    // string items at fixed indices (platforms[0]..platforms[7]).
-    const normalizePlatforms = (
-      platforms: string | null | undefined,
-    ): string[] => {
-      if (!platforms) return [];
-      try {
-        const parsed = JSON.parse(platforms);
-        if (Array.isArray(parsed)) return parsed;
-      } catch {
-        /* not JSON */
-      }
-      return String(platforms)
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
-    };
+      const normalizedPlatforms = normalizePlatforms(
+        strategyData?.platforms || null,
+      ).map((p) => p.toLowerCase());
+      // Fixed platform order to reserve indexes consistently
+      const PLATFORM_ORDER = [
+        "twitter",
+        "linkedin",
+        "newsletter",
+        "facebook",
+        "instagram",
+        "youtube",
+        "tiktok",
+        "blog",
+      ];
+      const platformsSlotted: string[] = PLATFORM_ORDER.map(() => "");
+      normalizedPlatforms.forEach((p) => {
+        const idx = PLATFORM_ORDER.indexOf(p);
+        if (idx !== -1) platformsSlotted[idx] = p;
+      });
 
-    const normalizedPlatforms = normalizePlatforms(
-      strategyData?.platforms || null,
-    ).map((p) => p.toLowerCase());
-    // Fixed platform order to reserve indexes consistently
-    const PLATFORM_ORDER = [
-      "twitter",
-      "linkedin",
-      "newsletter",
-      "facebook",
-      "instagram",
-      "youtube",
-      "tiktok",
-      "blog",
-    ];
-    const platformsSlotted: string[] = PLATFORM_ORDER.map(() => "");
-    normalizedPlatforms.forEach((p) => {
-      const idx = PLATFORM_ORDER.indexOf(p);
-      if (idx !== -1) platformsSlotted[idx] = p;
-    });
-
-    const companyDetailsPayload = {
-      id: companyData?.id ?? viewIdeaModal.idea.company_id,
-      name: brandName,
-      website,
-      brandTone: tone,
-      keyOffer: style,
-      targetAudience: targetAudienceStr,
-      additionalInfo,
-    };
-
-    const webhookPayload = {
-      identifier: "generateContent",
-      operation: "generate_content_from_idea",
-      meta: {
-        user_id: userId,
-        source: "app",
-        ts: new Date().toISOString(),
-      },
-      user_id: userId,
-      // Core identifiers for downstream CRUD
-      company_id: viewIdeaModal.idea.company_id,
-      strategy_id: viewIdeaModal.idea.strategy_id,
-      idea_id: viewIdeaModal.idea.id,
-      topic_number: viewIdeaModal.topic.number,
-      topic: topicData,
-      // Fixed-length string array for n8n Switch node compatibility
-      platforms: platformsSlotted,
-      // Fields expected by various n8n nodes (brand, data.brandData, etc.)
-      brand: {
-        id: companyData?.id ?? viewIdeaModal.idea.company_id,
+      const companyDetailsPayload = {
+        id: companyData?.id ?? activeIdea.company_id,
         name: brandName,
-        additionalInfo,
-        targetAudience: targetAudienceStr,
+        website,
         brandTone: tone,
         keyOffer: style,
-        website,
-      },
-      brandDetails: {
-        id: companyData?.id ?? viewIdeaModal.idea.company_id,
-        name: brandName,
-      },
-      data: {
-        brandData: {
-          id: companyData?.id ?? viewIdeaModal.idea.company_id,
-          name: brandName,
-          keyOffer: style,
+        targetAudience: targetAudienceStr,
+        additionalInfo,
+      };
+
+      const webhookPayload = {
+        identifier: "generateContent",
+        operation: "generate_content_from_idea",
+        meta: {
+          user_id: userId,
+          source: "app",
+          ts: new Date().toISOString(),
         },
-      },
-      // Always provide an object for companyDetails so n8n prompt templates resolve keys
-      companyDetails: companyDetailsPayload,
-      // SPECIFIC ANGLE DETAILS THAT GENERATED THIS IDEA
-      angleDetails: angleDetails,
-      // FULL STRATEGY CONTEXT
-      strategyContext: strategyData
-        ? {
-            id: strategyData.id,
-            brand: brandName,
-            name: brandName,
-            description: "No strategy description available",
-            platforms: strategyData.platforms,
-            created_at: strategyData.created_at,
-            totalAngles: (() => {
-              let count = 0;
-              for (let i = 1; i <= 10; i++) {
-                if ((strategyData as any)[`angle${i}_header`]) count++;
-              }
-              return count;
-            })(),
-          }
-        : null,
-      // REQUIRED FIELDS FOR AI AGENT CONTEXT
-      aiContext: {
-        strategyName: brandName,
-        strategyDescription: "No strategy description available",
-        tonality: angleDetails?.tonality || "No tonality specified",
-        objective: angleDetails?.objective || "No objective specified",
-        keyOffer: style || "No key offer specified",
-        brandTone: tone || "No brand tone specified",
-        targetAudience: targetAudienceStr || "No target audience specified",
+        user_id: userId,
+        // Core identifiers for downstream CRUD
+        company_id: activeIdea.company_id,
+        strategy_id: activeIdea.strategy_id,
+        idea_id: activeIdea.id,
+        topic_number: activeTopic.number,
+        topic: topicData,
+        // Fixed-length string array for n8n Switch node compatibility
         platforms: platformsSlotted,
-        contentType: "idea_to_content_generation",
-      },
-      context: {
-        requestType: "generate_content_from_idea",
-        timestamp: new Date().toISOString(),
-        hasCompanyDetails: !!companyData,
-        hasAngleDetails: !!angleDetails,
-        hasStrategyContext: !!strategyData,
-        ideaSetId: viewIdeaModal.idea.id,
-        topicNumber: viewIdeaModal.topic.number,
-      },
-    };
-
-    console.log("=== ENHANCED GENERATE CONTENT WEBHOOK ===");
-    console.log("Sending payload:", webhookPayload);
-    console.log("Company details included:", !!companyData);
-    console.log("Angle details included:", !!angleDetails);
-    console.log("Strategy context included:", !!strategyData);
-
-    // WEBHOOK SENDING DISABLED FOR ANALYSIS
-    // const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify(webhookPayload)
-    // })
-
-    // console.log('Webhook response status:', response.status)
-
-    // if (!response.ok) {
-    //   throw new Error(`Webhook failed with status: ${response.status}`)
-    // }
-
-    // const responseText = await response.text()
-    // console.log('Raw webhook response:', responseText)
-
-    // let result
-    // try {
-    //   result = JSON.parse(responseText)
-    // } catch (parseError) {
-    //   console.error('Failed to parse JSON response:', parseError)
-    //   console.error('Raw response text:', responseText)
-    //   // If JSON parsing fails, treat as success if status is ok
-    //   result = { message: 'Content generation started' }
-    // }
-
-    // console.log('Webhook response:', result)
-
-    console.log("=== FINAL WEBHOOK PAYLOAD FOR ANALYSIS ===");
-    console.log(JSON.stringify(webhookPayload, null, 2));
-
-    console.log("=== MAKING WEBHOOK REQUEST ===");
-    let result;
-    try {
-      const { company_id, strategy_id, idea_id, topic, platforms, ...rest } =
-        webhookPayload as any;
-      result = await n8nCall(
-        "generateContent",
-        {
-          company_id,
-          strategy_id,
-          idea_id,
-          topic,
-          platforms,
-          ...rest,
+        // Fields expected by various n8n nodes (brand, data.brandData, etc.)
+        brand: {
+          id: companyData?.id ?? activeIdea.company_id,
+          name: brandName,
+          additionalInfo,
+          targetAudience: targetAudienceStr,
+          brandTone: tone,
+          keyOffer: style,
+          website,
         },
-        { platforms },
-      );
-    } catch (e) {
-      throw e;
-    }
-    console.log("Webhook response status:", result.status);
-    if (!result.ok) {
-      throw new Error(`Webhook failed with status: ${result.status}`);
-    }
-    if (result.data) {
-      console.log("Webhook JSON response:", result.data);
-    } else {
-      console.log("Webhook raw response:", result.rawText);
-    }
-  });
+        brandDetails: {
+          id: companyData?.id ?? activeIdea.company_id,
+          name: brandName,
+        },
+        data: {
+          brandData: {
+            id: companyData?.id ?? activeIdea.company_id,
+            name: brandName,
+            keyOffer: style,
+          },
+        },
+        // Always provide an object for companyDetails so n8n prompt templates resolve keys
+        companyDetails: companyDetailsPayload,
+        // SPECIFIC ANGLE DETAILS THAT GENERATED THIS IDEA
+        angleDetails: angleDetails,
+        // FULL STRATEGY CONTEXT
+        strategyContext: strategyData
+          ? {
+              id: strategyData.id,
+              brand: brandName,
+              name: brandName,
+              description: "No strategy description available",
+              platforms: strategyData.platforms,
+              created_at: strategyData.created_at,
+              totalAngles: (() => {
+                let count = 0;
+                for (let i = 1; i <= 10; i++) {
+                  if ((strategyData as any)[`angle${i}_header`]) count++;
+                }
+                return count;
+              })(),
+            }
+          : null,
+        // REQUIRED FIELDS FOR AI AGENT CONTEXT
+        aiContext: {
+          strategyName: brandName,
+          strategyDescription: "No strategy description available",
+          tonality: angleDetails?.tonality || "No tonality specified",
+          objective: angleDetails?.objective || "No objective specified",
+          keyOffer: style || "No key offer specified",
+          brandTone: tone || "No brand tone specified",
+          targetAudience: targetAudienceStr || "No target audience specified",
+          platforms: platformsSlotted,
+          contentType: "idea_to_content_generation",
+        },
+        context: {
+          requestType: "generate_content_from_idea",
+          timestamp: new Date().toISOString(),
+          hasCompanyDetails: !!companyData,
+          hasAngleDetails: !!angleDetails,
+          hasStrategyContext: !!strategyData,
+          ideaSetId: activeIdea.id,
+          topicNumber: activeTopic.number,
+        },
+      };
+
+      console.log("=== ENHANCED GENERATE CONTENT WEBHOOK ===");
+      console.log("Sending payload:", webhookPayload);
+      console.log("Company details included:", !!companyData);
+      console.log("Angle details included:", !!angleDetails);
+      console.log("Strategy context included:", !!strategyData);
+
+      // WEBHOOK SENDING DISABLED FOR ANALYSIS
+      // const response = await fetch('https://n8n.srv856940.hstgr.cloud/webhook/content-saas', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify(webhookPayload)
+      // })
+
+      // console.log('Webhook response status:', response.status)
+
+      // if (!response.ok) {
+      //   throw new Error(`Webhook failed with status: ${response.status}`)
+      // }
+
+      // const responseText = await response.text()
+      // console.log('Raw webhook response:', responseText)
+
+      // let result
+      // try {
+      //   result = JSON.parse(responseText)
+      // } catch (parseError) {
+      //   console.error('Failed to parse JSON response:', parseError)
+      //   console.error('Raw response text:', responseText)
+      //   // If JSON parsing fails, treat as success if status is ok
+      //   result = { message: 'Content generation started' }
+      // }
+
+      // console.log('Webhook response:', result)
+
+      console.log("=== FINAL WEBHOOK PAYLOAD FOR ANALYSIS ===");
+      console.log(JSON.stringify(webhookPayload, null, 2));
+
+      console.log("=== MAKING WEBHOOK REQUEST ===");
+      let result;
+      try {
+        const { company_id, strategy_id, idea_id, topic, platforms, ...rest } =
+          webhookPayload as any;
+        result = await n8nCall(
+          "generateContent",
+          {
+            company_id,
+            strategy_id,
+            idea_id,
+            topic,
+            platforms,
+            ...rest,
+          },
+          { platforms },
+        );
+      } catch (e) {
+        throw e;
+      }
+      console.log("Webhook response status:", result.status);
+      if (!result.ok) {
+        throw new Error(`Webhook failed with status: ${result.status}`);
+      }
+      if (result.data) {
+        console.log("Webhook JSON response:", result.data);
+      } else {
+        console.log("Webhook raw response:", result.rawText);
+      }
+    },
+  );
 
   // Unified generation logic for both modal button and inline topic buttons
   const runTopicGeneration = useCallback(
@@ -919,7 +923,7 @@ export function Ideas() {
 
       let success = false;
       try {
-        const res = await generateContentCall();
+        const res = await generateContentCall(idea, topic);
         if (res && (res as any).error) throw (res as any).error;
         success = true;
         // Keep same loading toast during processing/polling

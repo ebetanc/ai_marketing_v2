@@ -32,9 +32,8 @@ const Content = lazy(() =>
 const Calendar = lazy(() =>
   import("@/pages/Calendar").then((m) => ({ default: m.Calendar })),
 );
-const Campaigns = lazy(() =>
-  import("@/pages/AiProductCampaign").then((m) => ({ default: m.Campaigns })),
-);
+// Product Campaign page (file exports AiProductCampaign as both named + default)
+const ProductCampaign = lazy(() => d(import("@/pages/AiProductCampaign")));
 const YouTubeSEO = lazy(() =>
   import("@/pages/YouTubeSEO").then((m) => ({ default: m.YouTubeSEO })),
 );
@@ -128,7 +127,7 @@ export const protectedRoutes: RouteDescriptor[] = [
   { path: "/ideas", component: Ideas },
   { path: "/content", component: Content },
   { path: "/calendar", component: Calendar },
-  { path: "/campaigns", component: Campaigns },
+  { path: "/campaigns", component: ProductCampaign },
   { path: "/youtube-seo", component: YouTubeSEO },
   { path: "/trend-blog", component: TrendBlog },
   { path: "/semantic-seo", component: SemanticSEO },
