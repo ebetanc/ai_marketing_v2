@@ -7,7 +7,6 @@ import { Textarea } from "../components/ui/Textarea";
 import { Input } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
 import { n8nCall, PRODUCT_CAMPAIGN_IDENTIFIER } from "../lib/n8n";
-import { N8N_PRODUCT_CAMPAIGN_WEBHOOK_PATH } from "../lib/n8n";
 import {
   uploadFileToSupabaseStorage,
   isSupabaseConfigured,
@@ -103,49 +102,21 @@ export function AiProductCampaign() {
     setResult(null);
     setError(null);
     try {
-      console.log("=== GENERATE IMAGES/VIDEO BUTTON CLICKED ===");
-      console.log("Operation:", operation);
-      console.log("User request:", userRequest);
-      console.log("Campaign data:", campaign);
-      console.log("Assets count:", assets.length);
-      console.log("Assets URLs:", assets);
-
-      const payload = {
-        process: operation,
-        user_request: userRequest.trim(),
-        campaign,
-        upload_assets: assets,
-      };
-
-      console.log("=== SENDING TO N8N ===");
-      console.log("Identifier:", PRODUCT_CAMPAIGN_IDENTIFIER);
-      console.log("Full payload:", JSON.stringify(payload, null, 2));
-      console.log("Operation for n8nCall:", operation);
-
-      const result = await n8nCall(PRODUCT_CAMPAIGN_IDENTIFIER, payload, {
-        operation,
-      });
-
-      console.log("=== N8N RESPONSE ===");
-      console.log("Response OK:", result.ok);
-      console.log("Response status:", result.status);
-      console.log("Response data:", result.data);
-      console.log("Response raw text:", result.rawText);
-      console.log("Full response object:", result);
-
-      setResult(result.data || result.rawText || { ok: result.ok });
-      if (!result.ok) setError("n8n returned an error (see console)");
+      const resp = await n8nCall(
+        PRODUCT_CAMPAIGN_IDENTIFIER,
+        {
+          operation,
+          user_request: userRequest.trim(),
+          campaign: campaign,
+          upload_assets: assets, // string[] OK per contract
+        },
+        { path: undefined },
+      );
+      setResult(resp.data || resp.rawText || { ok: resp.ok });
+      if (!resp.ok) setError("n8n returned an error (see console)");
     } catch (e: any) {
-      console.log("=== ERROR OCCURRED ===");
-      console.log("Product campaign request failed:", e);
-      console.log("Error type:", typeof e);
-      console.log("Error constructor:", e?.constructor?.name);
-      console.log("Error message:", e?.message);
-      console.log("Error stack:", e?.stack);
-      setError(e?.message || "Network request failed. Check your connection and try again.");
+      setError(e?.message || "Request failed");
     } finally {
-      console.log("=== REQUEST COMPLETED ===");
-      console.log("Setting sending to false");
       setSending(false);
     }
   }
@@ -284,12 +255,15 @@ export function AiProductCampaign() {
             </h3>
             <ul className="text-sm text-gray-600 space-y-1 list-disc pl-5">
               <li>identifier: productCampaign</li>
-              <li>process: generateImages | generateVideo</li>
-              <li>user_request, campaign, upload_assets</li>
+              <li>operation: generateImages | generateVideo</li>
+              <li>campaign.objective / description / aspectRatio / model</li>
+              <li>user_request (prompt)</li>
+              <li>upload_assets: string[] (urls)</li>
               <li>meta.contract: product-campaign-v1</li>
             </ul>
             <p className="text-xs text-gray-500">
-              This UI calls n8n webhooks via unified helper ensuring request_id & contract are attached automatically.
+              This UI sends payloads to n8n via the unified helper which adds
+              request_id & user/session metadata automatically.
             </p>
           </div>
         </div>
